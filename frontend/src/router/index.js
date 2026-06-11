@@ -60,7 +60,7 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫
+// 路由守卫 - 直接读 localStorage，不调用 store
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
 
