@@ -30,7 +30,8 @@ from routers import (
     cron_router,
     task_logs_router,
     stats_router,
-    test_router
+    test_router,
+    hindsight_router
 )
 
 
@@ -78,6 +79,7 @@ app.include_router(cron_router)
 app.include_router(task_logs_router)
 app.include_router(stats_router)
 app.include_router(test_router)
+app.include_router(hindsight_router)
 
 
 @app.get("/health")

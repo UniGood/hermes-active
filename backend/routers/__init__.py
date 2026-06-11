@@ -10,6 +10,7 @@ from .cron import router as cron_router
 from .task_logs import router as task_logs_router
 from .test import router as test_router
 from .stats import router as stats_router
+from .hindsight import router as hindsight_router
 
 __all__ = [
     "auth_router",
@@ -20,5 +21,6 @@ __all__ = [
     "cron_router",
     "task_logs_router",
     "test_router",
-    "stats_router"
+    "stats_router",
+    "hindsight_router"
 ]

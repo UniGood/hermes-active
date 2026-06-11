@@ -35,6 +35,8 @@ class SendProactiveRequest(BaseModel):
 
 class GenerateRequest(BaseModel):
     session_id: str
+    context_source: str = "session"  # session / recall / reflect
+    context_data: Optional[str] = None  # recall/reflect 的结果文本
 
 
 @router.get("/{session_id}")
@@ -76,22 +78,33 @@ async def generate_message(
     prompts_config = ConfigService.get_prompts_config(db)
 
     try:
+        # 根据 context_source 获取上下文
+        context_source = request.context_source
+        context_data = request.context_data
+
+        if context_source == "session":
+            # 从 session 获取上下文
+            context_msgs = MessageService.get_session_context_raw(request.session_id, limit=20)
+            context_text = "\n".join(
+                f"{m.get('role', 'unknown')}: {m.get('content', '')[:200]}"
+                for m in context_msgs[-10:]
+            )
+        elif context_source in ("recall", "reflect") and context_data:
+            # 使用传入的 context_data（Hindsight recall/reflect 结果）
+            context_text = context_data
+        else:
+            context_text = ""
+
+        system_prompt = prompts_config.get("system", "")
+        generation_template = prompts_config.get("generation", "{context}")
+        user_prompt = generation_template.replace("{context}", context_text)
+
         if llm_config.get("mode") == "hermes":
             # 使用 hermes 的 LLM
             import sys
             from pathlib import Path
             sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
             from agent.auxiliary_client import call_llm
-
-            context_msgs = MessageService.get_session_context_raw(request.session_id, limit=20)
-            context_text = "\n".join(
-                f"{m.get('role', 'unknown')}: {m.get('content', '')[:200]}"
-                for m in context_msgs[-10:]
-            )
-
-            system_prompt = prompts_config.get("system", "")
-            generation_template = prompts_config.get("generation", "{context}")
-            user_prompt = generation_template.replace("{context}", context_text)
 
             response = call_llm(
                 task="title_generation",
@@ -107,23 +120,13 @@ async def generate_message(
             MessageService.create_task_log(
                 task_type="generate",
                 status="success",
-                message=f"生成消息成功（hermes），session: {request.session_id}",
+                message=f"生成消息成功（hermes），session: {request.session_id}，来源: {context_source}",
                 duration=duration
             )
-            return {"success": True, "message": content, "source": "hermes"}
+            return {"success": True, "message": content, "source": "hermes", "context_source": context_source}
         else:
             # 使用自定义 LLM
             from services.llm_service import LLMService
-
-            context_msgs = MessageService.get_session_context_raw(request.session_id, limit=20)
-            context_text = "\n".join(
-                f"{m.get('role', 'unknown')}: {m.get('content', '')[:200]}"
-                for m in context_msgs[-10:]
-            )
-
-            system_prompt = prompts_config.get("system", "")
-            generation_template = prompts_config.get("generation", "{context}")
-            user_prompt = generation_template.replace("{context}", context_text)
 
             result = await LLMService.generate_message(
                 llm_config=llm_config,
@@ -138,10 +141,10 @@ async def generate_message(
                 MessageService.create_task_log(
                     task_type="generate",
                     status="success",
-                    message=f"生成消息成功（custom），session: {request.session_id}",
+                    message=f"生成消息成功（custom），session: {request.session_id}，来源: {context_source}",
                     duration=duration
                 )
-                return {"success": True, "message": result["content"], "source": "custom"}
+                return {"success": True, "message": result["content"], "source": "custom", "context_source": context_source}
             else:
                 duration = round(_time.time() - start_time, 2)
                 MessageService.create_task_log(

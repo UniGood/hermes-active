@@ -113,6 +113,7 @@ class CronJobCreate(BaseModel):
     enabled: bool = True
     prompt: Optional[str] = None
     session_id: Optional[str] = None
+    platform: str = "weixin"
     use_llm: bool = True
     write_to_db: bool = True
     with_mark: bool = True
@@ -125,6 +126,7 @@ class CronJobUpdate(BaseModel):
     enabled: Optional[bool] = None
     prompt: Optional[str] = None
     session_id: Optional[str] = None
+    platform: Optional[str] = None
     use_llm: Optional[bool] = None
     write_to_db: Optional[bool] = None
     with_mark: Optional[bool] = None
@@ -138,6 +140,7 @@ class CronJobInfo(BaseModel):
     enabled: bool
     prompt: Optional[str] = None
     session_id: Optional[str] = None
+    platform: str = "weixin"
     use_llm: bool = True
     write_to_db: bool = True
     with_mark: bool = True

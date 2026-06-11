@@ -1,61 +1,152 @@
 <template>
   <div class="test-page">
-    <!-- 步骤 1: 最新微信 Session -->
-    <n-card title="1. 最新微信 Session" style="margin-bottom: 16px">
+    <!-- 步骤 1: Session 选择区域 -->
+    <n-card title="1. Session 选择" style="margin-bottom: 16px">
       <n-spin :show="loadingSession">
-        <div v-if="latestSession" class="session-info">
-          <div class="info-item">
-            <span class="label">Session ID</span>
-            <n-text code style="font-size: 12px">{{ latestSession.id }}</n-text>
+        <div class="session-select-area">
+          <div class="select-row">
+            <span class="select-label">目标平台:</span>
+            <n-select
+              v-model:value="selectedPlatform"
+              :options="platformOptions"
+              style="width: 150px"
+              @update:value="onPlatformChange"
+            />
           </div>
-          <div class="info-item">
-            <span class="label">标题</span>
-            <span class="value">{{ latestSession.title || '无标题' }}</span>
+          <div class="select-row">
+            <span class="select-label">Session:</span>
+            <n-select
+              v-model:value="selectedSessionId"
+              :options="sessionOptions"
+              placeholder="选择 session"
+              style="flex: 1"
+              filterable
+            />
           </div>
-          <div class="info-item">
-            <span class="label">消息数</span>
-            <span class="value">{{ latestSession.message_count || 0 }}</span>
+          <div class="select-actions">
+            <n-button size="small" @click="loadLatestSession" :loading="loadingSession">获取最新</n-button>
+            <n-button size="small" @click="loadSessionList" :loading="loadingSessionList">刷新列表</n-button>
           </div>
+          <div v-if="selectedSession" class="session-info">
+            <div class="info-item">
+              <span class="label">Session ID</span>
+              <n-text code style="font-size: 12px">{{ selectedSession.id }}</n-text>
+            </div>
+            <div class="info-item">
+              <span class="label">标题</span>
+              <span class="value">{{ selectedSession.title || '无标题' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">消息数</span>
+              <span class="value">{{ selectedSession.message_count || 0 }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">状态</span>
+              <n-tag :type="selectedSession.ended_at ? 'default' : 'success'" size="small">
+                {{ selectedSession.ended_at ? '已结束' : '活跃' }}
+              </n-tag>
+            </div>
+          </div>
+          <n-empty v-else-if="!loadingSession" description="未找到 Session" />
         </div>
-        <n-empty v-else description="未找到活跃的微信 Session" />
       </n-spin>
-      <n-button @click="loadLatestSession" style="margin-top: 12px" size="small">刷新</n-button>
     </n-card>
 
-    <!-- 步骤 2: 上下文读取 -->
-    <n-card title="2. 读取上下文" style="margin-bottom: 16px">
-      <n-space align="center">
-        <n-button @click="testContext" :loading="loadingContext" :disabled="!latestSession" type="primary">
-          读取上下文
-        </n-button>
-        <n-input-number v-model:value="contextLimit" :min="1" :max="50" style="width: 100px" />
-        <span style="color: #999; font-size: 13px">条消息</span>
-      </n-space>
-      <div v-if="contextMessages.length > 0" class="context-preview">
-        <div class="context-header">
-          <span>共 {{ contextMessages.length }} 条上下文</span>
-        </div>
-        <div v-for="(msg, i) in contextMessages" :key="i" class="context-item">
-          <span class="context-role" :class="msg.role">{{ msg.role === 'user' ? '曹凡' : msg.role === 'assistant' ? '凯莉' : msg.role }}:</span>
-          <span class="context-content">{{ truncate(msg.content, 100) }}</span>
-        </div>
-      </div>
+    <!-- 步骤 2: 获取上下文（三个 Tab） -->
+    <n-card title="2. 获取上下文" style="margin-bottom: 16px">
+      <n-tabs v-model:value="activeContextTab" type="line">
+        <!-- Tab 1: Session 上下文 -->
+        <n-tab-pane name="session" tab="Session 上下文">
+          <div class="tab-content">
+            <n-space align="center">
+              <n-button @click="loadSessionContext" :loading="loadingContext" :disabled="!selectedSessionId" type="primary">
+                读取上下文
+              </n-button>
+              <n-input-number v-model:value="contextLimit" :min="1" :max="50" style="width: 100px" />
+              <span style="color: #999; font-size: 13px">条消息</span>
+            </n-space>
+            <div v-if="contextMessages.length > 0" class="context-preview">
+              <div class="context-header">
+                <span>共 {{ contextMessages.length }} 条上下文</span>
+              </div>
+              <div v-for="(msg, i) in contextMessages" :key="i" class="context-item">
+                <span class="context-role" :class="msg.role">{{ msg.role === 'user' ? '曹凡' : msg.role === 'assistant' ? '凯莉' : msg.role }}:</span>
+                <span class="context-content">{{ truncate(msg.content, 100) }}</span>
+              </div>
+            </div>
+          </div>
+        </n-tab-pane>
+
+        <!-- Tab 2: Hindsight Recall -->
+        <n-tab-pane name="recall" tab="Hindsight Recall">
+          <div class="tab-content">
+            <n-space vertical>
+              <n-space align="center">
+                <n-input v-model:value="recallQuery" placeholder="输入搜索关键词" style="width: 300px" />
+                <n-input-number v-model:value="recallLimit" :min="1" :max="50" style="width: 100px" />
+                <span style="color: #999; font-size: 13px">条</span>
+                <n-button @click="doRecall" :loading="loadingRecall" type="primary">Recall</n-button>
+              </n-space>
+              <div v-if="recallResults.length > 0" class="recall-results">
+                <div class="recall-header">
+                  <span>共 {{ recallResults.length }} 条结果</span>
+                </div>
+                <div v-for="(item, i) in recallResults" :key="i" class="recall-item">
+                  <div class="recall-text">{{ item.text }}</div>
+                  <div class="recall-meta">
+                    <n-tag v-if="item.type" size="small" type="info">{{ item.type }}</n-tag>
+                    <n-tag v-for="tag in (item.tags || [])" :key="tag" size="small">{{ tag }}</n-tag>
+                    <span v-if="item.entities" class="recall-entities">实体: {{ item.entities }}</span>
+                  </div>
+                </div>
+              </div>
+              <n-empty v-else-if="recallQueried && !loadingRecall" description="无结果" />
+            </n-space>
+          </div>
+        </n-tab-pane>
+
+        <!-- Tab 3: Hindsight Reflect -->
+        <n-tab-pane name="reflect" tab="Hindsight Reflect">
+          <div class="tab-content">
+            <n-space vertical>
+              <n-space align="center">
+                <n-input v-model:value="reflectQuery" placeholder="输入问题/查询" style="width: 400px" />
+                <n-button @click="doReflect" :loading="loadingReflect" type="primary">Reflect</n-button>
+              </n-space>
+              <div v-if="reflectResult" class="reflect-result">
+                <div class="reflect-label">综合分析结果：</div>
+                <div class="reflect-content">{{ reflectResult }}</div>
+              </div>
+              <n-empty v-else-if="reflectQueried && !loadingReflect" description="无结果" />
+            </n-space>
+          </div>
+        </n-tab-pane>
+      </n-tabs>
     </n-card>
 
     <!-- 步骤 3: 生成主动消息 -->
     <n-card title="3. 生成主动消息" style="margin-bottom: 16px">
-      <n-space>
-        <n-button @click="generateMessage" :loading="generating" :disabled="!latestSession" type="primary">
-          根据上下文生成消息
-        </n-button>
+      <n-space vertical>
+        <n-space>
+          <n-button
+            @click="generateMessage"
+            :loading="generating"
+            :disabled="!selectedSessionId || !hasContext"
+            type="primary"
+          >
+            根据上下文生成消息
+          </n-button>
+          <n-tag v-if="hasContext" type="success">已获取上下文 ({{ contextSource }})</n-tag>
+          <n-tag v-else type="warning">⚠️ 请先获取上下文</n-tag>
+        </n-space>
+        <div v-if="generatedMessage" class="generated-message">
+          <div class="generated-label">生成结果：</div>
+          <div class="generated-content">{{ generatedMessage }}</div>
+          <n-button size="small" type="primary" @click="fillToSendBox" style="margin-top: 8px">
+            填入发送框
+          </n-button>
+        </div>
       </n-space>
-      <div v-if="generatedMessage" class="generated-message">
-        <div class="generated-label">生成结果：</div>
-        <div class="generated-content">{{ generatedMessage }}</div>
-        <n-button size="small" type="primary" @click="fillToSendBox" style="margin-top: 8px">
-          填入发送框
-        </n-button>
-      </div>
     </n-card>
 
     <!-- 步骤 4: 发送消息 -->
@@ -91,9 +182,9 @@
               type="primary"
               @click="sendMessage"
               :loading="sending"
-              :disabled="!latestSession || !testMessage.trim()"
+              :disabled="!selectedSessionId || !testMessage.trim()"
             >
-              发送到微信
+              发送到 {{ platformLabel }}
             </n-button>
           </n-space>
         </n-space>
@@ -103,7 +194,7 @@
     <!-- 一键测试 -->
     <n-card title="一键测试" style="margin-bottom: 16px">
       <n-space>
-        <n-button type="warning" @click="fullTest" :loading="fullTesting" :disabled="!latestSession">
+        <n-button type="warning" @click="fullTest" :loading="fullTesting" :disabled="!selectedSessionId || !hasContext">
           生成 + 发送 + 写入DB
         </n-button>
       </n-space>
@@ -123,20 +214,65 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import api from '../api'
 
 const message = useMessage()
 const loadingSession = ref(false)
+const loadingSessionList = ref(false)
 const loadingContext = ref(false)
+const loadingRecall = ref(false)
+const loadingReflect = ref(false)
 const sending = ref(false)
 const generating = ref(false)
 const fullTesting = ref(false)
 
-const latestSession = ref(null)
+// 平台选择
+const selectedPlatform = ref('weixin')
+const platformOptions = [
+  { label: '微信', value: 'weixin' },
+  { label: '飞书', value: 'feishu' },
+  { label: 'CLI', value: 'cli' }
+]
+
+// Session 选择
+const selectedSessionId = ref(null)
+const selectedSession = ref(null)
+const sessionOptions = ref([])
+
+// 上下文 Tab
+const activeContextTab = ref('session')
+
+// Session 上下文
 const contextMessages = ref([])
 const contextLimit = ref(10)
+
+// Hindsight Recall
+const recallQuery = ref('')
+const recallLimit = ref(10)
+const recallResults = ref([])
+const recallQueried = ref(false)
+
+// Hindsight Reflect
+const reflectQuery = ref('')
+const reflectResult = ref('')
+const reflectQueried = ref(false)
+
+// 上下文状态跟踪
+const contextSource = ref(null)  // session / recall / reflect
+const contextData = ref(null)
+
+const hasContext = computed(() => {
+  return contextSource.value !== null
+})
+
+const platformLabel = computed(() => {
+  const p = platformOptions.find(o => o.value === selectedPlatform.value)
+  return p ? p.label : selectedPlatform.value
+})
+
+// 发送相关
 const testMessage = ref('')
 const writeToDB = ref(true)
 const withMark = ref(false)
@@ -153,6 +289,34 @@ const previewMark = computed(() => {
     .replace('{timestamp}', ts)
     .replace('{content}', testMessage.value.trim())
 })
+
+// 监听 selectedSessionId 变化
+watch(selectedSessionId, (newId) => {
+  if (newId) {
+    const s = sessionOptions.value.find(o => o.value === newId)
+    selectedSession.value = s ? s.raw : null
+    // 重置上下文状态
+    resetContext()
+  } else {
+    selectedSession.value = null
+    resetContext()
+  }
+})
+
+// 监听 Tab 切换
+watch(activeContextTab, () => {
+  // 切换 tab 时重置上下文状态，因为不同来源的上下文不同
+})
+
+function resetContext() {
+  contextSource.value = null
+  contextData.value = null
+  contextMessages.value = []
+  recallResults.value = []
+  reflectResult.value = ''
+  recallQueried.value = false
+  reflectQueried.value = false
+}
 
 function addLog(type, msg) {
   const now = new Date()
@@ -171,25 +335,137 @@ function fillToSendBox() {
   message.success('已填入发送框')
 }
 
+function onPlatformChange() {
+  selectedSessionId.value = null
+  selectedSession.value = null
+  sessionOptions.value = []
+  resetContext()
+  loadSessionList()
+}
+
+async function loadSessionList() {
+  loadingSessionList.value = true
+  try {
+    const data = await api.get('/sessions', {
+      params: { platform: selectedPlatform.value, page: 1, page_size: 50 }
+    })
+    sessionOptions.value = (data.items || []).map(s => ({
+      label: `${s.title || s.id} (${s.message_count || 0} 条消息)`,
+      value: s.id,
+      raw: s
+    }))
+    addLog('info', `加载 ${platformLabel.value} Session 列表: ${sessionOptions.value.length} 个`)
+  } catch (e) {
+    addLog('error', '加载 Session 列表失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    loadingSessionList.value = false
+  }
+}
+
 async function loadLatestSession() {
   loadingSession.value = true
   try {
-    const data = await api.get('/sessions/latest/weixin')
-    latestSession.value = data
-    addLog('info', `加载最新微信 Session: ${data.id}`)
+    const data = await api.get(`/sessions/latest/${selectedPlatform.value}`)
+    if (data && data.id) {
+      selectedSessionId.value = data.id
+      selectedSession.value = data
+      addLog('info', `获取最新 ${platformLabel.value} Session: ${data.id}`)
+    } else {
+      addLog('error', `未找到 ${platformLabel.value} 的 Session`)
+    }
   } catch (e) {
-    addLog('error', '加载失败: ' + (e?.detail || '未知错误'))
+    addLog('error', '获取最新 Session 失败: ' + (e?.detail || '未知错误'))
   } finally {
     loadingSession.value = false
   }
 }
 
+async function loadSessionContext() {
+  if (!selectedSessionId.value) return
+  loadingContext.value = true
+  try {
+    const data = await api.get(`/sessions/${selectedSessionId.value}/context`, {
+      params: { limit: contextLimit.value }
+    })
+    contextMessages.value = Array.isArray(data) ? data : (data?.items || [])
+    contextSource.value = 'session'
+    contextData.value = contextMessages.value.map(m => `${m.role}: ${m.content}`).join('\n')
+    addLog('success', `读取到 ${contextMessages.value.length} 条 Session 上下文消息`)
+  } catch (e) {
+    addLog('error', '读取上下文失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    loadingContext.value = false
+  }
+}
+
+async function doRecall() {
+  if (!recallQuery.value.trim()) {
+    message.warning('请输入搜索关键词')
+    return
+  }
+  loadingRecall.value = true
+  recallQueried.value = true
+  try {
+    const data = await api.post('/hindsight/recall', null, {
+      params: { query: recallQuery.value.trim(), limit: recallLimit.value }
+    })
+    if (data.success) {
+      recallResults.value = data.results || []
+      contextSource.value = 'recall'
+      contextData.value = recallResults.value.map(r => r.text).join('\n')
+      addLog('success', `Recall 成功: ${recallResults.value.length} 条结果`)
+    } else {
+      recallResults.value = []
+      addLog('error', 'Recall 失败: ' + (data.message || '未知错误'))
+    }
+  } catch (e) {
+    recallResults.value = []
+    addLog('error', 'Recall 请求失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    loadingRecall.value = false
+  }
+}
+
+async function doReflect() {
+  if (!reflectQuery.value.trim()) {
+    message.warning('请输入问题/查询')
+    return
+  }
+  loadingReflect.value = true
+  reflectQueried.value = true
+  try {
+    const data = await api.post('/hindsight/reflect', null, {
+      params: { query: reflectQuery.value.trim() }
+    })
+    if (data.success) {
+      reflectResult.value = data.reflection || ''
+      contextSource.value = 'reflect'
+      contextData.value = reflectResult.value
+      addLog('success', 'Reflect 成功')
+    } else {
+      reflectResult.value = ''
+      addLog('error', 'Reflect 失败: ' + (data.message || '未知错误'))
+    }
+  } catch (e) {
+    reflectResult.value = ''
+    addLog('error', 'Reflect 请求失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    loadingReflect.value = false
+  }
+}
+
 async function generateMessage() {
-  if (!latestSession.value) return
+  if (!selectedSessionId.value) return
+  if (!hasContext.value) {
+    message.warning('请先获取上下文（Session/Hindsight）')
+    return
+  }
   generating.value = true
   try {
     const data = await api.post('/messages/generate', {
-      session_id: latestSession.value.id
+      session_id: selectedSessionId.value,
+      context_source: contextSource.value,
+      context_data: contextData.value
     })
     generatedMessage.value = data?.message || ''
     addLog('success', `生成消息: ${generatedMessage.value}`)
@@ -203,11 +479,11 @@ async function generateMessage() {
 }
 
 async function sendMessage() {
-  if (!latestSession.value || !testMessage.value.trim()) return
+  if (!selectedSessionId.value || !testMessage.value.trim()) return
   sending.value = true
   try {
     const result = await api.post('/messages/send', {
-      session_id: latestSession.value.id,
+      session_id: selectedSessionId.value,
       message: testMessage.value.trim(),
       write_to_db: writeToDB.value,
       with_mark: withMark.value,
@@ -225,57 +501,85 @@ async function sendMessage() {
 }
 
 async function fullTest() {
-  if (!latestSession.value) return
+  if (!selectedSessionId.value) return
+  if (!hasContext.value) {
+    message.warning('请先获取上下文（Session/Hindsight）')
+    return
+  }
   fullTesting.value = true
   try {
-    const data = await api.post('/messages/send-proactive', {
-      session_id: latestSession.value.id,
-      use_llm: true,
-      message: '',
+    // 先生成
+    const genData = await api.post('/messages/generate', {
+      session_id: selectedSessionId.value,
+      context_source: contextSource.value,
+      context_data: contextData.value
+    })
+    const generated = genData?.message || ''
+    if (!generated) {
+      throw new Error('生成消息为空')
+    }
+
+    // 再发送
+    const sendResult = await api.post('/messages/send', {
+      session_id: selectedSessionId.value,
+      message: generated,
       write_to_db: true,
       with_mark: true,
       mark_format: markFormat.value
     })
-    const result = data?.detail || data
-    addLog('success', `完整流程测试完成: ${result.generated_message || result.message}`)
+
+    addLog('success', `完整流程测试完成: ${generated}`)
     message.success('完整流程测试成功')
   } catch (e) {
-    addLog('error', '完整流程测试失败: ' + (e?.detail || '未知错误'))
+    addLog('error', '完整流程测试失败: ' + (e?.detail || e?.message || '未知错误'))
     message.error('完整流程测试失败')
   } finally {
     fullTesting.value = false
   }
 }
 
-async function testContext() {
-  if (!latestSession.value) return
-  loadingContext.value = true
-  try {
-    const data = await api.get(`/sessions/${latestSession.value.id}/context`, {
-      params: { limit: contextLimit.value }
-    })
-    contextMessages.value = Array.isArray(data) ? data : (data?.items || [])
-    addLog('success', `读取到 ${contextMessages.value.length} 条上下文消息`)
-  } catch (e) {
-    addLog('error', '读取上下文失败: ' + (e?.detail || '未知错误'))
-  } finally {
-    loadingContext.value = false
-  }
-}
-
-onMounted(loadLatestSession)
+onMounted(() => {
+  loadSessionList()
+})
 </script>
 
 <style scoped>
 .test-page {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
+}
+
+.session-select-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.select-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.select-label {
+  min-width: 80px;
+  color: #666;
+  font-size: 14px;
+}
+
+.select-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .session-info {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+  margin-top: 8px;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
 }
 
 .info-item {
@@ -293,6 +597,109 @@ onMounted(loadLatestSession)
   font-size: 14px;
   color: #333;
   word-break: break-all;
+}
+
+.tab-content {
+  padding: 12px 0;
+}
+
+.context-preview {
+  margin-top: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.context-header {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.context-item {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.context-role {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.context-role.user {
+  color: #2080f0;
+}
+
+.context-role.assistant {
+  color: #18a058;
+}
+
+.context-content {
+  color: #666;
+}
+
+.recall-results {
+  margin-top: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.recall-header {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.recall-item {
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.recall-text {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.recall-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.recall-entities {
+  font-size: 12px;
+  color: #666;
+}
+
+.reflect-result {
+  margin-top: 12px;
+  padding: 16px;
+  background: #f0f9eb;
+  border-radius: 8px;
+}
+
+.reflect-label {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.reflect-content {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.8;
+  white-space: pre-wrap;
 }
 
 .send-options {
@@ -345,45 +752,6 @@ onMounted(loadLatestSession)
   font-size: 14px;
   color: #333;
   line-height: 1.6;
-}
-
-.context-preview {
-  margin-top: 12px;
-  max-height: 300px;
-  overflow-y: auto;
-  background: #f5f7fa;
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.context-header {
-  font-size: 12px;
-  color: #999;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e8e8e8;
-}
-
-.context-item {
-  margin-bottom: 8px;
-  font-size: 13px;
-}
-
-.context-role {
-  font-weight: 600;
-  margin-right: 4px;
-}
-
-.context-role.user {
-  color: #2080f0;
-}
-
-.context-role.assistant {
-  color: #18a058;
-}
-
-.context-content {
-  color: #666;
 }
 
 .log-list {

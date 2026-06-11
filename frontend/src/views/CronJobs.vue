@@ -15,6 +15,9 @@
           </div>
           <div class="job-meta">
             <span>调度: {{ job.schedule }}</span>
+            <span>平台: {{ job.platform || 'weixin' }}</span>
+            <span v-if="job.session_id">指定 Session: {{ job.session_id }}</span>
+            <span v-else>获取方式: 最新活跃</span>
             <span>LLM: {{ job.use_llm ? '是' : '否' }}</span>
             <span>写入DB: {{ job.write_to_db ? '是' : '否' }}</span>
             <span>带标记: {{ job.with_mark ? '是' : '否' }}</span>
@@ -34,7 +37,7 @@
 
     <!-- 创建/编辑任务弹窗 -->
     <n-modal v-model:show="showCreate" preset="card" :title="editingJob ? '编辑任务' : '创建任务'" style="width: 95%; max-width: 700px">
-      <n-form label-placement="left" label-width="100">
+      <n-form label-placement="left" label-width="120">
         <n-form-item label="任务名称">
           <n-input v-model:value="formData.name" placeholder="主动消息" />
         </n-form-item>
@@ -49,12 +52,26 @@
             </div>
           </div>
         </n-form-item>
-        <n-form-item label="目标 Session">
+        <n-form-item label="目标平台">
+          <n-select
+            v-model:value="formData.platform"
+            :options="platformOptions"
+            placeholder="选择平台"
+          />
+        </n-form-item>
+        <n-form-item label="Session 获取方式">
+          <n-radio-group v-model:value="sessionMode">
+            <n-space vertical>
+              <n-radio value="latest">每次获取最新活跃 Session</n-radio>
+              <n-radio value="fixed">指定 Session</n-radio>
+            </n-space>
+          </n-radio-group>
+        </n-form-item>
+        <n-form-item label="指定 Session" v-if="sessionMode === 'fixed'">
           <n-select
             v-model:value="formData.session_id"
             :options="sessionOptions"
-            placeholder="选择 session（留空使用最新）"
-            clearable
+            placeholder="选择 session"
             filterable
           />
         </n-form-item>
@@ -105,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useMessage, useDialog } from 'naive-ui'
 import api from '../api'
 
@@ -119,16 +136,38 @@ const editingJob = ref(null)
 const sessionOptions = ref([])
 const cronParseResult = ref(null)
 const defaultPrompt = ref('')
+const sessionMode = ref('latest')
+
+const platformOptions = [
+  { label: '微信', value: 'weixin' },
+  { label: '飞书', value: 'feishu' },
+  { label: 'CLI', value: 'cli' }
+]
 
 const formData = ref({
   name: '',
   schedule: '0,20,40 6-23 * * *',
   prompt: '',
   session_id: null,
+  platform: 'weixin',
   use_llm: true,
   write_to_db: true,
   with_mark: true,
   mark_format: '[凯莉主动发送] {timestamp}: {content}'
+})
+
+// 监听平台变化，重新加载 session 列表
+watch(() => formData.value.platform, (newPlatform) => {
+  if (showCreate.value) {
+    loadSessions(newPlatform)
+  }
+})
+
+// 监听 sessionMode 变化
+watch(sessionMode, (newMode) => {
+  if (newMode === 'latest') {
+    formData.value.session_id = null
+  }
 })
 
 function formatTime(ts) {
@@ -149,9 +188,9 @@ async function loadJobs() {
   }
 }
 
-async function loadSessions() {
+async function loadSessions(platform = 'weixin') {
   try {
-    const data = await api.get('/cron/sessions')
+    const data = await api.get('/cron/sessions', { params: { platform } })
     sessionOptions.value = (data.items || []).map(s => ({
       label: `${s.title || s.id} (${s.message_count || 0} 条消息)`,
       value: s.id
@@ -208,14 +247,16 @@ function openCreate() {
     schedule: '0,20,40 6-23 * * *',
     prompt: '',
     session_id: null,
+    platform: 'weixin',
     use_llm: true,
     write_to_db: true,
     with_mark: true,
     mark_format: '[凯莉主动发送] {timestamp}: {content}'
   }
+  sessionMode.value = 'latest'
   cronParseResult.value = null
   parseCron()
-  loadSessions()
+  loadSessions('weixin')
   showCreate.value = true
 }
 
@@ -226,11 +267,17 @@ async function saveJob() {
   }
   saving.value = true
   try {
+    // 如果是 latest 模式，清空 session_id
+    const submitData = { ...formData.value }
+    if (sessionMode.value === 'latest') {
+      submitData.session_id = null
+    }
+
     if (editingJob.value) {
-      await api.put(`/cron/${editingJob.value.id}`, formData.value)
+      await api.put(`/cron/${editingJob.value.id}`, submitData)
       message.success('任务已更新')
     } else {
-      await api.post('/cron', formData.value)
+      await api.post('/cron', submitData)
       message.success('任务已创建')
     }
     showCreate.value = false
@@ -272,14 +319,16 @@ function editJob(job) {
     schedule: job.schedule,
     prompt: job.prompt || '',
     session_id: job.session_id || null,
+    platform: job.platform || 'weixin',
     use_llm: job.use_llm !== false,
     write_to_db: job.write_to_db !== false,
     with_mark: job.with_mark !== false,
     mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}'
   }
+  sessionMode.value = job.session_id ? 'fixed' : 'latest'
   cronParseResult.value = null
   parseCron()
-  loadSessions()
+  loadSessions(formData.value.platform)
   showCreate.value = true
 }
 

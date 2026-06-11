@@ -47,6 +47,7 @@ async def create_cron_job(
         "enabled": request.enabled,
         "prompt": request.prompt,
         "session_id": request.session_id,
+        "platform": request.platform,
         "use_llm": request.use_llm,
         "write_to_db": request.write_to_db,
         "with_mark": request.with_mark,
@@ -83,6 +84,8 @@ async def update_cron_job(
                 job["prompt"] = request.prompt
             if request.session_id is not None:
                 job["session_id"] = request.session_id
+            if request.platform is not None:
+                job["platform"] = request.platform
             if request.use_llm is not None:
                 job["use_llm"] = request.use_llm
             if request.write_to_db is not None:
@@ -135,20 +138,24 @@ async def run_cron_job(
     try:
         # 获取 session - 优先使用任务配置的 session_id
         session_id = target_job.get("session_id")
+        platform = target_job.get("platform", "weixin")
+
         if session_id:
+            # 指定了 session_id，直接使用
             session = SessionService.get_session_by_id(db, session_id)
         else:
-            session = SessionService.get_latest_session("weixin")
+            # 未指定 session_id，获取该平台最新活跃 session
+            session = SessionService.get_latest_session(platform)
 
         if not session:
             MessageService.create_task_log(
                 task_type="cron_run",
                 status="failed",
                 message=f"任务 {target_job['name']} 运行失败",
-                error="未找到可用 session",
+                error=f"未找到可用 session (平台: {platform})",
                 duration=round(time.time() - start_time, 2)
             )
-            raise HTTPException(status_code=400, detail="未找到可用 session")
+            raise HTTPException(status_code=400, detail=f"未找到可用 session (平台: {platform})")
 
         session_id = session["id"] if isinstance(session, dict) else session.id
 
@@ -330,9 +337,10 @@ async def parse_cron_expression(
 
 @router.get("/sessions")
 async def get_available_sessions(
+    platform: str = Query("weixin", description="平台类型"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
     """获取可用的 session 列表（用于任务配置）"""
-    sessions = SessionService.get_sessions(db, page=1, page_size=20, platform="weixin")
+    sessions = SessionService.get_sessions(db, page=1, page_size=20, platform=platform)
     return sessions
