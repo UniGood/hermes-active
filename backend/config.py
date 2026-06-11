@@ -27,7 +27,7 @@ JWT_ACCESS_TOKEN_EXPIRE = timedelta(hours=24)
 
 # 服务器配置
 SERVER_HOST = "0.0.0.0"
-SERVER_PORT = 8080
+SERVER_PORT = 18720
 
 # 默认管理员
 DEFAULT_ADMIN_USERNAME = "admin"

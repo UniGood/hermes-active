@@ -6,7 +6,7 @@
         <div v-if="latestSession" class="session-info">
           <div class="info-item">
             <span class="label">Session ID</span>
-            <span class="value">{{ latestSession.session_id }}</span>
+            <span class="value">{{ latestSession.id }}</span>
           </div>
           <div class="info-item">
             <span class="label">标题</span>
@@ -122,7 +122,7 @@ async function loadLatestSession() {
   try {
     const data = await api.get('/sessions/latest/weixin')
     latestSession.value = data
-    addLog('info', `加载最新微信 Session: ${data.session_id}`)
+    addLog('info', `加载最新微信 Session: ${data.id}`)
   } catch (e) {
     addLog('error', '加载失败: ' + (e?.detail || '未知错误'))
   } finally {
@@ -134,8 +134,8 @@ async function testContext() {
   if (!latestSession.value) return
   loadingContext.value = true
   try {
-    const data = await api.get(`/sessions/${latestSession.value.session_id}/context`, { params: { limit: 10 } })
-    contextMessages.value = data.messages || []
+    const data = await api.get(`/sessions/${latestSession.value.id}/context`, { params: { limit: 10 } })
+    contextMessages.value = Array.isArray(data) ? data : (data.messages || [])
     addLog('success', `读取到 ${contextMessages.value.length} 条上下文消息`)
   } catch (e) {
     addLog('error', '读取上下文失败: ' + (e?.detail || '未知错误'))
