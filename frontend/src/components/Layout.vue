@@ -1,231 +1,366 @@
 <template>
-  <div class="app-layout">
-    <!-- 顶部导航栏（移动端） -->
-    <header class="app-header">
-      <div class="header-left">
-        <n-button quaternary circle @click="showMenu = !showMenu">
-          <template #icon><n-icon><MenuOutline /></n-icon></template>
-        </n-button>
-        <span class="header-title">{{ currentTitle }}</span>
+  <div class="layout">
+    <!-- PC 端侧边栏 -->
+    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
+      <div class="sidebar-header">
+        <n-avatar :size="40" round>H</n-avatar>
+        <span v-if="!sidebarCollapsed" class="sidebar-title">Hermes Active</span>
       </div>
-      <div class="header-right">
-        <n-button quaternary circle @click="handleLogout">
-          <template #icon><n-icon><LogOutOutline /></n-icon></template>
-        </n-button>
-      </div>
-    </header>
 
-    <!-- 侧边抽屉菜单（移动端） -->
-    <n-drawer v-model:show="showMenu" placement="left" :width="280">
-      <n-drawer-content>
-        <template #header>
-          <div class="drawer-header">
-            <n-avatar :size="48" round>H</n-avatar>
-            <div class="drawer-user">
-              <div class="drawer-username">Hermes Active</div>
-              <div class="drawer-subtitle">主动会话系统</div>
-            </div>
-          </div>
-        </template>
-        <n-menu :options="menuOptions" :value="currentRoute" @update:value="handleMenuClick" />
-      </n-drawer-content>
-    </n-drawer>
+      <nav class="sidebar-nav">
+        <router-link
+          v-for="item in menuItems"
+          :key="item.path"
+          :to="item.path"
+          class="nav-item"
+          :class="{ active: isActive(item.path) }"
+        >
+          <n-icon :size="20"><component :is="item.icon" /></n-icon>
+          <span v-if="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
+        </router-link>
+      </nav>
+
+      <div class="sidebar-footer">
+        <n-button quaternary @click="handleLogout" style="width: 100%">
+          <template #icon><n-icon><LogOutOutline /></n-icon></template>
+          <span v-if="!sidebarCollapsed">退出登录</span>
+        </n-button>
+      </div>
+    </aside>
 
     <!-- 主内容区 -->
-    <main class="app-content">
-      <router-view />
-    </main>
+    <div class="main-area">
+      <!-- 移动端顶部栏 -->
+      <header class="mobile-header">
+        <n-button quaternary @click="showDrawer = true">
+          <n-icon :size="24"><MenuOutline /></n-icon>
+        </n-button>
+        <span class="mobile-title">Hermes Active</span>
+        <n-button quaternary @click="handleLogout">
+          <n-icon :size="20"><LogOutOutline /></n-icon>
+        </n-button>
+      </header>
 
-    <!-- 底部导航栏（移动端） -->
-    <nav class="app-bottom-nav">
-      <div
-        v-for="item in bottomNavItems"
-        :key="item.key"
-        class="nav-item"
-        :class="{ active: currentRoute === item.key }"
-        @click="router.push(item.path)"
+      <!-- 页面内容 -->
+      <main class="page-content">
+        <router-view />
+      </main>
+    </div>
+
+    <!-- 移动端底部导航栏 -->
+    <nav class="mobile-nav">
+      <router-link
+        v-for="item in mobileMenuItems"
+        :key="item.path"
+        :to="item.path"
+        class="mobile-nav-item"
+        :class="{ active: isActive(item.path) }"
       >
-        <n-icon :size="24"><component :is="item.icon" /></n-icon>
-        <span class="nav-label">{{ item.label }}</span>
-      </div>
+        <n-icon :size="20"><component :is="item.icon" /></n-icon>
+        <span class="mobile-nav-label">{{ item.label }}</span>
+      </router-link>
     </nav>
+
+    <!-- 移动端侧边抽屉 -->
+    <n-drawer v-model:show="showDrawer" placement="left" :width="280">
+      <n-drawer-content>
+        <div class="drawer-header">
+          <n-avatar :size="48" round>H</n-avatar>
+          <div class="drawer-title">Hermes Active</div>
+          <div class="drawer-subtitle">主动会话系统</div>
+        </div>
+        <nav class="drawer-nav">
+          <router-link
+            v-for="item in menuItems"
+            :key="item.path"
+            :to="item.path"
+            class="drawer-nav-item"
+            :class="{ active: isActive(item.path) }"
+            @click="showDrawer = false"
+          >
+            <n-icon :size="20"><component :is="item.icon" /></n-icon>
+            <span>{{ item.label }}</span>
+          </router-link>
+        </nav>
+        <template #footer>
+          <n-button block @click="handleLogout">退出登录</n-button>
+        </template>
+      </n-drawer-content>
+    </n-drawer>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, h } from 'vue'
+import { ref, markRaw } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useMessage, NIcon } from 'naive-ui'
+import { useAuthStore } from '../store/auth'
 import {
-  MenuOutline,
-  LogOutOutline,
   HomeOutline,
   ChatbubblesOutline,
+  PersonOutline,
   SettingsOutline,
   TimeOutline,
+  DocumentTextOutline,
   FlaskOutline,
-  ListOutline,
-  DocumentTextOutline
+  MenuOutline,
+  LogOutOutline
 } from '@vicons/ionicons5'
-import { useAuthStore } from '../store/auth'
 
 const router = useRouter()
 const route = useRoute()
-const message = useMessage()
 const authStore = useAuthStore()
+const showDrawer = ref(false)
+const sidebarCollapsed = ref(false)
 
-const showMenu = ref(false)
-
-const currentRoute = computed(() => route.name)
-const currentTitle = computed(() => {
-  const titles = {
-    Dashboard: '监控面板',
-    Sessions: '会话管理',
-    SessionDetail: '会话详情',
-    Messages: '消息管理',
-    Config: '配置管理',
-    CronJobs: '定时任务',
-    TaskLogs: '任务日志',
-    Test: '测试工具'
-  }
-  return titles[route.name] || 'Hermes Active'
-})
-
-const bottomNavItems = [
-  { key: 'Dashboard', label: '监控', icon: HomeOutline, path: '/' },
-  { key: 'Sessions', label: '会话', icon: ChatbubblesOutline, path: '/sessions' },
-  { key: 'Messages', label: '消息', icon: DocumentTextOutline, path: '/messages' },
-  { key: 'Config', label: '配置', icon: SettingsOutline, path: '/config' },
-  { key: 'Test', label: '测试', icon: FlaskOutline, path: '/test' }
+const menuItems = [
+  { path: '/', label: '监控面板', icon: markRaw(HomeOutline) },
+  { path: '/sessions', label: '会话管理', icon: markRaw(PersonOutline) },
+  { path: '/messages', label: '消息管理', icon: markRaw(ChatbubblesOutline) },
+  { path: '/config', label: '配置管理', icon: markRaw(SettingsOutline) },
+  { path: '/cron-jobs', label: '定时任务', icon: markRaw(TimeOutline) },
+  { path: '/task-logs', label: '任务日志', icon: markRaw(DocumentTextOutline) },
+  { path: '/test', label: '测试工具', icon: markRaw(FlaskOutline) }
 ]
 
-const menuOptions = [
-  { label: '监控面板', key: 'Dashboard', icon: () => h(NIcon, null, { default: () => h(HomeOutline) }) },
-  { label: '会话管理', key: 'Sessions', icon: () => h(NIcon, null, { default: () => h(ChatbubblesOutline) }) },
-  { label: '消息管理', key: 'Messages', icon: () => h(NIcon, null, { default: () => h(DocumentTextOutline) }) },
-  { label: '配置管理', key: 'Config', icon: () => h(NIcon, null, { default: () => h(SettingsOutline) }) },
-  { label: '定时任务', key: 'CronJobs', icon: () => h(NIcon, null, { default: () => h(TimeOutline) }) },
-  { label: '任务日志', key: 'TaskLogs', icon: () => h(NIcon, null, { default: () => h(ListOutline) }) },
-  { label: '测试工具', key: 'Test', icon: () => h(NIcon, null, { default: () => h(FlaskOutline) }) }
+// 移动端底部导航只显示 4 个主要功能
+const mobileMenuItems = [
+  { path: '/', label: '监控', icon: markRaw(HomeOutline) },
+  { path: '/sessions', label: '会话', icon: markRaw(PersonOutline) },
+  { path: '/messages', label: '消息', icon: markRaw(ChatbubblesOutline) },
+  { path: '/test', label: '测试', icon: markRaw(FlaskOutline) }
 ]
 
-const pathMap = {
-  Dashboard: '/',
-  Sessions: '/sessions',
-  Messages: '/messages',
-  Config: '/config',
-  CronJobs: '/cron-jobs',
-  TaskLogs: '/task-logs',
-  Test: '/test'
-}
-
-function handleMenuClick(key) {
-  router.push(pathMap[key])
-  showMenu.value = false
+function isActive(path) {
+  if (path === '/') return route.path === '/'
+  return route.path.startsWith(path)
 }
 
 function handleLogout() {
   authStore.logout()
   router.push('/login')
-  message.success('已退出登录')
 }
 </script>
 
 <style scoped>
-.app-layout {
+/* ========== 布局 ========== */
+.layout {
   display: flex;
-  flex-direction: column;
   min-height: 100vh;
   background: #f5f7fa;
 }
 
-.app-header {
+/* ========== PC 端侧边栏 ========== */
+.sidebar {
+  width: 220px;
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width 0.3s;
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  height: 56px;
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
+  height: 100vh;
   z-index: 100;
 }
 
-.header-left {
+.sidebar.collapsed {
+  width: 64px;
+}
+
+.sidebar-header {
+  padding: 20px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.header-title {
-  font-size: 18px;
+.sidebar-title {
+  font-size: 16px;
   font-weight: 600;
   color: #333;
 }
 
-.app-content {
+.sidebar-nav {
   flex: 1;
-  margin-top: 56px;
-  margin-bottom: 64px;
-  padding: 16px;
-  overflow-y: auto;
-}
-
-.app-bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 64px;
-  background: #fff;
-  border-top: 1px solid #e0e0e0;
+  padding: 12px 8px;
   display: flex;
-  justify-content: space-around;
-  align-items: center;
-  z-index: 100;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .nav-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 12px;
-  cursor: pointer;
-  color: #999;
-  transition: color 0.2s;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #666;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.nav-item:hover {
+  background: #f5f7fa;
+  color: #333;
 }
 
 .nav-item.active {
+  background: #e8f5e9;
   color: #18a058;
 }
 
 .nav-label {
-  font-size: 12px;
+  font-size: 14px;
 }
 
-.drawer-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
+.sidebar-footer {
+  padding: 12px 8px;
+  border-top: 1px solid #f0f0f0;
 }
 
-.drawer-user {
+/* ========== 主内容区 ========== */
+.main-area {
+  flex: 1;
+  margin-left: 220px;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
-.drawer-username {
-  font-size: 16px;
+.page-content {
+  flex: 1;
+  padding: 20px;
+}
+
+/* ========== 移动端顶部栏（PC 端隐藏） ========== */
+.mobile-header {
+  display: none;
+}
+
+/* ========== 移动端底部导航（PC 端隐藏） ========== */
+.mobile-nav {
+  display: none;
+}
+
+/* ========== 移动端侧边抽屉 ========== */
+.drawer-header {
+  padding: 24px 16px;
+  text-align: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.drawer-title {
+  font-size: 18px;
   font-weight: 600;
+  color: #333;
+  margin-top: 12px;
 }
 
 .drawer-subtitle {
   font-size: 12px;
   color: #999;
+  margin-top: 4px;
+}
+
+.drawer-nav {
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drawer-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #666;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.drawer-nav-item:hover {
+  background: #f5f7fa;
+}
+
+.drawer-nav-item.active {
+  background: #e8f5e9;
+  color: #18a058;
+}
+
+/* ========== 移动端适配（< 768px） ========== */
+@media (max-width: 768px) {
+  /* 隐藏 PC 端侧边栏 */
+  .sidebar {
+    display: none;
+  }
+
+  /* 主内容区不需要偏移 */
+  .main-area {
+    margin-left: 0;
+  }
+
+  /* 显示移动端顶部栏 */
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .mobile-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  /* 显示移动端底部导航 */
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #e8e8e8;
+    z-index: 100;
+    padding: 4px 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    color: #999;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .mobile-nav-item.active {
+    color: #18a058;
+  }
+
+  .mobile-nav-label {
+    font-size: 10px;
+  }
+
+  /* 页面内容底部留出底部导航空间 */
+  .page-content {
+    padding: 12px;
+    padding-bottom: 80px;
+  }
 }
 </style>
