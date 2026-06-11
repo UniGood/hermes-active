@@ -149,9 +149,9 @@ async function sendTestMessage() {
   sending.value = true
   try {
     await api.post('/messages/send', {
-      session_id: latestSession.value.session_id,
-      content: testMessage.value.trim(),
-      write_to_db: writeToDB.value
+      session_id: latestSession.value.id,
+      message: testMessage.value.trim(),
+      is_test: true
     })
     addLog('success', `发送成功: ${testMessage.value.trim()}`)
     message.success('发送成功')
@@ -168,7 +168,7 @@ async function testGenerate() {
   generating.value = true
   try {
     const data = await api.post('/llm/generate', {
-      session_id: latestSession.value.session_id
+      session_id: latestSession.value.id
     })
     generatedMessage.value = data.message || ''
     addLog('success', `LLM 生成: ${generatedMessage.value}`)
