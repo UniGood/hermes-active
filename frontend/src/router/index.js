@@ -1,0 +1,77 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../store/auth'
+
+const routes = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/Login.vue')
+  },
+  {
+    path: '/',
+    component: () => import('../components/Layout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'Dashboard',
+        component: () => import('../views/Dashboard.vue')
+      },
+      {
+        path: 'sessions',
+        name: 'Sessions',
+        component: () => import('../views/Sessions.vue')
+      },
+      {
+        path: 'sessions/:id',
+        name: 'SessionDetail',
+        component: () => import('../views/SessionDetail.vue')
+      },
+      {
+        path: 'messages',
+        name: 'Messages',
+        component: () => import('../views/Messages.vue')
+      },
+      {
+        path: 'config',
+        name: 'Config',
+        component: () => import('../views/Config.vue')
+      },
+      {
+        path: 'cron-jobs',
+        name: 'CronJobs',
+        component: () => import('../views/CronJobs.vue')
+      },
+      {
+        path: 'task-logs',
+        name: 'TaskLogs',
+        component: () => import('../views/TaskLogs.vue')
+      },
+      {
+        path: 'test',
+        name: 'Test',
+        component: () => import('../views/Test.vue')
+      }
+    ]
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next('/login')
+  } else if (to.path === '/login' && authStore.isAuthenticated) {
+    next('/')
+  } else {
+    next()
+  }
+})
+
+export default router

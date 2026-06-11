@@ -12,26 +12,27 @@ Hermes Active - 主动会话系统
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Vue 3 前端 (端口8080)                 │
+│                    Vue 3 前端 (端口5173)                 │
 │              Vue Router + Naive UI + ECharts            │
 ├─────────────────────────────────────────────────────────┤
-│  监控面板  │  配置管理  │  测试工具  │  上下文查看  │
+│  登录认证  │  监控面板  │  配置管理  │  测试工具  │
 └─────────────────────────────────────────────────────────┘
                          │
-                         ▼ (Axios API调用)
+                         ▼ (Axios API调用 + JWT Token)
 ┌─────────────────────────────────────────────────────────┐
 │                  FastAPI 后端 (端口8080)                 │
-│              SQLAlchemy 2.0 + APScheduler               │
+│           SQLAlchemy 2.0 + APScheduler + JWT            │
 ├─────────────────────────────────────────────────────────┤
-│  Session管理  │  LLM调用  │  消息发送  │  定时任务  │
+│  认证中间件  │  Session管理  │  LLM调用  │  定时任务  │
 └─────────────────────────────────────────────────────────┘
                          │
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│              数据层 (只读 state.db)                      │
-├─────────────────────────────────────────────────────────┤
-│  state.db (只读)  │  config.yaml (读取)  │  .env (读取) │
-└─────────────────────────────────────────────────────────┘
+            ┌────────────┴────────────┐
+            ▼                         ▼
+┌───────────────────────┐  ┌───────────────────────┐
+│  state.db (只读)      │  │  active.db (读写)     │
+│  sessions, messages   │  │  users, task_logs,    │
+│                       │  │  configs              │
+└───────────────────────┘  └───────────────────────┘
 ```
 
 ---
@@ -45,9 +46,10 @@ Hermes Active - 主动会话系统
 | **UI组件库** | Naive UI | 2.x | Vue 3 组件库 |
 | **图表库** | ECharts | 5.5+ | 数据可视化 |
 | **后端框架** | FastAPI | 0.111+ | 高性能 API |
-| **ORM** | SQLAlchemy 2.0 | 2.0+ | 只读映射 |
+| **ORM** | SQLAlchemy 2.0 | 2.0+ | 双数据库映射 |
 | **任务调度** | APScheduler | 3.10+ | 定时任务 |
-| **数据库** | SQLite (state.db) | - | 只读，不写入 |
+| **认证** | JWT | - | python-jose |
+| **数据库** | SQLite | - | state.db(只读) + active.db(读写) |
 | **HTTP客户端** | Axios | 1.7+ | 前端请求 |
 
 ---
@@ -55,16 +57,21 @@ Hermes Active - 主动会话系统
 ## 核心设计原则
 
 ### 1. 数据库原则
-- **只读 state.db**：不新建数据库，不新建表
-- **不写入 hermes 数据**：除了上下文注入，不往 state.db 写入任何数据
-- **独立存储**：本系统的配置和数据单独存储
+- **state.db 只读**：只读取 hermes 的 state.db，不写入任何数据
+- **active.db 独立**：本系统的数据存储在独立的 active.db
+- **配置隔离**：本系统配置存储在 active.db 的 configs 表
 
 ### 2. 配置原则
 - **复用 hermes 配置**：读取 config.yaml 和 .env，不重复配置
 - **不污染 hermes 配置**：本系统的配置不写入 hermes 配置文件
 - **独立管理**：定时任务、提示词等独立管理
 
-### 3. LLM 调用原则
+### 3. 认证原则
+- **JWT Token 认证**：使用 JWT token 进行用户认证
+- **默认账号**：admin / admin
+- **密码修改**：登录后可修改密码
+
+### 4. LLM 调用原则
 - **默认使用 hermes LLM**：通过 `from agent.auxiliary_client import call_llm` 调用
 - **支持自定义配置**：可以配置独立的 LLM provider
 - **连通性测试**：配置 LLM 时可以测试连通性
@@ -72,6 +79,57 @@ Hermes Active - 主动会话系统
 ---
 
 ## 功能模块设计
+
+### 模块0：用户认证
+
+#### 功能列表
+| 功能 | 说明 |
+|------|------|
+| 用户登录 | 用户名+密码登录 |
+| 密码修改 | 登录后可修改密码 |
+| Token 管理 | JWT token 自动刷新 |
+| 认证中间件 | API 请求自动验证 token |
+
+#### 数据库表
+```sql
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### API 接口
+```
+POST   /api/auth/login                    # 用户登录
+POST   /api/auth/change-password          # 修改密码
+GET    /api/auth/me                       # 获取当前用户信息
+POST   /api/auth/refresh                  # 刷新 token
+```
+
+#### 认证流程
+```python
+# 1. 登录获取 token
+POST /api/auth/login
+{
+    "username": "admin",
+    "password": "admin"
+}
+Response: {
+    "access_token": "eyJ...",
+    "token_type": "bearer"
+}
+
+# 2. 请求携带 token
+GET /api/sessions
+Header: Authorization: Bearer eyJ...
+
+# 3. 中间件验证 token
+```
+
+---
 
 ### 模块1：监控面板
 
@@ -123,7 +181,7 @@ GET    /api/sessions/{session_id}/context # 获取上下文
 #### API 接口
 ```
 GET    /api/messages/{session_id}         # 获取消息列表
-POST   /api/messages/send                 # 发送消息
+POST   /api/messages/send                 # 发送消息（支持 is_test 参数）
 POST   /api/messages/send-proactive       # 发送主动消息
 GET    /api/messages/search               # 搜索消息
 ```
@@ -184,25 +242,13 @@ response = client.chat.completions.create(
 )
 ```
 
-#### 配置存储
-```yaml
-# ~/.hermes/hermes-active/config.yaml
-llm:
-  mode: hermes                    # hermes | custom
-  custom:
-    provider: xiaomi
-    model: mimo-v2.5-pro
-    api_key: ""                   # 从 .env 读取
-    base_url: ""                  # 从 .env 读取
-```
-
 #### API 接口
 ```
-GET    /api/llm/config                # 获取 LLM 配置
-PUT    /api/llm/config                # 更新 LLM 配置
-POST   /api/llm/test                  # 测试 LLM 连通性
-POST   /api/llm/generate              # 生成消息
-GET    /api/llm/providers             # 获取可用 provider
+GET    /api/config/llm                    # 获取 LLM 配置
+PUT    /api/config/llm                    # 更新 LLM 配置
+POST   /api/llm/test                      # 测试 LLM 连通性
+POST   /api/llm/generate                  # 生成消息
+GET    /api/llm/providers                 # 获取可用 provider
 ```
 
 ---
@@ -216,23 +262,6 @@ GET    /api/llm/providers             # 获取可用 provider
 | 生成提示词 | 配置 LLM 生成消息的提示词 |
 | 提示词模板 | 预设的提示词模板 |
 | hermes 读取 | 读取 hermes 的 SOUL.md 等配置 |
-
-#### 提示词存储
-```yaml
-# ~/.hermes/hermes-active/config.yaml
-prompts:
-  system: |
-    你是凯莉，曹凡最好的朋友。你现在想主动和曹凡聊天。
-    要求：
-    - 基于最近的对话内容，自然地延续话题或发起新话题
-    - 语气像真人朋友，不要太正式
-    - 1-2 句话即可，不要太长
-  generation: |
-    最近的对话历史：
-    {context}
-    
-    请生成一条主动消息：
-```
 
 #### hermes 配置读取
 ```python
@@ -248,10 +277,10 @@ memory_content = memory_path.read_text(encoding="utf-8")
 
 #### API 接口
 ```
-GET    /api/prompts                     # 获取提示词配置
-PUT    /api/prompts                     # 更新提示词配置
-GET    /api/prompts/hermes              # 读取 hermes 配置
-GET    /api/prompts/templates           # 获取提示词模板
+GET    /api/config/prompts                # 获取提示词配置
+PUT    /api/config/prompts                # 更新提示词配置
+GET    /api/prompts/hermes                # 读取 hermes 配置
+GET    /api/prompts/templates             # 获取提示词模板
 ```
 
 ---
@@ -288,28 +317,14 @@ scheduler.add_job(
 scheduler.start()
 ```
 
-#### 任务存储
-```yaml
-# ~/.hermes/hermes-active/config.yaml
-cron_jobs:
-  - id: proactive_message
-    name: 主动消息
-    schedule: "0,20,40 6-23 * * *"
-    enabled: true
-    prompt: ""
-    last_run_at: null
-    next_run_at: null
-```
-
 #### API 接口
 ```
-GET    /api/cron                        # 获取任务列表
-POST   /api/cron                        # 创建任务
-PUT    /api/cron/{id}                   # 更新任务
-DELETE /api/cron/{id}                   # 删除任务
-POST   /api/cron/{id}/run               # 手动运行
-POST   /api/cron/{id}/pause             # 暂停任务
-POST   /api/cron/{id}/resume            # 恢复任务
+GET    /api/cron                          # 获取任务列表
+POST   /api/cron                          # 创建任务
+PUT    /api/cron/{id}                     # 更新任务
+DELETE /api/cron/{id}                     # 删除任务
+POST   /api/cron/{id}/run                 # 手动运行
+POST   /api/cron/{id}/toggle              # 切换任务状态
 ```
 
 ---
@@ -319,9 +334,9 @@ POST   /api/cron/{id}/resume            # 恢复任务
 #### 功能列表
 | 功能 | 说明 |
 |------|------|
-| 消息发送测试 | 发送写死的消息 |
-| LLM 生成测试 | 测试 LLM 生成消息 |
-| 上下文读取测试 | 测试读取 session 上下文 |
+| 消息发送测试 | 通过消息发送接口测试（is_test=true） |
+| LLM 生成测试 | 通过 LLM 生成接口测试 |
+| 上下文读取测试 | 通过 Session 上下文接口测试 |
 | 完整流程测试 | 一键测试完整流程 |
 
 #### 测试流程
@@ -347,10 +362,43 @@ write_to_session_db(session["id"], message)
 
 #### API 接口
 ```
-POST   /api/test/send                   # 测试发送消息
-POST   /api/test/generate               # 测试生成消息
-POST   /api/test/context                # 测试读取上下文
-POST   /api/test/full                   # 测试完整流程
+POST   /api/test/full                     # 测试完整流程
+```
+
+**说明**：测试发送、测试生成、测试读取上下文功能已合并到对应的标准接口中：
+- 测试发送：`POST /api/messages/send`（设置 is_test=true）
+- 测试生成：`POST /api/llm/generate`
+- 测试上下文：`GET /api/sessions/{session_id}/context`
+
+---
+
+### 模块8：任务执行记录
+
+#### 功能列表
+| 功能 | 说明 |
+|------|------|
+| 执行记录 | 显示所有任务执行记录 |
+| 筛选过滤 | 按任务类型、状态、时间筛选 |
+| 执行详情 | 查看任务执行详情 |
+
+#### 数据库表
+```sql
+CREATE TABLE task_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_type TEXT NOT NULL,          -- 任务类型：proactive_message, test_send, etc.
+    status TEXT NOT NULL,             -- 状态：success, failed, running
+    message TEXT,                     -- 执行消息
+    error TEXT,                       -- 错误信息
+    duration REAL,                    -- 执行时长（秒）
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### API 接口
+```
+GET    /api/task-logs                    # 获取任务日志列表
+GET    /api/task-logs/{id}              # 获取任务日志详情
+DELETE /api/task-logs/{id}              # 删除任务日志
 ```
 
 ---
@@ -362,11 +410,13 @@ POST   /api/test/full                   # 测试完整流程
 ├── frontend/                          # Vue 3 前端
 │   ├── src/
 │   │   ├── views/                     # 页面组件
+│   │   │   ├── Login.vue              # 登录页面
 │   │   │   ├── Dashboard.vue          # 监控面板
 │   │   │   ├── Sessions.vue           # Session 管理
 │   │   │   ├── Messages.vue           # 消息管理
 │   │   │   ├── Config.vue             # 配置管理
 │   │   │   ├── CronJobs.vue           # 定时任务
+│   │   │   ├── TaskLogs.vue           # 任务日志
 │   │   │   └── Test.vue               # 测试工具
 │   │   ├── components/                # 公共组件
 │   │   │   ├── Layout.vue             # 布局组件
@@ -374,15 +424,17 @@ POST   /api/test/full                   # 测试完整流程
 │   │   │   └── StatsCard.vue          # 统计卡片
 │   │   ├── api/                       # API 接口
 │   │   │   ├── index.js               # Axios 配置
+│   │   │   ├── auth.js                # 认证 API
 │   │   │   ├── sessions.js            # Session API
 │   │   │   ├── messages.js            # 消息 API
 │   │   │   ├── config.js              # 配置 API
 │   │   │   ├── llm.js                 # LLM API
-│   │   │   └── cron.js                # 定时任务 API
+│   │   │   ├── cron.js                # 定时任务 API
+│   │   │   └── task_logs.js           # 任务日志 API
 │   │   ├── router/                    # 路由
 │   │   │   └── index.js
 │   │   ├── store/                     # 状态管理
-│   │   │   └── index.js
+│   │   │   └── auth.js                # 认证状态
 │   │   ├── utils/                     # 工具函数
 │   │   │   └── format.js              # 格式化函数
 │   │   ├── App.vue
@@ -394,46 +446,50 @@ POST   /api/test/full                   # 测试完整流程
 │   ├── main.py                        # 入口
 │   ├── routers/                       # 路由
 │   │   ├── __init__.py
+│   │   ├── auth.py                    # 认证路由
 │   │   ├── sessions.py                # Session 路由
 │   │   ├── messages.py                # 消息路由
 │   │   ├── config.py                  # 配置路由
 │   │   ├── llm.py                     # LLM 路由
 │   │   ├── cron.py                    # 定时任务路由
-│   │   ├── prompts.py                 # 提示词路由
-│   │   └── test.py                    # 测试路由
+│   │   ├── task_logs.py               # 任务日志路由
+│   │   ├── test.py                    # 测试路由
+│   │   └── stats.py                   # 统计路由
 │   ├── models/                        # 数据模型
 │   │   ├── __init__.py
 │   │   ├── database.py                # 数据库连接
 │   │   ├── schemas.py                 # Pydantic 模型
-│   │   └── state.py                   # state.db 映射
+│   │   └── active.py                  # active.db 模型（读写）
 │   ├── services/                      # 业务逻辑
 │   │   ├── __init__.py
+│   │   ├── auth_service.py            # 认证服务
 │   │   ├── session_service.py         # Session 服务
 │   │   ├── message_service.py         # 消息服务
-│   │   ├── llm_service.py             # LLM 服务
-│   │   ├── weixin_service.py          # 微信服务
-│   │   ├── config_service.py          # 配置服务
-│   │   └── scheduler_service.py       # 调度服务
+│   │   └── config_service.py          # 配置服务
+│   ├── middleware/                     # 中间件
+│   │   ├── __init__.py
+│   │   └── auth.py                    # 认证中间件
 │   ├── config.py                      # 配置管理
 │   └── requirements.txt
-├── config.yaml                        # 本系统配置
 ├── data/                              # 数据目录
-│   └── (运行时数据)
+│   └── active.db                      # 独立数据库
 ├── docs/                              # 文档
-│   ├── design.md                      # 设计文档
-│   ├── dev-doc.md                     # 开发文档
-│   ├── api.md                         # API 文档
-│   └── research.md                    # 技术研究
-├── scripts/                           # 脚本
-│   ├── proactive_context_gen.py       # 主动消息生成
-│   ├── test_context_read.py           # 上下文读取测试
-│   └── test_send_message.py           # 消息发送测试
+│   ├── design-v0.1.md                 # 设计文档
+│   └── ...
 └── README.md
 ```
 
 ---
 
 ## API 接口汇总
+
+### 认证管理
+```
+POST   /api/auth/login                    # 用户登录
+POST   /api/auth/change-password          # 修改密码
+GET    /api/auth/me                       # 获取当前用户信息
+POST   /api/auth/refresh                  # 刷新 token
+```
 
 ### Session 管理
 ```
@@ -453,16 +509,14 @@ GET    /api/messages/search               # 搜索消息
 
 ### 配置管理
 ```
-GET    /api/config                        # 获取配置
-PUT    /api/config                        # 更新配置
 GET    /api/config/llm                    # 获取 LLM 配置
 PUT    /api/config/llm                    # 更新 LLM 配置
+GET    /api/config/prompts                # 获取提示词配置
+PUT    /api/config/prompts                # 更新提示词配置
 ```
 
 ### LLM 管理
 ```
-GET    /api/llm/config                    # 获取 LLM 配置
-PUT    /api/llm/config                    # 更新 LLM 配置
 POST   /api/llm/test                      # 测试 LLM 连通性
 POST   /api/llm/generate                  # 生成消息
 GET    /api/llm/providers                 # 获取可用 provider
@@ -470,8 +524,6 @@ GET    /api/llm/providers                 # 获取可用 provider
 
 ### 提示词管理
 ```
-GET    /api/prompts                       # 获取提示词配置
-PUT    /api/prompts                       # 更新提示词配置
 GET    /api/prompts/hermes                # 读取 hermes 配置
 GET    /api/prompts/templates             # 获取提示词模板
 ```
@@ -483,15 +535,18 @@ POST   /api/cron                          # 创建任务
 PUT    /api/cron/{id}                     # 更新任务
 DELETE /api/cron/{id}                     # 删除任务
 POST   /api/cron/{id}/run                 # 手动运行
-POST   /api/cron/{id}/pause               # 暂停任务
-POST   /api/cron/{id}/resume              # 恢复任务
+POST   /api/cron/{id}/toggle              # 切换任务状态
+```
+
+### 任务日志
+```
+GET    /api/task-logs                     # 获取任务日志列表
+GET    /api/task-logs/{id}                # 获取任务日志详情
+DELETE /api/task-logs/{id}                # 删除任务日志
 ```
 
 ### 测试工具
 ```
-POST   /api/test/send                     # 测试发送消息
-POST   /api/test/generate                 # 测试生成消息
-POST   /api/test/context                  # 测试读取上下文
 POST   /api/test/full                     # 测试完整流程
 ```
 
@@ -502,11 +557,16 @@ GET    /api/stats/trend                   # 趋势统计
 GET    /api/stats/proactive               # 主动消息统计
 ```
 
+### 健康检查
+```
+GET    /api/health                        # 健康检查
+```
+
 ---
 
-## 数据库设计（只读映射）
+## 数据库设计
 
-### state.db 表结构（已有）
+### state.db（只读映射）
 
 #### sessions 表
 ```sql
@@ -535,124 +595,79 @@ CREATE TABLE messages (
 );
 ```
 
-### SQLAlchemy 映射
-```python
-from sqlalchemy import create_engine, MetaData, Table
-from sqlalchemy.orm import Session
+### active.db（独立数据库）
 
-# 连接 state.db（只读）
-engine = create_engine(
-    "sqlite:///path/to/state.db",
-    connect_args={"check_same_thread": False}
-)
+#### users 表
+```sql
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-# 映射现有表
-metadata = MetaData()
-metadata.reflect(bind=engine)
+-- 默认管理员账号
+INSERT INTO users (username, password_hash) VALUES ('admin', '<hashed_password>');
+```
 
-sessions_table = metadata.tables['sessions']
-messages_table = metadata.tables['messages']
+#### task_logs 表
+```sql
+CREATE TABLE task_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_type TEXT NOT NULL,
+    status TEXT NOT NULL,
+    message TEXT,
+    error TEXT,
+    duration REAL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### configs 表
+```sql
+CREATE TABLE configs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT NOT NULL UNIQUE,
+    value TEXT,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ---
 
-## 配置文件设计
+## 配置存储设计
 
-### config.yaml
-```yaml
-# Hermes Active 配置
-server:
-  host: "0.0.0.0"
-  port: 8080
+### 配置项（存储在 active.db configs 表）
 
-# 数据库配置
-database:
-  path: "~/.hermes/state.db"  # 只读
+| Key | 说明 | 默认值 |
+|-----|------|--------|
+| llm_mode | LLM 模式 | hermes |
+| llm_provider | 自定义 provider | "" |
+| llm_model | 自定义模型 | "" |
+| llm_api_key | 自定义 API Key | "" |
+| llm_base_url | 自定义 Base URL | "" |
+| prompts_system | 系统提示词 | 见下文 |
+| prompts_generation | 生成提示词 | 见下文 |
+| cron_jobs | 定时任务 JSON | [] |
 
-# LLM 配置
-llm:
-  mode: hermes                # hermes | custom
-  custom:
-    provider: ""
-    model: ""
-    api_key: ""
-    base_url: ""
-
-# 提示词配置
-prompts:
-  system: |
-    你是凯莉，曹凡最好的朋友。你现在想主动和曹凡聊天。
-    要求：
-    - 基于最近的对话内容，自然地延续话题或发起新话题
-    - 语气像真人朋友，不要太正式
-    - 1-2 句话即可，不要太长
-  generation: |
-    最近的对话历史：
-    {context}
-    
-    请生成一条主动消息：
-
-# 定时任务配置
-cron_jobs: []
-
-# 日志配置
-logging:
-  level: INFO
-  file: "~/.hermes/hermes-active/logs/app.log"
+### 默认提示词
 ```
+系统提示词：
+你是凯莉，曹凡最好的朋友。你现在想主动和曹凡聊天。
+要求：
+- 基于最近的对话内容，自然地延续话题或发起新话题
+- 语气像真人朋友，不要太正式
+- 1-2 句话即可，不要太长
 
----
+生成提示词：
+最近的对话历史：
+{context}
 
-## 开发计划
-
-### Phase 1：基础框架（1-2天）
-- [ ] 初始化 Vue 3 + Naive UI 项目
-- [ ] 初始化 FastAPI 项目
-- [ ] 配置 SQLAlchemy 2.0 映射 state.db
-- [ ] 配置跨域、路由
-- [ ] 实现基础 API（健康检查）
-- [ ] 配置 APScheduler
-
-### Phase 2：Session 管理（1天）
-- [ ] 实现 Session 列表 API
-- [ ] 实现 Session 详情 API
-- [ ] 实现最新微信 Session API
-- [ ] 前端 Session 列表页面
-
-### Phase 3：消息管理（1-2天）
-- [ ] 实现消息列表 API
-- [ ] 实现消息发送 API
-- [ ] 实现主动消息发送 API
-- [ ] 前端消息历史页面
-- [ ] 前端消息发送页面
-
-### Phase 4：LLM 配置（1天）
-- [ ] 实现 LLM 配置 API
-- [ ] 实现 LLM 连通性测试
-- [ ] 实现 LLM 生成 API
-- [ ] 前端 LLM 配置页面
-
-### Phase 5：提示词配置（1天）
-- [ ] 实现提示词读取 API
-- [ ] 实现提示词更新 API
-- [ ] 实现 hermes 配置读取
-- [ ] 前端提示词配置页面
-
-### Phase 6：定时任务（1天）
-- [ ] 集成 APScheduler
-- [ ] 实现定时任务 CRUD API
-- [ ] 实现任务运行/暂停/恢复 API
-- [ ] 前端定时任务页面
-
-### Phase 7：监控统计（1天）
-- [ ] 实现统计 API
-- [ ] 前端监控面板
-- [ ] 图表展示（ECharts）
-
-### Phase 8：测试工具（1天）
-- [ ] 实现测试 API
-- [ ] 前端测试页面
-- [ ] 完整流程测试
+请生成一条主动消息：
+```
 
 ---
 
@@ -686,33 +701,28 @@ uvicorn main:app --host 0.0.0.0 --port 8080
 
 ## 注意事项
 
-### 1. 数据库只读
+### 1. 数据库隔离
 - state.db 只读，不写入任何数据
+- active.db 存储本系统所有数据
 - 上下文注入通过 hermes 的 SessionDB API
 
 ### 2. 配置隔离
-- 本系统配置存储在 `~/.hermes/hermes-active/config.yaml`
+- 本系统配置存储在 active.db 的 configs 表
 - 不污染 hermes 的 config.yaml 和 .env
 
-### 3. LLM 调用
+### 3. 认证安全
+- 密码使用 bcrypt 哈希存储
+- JWT token 设置过期时间
+- 所有 API（除登录）需要认证
+
+### 4. LLM 调用
 - 默认使用 hermes 的 `call_llm`
 - 自定义配置时使用 OpenAI SDK
 
-### 4. 消息发送
+### 5. 消息发送
 - 直接调用 `send_weixin_direct`，不需要配置微信参数
 - 写入 session DB 时使用带标记格式
 
-### 5. 定时任务
+### 6. 定时任务
 - 使用 APScheduler 独立管理
 - 不与 hermes cron 混在一起
-
----
-
-## 参考资料
-
-- [Hermes Agent 官方文档](https://hermes-agent.nousresearch.com/docs)
-- [FastAPI 文档](https://fastapi.tiangolo.com/)
-- [Vue 3 文档](https://vuejs.org/)
-- [Naive UI 文档](https://www.naiveui.com/)
-- [SQLAlchemy 2.0 文档](https://docs.sqlalchemy.org/)
-- [APScheduler 文档](https://apscheduler.readthedocs.io/)
