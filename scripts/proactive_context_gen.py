@@ -8,12 +8,18 @@
 3. 调用 LLM 生成消息
 4. 发送到微信
 5. 写入 session DB（带标记）
+
+用法：
+  python3 proactive_context_gen.py                    # 使用 LLM 生成消息
+  python3 proactive_context_gen.py -m "推荐一首歌"    # 直接发送写死的消息
+  python3 proactive_context_gen.py --no-db            # 不写入 session DB
+  python3 proactive_context_gen.py --dry-run          # 只生成不发送
 """
 import sqlite3
 import os
 import sys
 import asyncio
-import json
+import argparse
 from pathlib import Path
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -126,14 +132,14 @@ def generate_proactive_message(context):
     
     try:
         response = call_llm(
-            task="title_generation",  # 使用轻量任务配置
+            task="title_generation",
             messages=messages,
             temperature=0.7,
             max_tokens=200,
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        print(f"LLM 调用失败: {e}")
+        print(f"❌ LLM 调用失败: {e}")
         return None
 
 async def send_to_weixin(chat_id, content):
@@ -164,6 +170,16 @@ def write_marked_message(session_id, content):
     )
     return marked_content
 
+def write_plain_message(session_id, content):
+    """写入不带标记的消息到 session DB"""
+    db = SessionDB()
+    db.append_message(
+        session_id=session_id,
+        role="assistant",
+        content=content,
+    )
+    return content
+
 def check_quiet_hours():
     """检查是否在安静时间"""
     quiet_hours = CONFIG["quiet_hours"]
@@ -188,15 +204,78 @@ def check_quiet_hours():
     
     return False
 
+def parse_args():
+    """解析命令行参数"""
+    parser = argparse.ArgumentParser(
+        description="方案 G：基于主会话上下文生成主动消息",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+示例：
+  %(prog)s                          # 使用 LLM 自动生成消息
+  %(prog)s -m "推荐一首歌"           # 直接发送写死的消息
+  %(prog)s -m "推荐一首歌" --no-db   # 发送但不写入 session DB
+  %(prog)s --dry-run                 # 只生成消息，不发送
+  %(prog)s --context-only            # 只读取上下文，不生成消息
+        """
+    )
+    
+    parser.add_argument(
+        "-m", "--message",
+        type=str,
+        help="直接指定要发送的消息内容（跳过 LLM 生成）"
+    )
+    
+    parser.add_argument(
+        "--no-db",
+        action="store_true",
+        help="不写入 session DB"
+    )
+    
+    parser.add_argument(
+        "--no-mark",
+        action="store_true",
+        help="写入 session DB 时不带标记（不加 [凯莉主动发送] 前缀）"
+    )
+    
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="只生成消息，不实际发送"
+    )
+    
+    parser.add_argument(
+        "--context-only",
+        action="store_true",
+        help="只读取上下文，不生成/发送消息"
+    )
+    
+    parser.add_argument(
+        "--skip-quiet",
+        action="store_true",
+        help="跳过安静时间检查"
+    )
+    
+    parser.add_argument(
+        "--max-context",
+        type=int,
+        default=20,
+        help="读取的最大上下文消息数（默认 20）"
+    )
+    
+    return parser.parse_args()
+
 async def main():
     """主函数"""
+    args = parse_args()
+    
     print("=" * 50)
     print("方案 G：基于主会话上下文生成主动消息")
     print("=" * 50)
     
     # 0. 检查安静时间
-    if check_quiet_hours():
+    if not args.skip_quiet and check_quiet_hours():
         print("⏸️ 当前在安静时间，跳过")
+        print("   使用 --skip-quiet 可跳过此检查")
         return
     
     # 1. 查找最新的微信 session
@@ -212,8 +291,8 @@ async def main():
     print(f"   消息数: {session['message_count']}")
     
     # 2. 读取上下文
-    print("\n[2] 读取上下文...")
-    context = load_session_context(session['id'], CONFIG["max_context_messages"])
+    print(f"\n[2] 读取上下文（最近 {args.max_context} 条）...")
+    context = load_session_context(session['id'], args.max_context)
     
     if not context:
         print("❌ 上下文为空")
@@ -221,33 +300,67 @@ async def main():
     
     print(f"✅ 读取到 {len(context)} 条消息")
     
-    # 3. 生成消息
-    print("\n[3] 调用 LLM 生成消息...")
-    message = generate_proactive_message(context)
+    # 显示最近几条消息
+    print("\n   最近 3 条消息:")
+    for msg in context[-3:]:
+        role = msg["role"]
+        content = msg["content"][:50] if msg["content"] else "(空)"
+        print(f"   - {role}: {content}...")
     
-    if not message:
-        print("❌ 生成消息失败")
+    # 如果只读取上下文，到此结束
+    if args.context_only:
+        print("\n✅ 上下文读取完成（--context-only 模式）")
         return
     
-    print(f"✅ 生成消息: {message}")
+    # 3. 确定要发送的消息
+    if args.message:
+        # 使用用户指定的消息
+        message = args.message
+        print(f"\n[3] 使用指定消息: {message}")
+    else:
+        # 调用 LLM 生成消息
+        print("\n[3] 调用 LLM 生成消息...")
+        message = generate_proactive_message(context)
+        
+        if not message:
+            print("❌ 生成消息失败")
+            return
+        
+        print(f"✅ 生成消息: {message}")
     
     # 4. 发送到微信
-    print("\n[4] 发送到微信...")
-    success = await send_to_weixin(session['user_id'], message)
-    
-    if not success:
-        print("❌ 发送失败")
-        return
-    
-    print("✅ 发送成功")
+    if args.dry_run:
+        print(f"\n[4] [DRY RUN] 跳过发送")
+        print(f"   将发送: {message}")
+    else:
+        print(f"\n[4] 发送到微信...")
+        success = await send_to_weixin(session['user_id'], message)
+        
+        if not success:
+            print("❌ 发送失败")
+            return
+        
+        print("✅ 发送成功")
     
     # 5. 写入 session DB
-    print("\n[5] 写入 session DB...")
-    marked_message = write_marked_message(session['id'], message)
-    print(f"✅ 已写入: {marked_message}")
+    if args.no_db:
+        print(f"\n[5] [NO DB] 跳过写入 session DB")
+    elif args.dry_run:
+        print(f"\n[5] [DRY RUN] 跳过写入 session DB")
+    else:
+        print(f"\n[5] 写入 session DB...")
+        
+        if args.no_mark:
+            # 不带标记
+            written = write_plain_message(session['id'], message)
+            print(f"✅ 已写入（不带标记）: {written}")
+        else:
+            # 带标记
+            written = write_marked_message(session['id'], message)
+            print(f"✅ 已写入: {written}")
     
     print("\n" + "=" * 50)
-    print("✅ 主动消息发送完成！")
+    print("✅ 完成！")
     print("=" * 50)
 
 if __name__ == "__main__":
