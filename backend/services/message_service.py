@@ -17,9 +17,8 @@ from models.active import TaskLog
 # 加载 hermes 环境
 sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
 
-# 用于标记写入的格式
-MARKED_FORMAT = "[凯莉主动发送] {timestamp}: {content}"
-UNMARKED_FORMAT = "{content}"
+# 默认标记格式
+DEFAULT_MARK_FORMAT = "[凯莉主动发送] {timestamp}: {content}"
 
 
 def _get_session_user_id(session_id: str) -> Optional[str]:
@@ -171,7 +170,8 @@ class MessageService:
         message: str,
         platform: str = "weixin",
         write_to_db: bool = True,
-        with_mark: bool = False
+        with_mark: bool = False,
+        mark_format: str = DEFAULT_MARK_FORMAT
     ) -> Dict[str, Any]:
         """发送消息到微信并写入 state.db
 
@@ -180,13 +180,21 @@ class MessageService:
             message: 消息内容
             platform: 目标平台（默认 weixin）
             write_to_db: 是否写入 state.db（默认 True）
-            with_mark: 是否带 [凯莉主动发送] 标记（默认 False）
+            with_mark: 是否带标记（默认 False）
+            mark_format: 标记格式模板，支持 {timestamp} 和 {content} 占位符
         """
         start_time = time.time()
         try:
             # 验证 session 存在
             metadata = get_state_metadata()
             if 'sessions' not in metadata.tables:
+                MessageService.create_task_log(
+                    task_type="send_message",
+                    status="failed",
+                    message=f"发送消息到 session {session_id}",
+                    error="sessions 表不存在",
+                    duration=round(time.time() - start_time, 2)
+                )
                 return {"success": False, "message": "sessions 表不存在"}
 
             sessions_table = metadata.tables['sessions']
@@ -196,6 +204,13 @@ class MessageService:
                 ).first()
 
             if not session_row:
+                MessageService.create_task_log(
+                    task_type="send_message",
+                    status="failed",
+                    message=f"发送消息到 session {session_id}",
+                    error=f"Session {session_id} 不存在",
+                    duration=round(time.time() - start_time, 2)
+                )
                 return {"success": False, "message": f"Session {session_id} 不存在"}
 
             user_id = session_row._mapping.get('user_id')
@@ -211,12 +226,18 @@ class MessageService:
             if write_to_db:
                 if with_mark:
                     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    db_content = MARKED_FORMAT.format(timestamp=now_str, content=message)
+                    db_content = mark_format.format(timestamp=now_str, content=message)
                 _write_to_state_db(session_id, db_content)
 
             duration = round(time.time() - start_time, 2)
 
             if send_result and send_result.get("success"):
+                MessageService.create_task_log(
+                    task_type="send_message",
+                    status="success",
+                    message=f"消息已发送到 {platform}，session: {session_id}",
+                    duration=duration
+                )
                 return {
                     "success": True,
                     "message": f"消息已发送到{platform}",
@@ -227,6 +248,13 @@ class MessageService:
                     "duration": duration
                 }
             elif send_result:
+                MessageService.create_task_log(
+                    task_type="send_message",
+                    status="failed",
+                    message=f"发送消息到 {platform}，session: {session_id}",
+                    error=send_result.get("message", "发送失败"),
+                    duration=duration
+                )
                 return {
                     "success": False,
                     "message": send_result.get("message", "发送失败"),
@@ -237,9 +265,17 @@ class MessageService:
                     "duration": duration
                 }
             else:
+                status = "success" if write_to_db else "success"
+                msg = "仅写入 DB（无平台发送）" if write_to_db else "未写入也未发送"
+                MessageService.create_task_log(
+                    task_type="send_message",
+                    status=status,
+                    message=f"{msg}，session: {session_id}",
+                    duration=duration
+                )
                 return {
                     "success": write_to_db,
-                    "message": "仅写入 DB（无平台发送）" if write_to_db else "未写入也未发送",
+                    "message": msg,
                     "session_id": session_id,
                     "platform": platform,
                     "db_content": db_content if write_to_db else None,
@@ -247,6 +283,14 @@ class MessageService:
                     "duration": duration
                 }
         except Exception as e:
+            duration = round(time.time() - start_time, 2)
+            MessageService.create_task_log(
+                task_type="send_message",
+                status="failed",
+                message=f"发送消息到 session {session_id}",
+                error=str(e),
+                duration=duration
+            )
             return {"success": False, "message": f"消息发送失败: {str(e)}"}
 
     @staticmethod
@@ -257,7 +301,8 @@ class MessageService:
         llm_config: Optional[Dict[str, Any]] = None,
         prompts_config: Optional[Dict[str, str]] = None,
         write_to_db: bool = True,
-        with_mark: bool = True
+        with_mark: bool = True,
+        mark_format: str = DEFAULT_MARK_FORMAT
     ) -> Dict[str, Any]:
         """发送主动消息"""
         start_time = time.time()
@@ -289,7 +334,20 @@ class MessageService:
 
                 if llm_result.get("success"):
                     final_message = llm_result["content"]
+                    MessageService.create_task_log(
+                        task_type="generate",
+                        status="success",
+                        message=f"LLM 生成消息成功，session: {session_id}",
+                        duration=round(time.time() - start_time, 2)
+                    )
                 else:
+                    MessageService.create_task_log(
+                        task_type="generate",
+                        status="failed",
+                        message=f"LLM 生成消息失败，session: {session_id}",
+                        error=llm_result.get("message", "未知错误"),
+                        duration=round(time.time() - start_time, 2)
+                    )
                     return {
                         "success": False,
                         "message": f"LLM 生成消息失败: {llm_result.get('message', '未知错误')}"
@@ -301,11 +359,18 @@ class MessageService:
                 message=final_message,
                 platform="weixin",
                 write_to_db=write_to_db,
-                with_mark=with_mark
+                with_mark=with_mark,
+                mark_format=mark_format
             )
 
             duration = round(time.time() - start_time, 2)
             if send_result.get("success"):
+                MessageService.create_task_log(
+                    task_type="send_proactive",
+                    status="success",
+                    message=f"主动消息发送成功，session: {session_id}",
+                    duration=duration
+                )
                 return {
                     "success": True,
                     "message": "主动消息发送成功",
@@ -315,9 +380,24 @@ class MessageService:
                     "duration": duration
                 }
             else:
+                MessageService.create_task_log(
+                    task_type="send_proactive",
+                    status="failed",
+                    message=f"主动消息发送失败，session: {session_id}",
+                    error=send_result.get("message", "未知错误"),
+                    duration=duration
+                )
                 return send_result
 
         except Exception as e:
+            duration = round(time.time() - start_time, 2)
+            MessageService.create_task_log(
+                task_type="send_proactive",
+                status="failed",
+                message=f"主动消息发送异常，session: {session_id}",
+                error=str(e),
+                duration=duration
+            )
             return {"success": False, "message": f"主动消息发送失败: {str(e)}"}
 
     @staticmethod

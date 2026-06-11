@@ -112,6 +112,11 @@ class CronJobCreate(BaseModel):
     schedule: str
     enabled: bool = True
     prompt: Optional[str] = None
+    session_id: Optional[str] = None
+    use_llm: bool = True
+    write_to_db: bool = True
+    with_mark: bool = True
+    mark_format: str = "[凯莉主动发送] {timestamp}: {content}"
 
 
 class CronJobUpdate(BaseModel):
@@ -119,6 +124,11 @@ class CronJobUpdate(BaseModel):
     schedule: Optional[str] = None
     enabled: Optional[bool] = None
     prompt: Optional[str] = None
+    session_id: Optional[str] = None
+    use_llm: Optional[bool] = None
+    write_to_db: Optional[bool] = None
+    with_mark: Optional[bool] = None
+    mark_format: Optional[str] = None
 
 
 class CronJobInfo(BaseModel):
@@ -127,6 +137,11 @@ class CronJobInfo(BaseModel):
     schedule: str
     enabled: bool
     prompt: Optional[str] = None
+    session_id: Optional[str] = None
+    use_llm: bool = True
+    write_to_db: bool = True
+    with_mark: bool = True
+    mark_format: str = "[凯莉主动发送] {timestamp}: {content}"
     last_run_at: Optional[datetime] = None
     next_run_at: Optional[datetime] = None
 

@@ -1,6 +1,7 @@
 """
 消息路由
 """
+import time
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional
@@ -9,7 +10,7 @@ from sqlalchemy.orm import Session
 from middleware.auth import get_current_user
 from models.database import get_active_db
 from models.active import User
-from services.message_service import MessageService
+from services.message_service import MessageService, DEFAULT_MARK_FORMAT
 from services.config_service import ConfigService
 
 router = APIRouter(prefix="/api/messages", tags=["messages"])
@@ -20,6 +21,7 @@ class SendMessageRequest(BaseModel):
     message: str
     write_to_db: bool = True
     with_mark: bool = False
+    mark_format: str = DEFAULT_MARK_FORMAT
 
 
 class SendProactiveRequest(BaseModel):
@@ -28,6 +30,7 @@ class SendProactiveRequest(BaseModel):
     use_llm: bool = False
     write_to_db: bool = True
     with_mark: bool = True
+    mark_format: str = DEFAULT_MARK_FORMAT
 
 
 class GenerateRequest(BaseModel):
@@ -67,12 +70,14 @@ async def generate_message(
     db: Session = Depends(get_active_db)
 ):
     """仅生成主动消息（不发送、不写入DB）"""
+    import time as _time
+    start_time = _time.time()
     llm_config = ConfigService.get_llm_config(db)
     prompts_config = ConfigService.get_prompts_config(db)
 
-    if llm_config.get("mode") == "hermes":
-        # 使用 hermes 的 LLM
-        try:
+    try:
+        if llm_config.get("mode") == "hermes":
+            # 使用 hermes 的 LLM
             import sys
             from pathlib import Path
             sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
@@ -98,35 +103,67 @@ async def generate_message(
                 max_tokens=200,
             )
             content = response.choices[0].message.content.strip()
+            duration = round(_time.time() - start_time, 2)
+            MessageService.create_task_log(
+                task_type="generate",
+                status="success",
+                message=f"生成消息成功（hermes），session: {request.session_id}",
+                duration=duration
+            )
             return {"success": True, "message": content, "source": "hermes"}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Hermes LLM 调用失败: {str(e)}")
-    else:
-        # 使用自定义 LLM
-        from services.llm_service import LLMService
-
-        context_msgs = MessageService.get_session_context_raw(request.session_id, limit=20)
-        context_text = "\n".join(
-            f"{m.get('role', 'unknown')}: {m.get('content', '')[:200]}"
-            for m in context_msgs[-10:]
-        )
-
-        system_prompt = prompts_config.get("system", "")
-        generation_template = prompts_config.get("generation", "{context}")
-        user_prompt = generation_template.replace("{context}", context_text)
-
-        result = await LLMService.generate_message(
-            llm_config=llm_config,
-            prompt=user_prompt,
-            system_prompt=system_prompt,
-            temperature=0.7,
-            max_tokens=200
-        )
-
-        if result.get("success"):
-            return {"success": True, "message": result["content"], "source": "custom"}
         else:
-            raise HTTPException(status_code=500, detail=result.get("message", "生成失败"))
+            # 使用自定义 LLM
+            from services.llm_service import LLMService
+
+            context_msgs = MessageService.get_session_context_raw(request.session_id, limit=20)
+            context_text = "\n".join(
+                f"{m.get('role', 'unknown')}: {m.get('content', '')[:200]}"
+                for m in context_msgs[-10:]
+            )
+
+            system_prompt = prompts_config.get("system", "")
+            generation_template = prompts_config.get("generation", "{context}")
+            user_prompt = generation_template.replace("{context}", context_text)
+
+            result = await LLMService.generate_message(
+                llm_config=llm_config,
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                temperature=0.7,
+                max_tokens=200
+            )
+
+            if result.get("success"):
+                duration = round(_time.time() - start_time, 2)
+                MessageService.create_task_log(
+                    task_type="generate",
+                    status="success",
+                    message=f"生成消息成功（custom），session: {request.session_id}",
+                    duration=duration
+                )
+                return {"success": True, "message": result["content"], "source": "custom"}
+            else:
+                duration = round(_time.time() - start_time, 2)
+                MessageService.create_task_log(
+                    task_type="generate",
+                    status="failed",
+                    message=f"生成消息失败，session: {request.session_id}",
+                    error=result.get("message", "生成失败"),
+                    duration=duration
+                )
+                raise HTTPException(status_code=500, detail=result.get("message", "生成失败"))
+    except HTTPException:
+        raise
+    except Exception as e:
+        duration = round(_time.time() - start_time, 2)
+        MessageService.create_task_log(
+            task_type="generate",
+            status="failed",
+            message=f"生成消息异常，session: {request.session_id}",
+            error=str(e),
+            duration=duration
+        )
+        raise HTTPException(status_code=500, detail=f"LLM 调用失败: {str(e)}")
 
 
 @router.post("/send")
@@ -140,7 +177,8 @@ async def send_message(
         message=request.message,
         platform="weixin",
         write_to_db=request.write_to_db,
-        with_mark=request.with_mark
+        with_mark=request.with_mark,
+        mark_format=request.mark_format
     )
     if result.get("success"):
         return {"success": True, "message": result.get("message", "发送成功"), "detail": result}
@@ -165,7 +203,8 @@ async def send_proactive_message(
         llm_config=llm_config,
         prompts_config=prompts_config,
         write_to_db=request.write_to_db,
-        with_mark=request.with_mark
+        with_mark=request.with_mark,
+        mark_format=request.mark_format
     )
     if result.get("success"):
         return {"success": True, "message": result.get("message", "发送成功"), "detail": result}

@@ -18,6 +18,7 @@
         style="width: 160px"
         @update:value="loadLogs"
       />
+      <n-button @click="loadLogs" size="small">刷新</n-button>
     </div>
 
     <!-- 日志列表 -->
@@ -26,7 +27,7 @@
         <div v-for="log in logs" :key="log.id" class="log-card">
           <div class="log-header">
             <n-tag :type="getStatusType(log.status)" size="small">{{ log.status }}</n-tag>
-            <span class="log-type">{{ log.task_type }}</span>
+            <span class="log-type">{{ getTypeLabel(log.task_type) }}</span>
             <span class="log-time">{{ formatTime(log.created_at) }}</span>
           </div>
           <div class="log-message" v-if="log.message">{{ log.message }}</div>
@@ -64,15 +65,28 @@ const typeFilter = ref(null)
 
 const statusOptions = [
   { label: '成功', value: 'success' },
-  { label: '失败', value: 'failed' },
-  { label: '运行中', value: 'running' }
+  { label: '失败', value: 'failed' }
 ]
 
 const typeOptions = [
-  { label: '主动消息', value: 'proactive_message' },
-  { label: '测试发送', value: 'test_send' },
-  { label: 'LLM 生成', value: 'llm_generate' }
+  { label: '发送消息', value: 'send_message' },
+  { label: 'LLM 生成', value: 'generate' },
+  { label: '主动消息', value: 'send_proactive' },
+  { label: '定时任务', value: 'cron_run' },
+  { label: '上下文读取', value: 'test_context' }
 ]
+
+const typeLabelMap = {
+  send_message: '发送消息',
+  generate: 'LLM 生成',
+  send_proactive: '主动消息',
+  cron_run: '定时任务',
+  test_context: '上下文读取'
+}
+
+function getTypeLabel(type) {
+  return typeLabelMap[type] || type
+}
 
 function formatTime(ts) {
   if (!ts) return ''
@@ -89,14 +103,14 @@ async function loadLogs() {
   loading.value = true
   try {
     const params = {
-      limit: pageSize,
-      offset: (currentPage.value - 1) * pageSize
+      page: currentPage.value,
+      page_size: pageSize
     }
     if (statusFilter.value) params.status = statusFilter.value
     if (typeFilter.value) params.task_type = typeFilter.value
 
     const data = await api.get('/task-logs', { params })
-    logs.value = data.logs || []
+    logs.value = data.items || []
     total.value = data.total || 0
   } catch (e) {
     console.error('加载日志失败:', e)

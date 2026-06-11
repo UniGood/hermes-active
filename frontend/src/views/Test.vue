@@ -1,7 +1,7 @@
 <template>
   <div class="test-page">
-    <!-- 最新微信 Session -->
-    <n-card title="最新微信 Session" style="margin-bottom: 16px">
+    <!-- 步骤 1: 最新微信 Session -->
+    <n-card title="1. 最新微信 Session" style="margin-bottom: 16px">
       <n-spin :show="loadingSession">
         <div v-if="latestSession" class="session-info">
           <div class="info-item">
@@ -22,36 +22,70 @@
       <n-button @click="loadLatestSession" style="margin-top: 12px" size="small">刷新</n-button>
     </n-card>
 
-    <!-- 生成主动消息 -->
-    <n-card title="生成主动消息" style="margin-bottom: 16px">
+    <!-- 步骤 2: 上下文读取 -->
+    <n-card title="2. 读取上下文" style="margin-bottom: 16px">
+      <n-space align="center">
+        <n-button @click="testContext" :loading="loadingContext" :disabled="!latestSession" type="primary">
+          读取上下文
+        </n-button>
+        <n-input-number v-model:value="contextLimit" :min="1" :max="50" style="width: 100px" />
+        <span style="color: #999; font-size: 13px">条消息</span>
+      </n-space>
+      <div v-if="contextMessages.length > 0" class="context-preview">
+        <div class="context-header">
+          <span>共 {{ contextMessages.length }} 条上下文</span>
+        </div>
+        <div v-for="(msg, i) in contextMessages" :key="i" class="context-item">
+          <span class="context-role" :class="msg.role">{{ msg.role === 'user' ? '曹凡' : msg.role === 'assistant' ? '凯莉' : msg.role }}:</span>
+          <span class="context-content">{{ truncate(msg.content, 100) }}</span>
+        </div>
+      </div>
+    </n-card>
+
+    <!-- 步骤 3: 生成主动消息 -->
+    <n-card title="3. 生成主动消息" style="margin-bottom: 16px">
       <n-space>
         <n-button @click="generateMessage" :loading="generating" :disabled="!latestSession" type="primary">
-          生成消息
+          根据上下文生成消息
         </n-button>
       </n-space>
       <div v-if="generatedMessage" class="generated-message">
         <div class="generated-label">生成结果：</div>
         <div class="generated-content">{{ generatedMessage }}</div>
-        <n-button size="small" @click="testMessage = generatedMessage" style="margin-top: 8px">
+        <n-button size="small" type="primary" @click="fillToSendBox" style="margin-top: 8px">
           填入发送框
         </n-button>
       </div>
     </n-card>
 
-    <!-- 消息发送测试 -->
-    <n-card title="消息发送测试" style="margin-bottom: 16px">
+    <!-- 步骤 4: 发送消息 -->
+    <n-card title="4. 发送消息" style="margin-bottom: 16px">
       <n-input
         v-model:value="testMessage"
         type="textarea"
-        :autosize="{ minRows: 2, maxRows: 4 }"
+        :autosize="{ minRows: 3, maxRows: 6 }"
         placeholder="输入要发送的消息..."
       />
       <div class="send-options">
         <n-space vertical style="width: 100%">
           <n-space>
             <n-checkbox v-model:checked="writeToDB">写入 Session DB</n-checkbox>
-            <n-checkbox v-model:checked="withMark" :disabled="!writeToDB">带 [凯莉主动发送] 标记</n-checkbox>
+            <n-checkbox v-model:checked="withMark" :disabled="!writeToDB">带标记</n-checkbox>
           </n-space>
+          <div v-if="withMark && writeToDB" class="mark-format-section">
+            <div class="mark-format-label">标记格式模板：</div>
+            <n-input
+              v-model:value="markFormat"
+              placeholder="[凯莉主动发送] {timestamp}: {content}"
+              size="small"
+            />
+            <div class="mark-format-hint">
+              支持占位符: <n-text code>{timestamp}</n-text> <n-text code>{content}</n-text>
+            </div>
+            <div class="mark-format-preview" v-if="testMessage.trim()">
+              预览: {{ previewMark }}
+            </div>
+          </div>
           <n-space>
             <n-button
               type="primary"
@@ -75,22 +109,6 @@
       </n-space>
     </n-card>
 
-    <!-- 上下文读取测试 -->
-    <n-card title="上下文读取测试" style="margin-bottom: 16px">
-      <n-space>
-        <n-button @click="testContext" :loading="loadingContext" :disabled="!latestSession">
-          读取上下文
-        </n-button>
-        <n-input-number v-model:value="contextLimit" :min="1" :max="50" style="width: 100px" />
-      </n-space>
-      <div v-if="contextMessages.length > 0" class="context-preview">
-        <div v-for="(msg, i) in contextMessages" :key="i" class="context-item">
-          <span class="context-role" :class="msg.role">{{ msg.role === 'user' ? '曹凡' : msg.role === 'assistant' ? '凯莉' : msg.role }}:</span>
-          <span class="context-content">{{ truncate(msg.content, 100) }}</span>
-        </div>
-      </div>
-    </n-card>
-
     <!-- 执行日志 -->
     <n-card title="执行日志">
       <div class="log-list">
@@ -105,7 +123,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import api from '../api'
 
@@ -122,8 +140,19 @@ const contextLimit = ref(10)
 const testMessage = ref('')
 const writeToDB = ref(true)
 const withMark = ref(false)
+const markFormat = ref('[凯莉主动发送] {timestamp}: {content}')
 const generatedMessage = ref('')
 const logs = ref([])
+
+// 标记预览
+const previewMark = computed(() => {
+  if (!testMessage.value.trim()) return ''
+  const now = new Date()
+  const ts = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+  return markFormat.value
+    .replace('{timestamp}', ts)
+    .replace('{content}', testMessage.value.trim())
+})
 
 function addLog(type, msg) {
   const now = new Date()
@@ -135,6 +164,11 @@ function addLog(type, msg) {
 function truncate(str, len) {
   if (!str) return ''
   return str.length > len ? str.slice(0, len) + '...' : str
+}
+
+function fillToSendBox() {
+  testMessage.value = generatedMessage.value
+  message.success('已填入发送框')
 }
 
 async function loadLatestSession() {
@@ -176,7 +210,8 @@ async function sendMessage() {
       session_id: latestSession.value.id,
       message: testMessage.value.trim(),
       write_to_db: writeToDB.value,
-      with_mark: withMark.value
+      with_mark: withMark.value,
+      mark_format: markFormat.value
     })
     const markLabel = withMark.value ? '带标记' : '不带标记'
     addLog('success', `发送成功（${markLabel}，写入DB=${writeToDB.value}）: ${testMessage.value.trim()}`)
@@ -198,7 +233,8 @@ async function fullTest() {
       use_llm: true,
       message: '',
       write_to_db: true,
-      with_mark: true
+      with_mark: true,
+      mark_format: markFormat.value
     })
     const result = data?.detail || data
     addLog('success', `完整流程测试完成: ${result.generated_message || result.message}`)
@@ -263,6 +299,35 @@ onMounted(loadLatestSession)
   margin-top: 12px;
 }
 
+.mark-format-section {
+  background: #f5f7fa;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.mark-format-label {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.mark-format-hint {
+  font-size: 12px;
+  color: #999;
+  margin-top: 6px;
+}
+
+.mark-format-preview {
+  font-size: 12px;
+  color: #18a058;
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: #f0f9eb;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
 .generated-message {
   margin-top: 12px;
   padding: 12px;
@@ -289,6 +354,14 @@ onMounted(loadLatestSession)
   background: #f5f7fa;
   border-radius: 8px;
   padding: 12px;
+}
+
+.context-header {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e8e8e8;
 }
 
 .context-item {
