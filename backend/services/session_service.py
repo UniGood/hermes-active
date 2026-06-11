@@ -31,28 +31,31 @@ class SessionService:
         # 构建查询
         query = sessions_table.select()
 
-        # 只返回活跃 session（按最后消息时间排序，最新的在前）
+        # 只返回活跃 session（按最后消息时间排序，排除僵尸 session）
         if active_only:
-            query = query.where(sessions_table.c.ended_at.is_(None))
-            # 按最后消息时间排序，排除僵尸 session
-            messages_table = metadata.tables.get('messages')
-            if messages_table is not None:
-                from sqlalchemy import func
-                last_msg_subq = (
-                    select(
-                        messages_table.c.session_id,
-                        func.max(messages_table.c.timestamp).label('last_msg_time')
-                    )
-                    .group_by(messages_table.c.session_id)
-                    .subquery()
-                )
-                query = query.join(
-                    last_msg_subq,
-                    sessions_table.c.id == last_msg_subq.c.session_id
-                )
-                query = query.order_by(last_msg_subq.c.last_msg_time.desc())
-            else:
+            # 用纯 SQL 子查询获取按最后消息时间排序的 session_id
+            with state_engine.connect() as conn:
+                active_ids_result = conn.execute(text(
+                    """
+                    SELECT s.id, COALESCE(MAX(m.timestamp), s.started_at) as last_active
+                    FROM sessions s
+                    LEFT JOIN messages m ON s.id = m.session_id
+                    WHERE s.ended_at IS NULL
+                    """ + (" AND s.source = :platform" if platform else "") + 
+                    """
+                    GROUP BY s.id
+                    ORDER BY last_active DESC
+                    LIMIT 1
+                    """
+                ), {"platform": platform, "limit": page_size, "offset": (page - 1) * page_size} if platform else {"limit": page_size, "offset": (page - 1) * page_size})
+                active_ids = [row[0] for row in active_ids_result]
+            
+            if active_ids:
+                query = sessions_table.select().where(sessions_table.c.id.in_(active_ids))
+                # 按 started_at 排序（近似）
                 query = query.order_by(sessions_table.c.started_at.desc())
+            else:
+                return {"total": 0, "items": []}
         else:
             query = query.order_by(sessions_table.c.started_at.desc())
 
