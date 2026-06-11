@@ -9,6 +9,7 @@ from models.database import get_active_db
 from models.active import User
 from models.schemas import MessageListResponse, SendMessageRequest, SendProactiveRequest, SuccessResponse
 from services.message_service import MessageService
+from services.config_service import ConfigService
 from middleware.auth import get_current_user
 
 router = APIRouter(prefix="/api/messages", tags=["消息管理"])
@@ -35,24 +36,41 @@ async def send_message(
     """发送消息"""
     result = await MessageService.send_message(
         session_id=request.session_id,
-        message=request.message,
-        is_test=request.is_test
+        message=request.message
     )
-    return SuccessResponse(message=result["message"])
+    if result.get("success"):
+        return SuccessResponse(message=result["message"])
+    else:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=result.get("message", "发送失败"))
 
 
 @router.post("/send-proactive", response_model=SuccessResponse)
 async def send_proactive_message(
     request: SendProactiveRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
 ):
     """发送主动消息"""
+    llm_config = None
+    prompts_config = None
+
+    if request.use_llm:
+        llm_config = ConfigService.get_llm_config(db)
+        prompts_config = ConfigService.get_prompts_config(db)
+
     result = await MessageService.send_proactive_message(
         session_id=request.session_id,
         message=request.message,
-        use_llm=request.use_llm
+        use_llm=request.use_llm,
+        llm_config=llm_config,
+        prompts_config=prompts_config
     )
-    return SuccessResponse(message=result["message"])
+    if result.get("success"):
+        return SuccessResponse(message=result["message"])
+    else:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=result.get("message", "发送失败"))
 
 
 @router.get("/search")

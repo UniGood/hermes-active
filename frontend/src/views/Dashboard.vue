@@ -93,8 +93,8 @@ async function loadRecentMessages() {
   loading.value = true
   try {
     const data = await api.get('/sessions', { params: { limit: 5 } })
-    if (data.sessions && data.sessions.length > 0) {
-      const firstSession = data.sessions[0]
+    if (data.items && data.items.length > 0) {
+      const firstSession = data.items[0]
       const msgs = await api.get(`/messages/${firstSession.session_id}`, { params: { limit: 10 } })
       recentMessages.value = msgs.messages || []
     }

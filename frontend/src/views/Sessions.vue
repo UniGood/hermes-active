@@ -108,7 +108,7 @@ async function loadSessions() {
     if (platformFilter.value) params.source = platformFilter.value
 
     const data = await api.get('/sessions', { params })
-    sessions.value = data.sessions || []
+    sessions.value = data.items || []
     total.value = data.total || 0
   } catch (e) {
     console.error('加载会话失败:', e)

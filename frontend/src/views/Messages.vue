@@ -91,7 +91,7 @@ async function loadMessages() {
   loading.value = true
   try {
     const data = await api.get(`/messages/${selectedSession.value}`, { params: { limit: 100 } })
-    messages.value = data.messages || []
+    messages.value = data.items || []
     await nextTick()
     scrollToBottom()
   } catch (e) {
