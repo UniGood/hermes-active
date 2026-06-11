@@ -71,11 +71,11 @@ function formatContent(content) {
 
 async function loadSessions() {
   try {
-    const data = await api.get('/sessions', { params: { limit: 50 } })
+    const data = await api.get('/sessions', { params: { page: 1, page_size: 50 } })
     sessions.value = data.sessions || []
     sessionOptions.value = sessions.value.map(s => ({
-      label: `${s.title || s.session_id} (${s.source || '未知'})`,
-      value: s.session_id
+      label: `${s.title || s.id} (${s.source || '未知'})`,
+      value: s.id
     }))
     if (sessionOptions.value.length > 0 && !selectedSession.value) {
       selectedSession.value = sessionOptions.value[0].value
@@ -90,7 +90,7 @@ async function loadMessages() {
   if (!selectedSession.value) return
   loading.value = true
   try {
-    const data = await api.get(`/messages/${selectedSession.value}`, { params: { limit: 100 } })
+    const data = await api.get(`/messages/${selectedSession.value}`, { params: { page: 1, page_size: 100 } })
     messages.value = data.items || []
     await nextTick()
     scrollToBottom()
@@ -107,7 +107,7 @@ async function sendMessage() {
   try {
     await api.post('/messages/send', {
       session_id: selectedSession.value,
-      content: newMessage.value.trim(),
+      message: newMessage.value.trim(),
       is_test: true
     })
     message.success('发送成功')

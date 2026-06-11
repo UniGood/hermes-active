@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 export const messagesApi = {
   // 获取消息列表

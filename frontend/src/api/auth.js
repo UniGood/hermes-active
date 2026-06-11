@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 export const authApi = {
   // 用户登录

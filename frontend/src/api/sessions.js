@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 export const sessionsApi = {
   // 获取 session 列表

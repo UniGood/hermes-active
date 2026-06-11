@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 export const llmApi = {
   // 测试 LLM 连通性

@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 export const configApi = {
   // 获取 LLM 配置

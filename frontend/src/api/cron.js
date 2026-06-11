@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 export const cronApi = {
   // 获取任务列表

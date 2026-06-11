@@ -27,9 +27,9 @@
       <div class="session-list">
         <div
           v-for="session in sessions"
-          :key="session.session_id"
+          :key="session.id"
           class="session-card"
-          @click="goToDetail(session.session_id)"
+          @click="goToDetail(session.id)"
         >
           <div class="session-header">
             <n-tag :type="getPlatformType(session.source)" size="small">
@@ -101,8 +101,8 @@ async function loadSessions() {
   loading.value = true
   try {
     const params = {
-      limit: pageSize,
-      offset: (currentPage.value - 1) * pageSize
+      page: currentPage.value,
+      page_size: pageSize
     }
     if (searchText.value) params.search = searchText.value
     if (platformFilter.value) params.source = platformFilter.value

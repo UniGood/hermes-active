@@ -1,39 +1,11 @@
-import axios from 'axios'
+import api from './http'
 
-const api = axios.create({
-  baseURL: '/api',
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
-
-// 请求拦截器
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
-
-// 响应拦截器
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    if (error.response) {
-      const { status, data } = error.response
-      if (status === 401) {
-        localStorage.removeItem('token')
-        window.location.href = '/login'
-      }
-      return Promise.reject(data || error)
-    }
-    return Promise.reject(error)
-  }
-)
+export { default as api } from './http'
+export { authApi } from './auth'
+export { sessionsApi } from './sessions'
+export { messagesApi } from './messages'
+export { configApi } from './config'
+export { llmApi } from './llm'
+export { cronApi } from './cron'
 
 export default api

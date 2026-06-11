@@ -100,7 +100,7 @@ async function loadMessages() {
   const sessionId = route.params.id
   loading.value = true
   try {
-    const data = await api.get(`/messages/${sessionId}`, { params: { limit: 200 } })
+    const data = await api.get(`/messages/${sessionId}`, { params: { page: 1, page_size: 200 } })
     messages.value = data.items || []
   } catch (e) {
     console.error('加载消息失败:', e)
