@@ -20,6 +20,13 @@
         style="width: 100px"
         @update:value="loadSessions"
       />
+      <n-select
+        v-model:value="statusFilter"
+        :options="statusOptions"
+        placeholder="状态"
+        style="width: 120px"
+        @update:value="loadSessions"
+      />
     </div>
 
     <!-- 会话列表 -->
@@ -71,6 +78,7 @@ const loading = ref(false)
 const sessions = ref([])
 const searchText = ref('')
 const platformFilter = ref(null)
+const statusFilter = ref(null)
 const currentPage = ref(1)
 const pageSize = 20
 const total = ref(0)
@@ -80,6 +88,12 @@ const platformOptions = [
   { label: '微信', value: 'weixin' },
   { label: '飞书', value: 'feishu' },
   { label: 'CLI', value: 'cli' }
+]
+
+const statusOptions = [
+  { label: '全部', value: null },
+  { label: '活跃', value: 'active' },
+  { label: '已结束', value: 'ended' }
 ]
 
 function formatTime(ts) {
@@ -106,6 +120,7 @@ async function loadSessions() {
     }
     if (searchText.value) params.search = searchText.value
     if (platformFilter.value) params.platform = platformFilter.value
+    if (statusFilter.value === 'active') params.active_only = true
 
     const data = await api.get('/sessions', { params })
     sessions.value = data.items || []
@@ -130,6 +145,7 @@ onMounted(loadSessions)
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .session-list {
