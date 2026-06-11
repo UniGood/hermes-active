@@ -31,23 +31,28 @@ class SessionService:
         # 构建查询
         query = sessions_table.select()
 
-        # 只返回活跃 session（按最后消息时间排序，排除僵尸 session）
+        # 只返回活跃 session（按最后消息时间排序）
         if active_only:
             # 用纯 SQL 子查询获取按最后消息时间排序的 session_id
             with state_engine.connect() as conn:
-                active_ids_result = conn.execute(text(
-                    """
+                sql = """
                     SELECT s.id, COALESCE(MAX(m.timestamp), s.started_at) as last_active
                     FROM sessions s
                     LEFT JOIN messages m ON s.id = m.session_id
                     WHERE s.ended_at IS NULL
-                    """ + (" AND s.source = :platform" if platform else "") + 
-                    """
+                """
+                params = {}
+                if platform:
+                    sql += " AND s.source = :platform"
+                    params["platform"] = platform
+                sql += """
                     GROUP BY s.id
                     ORDER BY last_active DESC
-                    LIMIT 1
-                    """
-                ), {"platform": platform, "limit": page_size, "offset": (page - 1) * page_size} if platform else {"limit": page_size, "offset": (page - 1) * page_size})
+                    LIMIT :limit OFFSET :offset
+                """
+                params["limit"] = page_size
+                params["offset"] = (page - 1) * page_size
+                active_ids_result = conn.execute(text(sql), params)
                 active_ids = [row[0] for row in active_ids_result]
             
             if active_ids:
