@@ -72,7 +72,7 @@ function formatContent(content) {
 async function loadSessions() {
   try {
     const data = await api.get('/sessions', { params: { page: 1, page_size: 50 } })
-    sessions.value = data.sessions || []
+    sessions.value = data.items || []
     sessionOptions.value = sessions.value.map(s => ({
       label: `${s.title || s.id} (${s.source || '未知'})`,
       value: s.id

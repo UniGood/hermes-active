@@ -10,7 +10,7 @@
       <div class="session-info">
         <div class="info-item">
           <span class="label">Session ID</span>
-          <span class="value">{{ session.session_id }}</span>
+          <span class="value">{{ session.id }}</span>
         </div>
         <div class="info-item">
           <span class="label">平台</span>
