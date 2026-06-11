@@ -31,9 +31,30 @@ class SessionService:
         # 构建查询
         query = sessions_table.select()
 
-        # 只返回活跃 session
+        # 只返回活跃 session（按最后消息时间排序，最新的在前）
         if active_only:
             query = query.where(sessions_table.c.ended_at.is_(None))
+            # 按最后消息时间排序，排除僵尸 session
+            messages_table = metadata.tables.get('messages')
+            if messages_table is not None:
+                from sqlalchemy import func
+                last_msg_subq = (
+                    select(
+                        messages_table.c.session_id,
+                        func.max(messages_table.c.timestamp).label('last_msg_time')
+                    )
+                    .group_by(messages_table.c.session_id)
+                    .subquery()
+                )
+                query = query.join(
+                    last_msg_subq,
+                    sessions_table.c.id == last_msg_subq.c.session_id
+                )
+                query = query.order_by(last_msg_subq.c.last_msg_time.desc())
+            else:
+                query = query.order_by(sessions_table.c.started_at.desc())
+        else:
+            query = query.order_by(sessions_table.c.started_at.desc())
 
         # 平台筛选
         if platform:
