@@ -105,7 +105,7 @@ async function loadSessions() {
       page_size: pageSize
     }
     if (searchText.value) params.search = searchText.value
-    if (platformFilter.value) params.source = platformFilter.value
+    if (platformFilter.value) params.platform = platformFilter.value
 
     const data = await api.get('/sessions', { params })
     sessions.value = data.items || []

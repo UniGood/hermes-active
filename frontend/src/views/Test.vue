@@ -347,7 +347,7 @@ async function loadSessionList() {
   loadingSessionList.value = true
   try {
     const data = await api.get('/sessions', {
-      params: { source: selectedPlatform.value, page: 1, page_size: 20, active_only: true }
+      params: { platform: selectedPlatform.value, page: 1, page_size: 20, active_only: true }
     })
     sessionOptions.value = (data.items || []).map(s => ({
       label: `${s.title || s.id} (${s.message_count || 0} 条消息)`,
