@@ -21,11 +21,12 @@ async def get_sessions(
     page_size: int = Query(20, ge=1, le=100),
     platform: Optional[str] = None,
     search: Optional[str] = None,
+    active_only: bool = Query(False, description="只返回活跃 session"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
     """获取 session 列表"""
-    result = SessionService.get_sessions(db, page, page_size, platform, search)
+    result = SessionService.get_sessions(db, page, page_size, platform, search, active_only)
     return SessionListResponse(**result)
 
 

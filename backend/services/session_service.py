@@ -17,7 +17,8 @@ class SessionService:
         page: int = 1,
         page_size: int = 20,
         platform: Optional[str] = None,
-        search: Optional[str] = None
+        search: Optional[str] = None,
+        active_only: bool = False
     ) -> Dict[str, Any]:
         """获取 session 列表"""
         metadata = get_state_metadata()
@@ -29,6 +30,10 @@ class SessionService:
 
         # 构建查询
         query = sessions_table.select()
+
+        # 只返回活跃 session
+        if active_only:
+            query = query.where(sessions_table.c.ended_at.is_(None))
 
         # 平台筛选
         if platform:
