@@ -1,7 +1,11 @@
 """
 消息服务
 """
+import sys
+import os
 import time
+import asyncio
+from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
@@ -9,6 +13,85 @@ from sqlalchemy import text
 
 from models.database import get_state_metadata, state_engine, ActiveSession
 from models.active import TaskLog
+
+# 加载 hermes 环境
+sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
+
+# 用于标记写入的格式
+MARKED_FORMAT = "[凯莉主动发送] {timestamp}: {content}"
+UNMARKED_FORMAT = "{content}"
+
+
+def _get_session_user_id(session_id: str) -> Optional[str]:
+    """从 state.db 获取 session 的 user_id"""
+    metadata = get_state_metadata()
+    if 'sessions' not in metadata.tables:
+        return None
+    sessions_table = metadata.tables['sessions']
+    with state_engine.connect() as conn:
+        row = conn.execute(
+            sessions_table.select().where(sessions_table.c.id == session_id)
+        ).first()
+    if row:
+        return row._mapping.get('user_id')
+    return None
+
+
+def _get_session_source(session_id: str) -> Optional[str]:
+    """从 state.db 获取 session 的 platform（source）"""
+    metadata = get_state_metadata()
+    if 'sessions' not in metadata.tables:
+        return None
+    sessions_table = metadata.tables['sessions']
+    with state_engine.connect() as conn:
+        row = conn.execute(
+            sessions_table.select().where(sessions_table.c.id == session_id)
+        ).first()
+    if row:
+        return row._mapping.get('source')
+    return None
+
+
+async def _send_to_weixin(chat_id: str, message: str) -> Dict[str, Any]:
+    """真正发送消息到微信"""
+    try:
+        from gateway.platforms.weixin import send_weixin_direct
+        token = os.environ.get('WEIXIN_TOKEN')
+        account_id = os.environ.get('WEIXIN_ACCOUNT_ID')
+        if not token:
+            return {"success": False, "message": "WEIXIN_TOKEN 未配置"}
+        extra = {"account_id": account_id}
+        result = await send_weixin_direct(
+            extra=extra, token=token, chat_id=chat_id, message=message
+        )
+        if result.get('success'):
+            return {"success": True, "message": "消息已发送到微信"}
+        else:
+            return {"success": False, "message": f"微信发送失败: {result.get('error', '未知错误')}"}
+    except ImportError:
+        return {"success": False, "message": "hermes-agent 模块未安装"}
+    except Exception as e:
+        return {"success": False, "message": f"微信发送异常: {str(e)}"}
+
+
+def _write_to_state_db(session_id: str, content: str) -> bool:
+    """写入消息到 state.db"""
+    try:
+        metadata = get_state_metadata()
+        if 'messages' not in metadata.tables:
+            return False
+        messages_table = metadata.tables['messages']
+        with state_engine.connect() as conn:
+            conn.execute(messages_table.insert().values(
+                session_id=session_id,
+                role="assistant",
+                content=content,
+                timestamp=time.time()
+            ))
+            conn.commit()
+        return True
+    except Exception:
+        return False
 
 
 class MessageService:
@@ -86,9 +169,19 @@ class MessageService:
     async def send_message(
         session_id: str,
         message: str,
-        platform: str = "weixin"
+        platform: str = "weixin",
+        write_to_db: bool = True,
+        with_mark: bool = False
     ) -> Dict[str, Any]:
-        """发送消息（上下文注入到 state.db）"""
+        """发送消息到微信并写入 state.db
+
+        Args:
+            session_id: 目标 session ID
+            message: 消息内容
+            platform: 目标平台（默认 weixin）
+            write_to_db: 是否写入 state.db（默认 True）
+            with_mark: 是否带 [凯莉主动发送] 标记（默认 False）
+        """
         start_time = time.time()
         try:
             # 验证 session 存在
@@ -105,26 +198,54 @@ class MessageService:
             if not session_row:
                 return {"success": False, "message": f"Session {session_id} 不存在"}
 
-            # 写入消息到 state.db（上下文注入）
-            if 'messages' in metadata.tables:
-                messages_table = metadata.tables['messages']
-                with state_engine.connect() as conn:
-                    conn.execute(messages_table.insert().values(
-                        session_id=session_id,
-                        role="assistant",
-                        content=message,
-                        timestamp=time.time()
-                    ))
-                    conn.commit()
+            user_id = session_row._mapping.get('user_id')
+            source = session_row._mapping.get('source')
+
+            # 1. 真正发送消息到平台
+            send_result = None
+            if platform == "weixin" and user_id:
+                send_result = await _send_to_weixin(user_id, message)
+
+            # 2. 写入 state.db（带标记或不带标记）
+            db_content = message
+            if write_to_db:
+                if with_mark:
+                    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    db_content = MARKED_FORMAT.format(timestamp=now_str, content=message)
+                _write_to_state_db(session_id, db_content)
 
             duration = round(time.time() - start_time, 2)
-            return {
-                "success": True,
-                "message": "消息发送成功",
-                "session_id": session_id,
-                "platform": platform,
-                "duration": duration
-            }
+
+            if send_result and send_result.get("success"):
+                return {
+                    "success": True,
+                    "message": f"消息已发送到{platform}",
+                    "session_id": session_id,
+                    "platform": platform,
+                    "db_content": db_content if write_to_db else None,
+                    "with_mark": with_mark,
+                    "duration": duration
+                }
+            elif send_result:
+                return {
+                    "success": False,
+                    "message": send_result.get("message", "发送失败"),
+                    "session_id": session_id,
+                    "platform": platform,
+                    "db_content": db_content if write_to_db else None,
+                    "with_mark": with_mark,
+                    "duration": duration
+                }
+            else:
+                return {
+                    "success": write_to_db,
+                    "message": "仅写入 DB（无平台发送）" if write_to_db else "未写入也未发送",
+                    "session_id": session_id,
+                    "platform": platform,
+                    "db_content": db_content if write_to_db else None,
+                    "with_mark": with_mark,
+                    "duration": duration
+                }
         except Exception as e:
             return {"success": False, "message": f"消息发送失败: {str(e)}"}
 
@@ -134,7 +255,9 @@ class MessageService:
         message: str,
         use_llm: bool = False,
         llm_config: Optional[Dict[str, Any]] = None,
-        prompts_config: Optional[Dict[str, str]] = None
+        prompts_config: Optional[Dict[str, str]] = None,
+        write_to_db: bool = True,
+        with_mark: bool = True
     ) -> Dict[str, Any]:
         """发送主动消息"""
         start_time = time.time()
@@ -172,11 +295,13 @@ class MessageService:
                         "message": f"LLM 生成消息失败: {llm_result.get('message', '未知错误')}"
                     }
 
-            # 发送消息（上下文注入）
+            # 发送消息
             send_result = await MessageService.send_message(
                 session_id=session_id,
                 message=final_message,
-                platform="weixin"
+                platform="weixin",
+                write_to_db=write_to_db,
+                with_mark=with_mark
             )
 
             duration = round(time.time() - start_time, 2)
