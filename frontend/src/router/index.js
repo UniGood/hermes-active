@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../store/auth'
 
 const routes = [
   {
@@ -63,11 +62,11 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
+  const token = localStorage.getItem('token')
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  if (to.meta.requiresAuth && !token) {
     next('/login')
-  } else if (to.path === '/login' && authStore.isAuthenticated) {
+  } else if (to.path === '/login' && token) {
     next('/')
   } else {
     next()
