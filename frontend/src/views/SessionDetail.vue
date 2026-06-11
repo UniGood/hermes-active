@@ -41,16 +41,30 @@
 
     <!-- 消息历史 -->
     <n-card title="消息历史" style="margin-top: 16px">
-      <n-space style="margin-bottom: 12px">
-        <n-button @click="loadMessages" :loading="loading" size="small">刷新</n-button>
-        <n-switch v-model:value="showAllFields" />
-        <span style="font-size: 13px; color: #666">显示全部字段</span>
-      </n-space>
+      <div class="toolbar">
+        <n-input
+          v-model:value="searchText"
+          placeholder="搜索消息内容..."
+          clearable
+          size="small"
+          style="max-width: 300px"
+        >
+          <template #prefix>
+            <n-icon><SearchOutline /></n-icon>
+          </template>
+        </n-input>
+        <n-checkbox v-model:checked="showToolMessages">
+          显示工具消息
+        </n-checkbox>
+        <n-checkbox v-model:checked="showAllFields">
+          显示全部字段
+        </n-checkbox>
+      </div>
 
       <n-spin :show="loading">
         <div class="message-list">
           <div
-            v-for="msg in messages"
+            v-for="msg in filteredMessages"
             :key="msg.id"
             class="message-item"
             :class="msg.role"
@@ -83,10 +97,14 @@
                         <n-text code style="font-size: 11px">{{ JSON.stringify(value) }}</n-text>
                       </template>
                       <template v-else-if="key === 'content'">
-                        <n-text style="white-space: pre-wrap; word-break: break-all">{{ String(value).substring(0, 500) }}{{ String(value).length > 500 ? '...' : '' }}</n-text>
+                        <n-text style="white-space: pre-wrap; word-break: break-all">
+                          {{ String(value).substring(0, 500) }}{{ String(value).length > 500 ? '...' : '' }}
+                        </n-text>
                       </template>
                       <template v-else-if="key === 'reasoning' || key === 'reasoning_content'">
-                        <n-text style="white-space: pre-wrap; word-break: break-all; font-size: 11px; color: #999">{{ String(value).substring(0, 300) }}{{ String(value).length > 300 ? '...' : '' }}</n-text>
+                        <n-text style="white-space: pre-wrap; word-break: break-all; font-size: 11px; color: #999">
+                          {{ String(value).substring(0, 300) }}{{ String(value).length > 300 ? '...' : '' }}
+                        </n-text>
                       </template>
                       <template v-else>
                         <n-text>{{ value }}</n-text>
@@ -107,7 +125,7 @@
               <span v-if="msg.observed">Observed: {{ msg.observed }}</span>
             </div>
           </div>
-          <n-empty v-if="!loading && messages.length === 0" description="暂无消息" />
+          <n-empty v-if="!loading && filteredMessages.length === 0" description="暂无消息" />
         </div>
       </n-spin>
     </n-card>
@@ -115,8 +133,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { SearchOutline } from '@vicons/ionicons5'
 import api from '../api'
 
 const route = useRoute()
@@ -125,6 +144,30 @@ const loading = ref(false)
 const session = ref(null)
 const messages = ref([])
 const showAllFields = ref(true)
+const showToolMessages = ref(false)
+const searchText = ref('')
+
+const filteredMessages = computed(() => {
+  let result = messages.value
+
+  // 过滤 tool 消息
+  if (!showToolMessages.value) {
+    result = result.filter(msg => msg.role !== 'tool')
+  }
+
+  // 关键词搜索
+  if (searchText.value) {
+    const keyword = searchText.value.toLowerCase()
+    result = result.filter(msg => {
+      const content = (msg.content || '').toLowerCase()
+      const toolName = (msg.tool_name || '').toLowerCase()
+      const reasoning = (msg.reasoning_content || '').toLowerCase()
+      return content.includes(keyword) || toolName.includes(keyword) || reasoning.includes(keyword)
+    })
+  }
+
+  return result
+})
 
 function formatTime(ts) {
   if (!ts) return ''
@@ -170,7 +213,7 @@ async function loadMessages() {
   const sessionId = route.params.id
   loading.value = true
   try {
-    const data = await api.get(`/messages/${sessionId}`, { params: { page: 1, page_size: 200 } })
+    const data = await api.get(`/messages/${sessionId}`, { params: { page: 1, page_size: 500 } })
     messages.value = data.items || []
   } catch (e) {
     console.error('加载消息失败:', e)
@@ -212,6 +255,14 @@ onMounted(() => {
   font-size: 14px;
   color: #333;
   word-break: break-all;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .message-list {
