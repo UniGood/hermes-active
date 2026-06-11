@@ -22,6 +22,22 @@
       <n-button @click="loadLatestSession" style="margin-top: 12px" size="small">刷新</n-button>
     </n-card>
 
+    <!-- 生成主动消息 -->
+    <n-card title="生成主动消息" style="margin-bottom: 16px">
+      <n-space>
+        <n-button @click="generateMessage" :loading="generating" :disabled="!latestSession" type="primary">
+          生成消息
+        </n-button>
+      </n-space>
+      <div v-if="generatedMessage" class="generated-message">
+        <div class="generated-label">生成结果：</div>
+        <div class="generated-content">{{ generatedMessage }}</div>
+        <n-button size="small" @click="testMessage = generatedMessage" style="margin-top: 8px">
+          填入发送框
+        </n-button>
+      </div>
+    </n-card>
+
     <!-- 消息发送测试 -->
     <n-card title="消息发送测试" style="margin-bottom: 16px">
       <n-input
@@ -50,6 +66,15 @@
       </div>
     </n-card>
 
+    <!-- 一键测试 -->
+    <n-card title="一键测试" style="margin-bottom: 16px">
+      <n-space>
+        <n-button type="warning" @click="fullTest" :loading="fullTesting" :disabled="!latestSession">
+          生成 + 发送 + 写入DB
+        </n-button>
+      </n-space>
+    </n-card>
+
     <!-- 上下文读取测试 -->
     <n-card title="上下文读取测试" style="margin-bottom: 16px">
       <n-space>
@@ -64,29 +89,6 @@
           <span class="context-content">{{ truncate(msg.content, 100) }}</span>
         </div>
       </div>
-    </n-card>
-
-    <!-- LLM 生成测试 -->
-    <n-card title="LLM 生成测试" style="margin-bottom: 16px">
-      <n-button @click="testGenerate" :loading="generating" :disabled="!latestSession">
-        生成主动消息
-      </n-button>
-      <div v-if="generatedMessage" class="generated-message">
-        <div class="generated-label">生成结果：</div>
-        <div class="generated-content">{{ generatedMessage }}</div>
-        <n-button size="small" @click="testMessage = generatedMessage" style="margin-top: 8px">
-          填入发送框
-        </n-button>
-      </div>
-    </n-card>
-
-    <!-- 完整流程测试 -->
-    <n-card title="完整流程测试" style="margin-bottom: 16px">
-      <n-space>
-        <n-button type="warning" @click="fullTest" :loading="fullTesting" :disabled="!latestSession">
-          一键测试（生成+发送+写入DB）
-        </n-button>
-      </n-space>
     </n-card>
 
     <!-- 执行日志 -->
@@ -148,19 +150,21 @@ async function loadLatestSession() {
   }
 }
 
-async function testContext() {
+async function generateMessage() {
   if (!latestSession.value) return
-  loadingContext.value = true
+  generating.value = true
   try {
-    const data = await api.get(`/sessions/${latestSession.value.id}/context`, {
-      params: { limit: contextLimit.value }
+    const data = await api.post('/messages/generate', {
+      session_id: latestSession.value.id
     })
-    contextMessages.value = Array.isArray(data) ? data : (data?.items || [])
-    addLog('success', `读取到 ${contextMessages.value.length} 条上下文消息`)
+    generatedMessage.value = data?.message || ''
+    addLog('success', `生成消息: ${generatedMessage.value}`)
+    message.success('生成成功')
   } catch (e) {
-    addLog('error', '读取上下文失败: ' + (e?.detail || '未知错误'))
+    addLog('error', '生成失败: ' + (e?.detail || '未知错误'))
+    message.error('生成失败')
   } finally {
-    loadingContext.value = false
+    generating.value = false
   }
 }
 
@@ -185,26 +189,6 @@ async function sendMessage() {
   }
 }
 
-async function testGenerate() {
-  if (!latestSession.value) return
-  generating.value = true
-  try {
-    const data = await api.post('/messages/send-proactive', {
-      session_id: latestSession.value.id,
-      use_llm: true,
-      message: '',
-      write_to_db: false,
-      with_mark: false
-    })
-    generatedMessage.value = data?.detail?.generated_message || data?.message || ''
-    addLog('success', `LLM 生成: ${generatedMessage.value}`)
-  } catch (e) {
-    addLog('error', '生成失败: ' + (e?.detail || '未知错误'))
-  } finally {
-    generating.value = false
-  }
-}
-
 async function fullTest() {
   if (!latestSession.value) return
   fullTesting.value = true
@@ -224,6 +208,22 @@ async function fullTest() {
     message.error('完整流程测试失败')
   } finally {
     fullTesting.value = false
+  }
+}
+
+async function testContext() {
+  if (!latestSession.value) return
+  loadingContext.value = true
+  try {
+    const data = await api.get(`/sessions/${latestSession.value.id}/context`, {
+      params: { limit: contextLimit.value }
+    })
+    contextMessages.value = Array.isArray(data) ? data : (data?.items || [])
+    addLog('success', `读取到 ${contextMessages.value.length} 条上下文消息`)
+  } catch (e) {
+    addLog('error', '读取上下文失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    loadingContext.value = false
   }
 }
 
@@ -263,6 +263,25 @@ onMounted(loadLatestSession)
   margin-top: 12px;
 }
 
+.generated-message {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f0f9eb;
+  border-radius: 8px;
+}
+
+.generated-label {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.generated-content {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+}
+
 .context-preview {
   margin-top: 12px;
   max-height: 300px;
@@ -292,25 +311,6 @@ onMounted(loadLatestSession)
 
 .context-content {
   color: #666;
-}
-
-.generated-message {
-  margin-top: 12px;
-  padding: 12px;
-  background: #f0f9eb;
-  border-radius: 8px;
-}
-
-.generated-label {
-  font-size: 12px;
-  color: #999;
-  margin-bottom: 4px;
-}
-
-.generated-content {
-  font-size: 14px;
-  color: #333;
-  line-height: 1.6;
 }
 
 .log-list {
