@@ -22,11 +22,12 @@ async def get_sessions(
     platform: Optional[str] = None,
     search: Optional[str] = None,
     active_only: bool = Query(False, description="只返回活跃 session"),
+    filter_zombie: bool = Query(False, description="过滤僵尸 session，只返回每个平台最新的一条"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
     """获取 session 列表"""
-    result = SessionService.get_sessions(db, page, page_size, platform, search, active_only)
+    result = SessionService.get_sessions(db, page, page_size, platform, search, active_only, filter_zombie)
     return SessionListResponse(**result)
 
 

@@ -34,31 +34,6 @@
       </n-form>
     </n-card>
 
-    <!-- 提示词配置 -->
-    <n-card title="提示词配置">
-      <n-form label-placement="left" label-width="80">
-        <n-form-item label="系统提示词">
-          <n-input
-            v-model:value="prompts.system"
-            type="textarea"
-            :autosize="{ minRows: 4, maxRows: 8 }"
-            placeholder="配置主动消息的系统提示词"
-          />
-        </n-form-item>
-        <n-form-item label="生成提示词">
-          <n-input
-            v-model:value="prompts.generation"
-            type="textarea"
-            :autosize="{ minRows: 4, maxRows: 8 }"
-            placeholder="配置 LLM 生成消息的提示词（使用 {context} 作为上下文占位符）"
-          />
-        </n-form-item>
-        <n-form-item>
-          <n-button type="primary" @click="savePrompts" :loading="saving">保存提示词</n-button>
-        </n-form-item>
-      </n-form>
-    </n-card>
-
     <!-- 修改密码 -->
     <n-card title="修改密码" style="margin-top: 16px">
       <n-form label-placement="left" label-width="80">
@@ -94,11 +69,6 @@ const llmConfig = ref({
   base_url: ''
 })
 
-const prompts = ref({
-  system: '',
-  generation: ''
-})
-
 const passwordForm = ref({
   old_password: '',
   new_password: ''
@@ -110,13 +80,6 @@ async function loadConfig() {
     llmConfig.value = data
   } catch (e) {
     console.error('加载 LLM 配置失败:', e)
-  }
-
-  try {
-    const data = await api.get('/config/prompts')
-    prompts.value = data
-  } catch (e) {
-    console.error('加载提示词配置失败:', e)
   }
 }
 
@@ -145,18 +108,6 @@ async function testLLM() {
     message.error('测试失败: ' + (e?.detail || '未知错误'))
   } finally {
     testing.value = false
-  }
-}
-
-async function savePrompts() {
-  saving.value = true
-  try {
-    await api.put('/config/prompts', prompts.value)
-    message.success('提示词已保存')
-  } catch (e) {
-    message.error('保存失败: ' + (e?.detail || '未知错误'))
-  } finally {
-    saving.value = false
   }
 }
 

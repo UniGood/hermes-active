@@ -2,6 +2,7 @@
 Hermes Active - 主动会话系统后端
 """
 import sys
+import logging
 from pathlib import Path
 
 # 加载 hermes 环境变量
@@ -14,6 +15,21 @@ sys.path.insert(0, str(Path.home() / ".hermes" / "hermes-agent"))
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent))
 
+# 配置日志输出到文件
+LOG_DIR = Path(__file__).parent.parent / "data"
+LOG_DIR.mkdir(exist_ok=True)
+LOG_FILE = LOG_DIR / "backend.log"
+
+# 设置日志：同时输出到文件和控制台
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +37,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import SERVER_HOST, SERVER_PORT
 from models.database import init_active_db, ActiveSession
 from services.auth_service import AuthService
+from services.scheduler_service import start_scheduler, stop_scheduler
 from routers import (
     auth_router,
     sessions_router,
@@ -31,7 +48,8 @@ from routers import (
     task_logs_router,
     stats_router,
     test_router,
-    hindsight_router
+    hindsight_router,
+    system_logs_router
 )
 
 
@@ -48,8 +66,15 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
+    # 启动定时任务调度器
+    print("正在启动定时任务调度器...")
+    start_scheduler()
+
     print("后端服务启动完成")
     yield
+
+    # 停止调度器
+    stop_scheduler()
     print("后端服务关闭")
 
 
@@ -80,6 +105,7 @@ app.include_router(task_logs_router)
 app.include_router(stats_router)
 app.include_router(test_router)
 app.include_router(hindsight_router)
+app.include_router(system_logs_router)
 
 
 @app.get("/health")

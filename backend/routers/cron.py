@@ -14,6 +14,7 @@ from services.config_service import ConfigService
 from services.llm_service import LLMService
 from services.message_service import MessageService
 from services.session_service import SessionService
+from services.scheduler_service import sync_jobs_from_db
 from middleware.auth import get_current_user
 
 router = APIRouter(prefix="/api/cron", tags=["定时任务"])
@@ -59,6 +60,9 @@ async def create_cron_job(
     jobs.append(new_job)
     ConfigService.save_cron_jobs(db, jobs)
 
+    # 同步到调度器
+    sync_jobs_from_db()
+
     return SuccessResponse(message="任务创建成功")
 
 
@@ -96,6 +100,8 @@ async def update_cron_job(
                 job["mark_format"] = request.mark_format
 
             ConfigService.save_cron_jobs(db, jobs)
+            # 同步到调度器
+            sync_jobs_from_db()
             return SuccessResponse(message="任务更新成功")
 
     raise HTTPException(status_code=404, detail="任务不存在")
@@ -111,6 +117,9 @@ async def delete_cron_job(
     jobs = ConfigService.get_cron_jobs(db)
     jobs = [job for job in jobs if job["id"] != job_id]
     ConfigService.save_cron_jobs(db, jobs)
+
+    # 同步到调度器
+    sync_jobs_from_db()
 
     return SuccessResponse(message="任务删除成功")
 
@@ -212,7 +221,7 @@ async def run_cron_job(
         send_result = await MessageService.send_message(
             session_id=session_id,
             message=generated_message,
-            platform="weixin",
+            platform=platform,
             write_to_db=write_to_db,
             with_mark=with_mark,
             mark_format=mark_format
@@ -270,6 +279,9 @@ async def toggle_cron_job(
         if job["id"] == job_id:
             job["enabled"] = not job["enabled"]
             ConfigService.save_cron_jobs(db, jobs)
+
+            # 同步到调度器
+            sync_jobs_from_db()
 
             status = "启用" if job["enabled"] else "暂停"
             return SuccessResponse(message=f"任务已{status}")

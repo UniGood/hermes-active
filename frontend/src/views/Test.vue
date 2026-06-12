@@ -110,7 +110,9 @@
           <div class="tab-content">
             <n-space vertical>
               <n-space align="center">
-                <n-input v-model:value="reflectQuery" placeholder="输入问题/查询" style="width: 400px" />
+                <n-input v-model:value="reflectQuery" placeholder="输入问题/查询" style="width: 300px" />
+                <n-input-number v-model:value="reflectLimit" :min="1" :max="50" style="width: 100px" />
+                <span style="color: #999; font-size: 13px">条记忆</span>
                 <n-button @click="doReflect" :loading="loadingReflect" type="primary">Reflect</n-button>
               </n-space>
               <div v-if="reflectResult" class="reflect-result">
@@ -256,6 +258,7 @@ const recallQueried = ref(false)
 
 // Hindsight Reflect
 const reflectQuery = ref('')
+const reflectLimit = ref(10)
 const reflectResult = ref('')
 const reflectQueried = ref(false)
 
@@ -435,7 +438,7 @@ async function doReflect() {
   reflectQueried.value = true
   try {
     const data = await api.post('/hindsight/reflect', null, {
-      params: { query: reflectQuery.value.trim() }
+      params: { query: reflectQuery.value.trim(), limit: reflectLimit.value }
     })
     if (data.success) {
       reflectResult.value = data.reflection || ''
@@ -485,6 +488,7 @@ async function sendMessage() {
     const result = await api.post('/messages/send', {
       session_id: selectedSessionId.value,
       message: testMessage.value.trim(),
+      platform: selectedPlatform.value,
       write_to_db: writeToDB.value,
       with_mark: withMark.value,
       mark_format: markFormat.value
@@ -523,6 +527,7 @@ async function fullTest() {
     const sendResult = await api.post('/messages/send', {
       session_id: selectedSessionId.value,
       message: generated,
+      platform: selectedPlatform.value,
       write_to_db: true,
       with_mark: true,
       mark_format: markFormat.value

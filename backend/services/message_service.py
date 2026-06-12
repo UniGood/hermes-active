@@ -73,6 +73,37 @@ async def _send_to_weixin(chat_id: str, message: str) -> Dict[str, Any]:
         return {"success": False, "message": f"微信发送异常: {str(e)}"}
 
 
+async def _send_to_feishu(chat_id: str, message: str) -> Dict[str, Any]:
+    """真正发送消息到飞书"""
+    try:
+        from gateway.platforms.feishu import FeishuAdapter, FEISHU_AVAILABLE
+        if not FEISHU_AVAILABLE:
+            return {"success": False, "message": "飞书依赖未安装，请运行: pip install 'hermes-agent[feishu]'"}
+        from gateway.platforms.feishu import FEISHU_DOMAIN, LARK_DOMAIN
+        from gateway.config import PlatformConfig
+
+        app_id = os.environ.get('FEISHU_APP_ID')
+        app_secret = os.environ.get('FEISHU_APP_SECRET')
+        if not app_id or not app_secret:
+            return {"success": False, "message": "FEISHU_APP_ID 或 FEISHU_APP_SECRET 未配置"}
+
+        extra = {"app_id": app_id, "app_secret": app_secret}
+        pconfig = PlatformConfig(extra=extra)
+        adapter = FeishuAdapter(pconfig)
+        domain = FEISHU_DOMAIN if getattr(adapter, "_domain_name", "feishu") != "lark" else LARK_DOMAIN
+        adapter._client = adapter._build_lark_client(domain)
+
+        result = await adapter.send(chat_id, message)
+        if result.success:
+            return {"success": True, "message": "消息已发送到飞书"}
+        else:
+            return {"success": False, "message": f"飞书发送失败: {result.error}"}
+    except ImportError:
+        return {"success": False, "message": "hermes-agent 飞书模块未安装"}
+    except Exception as e:
+        return {"success": False, "message": f"飞书发送异常: {str(e)}"}
+
+
 def _write_to_state_db(session_id: str, content: str) -> bool:
     """写入消息到 state.db"""
     try:
@@ -220,6 +251,8 @@ class MessageService:
             send_result = None
             if platform == "weixin" and user_id:
                 send_result = await _send_to_weixin(user_id, message)
+            elif platform == "feishu" and user_id:
+                send_result = await _send_to_feishu(user_id, message)
 
             # 2. 写入 state.db（带标记或不带标记）
             db_content = message
@@ -297,6 +330,7 @@ class MessageService:
     async def send_proactive_message(
         session_id: str,
         message: str,
+        platform: str = "weixin",
         use_llm: bool = False,
         llm_config: Optional[Dict[str, Any]] = None,
         prompts_config: Optional[Dict[str, str]] = None,
@@ -357,7 +391,7 @@ class MessageService:
             send_result = await MessageService.send_message(
                 session_id=session_id,
                 message=final_message,
-                platform="weixin",
+                platform=platform,
                 write_to_db=write_to_db,
                 with_mark=with_mark,
                 mark_format=mark_format

@@ -47,6 +47,11 @@ const routes = [
         component: () => import('../views/TaskLogs.vue')
       },
       {
+        path: 'system-logs',
+        name: 'SystemLogs',
+        component: () => import('../views/SystemLogs.vue')
+      },
+      {
         path: 'test',
         name: 'Test',
         component: () => import('../views/Test.vue')

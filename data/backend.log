@@ -1,0 +1,22 @@
+2026-06-12 09:53:36,847 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 09:53:36,847 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 09:53:36,849 [INFO] apscheduler.scheduler: Added job "1" to job store "default"
+2026-06-12 09:53:36,849 [INFO] hermes.scheduler: 添加任务: 1 (6c1fc9fa) -> * * * * *
+2026-06-12 09:53:36,849 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 09:54:00,000 [INFO] apscheduler.executors.default: Running job "1 (trigger: cron[month='*', day='*', day_of_week='*', hour='*', minute='*'], next run at: 2026-06-12 09:55:00 CST)" (scheduled at 2026-06-12 09:54:00+08:00)
+2026-06-12 09:54:00,001 [INFO] hermes.scheduler: 开始执行任务: 1 (6c1fc9fa)
+2026-06-12 09:54:08,121 [INFO] httpx: HTTP Request: POST https://api.xiaomimimo.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-12 09:54:08,382 [INFO] gateway.platforms.weixin: weixin: restored 1 context token(s) for 22714e28
+2026-06-12 09:54:08,420 [INFO] hermes.scheduler: 任务 1 运行成功，耗时 8.41s
+2026-06-12 09:54:08,424 [INFO] apscheduler.executors.default: Job "1 (trigger: cron[month='*', day='*', day_of_week='*', hour='*', minute='*'], next run at: 2026-06-12 09:55:00 CST)" executed successfully
+2026-06-12 09:54:36,850 [INFO] apscheduler.executors.default: Running job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-12 09:54:36 CST)" (scheduled at 2026-06-12 09:54:36.849513+08:00)
+2026-06-12 09:54:36,851 [INFO] hermes.scheduler: 更新任务调度: 1 (6c1fc9fa) -> * * * * *
+2026-06-12 09:54:36,851 [INFO] apscheduler.scheduler: Removed job _sync_jobs
+2026-06-12 09:54:36,852 [INFO] hermes.scheduler: 移除已删除任务: _sync_jobs
+2026-06-12 09:54:36,852 [INFO] apscheduler.executors.default: Job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-12 09:55:36 CST)" executed successfully
+2026-06-12 09:55:00,001 [INFO] apscheduler.executors.default: Running job "1 (trigger: cron[month='*', day='*', day_of_week='*', hour='*', minute='*'], next run at: 2026-06-12 09:56:00 CST)" (scheduled at 2026-06-12 09:55:00+08:00)
+2026-06-12 09:55:00,004 [INFO] hermes.scheduler: 开始执行任务: 1 (6c1fc9fa)
+2026-06-12 09:55:09,544 [INFO] httpx: HTTP Request: POST https://api.xiaomimimo.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-12 09:55:09,565 [INFO] gateway.platforms.weixin: weixin: restored 1 context token(s) for 22714e28
+2026-06-12 09:55:09,915 [INFO] hermes.scheduler: 任务 1 运行成功，耗时 9.91s
+2026-06-12 09:55:09,918 [INFO] apscheduler.executors.default: Job "1 (trigger: cron[month='*', day='*', day_of_week='*', hour='*', minute='*'], next run at: 2026-06-12 09:56:00 CST)" executed successfully

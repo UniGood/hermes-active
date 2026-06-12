@@ -19,6 +19,7 @@ router = APIRouter(prefix="/api/messages", tags=["messages"])
 class SendMessageRequest(BaseModel):
     session_id: str
     message: str
+    platform: str = "weixin"
     write_to_db: bool = True
     with_mark: bool = False
     mark_format: str = DEFAULT_MARK_FORMAT
@@ -27,6 +28,7 @@ class SendMessageRequest(BaseModel):
 class SendProactiveRequest(BaseModel):
     session_id: str
     message: str = ""
+    platform: str = "weixin"
     use_llm: bool = False
     write_to_db: bool = True
     with_mark: bool = True
@@ -174,11 +176,11 @@ async def send_message(
     request: SendMessageRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """发送消息到微信（真正发送 + 写入 state.db）"""
+    """发送消息到指定平台（真正发送 + 写入 state.db）"""
     result = await MessageService.send_message(
         session_id=request.session_id,
         message=request.message,
-        platform="weixin",
+        platform=request.platform,
         write_to_db=request.write_to_db,
         with_mark=request.with_mark,
         mark_format=request.mark_format
@@ -202,6 +204,7 @@ async def send_proactive_message(
     result = await MessageService.send_proactive_message(
         session_id=request.session_id,
         message=request.message,
+        platform=request.platform,
         use_llm=request.use_llm,
         llm_config=llm_config,
         prompts_config=prompts_config,

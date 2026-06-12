@@ -11,6 +11,7 @@ from .task_logs import router as task_logs_router
 from .test import router as test_router
 from .stats import router as stats_router
 from .hindsight import router as hindsight_router
+from .system_logs import router as system_logs_router
 
 __all__ = [
     "auth_router",
@@ -22,5 +23,6 @@ __all__ = [
     "task_logs_router",
     "test_router",
     "stats_router",
-    "hindsight_router"
+    "hindsight_router",
+    "system_logs_router"
 ]

@@ -55,6 +55,7 @@ async def hindsight_recall(
 @router.post("/reflect")
 async def hindsight_reflect(
     query: str = Query(..., description="问题/查询"),
+    limit: int = Query(10, description="考虑的记忆数量"),
     current_user: User = Depends(get_current_user)
 ):
     """从 Hindsight reflect 综合分析"""
@@ -62,7 +63,7 @@ async def hindsight_reflect(
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
                 f"{HINDSIGHT_BASE_URL}/v1/default/banks/{HINDSIGHT_BANK_ID}/reflect",
-                json={"query": query}
+                json={"query": query, "limit": limit}
             )
             if response.status_code == 200:
                 data = response.json()
