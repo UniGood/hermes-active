@@ -116,9 +116,10 @@ async def get_session_messages(
 async def get_session_context(
     session_id: str,
     limit: int = Query(50, ge=1, le=200),
+    include_tool: bool = Query(False, description="是否包含 tool 消息"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
     """获取 session 上下文"""
-    messages = SessionService.get_session_context(db, session_id, limit)
+    messages = SessionService.get_session_context(db, session_id, limit, include_tool)
     return [MessageInfo(**msg) for msg in messages]

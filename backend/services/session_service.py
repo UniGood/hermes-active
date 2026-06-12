@@ -207,7 +207,7 @@ class SessionService:
         return None
 
     @staticmethod
-    def get_session_context(db: Session, session_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_session_context(db: Session, session_id: str, limit: int = 50, include_tool: bool = False) -> List[Dict[str, Any]]:
         """获取 session 上下文（消息历史）"""
         metadata = get_state_metadata()
 
@@ -215,9 +215,17 @@ class SessionService:
             return []
 
         messages_table = metadata.tables['messages']
+
+        # 构建查询条件
+        conditions = [messages_table.c.session_id == session_id]
+        if not include_tool:
+            conditions.append(messages_table.c.role != 'tool')
+
+        # 使用子查询先过滤再取 limit 条
+        from sqlalchemy import and_
         query = (
             messages_table.select()
-            .where(messages_table.c.session_id == session_id)
+            .where(and_(*conditions))
             .order_by(messages_table.c.timestamp.desc())
             .limit(limit)
         )

@@ -345,7 +345,7 @@
             </div>
             <div class="context-messages">
               <div v-for="(msg, idx) in previewData.context_data.session_messages" :key="idx" class="context-msg">
-                <span class="context-msg-role" :class="msg.role">{{ msg.role === 'user' ? '用户' : '助手' }}:</span>
+                <span class="context-msg-role" :class="msg.role">{{ msg.role }}:</span>
                 <span class="context-msg-content">{{ msg.content }}</span>
               </div>
             </div>

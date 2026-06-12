@@ -64,13 +64,14 @@
               </n-button>
               <n-input-number v-model:value="contextLimit" :min="1" :max="50" style="width: 100px" />
               <span style="color: #999; font-size: 13px">条消息</span>
+              <n-checkbox v-model:checked="includeTool">获取tool上下文</n-checkbox>
             </n-space>
             <div v-if="contextMessages.length > 0" class="context-preview">
               <div class="context-header">
                 <span>共 {{ contextMessages.length }} 条上下文</span>
               </div>
               <div v-for="(msg, i) in contextMessages" :key="i" class="context-item">
-                <span class="context-role" :class="msg.role">{{ msg.role === 'user' ? '曹凡' : msg.role === 'assistant' ? '凯莉' : msg.role }}:</span>
+                <span class="context-role" :class="msg.role">{{ msg.role }}:</span>
                 <span class="context-content">{{ truncate(msg.content, 100) }}</span>
               </div>
             </div>
@@ -292,6 +293,7 @@ const activeContextTab = ref('session')
 // Session 上下文
 const contextMessages = ref([])
 const contextLimit = ref(10)
+const includeTool = ref(false)
 
 // Hindsight Recall
 const recallQuery = ref('')
@@ -434,7 +436,7 @@ async function loadSessionContext() {
   loadingContext.value = true
   try {
     const data = await api.get(`/sessions/${selectedSessionId.value}/context`, {
-      params: { limit: contextLimit.value }
+      params: { limit: contextLimit.value, include_tool: includeTool.value }
     })
     contextMessages.value = Array.isArray(data) ? data : (data?.items || [])
     contextSource.value = 'session'
