@@ -2,7 +2,7 @@
 Pydantic 模型定义
 """
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 
 
@@ -103,6 +103,19 @@ class LLMGenerateRequest(BaseModel):
 class PromptsConfig(BaseModel):
     system: str
     generation: str
+
+
+class DefaultPromptsConfig(BaseModel):
+    system_prompt: str = ""
+    user_prompt: str = ""
+    append_soul_md: bool = True
+
+
+class PreviewPromptRequest(BaseModel):
+    system_prompt: str = ""
+    user_prompt: str = ""
+    append_soul_md: bool = True
+    context_config: Optional[Dict[str, Any]] = None
 
 
 # ============ 定时任务相关 ============

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from models.database import get_active_db
 from models.active import User, Config
-from models.schemas import LLMConfig, PromptsConfig, SuccessResponse
+from models.schemas import LLMConfig, PromptsConfig, DefaultPromptsConfig, SuccessResponse
 from services.config_service import ConfigService
 from middleware.auth import get_current_user
 
@@ -119,6 +119,37 @@ async def get_prompt_templates(
 ):
     """获取提示词模板"""
     return ConfigService.get_prompt_templates()
+
+
+# ============ 默认提示词配置 ============
+
+@router.get("/default-prompts", response_model=DefaultPromptsConfig)
+async def get_default_prompts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
+):
+    """获取默认提示词配置"""
+    system_prompt = ConfigService.get_config(db, "default_system_prompt") or ""
+    user_prompt = ConfigService.get_config(db, "default_user_prompt") or ""
+    append_soul_md = ConfigService.get_config(db, "default_append_soul_md")
+    return DefaultPromptsConfig(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        append_soul_md=append_soul_md != "false"  # 默认 true
+    )
+
+
+@router.put("/default-prompts", response_model=SuccessResponse)
+async def update_default_prompts(
+    prompts: DefaultPromptsConfig,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
+):
+    """更新默认提示词配置"""
+    ConfigService.set_config(db, "default_system_prompt", prompts.system_prompt, "默认系统提示词")
+    ConfigService.set_config(db, "default_user_prompt", prompts.user_prompt, "默认用户提示词")
+    ConfigService.set_config(db, "default_append_soul_md", str(prompts.append_soul_md).lower(), "默认是否拼接 soul.md")
+    return SuccessResponse(message="默认提示词配置已保存")
 
 
 # ============ Hermes 文件 ============

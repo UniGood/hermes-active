@@ -148,6 +148,49 @@
             填入发送框
           </n-button>
         </div>
+        <!-- 完整提示词折叠面板 -->
+        <n-collapse v-if="generatedMessage && promptPreview" style="margin-top: 12px">
+          <n-collapse-item title="查看完整提示词" name="prompt-preview">
+            <div class="prompt-preview-section">
+              <div class="prompt-section">
+                <div class="prompt-label">系统提示词：</div>
+                <n-input
+                  :value="promptPreview.system_prompt"
+                  type="textarea"
+                  :autosize="{ minRows: 2, maxRows: 8 }"
+                  readonly
+                />
+              </div>
+              <div class="prompt-section">
+                <div class="prompt-label">用户提示词模板：</div>
+                <n-input
+                  :value="promptPreview.user_prompt_template"
+                  type="textarea"
+                  :autosize="{ minRows: 2, maxRows: 5 }"
+                  readonly
+                />
+              </div>
+              <div class="prompt-section">
+                <div class="prompt-label">实际上下文内容：</div>
+                <n-input
+                  :value="promptPreview.context_content"
+                  type="textarea"
+                  :autosize="{ minRows: 3, maxRows: 10 }"
+                  readonly
+                />
+              </div>
+              <div class="prompt-section" v-if="promptPreview.soul_md">
+                <div class="prompt-label">soul.md 内容：</div>
+                <n-input
+                  :value="promptPreview.soul_md"
+                  type="textarea"
+                  :autosize="{ minRows: 2, maxRows: 6 }"
+                  readonly
+                />
+              </div>
+            </div>
+          </n-collapse-item>
+        </n-collapse>
       </n-space>
     </n-card>
 
@@ -282,6 +325,9 @@ const withMark = ref(false)
 const markFormat = ref('[凯莉主动发送] {timestamp}: {content}')
 const generatedMessage = ref('')
 const logs = ref([])
+
+// 提示词预览
+const promptPreview = ref(null)
 
 // 标记预览
 const previewMark = computed(() => {
@@ -464,6 +510,7 @@ async function generateMessage() {
     return
   }
   generating.value = true
+  promptPreview.value = null
   try {
     const data = await api.post('/messages/generate', {
       session_id: selectedSessionId.value,
@@ -473,12 +520,47 @@ async function generateMessage() {
     generatedMessage.value = data?.message || ''
     addLog('success', `生成消息: ${generatedMessage.value}`)
     message.success('生成成功')
+
+    // 构建提示词预览
+    buildPromptPreview()
   } catch (e) {
     addLog('error', '生成失败: ' + (e?.detail || '未知错误'))
     message.error('生成失败')
   } finally {
     generating.value = false
   }
+}
+
+function buildPromptPreview() {
+  // 从配置获取提示词
+  api.get('/config/prompts').then(promptsConfig => {
+    const systemPrompt = promptsConfig.system || ''
+    const generationTemplate = promptsConfig.generation || '{context}'
+
+    // 获取 soul.md
+    api.get('/config/hermes/soul').then(soulData => {
+      promptPreview.value = {
+        system_prompt: systemPrompt,
+        user_prompt_template: generationTemplate,
+        context_content: contextData.value || '无上下文',
+        soul_md: soulData.content || ''
+      }
+    }).catch(() => {
+      promptPreview.value = {
+        system_prompt: systemPrompt,
+        user_prompt_template: generationTemplate,
+        context_content: contextData.value || '无上下文',
+        soul_md: ''
+      }
+    })
+  }).catch(() => {
+    promptPreview.value = {
+      system_prompt: '（无法加载）',
+      user_prompt_template: '（无法加载）',
+      context_content: contextData.value || '无上下文',
+      soul_md: ''
+    }
+  })
 }
 
 async function sendMessage() {
@@ -787,5 +869,23 @@ onMounted(() => {
 .log-time {
   color: #999;
   flex-shrink: 0;
+}
+
+.prompt-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prompt-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prompt-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
 }
 </style>

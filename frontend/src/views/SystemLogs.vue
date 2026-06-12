@@ -33,7 +33,11 @@
       <div v-if="message && logs.length === 0" class="empty-message">
         <n-empty :description="message" />
       </div>
-      <pre v-else class="log-content" ref="logContent"><template v-for="(line, index) in logs" :key="index"><span class="log-line" :class="getLineClass(line)">{{ line }}</span>\n</template></pre>
+      <div v-else class="log-content" ref="logContent">
+        <div v-for="(line, index) in logs" :key="index" class="log-line" :class="getLineClass(line)">
+          {{ line }}
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -148,12 +152,14 @@ onBeforeUnmount(() => {
   line-height: 1.6;
   color: #d4d4d4;
   margin: 0;
-  white-space: pre-wrap;
-  word-break: break-all;
 }
 
 .log-line {
-  display: inline;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-all;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .log-error {

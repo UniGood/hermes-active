@@ -1,9 +1,14 @@
 <template>
   <div class="cron-page">
     <!-- 创建任务按钮 -->
-    <n-button type="primary" @click="openCreate" style="margin-bottom: 16px">
-      + 创建任务
-    </n-button>
+    <n-space style="margin-bottom: 16px">
+      <n-button type="primary" @click="openCreate">
+        + 创建任务
+      </n-button>
+      <n-button @click="openDefaultPrompts">
+        默认提示词配置
+      </n-button>
+    </n-space>
 
     <!-- 任务列表 -->
     <n-spin :show="loading">
@@ -224,9 +229,111 @@
       <template #action>
         <n-space>
           <n-button @click="showCreate = false">取消</n-button>
+          <n-button @click="previewPrompt" :loading="previewing">预览提示词</n-button>
           <n-button type="primary" @click="saveJob" :loading="saving">保存</n-button>
         </n-space>
       </template>
+    </n-modal>
+
+    <!-- 默认提示词配置弹窗 -->
+    <n-modal v-model:show="showDefaultPrompts" preset="card" title="默认提示词配置" fullscreen>
+      <n-form label-placement="left" label-width="120">
+        <n-form-item label="默认系统提示词">
+          <n-input
+            v-model:value="defaultPromptsData.system_prompt"
+            type="textarea"
+            :autosize="{ minRows: 5, maxRows: 15 }"
+            placeholder="系统提示词，定义 AI 的角色和行为规则"
+          />
+        </n-form-item>
+        <n-form-item label="默认用户提示词">
+          <n-input
+            v-model:value="defaultPromptsData.user_prompt"
+            type="textarea"
+            :autosize="{ minRows: 5, maxRows: 15 }"
+            placeholder="用户提示词模板，支持 {context} 占位符"
+          />
+        </n-form-item>
+        <n-form-item label="拼接 soul.md">
+          <n-checkbox v-model:checked="defaultPromptsData.append_soul_md">
+            创建新任务时默认拼接 soul.md
+          </n-checkbox>
+        </n-form-item>
+        <n-form-item label=" ">
+          <n-button @click="previewDefaultPrompt" :loading="previewingDefault">
+            预览完整提示词
+          </n-button>
+        </n-form-item>
+        <!-- 预览结果 -->
+        <template v-if="defaultPromptPreview">
+          <n-divider title-placement="left">预览结果</n-divider>
+          <n-form-item label="系统提示词（最终版）">
+            <n-input
+              :value="defaultPromptPreview.system_prompt"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 10 }"
+              readonly
+            />
+          </n-form-item>
+          <n-form-item label="用户提示词">
+            <n-input
+              :value="defaultPromptPreview.user_prompt"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 5 }"
+              readonly
+            />
+          </n-form-item>
+          <n-form-item label="soul.md 内容" v-if="defaultPromptPreview.soul_md">
+            <n-input
+              :value="defaultPromptPreview.soul_md"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 10 }"
+              readonly
+            />
+          </n-form-item>
+        </template>
+      </n-form>
+      <template #action>
+        <n-space>
+          <n-button @click="showDefaultPrompts = false">取消</n-button>
+          <n-button type="primary" @click="saveDefaultPrompts" :loading="savingDefaultPrompts">保存</n-button>
+        </n-space>
+      </template>
+    </n-modal>
+
+    <!-- 预览提示词弹窗 -->
+    <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词" style="width: 700px">
+      <n-spin :show="previewing">
+        <n-form label-placement="left" label-width="100">
+          <n-form-item label="系统提示词">
+            <n-input
+              :value="previewData.system_prompt"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 10 }"
+              readonly
+            />
+          </n-form-item>
+          <n-form-item label="用户提示词">
+            <n-input
+              :value="previewData.user_prompt"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 5 }"
+              readonly
+            />
+          </n-form-item>
+          <n-form-item label="soul.md" v-if="previewData.soul_md">
+            <n-input
+              :value="previewData.soul_md"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 8 }"
+              readonly
+            />
+          </n-form-item>
+          <n-form-item label="上下文配置" v-if="previewData.context_summary">
+            <n-tag type="info">{{ previewData.context_summary }}</n-tag>
+          </n-form-item>
+        </n-form>
+      </n-spin>
     </n-modal>
   </div>
 </template>
@@ -248,6 +355,22 @@ const cronParseResult = ref(null)
 const defaultPrompt = ref('')
 const soulMdContent = ref('')
 const sessionMode = ref('latest')
+
+// 默认提示词配置
+const showDefaultPrompts = ref(false)
+const defaultPromptsData = ref({
+  system_prompt: '',
+  user_prompt: '',
+  append_soul_md: true
+})
+const defaultPromptPreview = ref(null)
+const savingDefaultPrompts = ref(false)
+const previewingDefault = ref(false)
+
+// 预览提示词
+const showPreview = ref(false)
+const previewData = ref({ system_prompt: '', user_prompt: '', soul_md: '', context_summary: '' })
+const previewing = ref(false)
 
 const platformOptions = [
   { label: '微信', value: 'weixin' },
@@ -406,7 +529,27 @@ function openCreate() {
   cronParseResult.value = null
   parseCron()
   loadSessions('weixin')
+
+  // 自动填充默认提示词
+  loadDefaultPromptsForNewJob()
+
   showCreate.value = true
+}
+
+async function loadDefaultPromptsForNewJob() {
+  try {
+    const data = await api.get('/config/default-prompts')
+    if (data.system_prompt) {
+      formData.value.system_prompt = data.system_prompt
+    }
+    if (data.user_prompt) {
+      formData.value.user_prompt = data.user_prompt
+    }
+    formData.value.append_soul_md = data.append_soul_md !== false
+  } catch (e) {
+    // 静默失败，使用空值
+    console.warn('加载默认提示词失败:', e)
+  }
 }
 
 async function saveJob() {
@@ -537,6 +680,76 @@ function deleteJob(job) {
       }
     }
   })
+}
+
+// ============ 默认提示词配置 ============
+
+async function openDefaultPrompts() {
+  try {
+    const data = await api.get('/config/default-prompts')
+    defaultPromptsData.value = {
+      system_prompt: data.system_prompt || '',
+      user_prompt: data.user_prompt || '',
+      append_soul_md: data.append_soul_md !== false
+    }
+    defaultPromptPreview.value = null
+    showDefaultPrompts.value = true
+  } catch (e) {
+    message.error('加载默认提示词配置失败')
+  }
+}
+
+async function saveDefaultPrompts() {
+  savingDefaultPrompts.value = true
+  try {
+    await api.put('/config/default-prompts', defaultPromptsData.value)
+    message.success('默认提示词配置已保存')
+    showDefaultPrompts.value = false
+    // 重新加载默认提示词
+    await loadDefaultPrompt()
+  } catch (e) {
+    message.error('保存失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    savingDefaultPrompts.value = false
+  }
+}
+
+async function previewDefaultPrompt() {
+  previewingDefault.value = true
+  try {
+    const data = await api.post('/cron/preview-prompt', {
+      system_prompt: defaultPromptsData.value.system_prompt,
+      user_prompt: defaultPromptsData.value.user_prompt,
+      append_soul_md: defaultPromptsData.value.append_soul_md,
+      context_config: {}
+    })
+    defaultPromptPreview.value = data
+  } catch (e) {
+    message.error('预览失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    previewingDefault.value = false
+  }
+}
+
+// ============ 预览提示词（编辑弹窗） ============
+
+async function previewPrompt() {
+  previewing.value = true
+  showPreview.value = true
+  try {
+    const data = await api.post('/cron/preview-prompt', {
+      system_prompt: formData.value.system_prompt,
+      user_prompt: formData.value.user_prompt,
+      append_soul_md: formData.value.append_soul_md,
+      context_config: contextConfig.value
+    })
+    previewData.value = data
+  } catch (e) {
+    message.error('预览失败: ' + (e?.detail || '未知错误'))
+    showPreview.value = false
+  } finally {
+    previewing.value = false
+  }
 }
 
 // 上下文配置序列化/反序列化

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from models.database import get_active_db
 from models.active import User
-from models.schemas import CronJobCreate, CronJobUpdate, CronJobInfo, CronJobListResponse, SuccessResponse
+from models.schemas import CronJobCreate, CronJobUpdate, CronJobInfo, CronJobListResponse, PreviewPromptRequest, SuccessResponse
 from services.config_service import ConfigService
 from services.llm_service import LLMService
 from services.message_service import MessageService
@@ -407,3 +407,50 @@ async def get_available_sessions(
     """获取可用的 session 列表（用于任务配置）"""
     sessions = SessionService.get_sessions(db, page=1, page_size=20, platform=platform)
     return sessions
+
+
+@router.post("/preview-prompt")
+async def preview_prompt(
+    request: PreviewPromptRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
+):
+    """预览最终提示词（拼接 soul.md 和上下文配置后）"""
+    # 获取默认提示词配置（如果传入的为空）
+    system_prompt = request.system_prompt
+    if not system_prompt:
+        system_prompt = ConfigService.get_config(db, "default_system_prompt") or ""
+
+    user_prompt = request.user_prompt
+    if not user_prompt:
+        user_prompt = ConfigService.get_config(db, "default_user_prompt") or ""
+
+    # 拼接 soul.md
+    soul_md_content = ""
+    final_system_prompt = system_prompt
+    if request.append_soul_md:
+        soul_md_content = ConfigService.read_hermes_soul() or ""
+        if soul_md_content:
+            final_system_prompt = system_prompt + "\n\n" + soul_md_content if system_prompt else soul_md_content
+
+    # 解析上下文配置
+    ctx_config = request.context_config or {}
+    session_limit = ctx_config.get("session_limit", 20)
+    recall_enabled = ctx_config.get("hindsight_recall_enabled", False)
+    reflect_enabled = ctx_config.get("hindsight_reflect_enabled", False)
+
+    # 构建上下文配置摘要
+    context_summary_parts = [f"Session 上下文: {session_limit} 条"]
+    if recall_enabled:
+        recall_query = ctx_config.get("hindsight_recall_query", "")
+        context_summary_parts.append(f"Recall: {recall_query or '已启用'}")
+    if reflect_enabled:
+        reflect_query = ctx_config.get("hindsight_reflect_query", "")
+        context_summary_parts.append(f"Reflect: {reflect_query or '已启用'}")
+
+    return {
+        "system_prompt": final_system_prompt,
+        "user_prompt": user_prompt,
+        "soul_md": soul_md_content,
+        "context_summary": " | ".join(context_summary_parts)
+    }
