@@ -47,8 +47,11 @@
         <n-form-item label=" " v-if="cronParseResult">
           <div class="cron-parse-result">
             <div class="cron-freq">频率: {{ cronParseResult.frequency }}</div>
-            <div class="cron-next" v-if="cronParseResult.next_runs && cronParseResult.next_runs.length">
-              下次运行: {{ cronParseResult.next_runs[0] }}
+            <div class="cron-next-runs" v-if="cronParseResult.next_runs && cronParseResult.next_runs.length">
+              <div class="cron-next-title">未来运行时间：</div>
+              <div v-for="(run, idx) in cronParseResult.next_runs" :key="idx" class="cron-next-item">
+                {{ idx + 1 }}. {{ run }}
+              </div>
             </div>
           </div>
         </n-form-item>
@@ -75,16 +78,60 @@
             filterable
           />
         </n-form-item>
-        <n-form-item label="提示词">
-          <n-input
-            v-model:value="formData.prompt"
-            type="textarea"
-            :autosize="{ minRows: 3, maxRows: 8 }"
-            placeholder="可选，留空使用全局配置的提示词"
-          />
-          <n-button size="small" @click="fillDefaultPrompt" style="margin-top: 4px">
-            填充默认提示词
-          </n-button>
+        <!-- 系统提示词 -->
+        <n-divider title-placement="left">提示词配置</n-divider>
+        <n-form-item label="系统提示词">
+          <n-space vertical style="width: 100%">
+            <n-input
+              v-model:value="formData.system_prompt"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 8 }"
+              placeholder="系统提示词，定义 AI 的角色和行为规则"
+            />
+            <n-space align="center">
+              <n-checkbox v-model:checked="formData.append_soul_md">
+                拼接 soul.md
+              </n-checkbox>
+              <span style="font-size: 12px; color: #999">
+                {{ formData.append_soul_md ? '将在系统提示词后追加 SOUL.md 内容' : '不追加 SOUL.md' }}
+              </span>
+            </n-space>
+            <n-button size="small" @click="fillDefaultSystemPrompt" style="margin-top: 4px">
+              填充默认系统提示词
+            </n-button>
+          </n-space>
+        </n-form-item>
+
+        <!-- 用户提示词 -->
+        <n-form-item label="用户提示词">
+          <n-space vertical style="width: 100%">
+            <n-input
+              v-model:value="formData.user_prompt"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 8 }"
+              placeholder="生成提示词，支持 {context} 占位符"
+            />
+            <div style="font-size: 12px; color: #999">
+              支持 {context} 占位符，运行时替换为实际上下文
+            </div>
+            <n-button size="small" @click="fillDefaultUserPrompt" style="margin-top: 4px">
+              填充默认用户提示词
+            </n-button>
+            <!-- 上下文配置状态 -->
+            <div class="context-status">
+              <span class="context-status-label">当前上下文配置：</span>
+              <n-tag size="small" type="info">Session: {{ contextConfig.session_limit }} 条</n-tag>
+              <n-tag v-if="contextConfig.hindsight_recall_enabled" size="small" type="success">
+                Recall: {{ contextConfig.hindsight_recall_query || '已启用' }}
+              </n-tag>
+              <n-tag v-if="contextConfig.hindsight_reflect_enabled" size="small" type="warning">
+                Reflect: {{ contextConfig.hindsight_reflect_query || '已启用' }}
+              </n-tag>
+              <n-tag v-if="!contextConfig.hindsight_recall_enabled && !contextConfig.hindsight_reflect_enabled" size="small">
+                仅 Session 上下文
+              </n-tag>
+            </div>
+          </n-space>
         </n-form-item>
 
         <!-- 上下文配置 -->
@@ -199,6 +246,7 @@ const editingJob = ref(null)
 const sessionOptions = ref([])
 const cronParseResult = ref(null)
 const defaultPrompt = ref('')
+const soulMdContent = ref('')
 const sessionMode = ref('latest')
 
 const platformOptions = [
@@ -211,6 +259,9 @@ const formData = ref({
   name: '',
   schedule: '0,20,40 6-23 * * *',
   prompt: '',
+  system_prompt: '',
+  user_prompt: '',
+  append_soul_md: true,
   session_id: null,
   platform: 'weixin',
   use_llm: true,
@@ -282,13 +333,27 @@ async function loadDefaultPrompt() {
   }
 }
 
-function fillDefaultPrompt() {
+async function loadSoulMd() {
+  try {
+    const data = await api.get('/config/hermes/soul')
+    soulMdContent.value = data.content || ''
+  } catch (e) {
+    console.error('加载 SOUL.md 失败:', e)
+  }
+}
+
+function fillDefaultSystemPrompt() {
   if (defaultPrompt.value) {
-    formData.value.prompt = defaultPrompt.value
-    message.success('已填充默认提示词')
+    formData.value.system_prompt = defaultPrompt.value
+    message.success('已填充默认系统提示词')
   } else {
     message.warning('未找到默认提示词')
   }
+}
+
+function fillDefaultUserPrompt() {
+  formData.value.user_prompt = '{context}'
+  message.success('已填充默认用户提示词')
 }
 
 let cronParseTimer = null
@@ -319,6 +384,9 @@ function openCreate() {
     name: '',
     schedule: '0,20,40 6-23 * * *',
     prompt: '',
+    system_prompt: '',
+    user_prompt: '',
+    append_soul_md: true,
     session_id: null,
     platform: 'weixin',
     use_llm: true,
@@ -354,8 +422,16 @@ async function saveJob() {
       submitData.session_id = null
     }
 
-    // 将上下文配置拼接到 prompt 中
-    submitData.prompt = buildPromptWithContext(formData.value.prompt, contextConfig.value)
+    // 如果使用新的 system_prompt/user_prompt 字段，将上下文配置序列化到 user_prompt 中
+    if (submitData.system_prompt || submitData.user_prompt) {
+      // 将上下文配置拼接到 user_prompt 中
+      submitData.user_prompt = buildPromptWithContext(submitData.user_prompt || '', contextConfig.value)
+      // 清空旧的 prompt 字段
+      submitData.prompt = null
+    } else {
+      // 兼容旧的单一 prompt 字段
+      submitData.prompt = buildPromptWithContext(formData.value.prompt, contextConfig.value)
+    }
 
     if (editingJob.value) {
       await api.put(`/cron/${editingJob.value.id}`, submitData)
@@ -400,19 +476,43 @@ function editJob(job) {
   editingJob.value = job
   const rawPrompt = job.prompt || ''
 
-  // 解析提示词中的上下文配置
-  const parsed = parseContextFromPrompt(rawPrompt)
-  contextConfig.value = parsed.config
-  formData.value = {
-    name: job.name,
-    schedule: job.schedule,
-    prompt: parsed.userPrompt,
-    session_id: job.session_id || null,
-    platform: job.platform || 'weixin',
-    use_llm: job.use_llm !== false,
-    write_to_db: job.write_to_db !== false,
-    with_mark: job.with_mark !== false,
-    mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}'
+  // 检查是否使用新的 system_prompt/user_prompt 字段
+  if (job.system_prompt !== undefined || job.user_prompt !== undefined) {
+    // 使用新字段
+    const parsedUser = parseContextFromPrompt(job.user_prompt || '')
+    contextConfig.value = parsedUser.config
+    formData.value = {
+      name: job.name,
+      schedule: job.schedule,
+      prompt: '',
+      system_prompt: job.system_prompt || '',
+      user_prompt: parsedUser.userPrompt,
+      append_soul_md: job.append_soul_md !== false,
+      session_id: job.session_id || null,
+      platform: job.platform || 'weixin',
+      use_llm: job.use_llm !== false,
+      write_to_db: job.write_to_db !== false,
+      with_mark: job.with_mark !== false,
+      mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}'
+    }
+  } else {
+    // 兼容旧的单一 prompt 字段
+    const parsed = parseContextFromPrompt(rawPrompt)
+    contextConfig.value = parsed.config
+    formData.value = {
+      name: job.name,
+      schedule: job.schedule,
+      prompt: parsed.userPrompt,
+      system_prompt: '',
+      user_prompt: '',
+      append_soul_md: true,
+      session_id: job.session_id || null,
+      platform: job.platform || 'weixin',
+      use_llm: job.use_llm !== false,
+      write_to_db: job.write_to_db !== false,
+      with_mark: job.with_mark !== false,
+      mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}'
+    }
   }
   sessionMode.value = job.session_id ? 'fixed' : 'latest'
   cronParseResult.value = null
@@ -514,6 +614,7 @@ function parseContextFromPrompt(rawPrompt) {
 onMounted(() => {
   loadJobs()
   loadDefaultPrompt()
+  loadSoulMd()
 })
 </script>
 
@@ -573,11 +674,36 @@ onMounted(() => {
 .cron-freq {
   color: #18a058;
   font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.cron-next-runs {
+  margin-top: 4px;
+}
+
+.cron-next-title {
+  color: #666;
+  font-size: 12px;
   margin-bottom: 4px;
 }
 
-.cron-next {
-  color: #666;
+.cron-next-item {
+  color: #333;
   font-size: 12px;
+  line-height: 1.8;
+  font-family: monospace;
+}
+
+.context-status {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.context-status-label {
+  font-size: 12px;
+  color: #666;
 }
 </style>

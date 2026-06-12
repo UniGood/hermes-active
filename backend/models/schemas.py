@@ -112,6 +112,9 @@ class CronJobCreate(BaseModel):
     schedule: str
     enabled: bool = True
     prompt: Optional[str] = None
+    system_prompt: Optional[str] = None
+    user_prompt: Optional[str] = None
+    append_soul_md: bool = True
     session_id: Optional[str] = None
     platform: str = "weixin"
     use_llm: bool = True
@@ -125,6 +128,9 @@ class CronJobUpdate(BaseModel):
     schedule: Optional[str] = None
     enabled: Optional[bool] = None
     prompt: Optional[str] = None
+    system_prompt: Optional[str] = None
+    user_prompt: Optional[str] = None
+    append_soul_md: Optional[bool] = None
     session_id: Optional[str] = None
     platform: Optional[str] = None
     use_llm: Optional[bool] = None
@@ -139,6 +145,9 @@ class CronJobInfo(BaseModel):
     schedule: str
     enabled: bool
     prompt: Optional[str] = None
+    system_prompt: Optional[str] = None
+    user_prompt: Optional[str] = None
+    append_soul_md: bool = True
     session_id: Optional[str] = None
     platform: str = "weixin"
     use_llm: bool = True

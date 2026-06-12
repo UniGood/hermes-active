@@ -67,10 +67,46 @@ async def run_cron_job(job_id: str):
         llm_config = ConfigService.get_llm_config(db)
         prompts_config = ConfigService.get_prompts_config(db)
 
+        # 解析提示词 - 支持新的 system_prompt/user_prompt 字段和旧的 prompt 字段
+        system_prompt_text = target_job.get("system_prompt")
+        user_prompt_text = target_job.get("user_prompt")
+        append_soul_md = target_job.get("append_soul_md", True)
         raw_prompt = target_job.get("prompt") or ""
-        # 从 prompt 中解析上下文配置
-        ctx_config, user_prompt_text = _parse_context_config(raw_prompt)
-        prompt_text = user_prompt_text or prompts_config.get("system", "")
+
+        # 如果有新的 system_prompt/user_prompt 字段，优先使用
+        if system_prompt_text is not None or user_prompt_text is not None:
+            # 使用新字段
+            prompt_text = system_prompt_text or prompts_config.get("system", "")
+
+            # 如果需要拼接 soul.md
+            if append_soul_md:
+                soul_content = ConfigService.read_hermes_soul()
+                if soul_content:
+                    prompt_text = prompt_text + "\n\n" + soul_content if prompt_text else soul_content
+
+            # 解析用户提示词中的上下文配置
+            ctx_config, user_prompt_clean = _parse_context_config(user_prompt_text or "")
+            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{context}")
+        elif raw_prompt and "|||" in raw_prompt:
+            # 兼容旧的 ||| 分隔格式
+            parts = raw_prompt.split("|||", 1)
+            prompt_text = parts[0].strip()
+            user_prompt_raw = parts[1].strip()
+
+            # 检查是否需要拼接 soul.md
+            if prompt_text.endswith("[SOUL_MD]"):
+                prompt_text = prompt_text[:-9].strip()
+                soul_content = ConfigService.read_hermes_soul()
+                if soul_content:
+                    prompt_text = prompt_text + "\n\n" + soul_content if prompt_text else soul_content
+
+            ctx_config, user_prompt_clean = _parse_context_config(user_prompt_raw)
+            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{context}")
+        else:
+            # 兼容旧的单一 prompt 字段
+            ctx_config, user_prompt_text = _parse_context_config(raw_prompt)
+            prompt_text = user_prompt_text or prompts_config.get("system", "")
+            user_prompt_final = prompts_config.get("generation", "{context}")
 
         # 获取上下文
         context_limit = ctx_config.get("session_limit", 20)
@@ -80,8 +116,7 @@ async def run_cron_job(job_id: str):
             for m in context_msgs
         )
 
-        generation_template = prompts_config.get("generation", "{context}")
-        user_prompt = generation_template.replace("{context}", context_text)
+        user_prompt = user_prompt_final.replace("{context}", context_text)
 
         # 获取任务参数
         use_llm = target_job.get("use_llm", True)
