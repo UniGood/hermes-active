@@ -29,13 +29,13 @@
     </aside>
     
     <!-- 移动端遮罩层 -->
-    <div class="sidebar-overlay" :class="{ show: sidebarOpen }" @click="sidebarOpen = false"></div>
+    <div class="sidebar-overlay" :class="{ show: !sidebarCollapsed }" @click="sidebarCollapsed = true"></div>
 
     <!-- 主内容区 -->
     <div class="main-area">
       <!-- 移动端顶部栏 -->
       <header class="mobile-header">
-        <n-button quaternary @click="sidebarOpen = !sidebarOpen">
+        <n-button quaternary @click="sidebarCollapsed = !sidebarCollapsed">
           <n-icon :size="22"><MenuOutline /></n-icon>
         </n-button>
         <span class="mobile-title">Hermes Active</span>
@@ -211,13 +211,13 @@ watch(() => route.path, () => {
     bottom: 0;
     width: 240px;
     z-index: 1001;
-    transform: translateX(-100%);
+    transform: translateX(0);
     transition: transform 0.3s ease;
     background: #fff;
   }
 
-  .sidebar.open {
-    transform: translateX(0);
+  .sidebar.collapsed {
+    transform: translateX(-100%);
   }
 
   /* 遮罩层 */
