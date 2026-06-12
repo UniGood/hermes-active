@@ -643,9 +643,9 @@ async function loadSoulMd() {
 
 async function fillDefaultSystemPrompt() {
   try {
-    const data = await api.get('/config/default-prompts')
-    if (data.system_prompt) {
-      formData.value.system_prompt = data.system_prompt
+    const data = await api.get('/config/prompts')
+    if (data.system) {
+      formData.value.system_prompt = data.system
       message.success('已填充默认系统提示词')
     } else {
       message.warning('未配置默认系统提示词')
@@ -657,9 +657,9 @@ async function fillDefaultSystemPrompt() {
 
 async function fillDefaultUserPrompt() {
   try {
-    const data = await api.get('/config/default-prompts')
-    if (data.user_prompt) {
-      formData.value.user_prompt = data.user_prompt
+    const data = await api.get('/config/prompts')
+    if (data.generation) {
+      formData.value.user_prompt = data.generation
       message.success('已填充默认用户提示词')
     } else {
       message.warning('未配置默认用户提示词')
@@ -730,14 +730,13 @@ function openCreate() {
 
 async function loadDefaultPromptsForNewJob() {
   try {
-    const data = await api.get('/config/default-prompts')
-    if (data.system_prompt) {
-      formData.value.system_prompt = data.system_prompt
+    const data = await api.get('/config/prompts')
+    if (data.system) {
+      formData.value.system_prompt = data.system
     }
-    if (data.user_prompt) {
-      formData.value.user_prompt = data.user_prompt
+    if (data.generation) {
+      formData.value.user_prompt = data.generation
     }
-    formData.value.append_soul_md = data.append_soul_md !== false
   } catch (e) {
     // 静默失败，使用空值
     console.warn('加载默认提示词失败:', e)

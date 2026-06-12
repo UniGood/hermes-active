@@ -221,3 +221,13 @@
 2026-06-12 23:57:33,785 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
 2026-06-12 23:57:33,785 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
 2026-06-12 23:57:33,786 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:59:27,976 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:59:27,976 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:59:27,991 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:59:27,991 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:59:27,992 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:00:27,992 [INFO] apscheduler.executors.default: Running job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-13 00:00:27 CST)" (scheduled at 2026-06-13 00:00:27.992014+08:00)
+2026-06-13 00:00:27,994 [INFO] hermes.scheduler: 更新任务调度: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:00:27,994 [INFO] apscheduler.scheduler: Removed job _sync_jobs
+2026-06-13 00:00:27,994 [INFO] hermes.scheduler: 移除已删除任务: _sync_jobs
+2026-06-13 00:00:27,994 [INFO] apscheduler.executors.default: Job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-13 00:01:27 CST)" executed successfully
