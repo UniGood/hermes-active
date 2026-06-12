@@ -84,10 +84,22 @@ class ConfigService:
 
     @staticmethod
     def read_hermes_soul() -> Optional[str]:
-        """读取 hermes SOUL.md"""
-        if SOUL_PATH.exists():
-            return SOUL_PATH.read_text(encoding="utf-8")
-        return None
+        """读取 hermes SOUL.md（调用 hermes 官方库函数）"""
+        try:
+            import sys
+            from pathlib import Path
+            sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
+            from agent.prompt_builder import load_soul_md
+            return load_soul_md()
+        except ImportError:
+            # 降级：直接读文件
+            if SOUL_PATH.exists():
+                return SOUL_PATH.read_text(encoding='utf-8')
+            return None
+        except Exception:
+            if SOUL_PATH.exists():
+                return SOUL_PATH.read_text(encoding='utf-8')
+            return None
 
     @staticmethod
     def read_hermes_memory() -> Optional[str]:
