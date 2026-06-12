@@ -250,25 +250,43 @@ async def run_cron_job(
 
         # 调用 LLM 生成消息
         if use_llm:
-            llm_result = await LLMService.generate_message(
-                llm_config=llm_config,
-                prompt=user_prompt,
-                system_prompt=prompt_text,
-                temperature=0.7,
-                max_tokens=200
-            )
+            if llm_config.get("mode") == "hermes":
+                # 使用 hermes 的 call_llm
+                import sys as _sys
+                from pathlib import Path as _Path
+                _sys.path.insert(0, str(_Path.home() / '.hermes' / 'hermes-agent'))
+                from agent.auxiliary_client import call_llm
 
-            if not llm_result.get("success"):
-                MessageService.create_task_log(
-                    task_type="cron_run",
-                    status="failed",
-                    message=f"任务 {target_job['name']} LLM 生成失败",
-                    error=llm_result.get("message", "未知错误"),
-                    duration=round(time.time() - start_time, 2)
+                response = call_llm(
+                    task="title_generation",
+                    messages=[
+                        {"role": "system", "content": prompt_text},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=200,
                 )
-                raise HTTPException(status_code=500, detail=f"LLM 生成失败: {llm_result.get('message')}")
+                generated_message = response.choices[0].message.content.strip()
+            else:
+                llm_result = await LLMService.generate_message(
+                    llm_config=llm_config,
+                    prompt=user_prompt,
+                    system_prompt=prompt_text,
+                    temperature=0.7,
+                    max_tokens=200
+                )
 
-            generated_message = llm_result["content"]
+                if not llm_result.get("success"):
+                    MessageService.create_task_log(
+                        task_type="cron_run",
+                        status="failed",
+                        message=f"任务 {target_job['name']} LLM 生成失败",
+                        error=llm_result.get("message", "未知错误"),
+                        duration=round(time.time() - start_time, 2)
+                    )
+                    raise HTTPException(status_code=500, detail=f"LLM 生成失败: {llm_result.get('message')}")
+
+                generated_message = llm_result["content"]
         else:
             # 不使用 LLM，使用提示词作为消息
             generated_message = prompt_text

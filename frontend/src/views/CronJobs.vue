@@ -641,18 +641,32 @@ async function loadSoulMd() {
   }
 }
 
-function fillDefaultSystemPrompt() {
-  if (defaultPrompt.value) {
-    formData.value.system_prompt = defaultPrompt.value
-    message.success('已填充默认系统提示词')
-  } else {
-    message.warning('未找到默认提示词')
+async function fillDefaultSystemPrompt() {
+  try {
+    const data = await api.get('/config/default-prompts')
+    if (data.system_prompt) {
+      formData.value.system_prompt = data.system_prompt
+      message.success('已填充默认系统提示词')
+    } else {
+      message.warning('未配置默认系统提示词')
+    }
+  } catch (e) {
+    message.error('加载默认提示词失败')
   }
 }
 
-function fillDefaultUserPrompt() {
-  formData.value.user_prompt = '{context}'
-  message.success('已填充默认用户提示词')
+async function fillDefaultUserPrompt() {
+  try {
+    const data = await api.get('/config/default-prompts')
+    if (data.user_prompt) {
+      formData.value.user_prompt = data.user_prompt
+      message.success('已填充默认用户提示词')
+    } else {
+      message.warning('未配置默认用户提示词')
+    }
+  } catch (e) {
+    message.error('加载默认提示词失败')
+  }
 }
 
 let cronParseTimer = null

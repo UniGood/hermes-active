@@ -212,3 +212,12 @@
 2026-06-12 23:40:12,568 [INFO] gateway.platforms.weixin: weixin: restored 1 context token(s) for 22714e28
 2026-06-12 23:40:12,992 [INFO] hermes.scheduler: 任务 主动消息 运行成功，耗时 12.99s
 2026-06-12 23:40:12,996 [INFO] apscheduler.executors.default: Job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 06:00:00 CST)" executed successfully
+2026-06-12 23:57:31,443 [INFO] watchfiles.main: 1 change detected
+2026-06-12 23:57:31,717 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:57:31,717 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:57:33,638 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:57:33,753 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:57:33,754 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:57:33,785 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:57:33,785 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:57:33,786 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
