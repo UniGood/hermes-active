@@ -66,7 +66,8 @@ import {
   DocumentTextOutline,
   FlaskOutline,
   LogOutOutline,
-  TerminalOutline
+  TerminalOutline,
+  MenuOutline
 } from '@vicons/ionicons5'
 
 const router = useRouter()
@@ -82,7 +83,8 @@ const menuItems = [
   { path: '/config', label: '配置管理', icon: markRaw(SettingsOutline) },
   { path: '/cron-jobs', label: '定时任务', icon: markRaw(TimeOutline) },
   { path: '/task-logs', label: '任务日志', icon: markRaw(DocumentTextOutline) },
-  { path: '/system-logs', label: '系统日志', icon: markRaw(TerminalOutline) },
+  { path: '/system-logs', label: '系统日志', icon: markRaw(TerminalOutline,
+  MenuOutline) },
   { path: '/test', label: '测试工具', icon: markRaw(FlaskOutline) }
 ]
 
