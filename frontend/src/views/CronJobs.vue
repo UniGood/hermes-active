@@ -282,7 +282,7 @@
               </div>
             </div>
             <div class="mark-preview" v-if="testMessageForPreview">
-              预览: {{ formData.send_mark }} {{ formatWithOption(formData.time_format) }}: {{ testMessageForPreview }}
+              预览: <template v-if="formData.send_mark">{{ formData.send_mark }}<template v-if="formData.time_format"> {{ formatWithOption(formData.time_format) }}</template>: </template>{{ testMessageForPreview }}
             </div>
           </n-form-item>
         </template>
@@ -592,6 +592,7 @@ const platformOptions = [
 const WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日']
 
 const timeFormatOptions = [
+  { label: '无', value: '', preview: () => '' },
   { label: '简短', value: '%H:%M 星期{weekday}', preview: () => '14:30 星期四' },
   { label: '时分秒', value: '%H:%M:%S', preview: () => '14:30:25' },
   { label: '日期时分', value: '%m/%d %H:%M', preview: () => '06/12 14:30' },
@@ -628,8 +629,8 @@ const formData = ref({
   write_to_db: true,
   with_mark: true,
   mark_format: '[凯莉主动发送] {timestamp}: {content}',
-  send_mark: '[凯莉主动发送]',
-  time_format: '%H:%M 星期{weekday}',
+  send_mark: '',
+  time_format: '',
   cooldown_enabled: false,
   cooldown_minutes: 10
 })
@@ -899,8 +900,8 @@ function editJob(job) {
       write_to_db: job.write_to_db !== false,
       with_mark: job.with_mark !== false,
       mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}',
-      send_mark: job.send_mark || '[凯莉主动发送]',
-      time_format: job.time_format || '%H:%M 星期{weekday}',
+      send_mark: job.send_mark || '',
+      time_format: job.time_format || '',
       cooldown_enabled: job.cooldown_enabled || false,
       cooldown_minutes: job.cooldown_minutes || 10
     }
@@ -921,8 +922,8 @@ function editJob(job) {
       write_to_db: job.write_to_db !== false,
       with_mark: job.with_mark !== false,
       mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}',
-      send_mark: job.send_mark || '[凯莉主动发送]',
-      time_format: job.time_format || '%H:%M 星期{weekday}'
+      send_mark: job.send_mark || '',
+      time_format: job.time_format || ''
     }
   }
   sessionMode.value = job.session_id ? 'fixed' : 'latest'
