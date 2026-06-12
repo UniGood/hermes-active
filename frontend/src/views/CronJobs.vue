@@ -34,6 +34,7 @@
             <n-button size="small" @click="runJob(job)" :loading="job.running">运行</n-button>
             <n-button size="small" @click="editJob(job)">编辑</n-button>
             <n-button size="small" type="error" @click="deleteJob(job)">删除</n-button>
+            <n-button size="small" @click="viewJobLogs(job)">运行日志</n-button>
           </div>
         </div>
         <n-empty v-if="!loading && jobs.length === 0" description="暂无定时任务" />
@@ -301,6 +302,21 @@
       </template>
     </n-modal>
 
+    <!-- 运行日志弹窗 -->
+    <n-modal v-model:show="showJobLogs" preset="card" :title="`运行日志 - ${jobLogsName}`" style="width: 900px">
+      <n-spin :show="jobLogsLoading">
+        <n-data-table
+          v-if="jobLogs.length > 0"
+          :columns="jobLogsColumns"
+          :data="jobLogs"
+          :bordered="false"
+          size="small"
+          :max-height="500"
+        />
+        <n-empty v-else description="暂无运行日志" />
+      </n-spin>
+    </n-modal>
+
     <!-- 预览提示词弹窗 -->
     <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词" style="width: 800px">
       <n-spin :show="previewing">
@@ -421,6 +437,19 @@ const previewingDefault = ref(false)
 const showPreview = ref(false)
 const previewData = ref({ system_prompt: '', user_prompt: '', soul_md: '', context_summary: '', context_data: null })
 const previewing = ref(false)
+
+// 运行日志
+const showJobLogs = ref(false)
+const jobLogs = ref([])
+const jobLogsLoading = ref(false)
+const jobLogsName = ref('')
+const jobLogsColumns = [
+  { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
+  { title: '状态', key: 'status', width: 80, render: (row) => row.status === 'success' ? '✅ 成功' : '❌ 失败' },
+  { title: '消息', key: 'message', ellipsis: { tooltip: true } },
+  { title: '错误信息', key: 'error', ellipsis: { tooltip: true }, render: (row) => row.error || '-' },
+  { title: '耗时', key: 'duration', width: 80, render: (row) => row.duration ? `${row.duration.toFixed(1)}s` : '-' }
+]
 
 const platformOptions = [
   { label: '微信', value: 'weixin' },
@@ -712,6 +741,21 @@ function editJob(job) {
   parseCron()
   loadSessions(formData.value.platform)
   showCreate.value = true
+}
+
+async function viewJobLogs(job) {
+  jobLogsName.value = job.name
+  jobLogsLoading.value = true
+  showJobLogs.value = true
+  try {
+    const data = await api.get('/task-logs', { params: { task_type: 'cron_run', message: job.name, page_size: 100 } })
+    jobLogs.value = data.items || []
+  } catch (e) {
+    message.error('加载运行日志失败')
+    jobLogs.value = []
+  } finally {
+    jobLogsLoading.value = false
+  }
 }
 
 function deleteJob(job) {

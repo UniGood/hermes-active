@@ -32,9 +32,6 @@
     <div class="main-area">
       <!-- 移动端顶部栏 -->
       <header class="mobile-header">
-        <n-button quaternary @click="showDrawer = true">
-          <n-icon :size="24"><MenuOutline /></n-icon>
-        </n-button>
         <span class="mobile-title">Hermes Active</span>
         <n-button quaternary @click="handleLogout">
           <n-icon :size="20"><LogOutOutline /></n-icon>
@@ -61,32 +58,6 @@
       </router-link>
     </nav>
 
-    <!-- 移动端侧边抽屉 -->
-    <n-drawer v-model:show="showDrawer" placement="left" :width="280">
-      <n-drawer-content>
-        <div class="drawer-header">
-          <n-avatar :size="48" round>H</n-avatar>
-          <div class="drawer-title">Hermes Active</div>
-          <div class="drawer-subtitle">主动会话系统</div>
-        </div>
-        <nav class="drawer-nav">
-          <router-link
-            v-for="item in menuItems"
-            :key="item.path"
-            :to="item.path"
-            class="drawer-nav-item"
-            :class="{ active: isActive(item.path) }"
-            @click="showDrawer = false"
-          >
-            <n-icon :size="20"><component :is="item.icon" /></n-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-        </nav>
-        <template #footer>
-          <n-button block @click="handleLogout">退出登录</n-button>
-        </template>
-      </n-drawer-content>
-    </n-drawer>
   </div>
 </template>
 
@@ -102,7 +73,6 @@ import {
   TimeOutline,
   DocumentTextOutline,
   FlaskOutline,
-  MenuOutline,
   LogOutOutline,
   TerminalOutline
 } from '@vicons/ionicons5'
@@ -110,7 +80,6 @@ import {
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const showDrawer = ref(false)
 const sidebarCollapsed = ref(false)
 
 const menuItems = [
@@ -245,53 +214,6 @@ function handleLogout() {
 /* ========== 移动端底部导航（PC 端隐藏） ========== */
 .mobile-nav {
   display: none;
-}
-
-/* ========== 移动端侧边抽屉 ========== */
-.drawer-header {
-  padding: 24px 16px;
-  text-align: center;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.drawer-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin-top: 12px;
-}
-
-.drawer-subtitle {
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
-}
-
-.drawer-nav {
-  padding: 12px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.drawer-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  color: #666;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.drawer-nav-item:hover {
-  background: #f5f7fa;
-}
-
-.drawer-nav-item.active {
-  background: #e8f5e9;
-  color: #18a058;
 }
 
 /* ========== 移动端适配（< 768px） ========== */
