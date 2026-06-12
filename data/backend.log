@@ -231,3 +231,69 @@
 2026-06-13 00:00:27,994 [INFO] apscheduler.scheduler: Removed job _sync_jobs
 2026-06-13 00:00:27,994 [INFO] hermes.scheduler: 移除已删除任务: _sync_jobs
 2026-06-13 00:00:27,994 [INFO] apscheduler.executors.default: Job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-13 00:01:27 CST)" executed successfully
+2026-06-13 00:38:04,394 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:38:04,394 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:38:04,410 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:38:04,410 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:38:04,410 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:39:04,411 [INFO] apscheduler.executors.default: Running job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-13 00:39:04 CST)" (scheduled at 2026-06-13 00:39:04.410807+08:00)
+2026-06-13 00:39:04,413 [INFO] hermes.scheduler: 更新任务调度: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:39:04,413 [INFO] apscheduler.scheduler: Removed job _sync_jobs
+2026-06-13 00:39:04,413 [INFO] hermes.scheduler: 移除已删除任务: _sync_jobs
+2026-06-13 00:39:04,414 [INFO] apscheduler.executors.default: Job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-13 00:40:04 CST)" executed successfully
+2026-06-13 00:40:49,479 [INFO] hermes.scheduler: 调度器已停止
+2026-06-13 00:40:49,479 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-13 00:40:50,804 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:40:50,805 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:40:50,821 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:40:50,821 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:40:50,821 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:41:22,389 [INFO] hermes.scheduler: 调度器已停止
+2026-06-13 00:41:22,389 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-13 00:41:23,825 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:41:23,825 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:41:23,840 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:41:23,841 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:41:23,841 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:41:43,183 [INFO] hermes.scheduler: 调度器已停止
+2026-06-13 00:41:43,183 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-13 00:41:44,562 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:41:44,563 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:41:44,578 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:41:44,578 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:41:44,579 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:42:11,640 [INFO] hermes.scheduler: 调度器已停止
+2026-06-13 00:42:11,641 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-13 00:42:13,009 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:42:13,009 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:42:13,025 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:42:13,025 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:42:13,026 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:43:04,538 [INFO] hermes.scheduler: 调度器已停止
+2026-06-13 00:43:04,538 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-13 00:43:05,976 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:43:05,976 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:43:05,992 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:43:05,992 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:43:05,992 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:44:05,539 [INFO] hermes.scheduler: 调度器已停止
+2026-06-13 00:44:05,540 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-13 00:44:06,920 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:44:06,920 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:44:06,936 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:44:06,936 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:44:06,937 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:44:35,214 [INFO] hermes.scheduler: 调度器已停止
+2026-06-13 00:44:35,214 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-13 00:44:36,586 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:44:36,586 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:44:36,602 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:44:36,603 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:44:36,603 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:45:17,913 [INFO] hermes.scheduler: 调度器已停止
+2026-06-13 00:45:17,913 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-13 00:45:19,303 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:45:19,304 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:45:19,320 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:45:19,320 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:45:19,320 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"

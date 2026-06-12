@@ -179,7 +179,10 @@
             </template>
           </n-space>
         </n-form-item>
-        <n-form-item label="Hindsight Recall">
+
+        <!-- 记忆反思 -->
+        <n-divider title-placement="left">记忆反思</n-divider>
+        <n-form-item label="Recall 检索">
           <n-space vertical style="width: 100%">
             <n-space align="center">
               <n-switch v-model:value="contextConfig.hindsight_recall_enabled" />
@@ -206,7 +209,7 @@
             </template>
           </n-space>
         </n-form-item>
-        <n-form-item label="Hindsight Reflect">
+        <n-form-item label="Reflect 分析">
           <n-space vertical style="width: 100%">
             <n-space align="center">
               <n-switch v-model:value="contextConfig.hindsight_reflect_enabled" />
@@ -223,6 +226,30 @@
                 />
               </n-space>
             </template>
+          </n-space>
+        </n-form-item>
+
+        <!-- 跳过执行参数 -->
+        <n-divider title-placement="left">跳过执行参数</n-divider>
+        <n-form-item label="聊天冷却时间">
+          <n-space vertical style="width: 100%">
+            <n-space align="center">
+              <n-checkbox v-model:checked="formData.cooldown_enabled">
+                启用聊天冷却
+              </n-checkbox>
+              <n-input-number
+                v-model:value="formData.cooldown_minutes"
+                :min="1"
+                :max="120"
+                size="small"
+                style="width: 120px"
+                :disabled="!formData.cooldown_enabled"
+              />
+              <span style="font-size: 13px; color: #666">分钟</span>
+            </n-space>
+            <div style="font-size: 12px; color: #999; margin-top: 4px;">
+              如果当前会话最后一条用户消息距今不足设定时间，则跳过本次执行（不调用LLM），避免在用户正在聊天时发送重复消息。
+            </div>
           </n-space>
         </n-form-item>
         <n-form-item label="使用 LLM">
@@ -607,7 +634,9 @@ const formData = ref({
   with_mark: true,
   mark_format: '[凯莉主动发送] {timestamp}: {content}',
   send_mark: '[凯莉主动发送]',
-  time_format: '%H:%M 星期{weekday}'
+  time_format: '%H:%M 星期{weekday}',
+  cooldown_enabled: false,
+  cooldown_minutes: 10
 })
 
 // 上下文配置
@@ -750,7 +779,9 @@ function openCreate() {
     with_mark: true,
     mark_format: '[凯莉主动发送] {timestamp}: {content}',
     send_mark: '[凯莉主动发送]',
-    time_format: '%H:%M 星期{weekday}'
+    time_format: '%H:%M 星期{weekday}',
+    cooldown_enabled: false,
+    cooldown_minutes: 10
   }
   contextConfig.value = {
     session_enabled: true,
@@ -874,7 +905,9 @@ function editJob(job) {
       with_mark: job.with_mark !== false,
       mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}',
       send_mark: job.send_mark || '[凯莉主动发送]',
-      time_format: job.time_format || '%H:%M 星期{weekday}'
+      time_format: job.time_format || '%H:%M 星期{weekday}',
+      cooldown_enabled: job.cooldown_enabled || false,
+      cooldown_minutes: job.cooldown_minutes || 10
     }
   } else {
     // 兼容旧的单一 prompt 字段

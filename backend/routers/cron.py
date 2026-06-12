@@ -58,6 +58,8 @@ async def create_cron_job(
         "mark_format": request.mark_format,
         "send_mark": request.send_mark,
         "time_format": request.time_format,
+        "cooldown_enabled": request.cooldown_enabled,
+        "cooldown_minutes": request.cooldown_minutes,
         "last_run_at": None,
         "next_run_at": None
     }
@@ -113,6 +115,10 @@ async def update_cron_job(
                 job["send_mark"] = request.send_mark
             if request.time_format is not None:
                 job["time_format"] = request.time_format
+            if request.cooldown_enabled is not None:
+                job["cooldown_enabled"] = request.cooldown_enabled
+            if request.cooldown_minutes is not None:
+                job["cooldown_minutes"] = request.cooldown_minutes
 
             ConfigService.save_cron_jobs(db, jobs)
             # 同步到调度器

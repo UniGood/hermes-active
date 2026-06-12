@@ -158,6 +158,7 @@ async def run_cron_job(job_id: str):
         context_parts = []
 
         # 1. Session 上下文
+        context_msgs = []
         session_enabled = ctx_config.get("session_enabled", True)
         if session_enabled:
             context_limit = ctx_config.get("session_limit", 20)
@@ -190,6 +191,35 @@ async def run_cron_job(job_id: str):
 
         context_text = "\n\n".join(context_parts)
         user_prompt = user_prompt_final.replace("{context}", context_text)
+
+        # 冷却时间检查
+        cooldown_enabled = target_job.get("cooldown_enabled", False)
+        cooldown_minutes = target_job.get("cooldown_minutes", 10)
+        if cooldown_enabled and context_msgs:
+            from datetime import datetime, timezone, timedelta
+            now = datetime.now(timezone(timedelta(hours=8)))
+            # 找最后一条 user 消息的时间
+            last_user_time = None
+            for msg in reversed(context_msgs):
+                if msg.get("role") == "user" and msg.get("timestamp"):
+                    ts = msg["timestamp"]
+                    if isinstance(ts, (int, float)):
+                        last_user_time = datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=8)))
+                    break
+            if last_user_time:
+                elapsed = (now - last_user_time).total_seconds() / 60
+                if elapsed < cooldown_minutes:
+                    reason = f"用户最后发言距今 {elapsed:.1f} 分钟，不足冷却时间 {cooldown_minutes} 分钟"
+                    logger.info(f"任务 {target_job['name']} 跳过执行: {reason}")
+                    MessageService.create_task_log(
+                        task_type="cron_run",
+                        status="skipped",
+                        message=f"任务 {target_job['name']} 跳过执行",
+                        error=reason,
+                        duration=round(datetime.now().timestamp() - start_time, 2),
+                        details={"skip_reason": reason, "cooldown_minutes": cooldown_minutes, "elapsed_minutes": round(elapsed, 1)}
+                    )
+                    return
 
         # 获取任务参数
         use_llm = target_job.get("use_llm", True)
