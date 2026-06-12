@@ -3,6 +3,7 @@
 """
 import logging
 import asyncio
+import aiohttp
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -14,6 +15,51 @@ from services.session_service import SessionService
 from services.llm_service import LLMService
 
 logger = logging.getLogger("hermes.scheduler")
+
+HINDSIGHT_BASE_URL = "http://localhost:8888/v1/default/banks/hermes"
+
+
+async def call_hindsight_recall(query: str, limit: int = 10) -> list:
+    """调用 Hindsight Recall API 获取相关记忆"""
+    url = f"{HINDSIGHT_BASE_URL}/memories/recall"
+    payload = {"query": query, "limit": limit}
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    results = data.get("results", data.get("memories", []))
+                    logger.info(f"Hindsight Recall 成功: {len(results)} 条结果")
+                    return results
+                else:
+                    text = await resp.text()
+                    logger.warning(f"Hindsight Recall 失败 ({resp.status}): {text}")
+                    return []
+    except Exception as e:
+        logger.warning(f"Hindsight Recall 请求异常: {e}")
+        return []
+
+
+async def call_hindsight_reflect(query: str) -> str:
+    """调用 Hindsight Reflect API 获取综合分析"""
+    url = f"{HINDSIGHT_BASE_URL}/reflect"
+    payload = {"query": query}
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    reflection = data.get("reflection", data.get("result", ""))
+                    logger.info("Hindsight Reflect 成功")
+                    return reflection
+                else:
+                    text = await resp.text()
+                    logger.warning(f"Hindsight Reflect 失败 ({resp.status}): {text}")
+                    return ""
+    except Exception as e:
+        logger.warning(f"Hindsight Reflect 请求异常: {e}")
+        return ""
+
 
 # 全局调度器实例
 scheduler = AsyncIOScheduler(timezone="Asia/Shanghai")
@@ -108,19 +154,41 @@ async def run_cron_job(job_id: str):
             prompt_text = user_prompt_text or prompts_config.get("system", "")
             user_prompt_final = prompts_config.get("generation", "{context}")
 
-        # 获取上下文
+        # 获取上下文 - 拼接 Session、Hindsight Recall、Hindsight Reflect
+        context_parts = []
+
+        # 1. Session 上下文
         session_enabled = ctx_config.get("session_enabled", True)
         if session_enabled:
             context_limit = ctx_config.get("session_limit", 20)
             include_tool = ctx_config.get("include_tool", False)
             context_msgs = MessageService.get_session_context_raw(sid, limit=context_limit, include_tool=include_tool)
-            context_text = "\n".join(
-                f"{m.get('role', 'unknown')}: {m.get('content', '')}"
-                for m in context_msgs
-            )
-        else:
-            context_text = ""
+            if context_msgs:
+                session_text = "\n".join(
+                    f"{m.get('role', 'unknown')}: {m.get('content', '')}"
+                    for m in context_msgs
+                )
+                context_parts.append(f"=== 最近对话 ===\n{session_text}")
 
+        # 2. Hindsight Recall
+        recall_enabled = ctx_config.get("hindsight_recall_enabled", False)
+        recall_query = ctx_config.get("hindsight_recall_query", "")
+        if recall_enabled and recall_query:
+            recall_limit = ctx_config.get("hindsight_recall_limit", 10)
+            recall_results = await call_hindsight_recall(recall_query, recall_limit)
+            if recall_results:
+                recall_text = "\n".join(f"- {r.get('text', '')}" for r in recall_results)
+                context_parts.append(f"=== 相关记忆 ===\n{recall_text}")
+
+        # 3. Hindsight Reflect
+        reflect_enabled = ctx_config.get("hindsight_reflect_enabled", False)
+        reflect_query = ctx_config.get("hindsight_reflect_query", "")
+        if reflect_enabled and reflect_query:
+            reflect_result = await call_hindsight_reflect(reflect_query)
+            if reflect_result:
+                context_parts.append(f"=== 综合分析 ===\n{reflect_result}")
+
+        context_text = "\n\n".join(context_parts)
         user_prompt = user_prompt_final.replace("{context}", context_text)
 
         # 获取任务参数

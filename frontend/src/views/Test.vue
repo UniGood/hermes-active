@@ -130,6 +130,44 @@
     <!-- 步骤 3: 生成主动消息 -->
     <n-card title="3. 生成主动消息" style="margin-bottom: 16px">
       <n-space vertical>
+        <!-- 提示词配置 -->
+        <n-divider title-placement="left" style="margin: 0 0 12px 0">提示词配置</n-divider>
+        <div class="prompt-config-area">
+          <div class="prompt-config-item">
+            <div class="prompt-config-label">系统提示词：</div>
+            <n-input
+              v-model:value="customSystemPrompt"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 6 }"
+              placeholder="系统提示词，定义 AI 的角色和行为规则"
+            />
+            <n-button size="small" @click="loadDefaultSystemPrompt" style="margin-top: 4px">
+              填充默认系统提示词
+            </n-button>
+          </div>
+          <div class="prompt-config-item">
+            <div class="prompt-config-label">用户提示词：</div>
+            <n-input
+              v-model:value="customUserPrompt"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 6 }"
+              placeholder="用户提示词模板，支持 {context} 占位符"
+            />
+            <div style="font-size: 12px; color: #999; margin-top: 4px">
+              支持 {context} 占位符，运行时替换为实际上下文
+            </div>
+          </div>
+          <n-space align="center">
+            <n-checkbox v-model:checked="appendSoulMd">拼接 soul.md</n-checkbox>
+            <n-button size="small" @click="previewPrompt" :loading="previewingPrompt" :disabled="!selectedSessionId || !hasContext">
+              预览提示词
+            </n-button>
+          </n-space>
+        </div>
+
+        <n-divider style="margin: 12px 0" />
+
+        <!-- 生成按钮 -->
         <n-space>
           <n-button
             @click="generateMessage"
@@ -142,21 +180,15 @@
           <n-tag v-if="hasContext" type="success">已获取上下文 ({{ contextSource }})</n-tag>
           <n-tag v-else type="warning">⚠️ 请先获取上下文</n-tag>
         </n-space>
-        <div v-if="generatedMessage" class="generated-message">
-          <div class="generated-label">生成结果：</div>
-          <div class="generated-content">{{ generatedMessage }}</div>
-          <n-button size="small" type="primary" @click="fillToSendBox" style="margin-top: 8px">
-            填入发送框
-          </n-button>
-        </div>
-        <!-- 完整提示词折叠面板 -->
-        <n-collapse v-if="generatedMessage && promptPreview" style="margin-top: 12px">
-          <n-collapse-item title="查看完整提示词" name="prompt-preview">
+
+        <!-- 预览结果 -->
+        <n-collapse v-if="promptPreviewData" style="margin-top: 12px">
+          <n-collapse-item title="查看提示词预览" name="prompt-preview">
             <div class="prompt-preview-section">
               <div class="prompt-section">
-                <div class="prompt-label">系统提示词：</div>
+                <div class="prompt-label">系统提示词（最终版）：</div>
                 <n-input
-                  :value="promptPreview.system_prompt"
+                  :value="promptPreviewData.system_prompt"
                   type="textarea"
                   :autosize="{ minRows: 2, maxRows: 8 }"
                   readonly
@@ -165,7 +197,7 @@
               <div class="prompt-section">
                 <div class="prompt-label">用户提示词模板：</div>
                 <n-input
-                  :value="promptPreview.user_prompt_template"
+                  :value="promptPreviewData.user_prompt_template"
                   type="textarea"
                   :autosize="{ minRows: 2, maxRows: 5 }"
                   readonly
@@ -174,16 +206,16 @@
               <div class="prompt-section">
                 <div class="prompt-label">实际上下文内容：</div>
                 <n-input
-                  :value="promptPreview.context_content"
+                  :value="promptPreviewData.context_content"
                   type="textarea"
                   :autosize="{ minRows: 3, maxRows: 10 }"
                   readonly
                 />
               </div>
-              <div class="prompt-section" v-if="promptPreview.soul_md">
+              <div class="prompt-section" v-if="promptPreviewData.soul_md">
                 <div class="prompt-label">soul.md 内容：</div>
                 <n-input
-                  :value="promptPreview.soul_md"
+                  :value="promptPreviewData.soul_md"
                   type="textarea"
                   :autosize="{ minRows: 2, maxRows: 6 }"
                   readonly
@@ -192,6 +224,15 @@
             </div>
           </n-collapse-item>
         </n-collapse>
+
+        <!-- 生成结果 -->
+        <div v-if="generatedMessage" class="generated-message">
+          <div class="generated-label">生成结果：</div>
+          <div class="generated-content">{{ generatedMessage }}</div>
+          <n-button size="small" type="primary" @click="fillToSendBox" style="margin-top: 8px">
+            填入发送框
+          </n-button>
+        </div>
       </n-space>
     </n-card>
 
@@ -311,6 +352,13 @@ const reflectQueried = ref(false)
 const contextSource = ref(null)  // session / recall / reflect
 const contextData = ref(null)
 
+// 自定义提示词
+const customSystemPrompt = ref('')
+const customUserPrompt = ref('{context}')
+const appendSoulMd = ref(true)
+const promptPreviewData = ref(null)
+const previewingPrompt = ref(false)
+
 const hasContext = computed(() => {
   return contextSource.value !== null
 })
@@ -384,6 +432,54 @@ function truncate(str, len) {
 function fillToSendBox() {
   testMessage.value = generatedMessage.value
   message.success('已填入发送框')
+}
+
+async function loadDefaultSystemPrompt() {
+  try {
+    const data = await api.get('/config/default-prompts')
+    if (data.system_prompt) {
+      customSystemPrompt.value = data.system_prompt
+    }
+    if (data.user_prompt) {
+      customUserPrompt.value = data.user_prompt
+    }
+    appendSoulMd.value = data.append_soul_md !== false
+    message.success('已加载默认提示词')
+  } catch (e) {
+    // 如果没有默认提示词，尝试从 prompts 配置加载
+    try {
+      const promptsConfig = await api.get('/config/prompts')
+      customSystemPrompt.value = promptsConfig.system || ''
+      message.success('已加载系统提示词')
+    } catch (e2) {
+      message.warning('加载默认提示词失败')
+    }
+  }
+}
+
+async function previewPrompt() {
+  if (!selectedSessionId.value || !hasContext.value) {
+    message.warning('请先选择 Session 并获取上下文')
+    return
+  }
+  previewingPrompt.value = true
+  try {
+    const data = await api.post('/messages/preview', {
+      session_id: selectedSessionId.value,
+      context_source: contextSource.value,
+      context_data: contextData.value,
+      system_prompt: customSystemPrompt.value || null,
+      user_prompt: customUserPrompt.value || null,
+      append_soul_md: appendSoulMd.value
+    })
+    promptPreviewData.value = data
+    addLog('success', '提示词预览成功')
+  } catch (e) {
+    addLog('error', '预览失败: ' + (e?.detail || '未知错误'))
+    message.error('预览失败')
+  } finally {
+    previewingPrompt.value = false
+  }
 }
 
 function onPlatformChange() {
@@ -512,57 +608,28 @@ async function generateMessage() {
     return
   }
   generating.value = true
-  promptPreview.value = null
+  promptPreviewData.value = null
   try {
     const data = await api.post('/messages/generate', {
       session_id: selectedSessionId.value,
       context_source: contextSource.value,
-      context_data: contextData.value
+      context_data: contextData.value,
+      system_prompt: customSystemPrompt.value || null,
+      user_prompt: customUserPrompt.value || null,
+      append_soul_md: appendSoulMd.value
     })
     generatedMessage.value = data?.message || ''
     addLog('success', `生成消息: ${generatedMessage.value}`)
     message.success('生成成功')
 
-    // 构建提示词预览
-    buildPromptPreview()
+    // 自动预览提示词
+    await previewPrompt()
   } catch (e) {
     addLog('error', '生成失败: ' + (e?.detail || '未知错误'))
     message.error('生成失败')
   } finally {
     generating.value = false
   }
-}
-
-function buildPromptPreview() {
-  // 从配置获取提示词
-  api.get('/config/prompts').then(promptsConfig => {
-    const systemPrompt = promptsConfig.system || ''
-    const generationTemplate = promptsConfig.generation || '{context}'
-
-    // 获取 soul.md
-    api.get('/config/hermes/soul').then(soulData => {
-      promptPreview.value = {
-        system_prompt: systemPrompt,
-        user_prompt_template: generationTemplate,
-        context_content: contextData.value || '无上下文',
-        soul_md: soulData.content || ''
-      }
-    }).catch(() => {
-      promptPreview.value = {
-        system_prompt: systemPrompt,
-        user_prompt_template: generationTemplate,
-        context_content: contextData.value || '无上下文',
-        soul_md: ''
-      }
-    })
-  }).catch(() => {
-    promptPreview.value = {
-      system_prompt: '（无法加载）',
-      user_prompt_template: '（无法加载）',
-      context_content: contextData.value || '无上下文',
-      soul_md: ''
-    }
-  })
 }
 
 async function sendMessage() {
@@ -871,6 +938,27 @@ onMounted(() => {
 .log-time {
   color: #999;
   flex-shrink: 0;
+}
+
+.prompt-config-area {
+  background: #f5f7fa;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.prompt-config-item {
+  margin-bottom: 12px;
+}
+
+.prompt-config-item:last-of-type {
+  margin-bottom: 8px;
+}
+
+.prompt-config-label {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+  font-weight: 500;
 }
 
 .prompt-preview-section {

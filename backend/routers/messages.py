@@ -39,6 +39,18 @@ class GenerateRequest(BaseModel):
     session_id: str
     context_source: str = "session"  # session / recall / reflect
     context_data: Optional[str] = None  # recall/reflect 的结果文本
+    system_prompt: Optional[str] = None  # 自定义系统提示词
+    user_prompt: Optional[str] = None  # 自定义用户提示词模板
+    append_soul_md: bool = True  # 是否拼接 soul.md
+
+
+class PreviewRequest(BaseModel):
+    session_id: str
+    context_source: str = "session"
+    context_data: Optional[str] = None
+    system_prompt: Optional[str] = None
+    user_prompt: Optional[str] = None
+    append_soul_md: bool = True
 
 
 @router.get("/{session_id}")
@@ -97,8 +109,16 @@ async def generate_message(
         else:
             context_text = ""
 
-        system_prompt = prompts_config.get("system", "")
-        generation_template = prompts_config.get("generation", "{context}")
+        # 使用自定义提示词或默认提示词
+        system_prompt = request.system_prompt if request.system_prompt is not None else prompts_config.get("system", "")
+
+        # 拼接 soul.md
+        if request.append_soul_md:
+            soul_content = ConfigService.read_hermes_soul()
+            if soul_content:
+                system_prompt = system_prompt + "\n\n" + soul_content if system_prompt else soul_content
+
+        generation_template = request.user_prompt if request.user_prompt is not None else prompts_config.get("generation", "{context}")
         user_prompt = generation_template.replace("{context}", context_text)
 
         if llm_config.get("mode") == "hermes":
@@ -216,3 +236,49 @@ async def send_proactive_message(
         return {"success": True, "message": result.get("message", "发送成功"), "detail": result}
     else:
         raise HTTPException(status_code=500, detail=result.get("message", "发送失败"))
+
+
+@router.post("/preview")
+async def preview_prompt(
+    request: PreviewRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
+):
+    """预览完整提示词（不调用 LLM）"""
+    prompts_config = ConfigService.get_prompts_config(db)
+
+    # 获取上下文
+    context_source = request.context_source
+    context_data = request.context_data
+    context_content = ""
+
+    if context_source == "session":
+        context_msgs = MessageService.get_session_context_raw(request.session_id, limit=20)
+        if context_msgs:
+            context_content = "\n".join(
+                f"{m.get('role', 'unknown')}: {m.get('content', '')[:200]}"
+                for m in context_msgs[-10:]
+            )
+    elif context_data:
+        context_content = context_data
+
+    # 构建提示词
+    system_prompt = request.system_prompt if request.system_prompt is not None else prompts_config.get("system", "")
+    soul_md = ""
+
+    # 拼接 soul.md
+    if request.append_soul_md:
+        soul_md = ConfigService.read_hermes_soul() or ""
+        if soul_md:
+            system_prompt = system_prompt + "\n\n" + soul_md if system_prompt else soul_md
+
+    user_prompt_template = request.user_prompt if request.user_prompt is not None else prompts_config.get("generation", "{context}")
+    user_prompt_final = user_prompt_template.replace("{context}", context_content)
+
+    return {
+        "system_prompt": system_prompt,
+        "user_prompt_template": user_prompt_template,
+        "user_prompt_final": user_prompt_final,
+        "context_content": context_content,
+        "soul_md": soul_md
+    }

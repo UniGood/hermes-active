@@ -54,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, markRaw } from 'vue'
+import { ref, markRaw, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import {
@@ -73,6 +73,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const sidebarCollapsed = ref(false)
+const sidebarOpen = ref(false)
 
 const menuItems = [
   { path: '/', label: '监控面板', icon: markRaw(HomeOutline) },
@@ -94,6 +95,11 @@ function handleLogout() {
   authStore.logout()
   router.push('/login')
 }
+
+// 路由切换时关闭移动端侧边栏
+watch(() => route.path, () => {
+  sidebarOpen.value = false
+})
 </script>
 
 <style scoped>
