@@ -1,7 +1,7 @@
 <template>
   <div class="layout">
     <!-- PC 端侧边栏 -->
-    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
+    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed, open: sidebarOpen }">
       <div class="sidebar-header">
         <n-avatar :size="40" round>H</n-avatar>
         <span v-if="!sidebarCollapsed" class="sidebar-title">Hermes Active</span>
@@ -27,11 +27,17 @@
         </n-button>
       </div>
     </aside>
+    
+    <!-- 移动端遮罩层 -->
+    <div class="sidebar-overlay" :class="{ show: sidebarOpen }" @click="sidebarOpen = false"></div>
 
     <!-- 主内容区 -->
     <div class="main-area">
-      <!-- 移动端顶部栏（仅退出按钮） -->
+      <!-- 移动端顶部栏 -->
       <header class="mobile-header">
+        <n-button quaternary @click="sidebarOpen = !sidebarOpen">
+          <n-icon :size="22"><MenuOutline /></n-icon>
+        </n-button>
         <span class="mobile-title">Hermes Active</span>
         <n-button quaternary @click="handleLogout">
           <n-icon :size="20"><LogOutOutline /></n-icon>
@@ -191,78 +197,43 @@ function handleLogout() {
 
 /* ========== 移动端适配（< 768px） ========== */
 @media (max-width: 768px) {
-  /* 移动端侧边栏改为顶部横向导航 */
+  /* 移动端侧边栏 - 可折叠 */
   .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 240px;
+    z-index: 1001;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    background: #fff;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* 遮罩层 */
+  .sidebar-overlay {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    align-items: center;
-    padding: 8px 12px;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
     z-index: 1000;
-    border-right: none;
-    border-bottom: 1px solid #e8e8e8;
-    overflow-x: auto;
-    white-space: nowrap;
   }
 
-  .sidebar-header {
-    display: none;
+  .sidebar-overlay.show {
+    display: block;
   }
 
-  .sidebar-nav {
-    flex-direction: row;
-    gap: 4px;
-    overflow-x: auto;
-    flex: 1;
-  }
-
-  .nav-item {
-    flex-direction: column;
-    padding: 4px 8px;
-    font-size: 11px;
-    min-width: 48px;
-  }
-
-  .nav-label {
-    font-size: 10px;
-  }
-
-  .sidebar-footer {
-    display: none;
-  }
-
-  /* 主内容区顶部留出空间 */
+  /* 主内容区 */
   .main-area {
     margin-left: 0;
-    margin-top: 56px;
-  }
-
-  /* 显示移动端顶部栏 */
-  .mobile-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 16px;
-    background: #fff;
-    border-bottom: 1px solid #e8e8e8;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-  }
-
-  .mobile-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
-  }
-
-  /* 页面内容适配 */
-  .page-content {
-    padding: 12px;
+    margin-top: 52px;
   }
 }
 </style>
