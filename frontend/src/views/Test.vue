@@ -436,24 +436,13 @@ function fillToSendBox() {
 
 async function loadDefaultSystemPrompt() {
   try {
-    const data = await api.get('/config/default-prompts')
-    if (data.system_prompt) {
-      customSystemPrompt.value = data.system_prompt
-    }
-    if (data.user_prompt) {
-      customUserPrompt.value = data.user_prompt
-    }
-    appendSoulMd.value = data.append_soul_md !== false
+    const data = await api.get('/config/prompts')
+    customSystemPrompt.value = data.system || ''
+    customUserPrompt.value = data.generation || ''
+    appendSoulMd.value = true
     message.success('已加载默认提示词')
   } catch (e) {
-    // 如果没有默认提示词，尝试从 prompts 配置加载
-    try {
-      const promptsConfig = await api.get('/config/prompts')
-      customSystemPrompt.value = promptsConfig.system || ''
-      message.success('已加载系统提示词')
-    } catch (e2) {
-      message.warning('加载默认提示词失败')
-    }
+    message.warning('加载默认提示词失败')
   }
 }
 

@@ -892,11 +892,11 @@ function deleteJob(job) {
 
 async function openDefaultPrompts() {
   try {
-    const data = await api.get('/config/default-prompts')
+    const data = await api.get('/config/prompts')
     defaultPromptsData.value = {
-      system_prompt: data.system_prompt || '',
-      user_prompt: data.user_prompt || '',
-      append_soul_md: data.append_soul_md !== false
+      system_prompt: data.system || '',
+      user_prompt: data.generation || '',
+      append_soul_md: true
     }
     defaultPromptPreview.value = null
     showDefaultPrompts.value = true
@@ -908,7 +908,10 @@ async function openDefaultPrompts() {
 async function saveDefaultPrompts() {
   savingDefaultPrompts.value = true
   try {
-    await api.put('/config/default-prompts', defaultPromptsData.value)
+    await api.put('/config/prompts', {
+      system: defaultPromptsData.value.system_prompt,
+      generation: defaultPromptsData.value.user_prompt
+    })
     message.success('默认提示词配置已保存')
     showDefaultPrompts.value = false
     // 重新加载默认提示词
