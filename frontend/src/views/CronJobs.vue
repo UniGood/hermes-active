@@ -264,13 +264,8 @@
             {{ formData.write_to_db ? '消息写入 session 数据库' : '仅发送不写入' }}
           </span>
         </n-form-item>
-        <n-form-item label="带标记">
-          <n-switch v-model:value="formData.with_mark" :disabled="!formData.write_to_db" />
-          <span style="margin-left: 8px; color: #999; font-size: 13px">
-            {{ formData.with_mark ? '消息带标记前缀' : '不带标记' }}
-          </span>
-        </n-form-item>
-        <template v-if="formData.with_mark && formData.write_to_db">
+
+        <template>
           <n-form-item label="发送标记">
             <n-input v-model:value="formData.send_mark" placeholder="[凯莉主动发送]" style="max-width: 300px" />
           </n-form-item>

@@ -135,8 +135,8 @@ class CronJobCreate(BaseModel):
     write_to_db: bool = True
     with_mark: bool = True
     mark_format: str = "[凯莉主动发送] {timestamp}: {content}"
-    send_mark: str = "[凯莉主动发送]"
-    time_format: str = "%H:%M 星期{weekday}"
+    send_mark: Optional[str] = "[凯莉主动发送]"
+    time_format: Optional[str] = "%H:%M 星期{weekday}"
     cooldown_enabled: bool = False
     cooldown_minutes: int = 10
 
@@ -176,8 +176,8 @@ class CronJobInfo(BaseModel):
     write_to_db: bool = True
     with_mark: bool = True
     mark_format: str = "[凯莉主动发送] {timestamp}: {content}"
-    send_mark: str = "[凯莉主动发送]"
-    time_format: str = "%H:%M 星期{weekday}"
+    send_mark: Optional[str] = "[凯莉主动发送]"
+    time_format: Optional[str] = "%H:%M 星期{weekday}"
     cooldown_enabled: bool = False
     cooldown_minutes: int = 10
     last_run_at: Optional[datetime] = None

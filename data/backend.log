@@ -348,3 +348,27 @@
 2026-06-13 00:50:42,758 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
 2026-06-13 00:50:42,758 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
 2026-06-13 00:50:42,759 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:51:42,759 [INFO] apscheduler.executors.default: Running job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-13 00:51:42 CST)" (scheduled at 2026-06-13 00:51:42.759217+08:00)
+2026-06-13 00:51:42,761 [INFO] hermes.scheduler: 更新任务调度: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:51:42,761 [INFO] apscheduler.scheduler: Removed job _sync_jobs
+2026-06-13 00:51:42,761 [INFO] hermes.scheduler: 移除已删除任务: _sync_jobs
+2026-06-13 00:51:42,761 [INFO] apscheduler.executors.default: Job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-13 00:52:42 CST)" executed successfully
+2026-06-13 00:52:01,547 [INFO] hermes.scheduler: 更新任务调度: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:56:14,422 [INFO] watchfiles.main: 1 change detected
+2026-06-13 00:56:14,603 [INFO] hermes.scheduler: 调度器已停止
+2026-06-13 00:56:14,603 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-13 00:56:15,814 [INFO] watchfiles.main: 3 changes detected
+2026-06-13 00:56:15,979 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:56:15,979 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:56:15,995 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:56:15,995 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:56:15,996 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-13 00:57:01,382 [INFO] watchfiles.main: 1 change detected
+2026-06-13 00:57:01,531 [INFO] hermes.scheduler: 调度器已停止
+2026-06-13 00:57:01,531 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-13 00:57:02,341 [INFO] watchfiles.main: 3 changes detected
+2026-06-13 00:57:02,911 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-13 00:57:02,911 [INFO] hermes.scheduler: 调度器已启动
+2026-06-13 00:57:02,927 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-13 00:57:02,928 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-13 00:57:02,928 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
