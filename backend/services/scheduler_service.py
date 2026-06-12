@@ -67,10 +67,13 @@ async def run_cron_job(job_id: str):
         llm_config = ConfigService.get_llm_config(db)
         prompts_config = ConfigService.get_prompts_config(db)
 
-        prompt_text = target_job.get("prompt") or prompts_config.get("system", "")
+        raw_prompt = target_job.get("prompt") or ""
+        # 从 prompt 中解析上下文配置
+        ctx_config, user_prompt_text = _parse_context_config(raw_prompt)
+        prompt_text = user_prompt_text or prompts_config.get("system", "")
 
         # 获取上下文
-        context_limit = target_job.get("context_limit", 20)
+        context_limit = ctx_config.get("session_limit", 20)
         context_msgs = MessageService.get_session_context_raw(sid, limit=context_limit)
         context_text = "\n".join(
             f"{m.get('role', 'unknown')}: {m.get('content', '')}"
@@ -125,8 +128,18 @@ async def run_cron_job(job_id: str):
 
         duration = round(datetime.now().timestamp() - start_time, 2)
 
-        # 更新 last_run_at
+        # 更新 last_run_at 和 next_run_at
         target_job["last_run_at"] = datetime.utcnow().isoformat()
+        # 计算 next_run_at
+        try:
+            from croniter import croniter
+            schedule = target_job.get("schedule", "")
+            if schedule:
+                now = datetime.now()
+                cron = croniter(schedule, now)
+                target_job["next_run_at"] = cron.get_next(datetime).isoformat()
+        except Exception as e:
+            logger.warning(f"计算 next_run_at 失败: {e}")
         ConfigService.save_cron_jobs(db, jobs)
 
         if send_result.get("success"):
@@ -176,6 +189,54 @@ def _parse_cron_schedule(schedule: str) -> dict:
     }
 
 
+CTX_MARKER_START = "<!--CTX:"
+CTX_MARKER_END = "-->"
+
+
+def _parse_context_config(raw_prompt: str) -> tuple:
+    """从 prompt 中解析上下文配置，返回 (config_dict, user_prompt)"""
+    import urllib.parse
+
+    default_config = {
+        "session_limit": 20,
+        "hindsight_recall_enabled": False,
+        "hindsight_recall_query": "",
+        "hindsight_recall_limit": 10,
+        "hindsight_reflect_enabled": False,
+        "hindsight_reflect_query": "",
+    }
+
+    if not raw_prompt or not raw_prompt.startswith(CTX_MARKER_START):
+        return default_config, raw_prompt or ""
+
+    end_idx = raw_prompt.find(CTX_MARKER_END)
+    if end_idx == -1:
+        return default_config, raw_prompt
+
+    ctx_str = raw_prompt[len(CTX_MARKER_START):end_idx]
+    user_prompt = raw_prompt[end_idx + len(CTX_MARKER_END):].strip()
+
+    config = dict(default_config)
+    for pair in ctx_str.split(";"):
+        if "=" not in pair:
+            continue
+        key, value = pair.split("=", 1)
+        if key == "session_limit":
+            config["session_limit"] = int(value) if value.isdigit() else 20
+        elif key == "recall":
+            config["hindsight_recall_enabled"] = value == "true"
+        elif key == "recall_query":
+            config["hindsight_recall_query"] = urllib.parse.unquote(value)
+        elif key == "recall_limit":
+            config["hindsight_recall_limit"] = int(value) if value.isdigit() else 10
+        elif key == "reflect":
+            config["hindsight_reflect_enabled"] = value == "true"
+        elif key == "reflect_query":
+            config["hindsight_reflect_query"] = urllib.parse.unquote(value)
+
+    return config, user_prompt
+
+
 def sync_jobs_from_db():
     """从数据库同步任务到调度器"""
     db = ActiveSession()
@@ -187,6 +248,7 @@ def sync_jobs_from_db():
     # 获取当前调度器中的任务 ID
     existing_job_ids = {job.id for job in scheduler.get_jobs()}
     db_job_ids = set()
+    jobs_updated = False
 
     for job_config in jobs:
         job_id = job_config["id"]
@@ -197,6 +259,10 @@ def sync_jobs_from_db():
             if job_id in existing_job_ids:
                 scheduler.remove_job(job_id)
                 logger.info(f"移除禁用任务: {job_config['name']} ({job_id})")
+            # 禁用任务也要计算 next_run_at（但标记为 null）
+            if job_config.get("next_run_at") is not None:
+                job_config["next_run_at"] = None
+                jobs_updated = True
             continue
 
         schedule = job_config.get("schedule", "")
@@ -206,6 +272,20 @@ def sync_jobs_from_db():
         try:
             trigger_params = _parse_cron_schedule(schedule)
             trigger = CronTrigger(**trigger_params, timezone="Asia/Shanghai")
+
+            # 使用 croniter 计算 next_run_at
+            try:
+                from croniter import croniter
+                now = datetime.now()
+                cron = croniter(schedule, now)
+                next_run = cron.get_next(datetime)
+                next_run_iso = next_run.isoformat()
+
+                if job_config.get("next_run_at") != next_run_iso:
+                    job_config["next_run_at"] = next_run_iso
+                    jobs_updated = True
+            except Exception as e:
+                logger.warning(f"计算任务 {job_config['name']} 的 next_run_at 失败: {e}")
 
             # 如果任务已存在，更新它；否则添加新任务
             if job_id in existing_job_ids:
@@ -228,6 +308,15 @@ def sync_jobs_from_db():
     for job_id in existing_job_ids - db_job_ids:
         scheduler.remove_job(job_id)
         logger.info(f"移除已删除任务: {job_id}")
+
+    # 如果有更新，回写数据库
+    if jobs_updated:
+        db = ActiveSession()
+        try:
+            ConfigService.save_cron_jobs(db, jobs)
+            logger.info("已更新任务的 next_run_at")
+        finally:
+            db.close()
 
 
 def start_scheduler():

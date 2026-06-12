@@ -172,10 +172,15 @@ async def run_cron_job(
         llm_config = ConfigService.get_llm_config(db)
         prompts_config = ConfigService.get_prompts_config(db)
 
-        prompt_text = target_job.get("prompt") or prompts_config.get("system", "")
+        raw_prompt = target_job.get("prompt") or ""
+        # 从 prompt 中解析上下文配置
+        from services.scheduler_service import _parse_context_config
+        ctx_config, user_prompt_text = _parse_context_config(raw_prompt)
+        prompt_text = user_prompt_text or prompts_config.get("system", "")
 
         # 获取上下文
-        context_msgs = MessageService.get_session_context_raw(session_id, limit=20)
+        context_limit = ctx_config.get("session_limit", 20)
+        context_msgs = MessageService.get_session_context_raw(session_id, limit=context_limit)
         context_text = "\n".join(
             f"{m.get('role', 'unknown')}: {m.get('content', '')}"
             for m in context_msgs

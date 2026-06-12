@@ -36,7 +36,7 @@
     </n-spin>
 
     <!-- 创建/编辑任务弹窗 -->
-    <n-modal v-model:show="showCreate" preset="card" :title="editingJob ? '编辑任务' : '创建任务'" style="width: 95%; max-width: 700px">
+    <n-modal v-model:show="showCreate" preset="card" :title="editingJob ? '编辑任务' : '创建任务'" fullscreen>
       <n-form label-placement="left" label-width="120">
         <n-form-item label="任务名称">
           <n-input v-model:value="formData.name" placeholder="主动消息" />
@@ -85,6 +85,69 @@
           <n-button size="small" @click="fillDefaultPrompt" style="margin-top: 4px">
             填充默认提示词
           </n-button>
+        </n-form-item>
+
+        <!-- 上下文配置 -->
+        <n-divider title-placement="left">上下文配置</n-divider>
+        <n-form-item label="Session 上下文">
+          <n-space vertical style="width: 100%">
+            <n-space align="center">
+              <span style="font-size: 13px; color: #666">读取条数：</span>
+              <n-input-number
+                v-model:value="contextConfig.session_limit"
+                :min="1"
+                :max="100"
+                size="small"
+                style="width: 120px"
+              />
+            </n-space>
+          </n-space>
+        </n-form-item>
+        <n-form-item label="Hindsight Recall">
+          <n-space vertical style="width: 100%">
+            <n-space align="center">
+              <n-switch v-model:value="contextConfig.hindsight_recall_enabled" />
+              <span style="font-size: 13px; color: #666">启用 Recall 记忆检索</span>
+            </n-space>
+            <template v-if="contextConfig.hindsight_recall_enabled">
+              <n-space align="center">
+                <span style="font-size: 13px; color: #666">关键词：</span>
+                <n-input
+                  v-model:value="contextConfig.hindsight_recall_query"
+                  placeholder="搜索关键词"
+                  size="small"
+                  style="width: 300px"
+                />
+                <span style="font-size: 13px; color: #666">数量：</span>
+                <n-input-number
+                  v-model:value="contextConfig.hindsight_recall_limit"
+                  :min="1"
+                  :max="50"
+                  size="small"
+                  style="width: 100px"
+                />
+              </n-space>
+            </template>
+          </n-space>
+        </n-form-item>
+        <n-form-item label="Hindsight Reflect">
+          <n-space vertical style="width: 100%">
+            <n-space align="center">
+              <n-switch v-model:value="contextConfig.hindsight_reflect_enabled" />
+              <span style="font-size: 13px; color: #666">启用 Reflect 综合分析</span>
+            </n-space>
+            <template v-if="contextConfig.hindsight_reflect_enabled">
+              <n-space align="center">
+                <span style="font-size: 13px; color: #666">问题：</span>
+                <n-input
+                  v-model:value="contextConfig.hindsight_reflect_query"
+                  placeholder="要分析的问题"
+                  size="small"
+                  style="width: 400px"
+                />
+              </n-space>
+            </template>
+          </n-space>
         </n-form-item>
         <n-form-item label="使用 LLM">
           <n-switch v-model:value="formData.use_llm" />
@@ -154,6 +217,16 @@ const formData = ref({
   write_to_db: true,
   with_mark: true,
   mark_format: '[凯莉主动发送] {timestamp}: {content}'
+})
+
+// 上下文配置
+const contextConfig = ref({
+  session_limit: 20,
+  hindsight_recall_enabled: false,
+  hindsight_recall_query: '',
+  hindsight_recall_limit: 10,
+  hindsight_reflect_enabled: false,
+  hindsight_reflect_query: ''
 })
 
 // 监听平台变化，重新加载 session 列表
@@ -253,6 +326,14 @@ function openCreate() {
     with_mark: true,
     mark_format: '[凯莉主动发送] {timestamp}: {content}'
   }
+  contextConfig.value = {
+    session_limit: 20,
+    hindsight_recall_enabled: false,
+    hindsight_recall_query: '',
+    hindsight_recall_limit: 10,
+    hindsight_reflect_enabled: false,
+    hindsight_reflect_query: ''
+  }
   sessionMode.value = 'latest'
   cronParseResult.value = null
   parseCron()
@@ -272,6 +353,9 @@ async function saveJob() {
     if (sessionMode.value === 'latest') {
       submitData.session_id = null
     }
+
+    // 将上下文配置拼接到 prompt 中
+    submitData.prompt = buildPromptWithContext(formData.value.prompt, contextConfig.value)
 
     if (editingJob.value) {
       await api.put(`/cron/${editingJob.value.id}`, submitData)
@@ -314,10 +398,15 @@ async function runJob(job) {
 
 function editJob(job) {
   editingJob.value = job
+  const rawPrompt = job.prompt || ''
+
+  // 解析提示词中的上下文配置
+  const parsed = parseContextFromPrompt(rawPrompt)
+  contextConfig.value = parsed.config
   formData.value = {
     name: job.name,
     schedule: job.schedule,
-    prompt: job.prompt || '',
+    prompt: parsed.userPrompt,
     session_id: job.session_id || null,
     platform: job.platform || 'weixin',
     use_llm: job.use_llm !== false,
@@ -348,6 +437,78 @@ function deleteJob(job) {
       }
     }
   })
+}
+
+// 上下文配置序列化/反序列化
+const CTX_MARKER_START = '<!--CTX:'
+const CTX_MARKER_END = '-->'
+
+function buildPromptWithContext(userPrompt, config) {
+  const parts = []
+  parts.push(`session_limit=${config.session_limit || 20}`)
+  parts.push(`recall=${config.hindsight_recall_enabled ? 'true' : 'false'}`)
+  if (config.hindsight_recall_enabled && config.hindsight_recall_query) {
+    parts.push(`recall_query=${encodeURIComponent(config.hindsight_recall_query)}`)
+    parts.push(`recall_limit=${config.hindsight_recall_limit || 10}`)
+  }
+  parts.push(`reflect=${config.hindsight_reflect_enabled ? 'true' : 'false'}`)
+  if (config.hindsight_reflect_enabled && config.hindsight_reflect_query) {
+    parts.push(`reflect_query=${encodeURIComponent(config.hindsight_reflect_query)}`)
+  }
+  const ctxLine = `${CTX_MARKER_START}${parts.join(';')}${CTX_MARKER_END}`
+  return `${ctxLine}\n${userPrompt || ''}`
+}
+
+function parseContextFromPrompt(rawPrompt) {
+  const defaultConfig = {
+    session_limit: 20,
+    hindsight_recall_enabled: false,
+    hindsight_recall_query: '',
+    hindsight_recall_limit: 10,
+    hindsight_reflect_enabled: false,
+    hindsight_reflect_query: ''
+  }
+
+  if (!rawPrompt || !rawPrompt.startsWith(CTX_MARKER_START)) {
+    return { config: defaultConfig, userPrompt: rawPrompt || '' }
+  }
+
+  const endIdx = rawPrompt.indexOf(CTX_MARKER_END)
+  if (endIdx === -1) {
+    return { config: defaultConfig, userPrompt: rawPrompt }
+  }
+
+  const ctxStr = rawPrompt.substring(CTX_MARKER_START.length, endIdx)
+  const userPrompt = rawPrompt.substring(endIdx + CTX_MARKER_END.length).trim()
+
+  const config = { ...defaultConfig }
+  const pairs = ctxStr.split(';')
+  for (const pair of pairs) {
+    const [key, value] = pair.split('=')
+    if (!key || value === undefined) continue
+    switch (key) {
+      case 'session_limit':
+        config.session_limit = parseInt(value) || 20
+        break
+      case 'recall':
+        config.hindsight_recall_enabled = value === 'true'
+        break
+      case 'recall_query':
+        config.hindsight_recall_query = decodeURIComponent(value)
+        break
+      case 'recall_limit':
+        config.hindsight_recall_limit = parseInt(value) || 10
+        break
+      case 'reflect':
+        config.hindsight_reflect_enabled = value === 'true'
+        break
+      case 'reflect_query':
+        config.hindsight_reflect_query = decodeURIComponent(value)
+        break
+    }
+  }
+
+  return { config, userPrompt }
 }
 
 onMounted(() => {

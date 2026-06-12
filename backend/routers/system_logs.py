@@ -18,10 +18,15 @@ LOG_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "
 
 @router.get("/logs")
 async def get_system_logs(
-    lines: int = Query(200, ge=10, le=2000, description="返回最近多少行"),
+    lines: Optional[int] = Query(default=200, ge=10, le=2000, description="返回最近多少行"),
     current_user: User = Depends(get_current_user)
 ):
     """获取后端运行日志（最后 N 行）"""
+    # 防御性处理：确保 lines 为有效整数
+    if lines is None or lines < 10:
+        lines = 200
+    lines = min(lines, 2000)
+
     log_path = os.path.abspath(LOG_FILE_PATH)
 
     if not os.path.exists(log_path):
