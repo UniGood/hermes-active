@@ -126,14 +126,17 @@
             <!-- 上下文配置状态 -->
             <div class="context-status">
               <span class="context-status-label">当前上下文配置：</span>
-              <n-tag size="small" type="info">Session: {{ contextConfig.session_limit }} 条</n-tag>
+              <n-tag v-if="contextConfig.session_enabled" size="small" type="info">
+                Session: {{ contextConfig.session_limit }} 条{{ contextConfig.include_tool ? ' (含tool)' : '' }}
+              </n-tag>
+              <n-tag v-else size="small">无 Session 上下文</n-tag>
               <n-tag v-if="contextConfig.hindsight_recall_enabled" size="small" type="success">
                 Recall: {{ contextConfig.hindsight_recall_query || '已启用' }}
               </n-tag>
               <n-tag v-if="contextConfig.hindsight_reflect_enabled" size="small" type="warning">
                 Reflect: {{ contextConfig.hindsight_reflect_query || '已启用' }}
               </n-tag>
-              <n-tag v-if="!contextConfig.hindsight_recall_enabled && !contextConfig.hindsight_reflect_enabled" size="small">
+              <n-tag v-if="contextConfig.session_enabled && !contextConfig.hindsight_recall_enabled && !contextConfig.hindsight_reflect_enabled" size="small">
                 仅 Session 上下文
               </n-tag>
             </div>
@@ -145,15 +148,30 @@
         <n-form-item label="Session 上下文">
           <n-space vertical style="width: 100%">
             <n-space align="center">
-              <span style="font-size: 13px; color: #666">读取条数：</span>
-              <n-input-number
-                v-model:value="contextConfig.session_limit"
-                :min="1"
-                :max="100"
-                size="small"
-                style="width: 120px"
-              />
+              <n-checkbox v-model:checked="contextConfig.session_enabled">
+                获取 Session 上下文
+              </n-checkbox>
             </n-space>
+            <template v-if="contextConfig.session_enabled">
+              <n-space align="center">
+                <span style="font-size: 13px; color: #666">读取条数：</span>
+                <n-input-number
+                  v-model:value="contextConfig.session_limit"
+                  :min="1"
+                  :max="100"
+                  size="small"
+                  style="width: 120px"
+                />
+              </n-space>
+              <n-space align="center">
+                <n-checkbox v-model:checked="contextConfig.include_tool">
+                  获取 tool 上下文
+                </n-checkbox>
+                <span style="font-size: 12px; color: #999">
+                  {{ contextConfig.include_tool ? '包含 tool 角色消息' : '不包含 tool 角色消息' }}
+                </span>
+              </n-space>
+            </template>
           </n-space>
         </n-form-item>
         <n-form-item label="Hindsight Recall">
@@ -474,7 +492,9 @@ const formData = ref({
 
 // 上下文配置
 const contextConfig = ref({
+  session_enabled: true,
   session_limit: 20,
+  include_tool: false,
   hindsight_recall_enabled: false,
   hindsight_recall_query: '',
   hindsight_recall_limit: 10,
@@ -597,7 +617,9 @@ function openCreate() {
     mark_format: '[凯莉主动发送] {timestamp}: {content}'
   }
   contextConfig.value = {
+    session_enabled: true,
     session_limit: 20,
+    include_tool: false,
     hindsight_recall_enabled: false,
     hindsight_recall_query: '',
     hindsight_recall_limit: 10,
@@ -855,7 +877,9 @@ const CTX_MARKER_END = '-->'
 
 function buildPromptWithContext(userPrompt, config) {
   const parts = []
+  parts.push(`session_enabled=${config.session_enabled !== false ? 'true' : 'false'}`)
   parts.push(`session_limit=${config.session_limit || 20}`)
+  parts.push(`include_tool=${config.include_tool ? 'true' : 'false'}`)
   parts.push(`recall=${config.hindsight_recall_enabled ? 'true' : 'false'}`)
   if (config.hindsight_recall_enabled && config.hindsight_recall_query) {
     parts.push(`recall_query=${encodeURIComponent(config.hindsight_recall_query)}`)
@@ -871,7 +895,9 @@ function buildPromptWithContext(userPrompt, config) {
 
 function parseContextFromPrompt(rawPrompt) {
   const defaultConfig = {
+    session_enabled: true,
     session_limit: 20,
+    include_tool: false,
     hindsight_recall_enabled: false,
     hindsight_recall_query: '',
     hindsight_recall_limit: 10,
@@ -897,8 +923,14 @@ function parseContextFromPrompt(rawPrompt) {
     const [key, value] = pair.split('=')
     if (!key || value === undefined) continue
     switch (key) {
+      case 'session_enabled':
+        config.session_enabled = value === 'true'
+        break
       case 'session_limit':
         config.session_limit = parseInt(value) || 20
+        break
+      case 'include_tool':
+        config.include_tool = value === 'true'
         break
       case 'recall':
         config.hindsight_recall_enabled = value === 'true'

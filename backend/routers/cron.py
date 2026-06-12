@@ -226,12 +226,17 @@ async def run_cron_job(
             user_prompt_final = prompts_config.get("generation", "{context}")
 
         # 获取上下文
-        context_limit = ctx_config.get("session_limit", 20)
-        context_msgs = MessageService.get_session_context_raw(session_id, limit=context_limit)
-        context_text = "\n".join(
-            f"{m.get('role', 'unknown')}: {m.get('content', '')}"
-            for m in context_msgs
-        )
+        session_enabled = ctx_config.get("session_enabled", True)
+        if session_enabled:
+            context_limit = ctx_config.get("session_limit", 20)
+            include_tool = ctx_config.get("include_tool", False)
+            context_msgs = MessageService.get_session_context_raw(session_id, limit=context_limit, include_tool=include_tool)
+            context_text = "\n".join(
+                f"{m.get('role', 'unknown')}: {m.get('content', '')}"
+                for m in context_msgs
+            )
+        else:
+            context_text = ""
 
         user_prompt = user_prompt_final.replace("{context}", context_text)
 
@@ -437,7 +442,9 @@ async def preview_prompt(
 
     # 解析上下文配置
     ctx_config = request.context_config or {}
+    session_enabled = ctx_config.get("session_enabled", True)
     session_limit = ctx_config.get("session_limit", 20)
+    include_tool = ctx_config.get("include_tool", False)
     recall_enabled = ctx_config.get("hindsight_recall_enabled", False)
     recall_query = ctx_config.get("hindsight_recall_query", "")
     recall_limit = ctx_config.get("hindsight_recall_limit", 10)
@@ -460,8 +467,8 @@ async def preview_prompt(
             effective_session_id = latest_session.get("id")
 
     # 获取 Session 上下文
-    if effective_session_id:
-        context_msgs = MessageService.get_session_context_raw(effective_session_id, limit=session_limit)
+    if session_enabled and effective_session_id:
+        context_msgs = MessageService.get_session_context_raw(effective_session_id, limit=session_limit, include_tool=include_tool)
         context_data["session_messages"] = [
             {"role": m.get("role", "unknown"), "content": m.get("content", "")}
             for m in context_msgs

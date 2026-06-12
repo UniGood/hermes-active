@@ -30,7 +30,7 @@
 
     <!-- 主内容区 -->
     <div class="main-area">
-      <!-- 移动端顶部栏 -->
+      <!-- 移动端顶部栏（仅退出按钮） -->
       <header class="mobile-header">
         <span class="mobile-title">Hermes Active</span>
         <n-button quaternary @click="handleLogout">
@@ -43,20 +43,6 @@
         <router-view />
       </main>
     </div>
-
-    <!-- 移动端底部导航栏 -->
-    <nav class="mobile-nav">
-      <router-link
-        v-for="item in mobileMenuItems"
-        :key="item.path"
-        :to="item.path"
-        class="mobile-nav-item"
-        :class="{ active: isActive(item.path) }"
-      >
-        <n-icon :size="20"><component :is="item.icon" /></n-icon>
-        <span class="mobile-nav-label">{{ item.label }}</span>
-      </router-link>
-    </nav>
 
   </div>
 </template>
@@ -91,14 +77,6 @@ const menuItems = [
   { path: '/task-logs', label: '任务日志', icon: markRaw(DocumentTextOutline) },
   { path: '/system-logs', label: '系统日志', icon: markRaw(TerminalOutline) },
   { path: '/test', label: '测试工具', icon: markRaw(FlaskOutline) }
-]
-
-// 移动端底部导航只显示 4 个主要功能
-const mobileMenuItems = [
-  { path: '/', label: '监控', icon: markRaw(HomeOutline) },
-  { path: '/sessions', label: '会话', icon: markRaw(PersonOutline) },
-  { path: '/messages', label: '消息', icon: markRaw(ChatbubblesOutline) },
-  { path: '/test', label: '测试', icon: markRaw(FlaskOutline) }
 ]
 
 function isActive(path) {
@@ -211,21 +189,56 @@ function handleLogout() {
   display: none;
 }
 
-/* ========== 移动端底部导航（PC 端隐藏） ========== */
-.mobile-nav {
-  display: none;
-}
-
 /* ========== 移动端适配（< 768px） ========== */
 @media (max-width: 768px) {
-  /* 隐藏 PC 端侧边栏 */
+  /* 移动端侧边栏改为顶部横向导航 */
   .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 12px;
+    z-index: 1000;
+    border-right: none;
+    border-bottom: 1px solid #e8e8e8;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .sidebar-header {
     display: none;
   }
 
-  /* 主内容区不需要偏移 */
+  .sidebar-nav {
+    flex-direction: row;
+    gap: 4px;
+    overflow-x: auto;
+    flex: 1;
+  }
+
+  .nav-item {
+    flex-direction: column;
+    padding: 4px 8px;
+    font-size: 11px;
+    min-width: 48px;
+  }
+
+  .nav-label {
+    font-size: 10px;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  /* 主内容区顶部留出空间 */
   .main-area {
     margin-left: 0;
+    margin-top: 56px;
   }
 
   /* 显示移动端顶部栏 */
@@ -247,44 +260,9 @@ function handleLogout() {
     color: #333;
   }
 
-  /* 显示移动端底部导航 */
-  .mobile-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #fff;
-    border-top: 1px solid #e8e8e8;
-    z-index: 100;
-    padding: 4px 0;
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-
-  .mobile-nav-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: 8px 4px;
-    color: #999;
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-
-  .mobile-nav-item.active {
-    color: #18a058;
-  }
-
-  .mobile-nav-label {
-    font-size: 10px;
-  }
-
-  /* 页面内容底部留出底部导航空间 */
+  /* 页面内容适配 */
   .page-content {
     padding: 12px;
-    padding-bottom: 80px;
   }
 }
 </style>

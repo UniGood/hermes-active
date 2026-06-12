@@ -435,8 +435,14 @@ class MessageService:
             return {"success": False, "message": f"主动消息发送失败: {str(e)}"}
 
     @staticmethod
-    def get_session_context_raw(session_id: str, limit: int = 20) -> List[Dict[str, Any]]:
-        """获取 session 上下文（原始数据）"""
+    def get_session_context_raw(session_id: str, limit: int = 20, include_tool: bool = False) -> List[Dict[str, Any]]:
+        """获取 session 上下文（原始数据）
+
+        Args:
+            session_id: session ID
+            limit: 读取消息条数
+            include_tool: 是否包含 tool 角色的消息（默认 False）
+        """
         metadata = get_state_metadata()
         if 'messages' not in metadata.tables:
             return []
@@ -445,9 +451,12 @@ class MessageService:
         query = (
             messages_table.select()
             .where(messages_table.c.session_id == session_id)
-            .order_by(messages_table.c.timestamp.desc())
-            .limit(limit)
         )
+
+        if not include_tool:
+            query = query.where(messages_table.c.role != 'tool')
+
+        query = query.order_by(messages_table.c.timestamp.desc()).limit(limit)
 
         with state_engine.connect() as conn:
             result = conn.execute(query)

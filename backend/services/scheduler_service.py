@@ -109,12 +109,17 @@ async def run_cron_job(job_id: str):
             user_prompt_final = prompts_config.get("generation", "{context}")
 
         # 获取上下文
-        context_limit = ctx_config.get("session_limit", 20)
-        context_msgs = MessageService.get_session_context_raw(sid, limit=context_limit)
-        context_text = "\n".join(
-            f"{m.get('role', 'unknown')}: {m.get('content', '')}"
-            for m in context_msgs
-        )
+        session_enabled = ctx_config.get("session_enabled", True)
+        if session_enabled:
+            context_limit = ctx_config.get("session_limit", 20)
+            include_tool = ctx_config.get("include_tool", False)
+            context_msgs = MessageService.get_session_context_raw(sid, limit=context_limit, include_tool=include_tool)
+            context_text = "\n".join(
+                f"{m.get('role', 'unknown')}: {m.get('content', '')}"
+                for m in context_msgs
+            )
+        else:
+            context_text = ""
 
         user_prompt = user_prompt_final.replace("{context}", context_text)
 
@@ -233,7 +238,9 @@ def _parse_context_config(raw_prompt: str) -> tuple:
     import urllib.parse
 
     default_config = {
+        "session_enabled": True,
         "session_limit": 20,
+        "include_tool": False,
         "hindsight_recall_enabled": False,
         "hindsight_recall_query": "",
         "hindsight_recall_limit": 10,
@@ -256,8 +263,12 @@ def _parse_context_config(raw_prompt: str) -> tuple:
         if "=" not in pair:
             continue
         key, value = pair.split("=", 1)
-        if key == "session_limit":
+        if key == "session_enabled":
+            config["session_enabled"] = value == "true"
+        elif key == "session_limit":
             config["session_limit"] = int(value) if value.isdigit() else 20
+        elif key == "include_tool":
+            config["include_tool"] = value == "true"
         elif key == "recall":
             config["hindsight_recall_enabled"] = value == "true"
         elif key == "recall_query":
