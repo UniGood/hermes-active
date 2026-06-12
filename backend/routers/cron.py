@@ -416,6 +416,8 @@ async def preview_prompt(
     db: Session = Depends(get_active_db)
 ):
     """预览最终提示词（拼接 soul.md 和上下文配置后）"""
+    import httpx
+
     # 获取默认提示词配置（如果传入的为空）
     system_prompt = request.system_prompt
     if not system_prompt:
@@ -437,20 +439,93 @@ async def preview_prompt(
     ctx_config = request.context_config or {}
     session_limit = ctx_config.get("session_limit", 20)
     recall_enabled = ctx_config.get("hindsight_recall_enabled", False)
+    recall_query = ctx_config.get("hindsight_recall_query", "")
+    recall_limit = ctx_config.get("hindsight_recall_limit", 10)
     reflect_enabled = ctx_config.get("hindsight_reflect_enabled", False)
+    reflect_query = ctx_config.get("hindsight_reflect_query", "")
+
+    # 上下文数据
+    context_data = {
+        "session_messages": [],
+        "recall_results": [],
+        "reflect_result": ""
+    }
+
+    # 确定 session_id：优先使用传入的，否则获取最新活跃 session
+    effective_session_id = request.session_id
+    if not effective_session_id:
+        # 尝试获取最新活跃 session
+        latest_session = SessionService.get_latest_session("weixin")
+        if latest_session:
+            effective_session_id = latest_session.get("id")
+
+    # 获取 Session 上下文
+    if effective_session_id:
+        context_msgs = MessageService.get_session_context_raw(effective_session_id, limit=session_limit)
+        context_data["session_messages"] = [
+            {"role": m.get("role", "unknown"), "content": m.get("content", "")}
+            for m in context_msgs
+        ]
+
+    # 获取 Hindsight Recall
+    if recall_enabled and recall_query:
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    "http://localhost:8888/v1/default/banks/hermes/memories/recall",
+                    json={"query": recall_query, "limit": recall_limit}
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    context_data["recall_results"] = data.get("results", [])
+        except Exception:
+            pass  # 静默失败，不影响预览
+
+    # 获取 Hindsight Reflect
+    if reflect_enabled and reflect_query:
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(
+                    "http://localhost:8888/v1/default/banks/hermes/reflect",
+                    json={"query": reflect_query, "limit": 10}
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    context_data["reflect_result"] = data.get("reflection", "")
+        except Exception:
+            pass  # 静默失败，不影响预览
+
+    # 构建上下文文本并替换 {context}
+    context_parts = []
+    if context_data["session_messages"]:
+        context_parts.append(
+            "\n".join(f"{m['role']}: {m['content']}" for m in context_data["session_messages"])
+        )
+    if context_data["recall_results"]:
+        recall_texts = [r.get("text", "") for r in context_data["recall_results"] if r.get("text")]
+        if recall_texts:
+            context_parts.append("[Recall 记忆]\n" + "\n".join(recall_texts))
+    if context_data["reflect_result"]:
+        context_parts.append("[Reflect 分析]\n" + context_data["reflect_result"])
+
+    context_text = "\n\n".join(context_parts) if context_parts else ""
+    final_user_prompt = user_prompt.replace("{context}", context_text)
 
     # 构建上下文配置摘要
-    context_summary_parts = [f"Session 上下文: {session_limit} 条"]
-    if recall_enabled:
-        recall_query = ctx_config.get("hindsight_recall_query", "")
-        context_summary_parts.append(f"Recall: {recall_query or '已启用'}")
-    if reflect_enabled:
-        reflect_query = ctx_config.get("hindsight_reflect_query", "")
-        context_summary_parts.append(f"Reflect: {reflect_query or '已启用'}")
+    context_summary_parts = []
+    if context_data["session_messages"]:
+        context_summary_parts.append(f"Session: {len(context_data['session_messages'])} 条")
+    if context_data["recall_results"]:
+        context_summary_parts.append(f"Recall: {len(context_data['recall_results'])} 条")
+    if context_data["reflect_result"]:
+        context_summary_parts.append("Reflect: 1 条")
+    if not context_summary_parts:
+        context_summary_parts.append("无上下文数据")
 
     return {
         "system_prompt": final_system_prompt,
-        "user_prompt": user_prompt,
+        "user_prompt": final_user_prompt,
         "soul_md": soul_md_content,
-        "context_summary": " | ".join(context_summary_parts)
+        "context_summary": " | ".join(context_summary_parts),
+        "context_data": context_data
     }

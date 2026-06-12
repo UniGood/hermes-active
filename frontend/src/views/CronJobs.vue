@@ -302,7 +302,7 @@
     </n-modal>
 
     <!-- 预览提示词弹窗 -->
-    <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词" style="width: 700px">
+    <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词" style="width: 800px">
       <n-spin :show="previewing">
         <n-form label-placement="left" label-width="100">
           <n-form-item label="系统提示词">
@@ -317,7 +317,7 @@
             <n-input
               :value="previewData.user_prompt"
               type="textarea"
-              :autosize="{ minRows: 2, maxRows: 5 }"
+              :autosize="{ minRows: 3, maxRows: 10 }"
               readonly
             />
           </n-form-item>
@@ -329,10 +329,60 @@
               readonly
             />
           </n-form-item>
-          <n-form-item label="上下文配置" v-if="previewData.context_summary">
+          <n-form-item label="上下文摘要" v-if="previewData.context_summary">
             <n-tag type="info">{{ previewData.context_summary }}</n-tag>
           </n-form-item>
         </n-form>
+
+        <!-- 实际上下文数据 -->
+        <n-divider title-placement="left" v-if="previewData.context_data">实际上下文</n-divider>
+        <div v-if="previewData.context_data" class="context-data-section">
+          <!-- Session 消息 -->
+          <div v-if="previewData.context_data.session_messages && previewData.context_data.session_messages.length > 0" class="context-block">
+            <div class="context-block-title">
+              <n-tag type="info" size="small">Session 消息</n-tag>
+              <span class="context-count">{{ previewData.context_data.session_messages.length }} 条</span>
+            </div>
+            <div class="context-messages">
+              <div v-for="(msg, idx) in previewData.context_data.session_messages" :key="idx" class="context-msg">
+                <span class="context-msg-role" :class="msg.role">{{ msg.role === 'user' ? '用户' : '助手' }}:</span>
+                <span class="context-msg-content">{{ msg.content }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recall 结果 -->
+          <div v-if="previewData.context_data.recall_results && previewData.context_data.recall_results.length > 0" class="context-block">
+            <div class="context-block-title">
+              <n-tag type="success" size="small">Recall 记忆</n-tag>
+              <span class="context-count">{{ previewData.context_data.recall_results.length }} 条</span>
+            </div>
+            <div class="context-messages">
+              <div v-for="(item, idx) in previewData.context_data.recall_results" :key="idx" class="context-msg recall">
+                <span class="context-msg-content">{{ item.text || JSON.stringify(item) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reflect 结果 -->
+          <div v-if="previewData.context_data.reflect_result" class="context-block">
+            <div class="context-block-title">
+              <n-tag type="warning" size="small">Reflect 分析</n-tag>
+            </div>
+            <div class="context-messages">
+              <div class="context-msg reflect">
+                <span class="context-msg-content">{{ previewData.context_data.reflect_result }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 无上下文 -->
+          <n-empty
+            v-if="!previewData.context_data.session_messages?.length && !previewData.context_data.recall_results?.length && !previewData.context_data.reflect_result"
+            description="无上下文数据"
+            size="small"
+          />
+        </div>
       </n-spin>
     </n-modal>
   </div>
@@ -369,7 +419,7 @@ const previewingDefault = ref(false)
 
 // 预览提示词
 const showPreview = ref(false)
-const previewData = ref({ system_prompt: '', user_prompt: '', soul_md: '', context_summary: '' })
+const previewData = ref({ system_prompt: '', user_prompt: '', soul_md: '', context_summary: '', context_data: null })
 const previewing = ref(false)
 
 const platformOptions = [
@@ -737,11 +787,14 @@ async function previewPrompt() {
   previewing.value = true
   showPreview.value = true
   try {
+    // 确定 session_id：优先使用指定的，否则不传（后端会自动获取最新活跃）
+    const sessionId = formData.value.session_id || null
     const data = await api.post('/cron/preview-prompt', {
       system_prompt: formData.value.system_prompt,
       user_prompt: formData.value.user_prompt,
       append_soul_md: formData.value.append_soul_md,
-      context_config: contextConfig.value
+      context_config: contextConfig.value,
+      session_id: sessionId
     })
     previewData.value = data
   } catch (e) {
@@ -918,5 +971,71 @@ onMounted(() => {
 .context-status-label {
   font-size: 12px;
   color: #666;
+}
+
+.context-data-section {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.context-block {
+  margin-bottom: 16px;
+}
+
+.context-block-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.context-count {
+  font-size: 12px;
+  color: #999;
+}
+
+.context-messages {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.context-msg {
+  margin-bottom: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.context-msg:last-child {
+  margin-bottom: 0;
+}
+
+.context-msg-role {
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.context-msg-role.user {
+  color: #18a058;
+}
+
+.context-msg-role.assistant {
+  color: #2080f0;
+}
+
+.context-msg-content {
+  color: #333;
+}
+
+.context-msg.recall .context-msg-content {
+  color: #0a7;
+}
+
+.context-msg.reflect .context-msg-content {
+  color: #f0a020;
+  font-style: italic;
 }
 </style>

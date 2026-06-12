@@ -116,6 +116,7 @@ class PreviewPromptRequest(BaseModel):
     user_prompt: str = ""
     append_soul_md: bool = True
     context_config: Optional[Dict[str, Any]] = None
+    session_id: Optional[str] = None
 
 
 # ============ 定时任务相关 ============
