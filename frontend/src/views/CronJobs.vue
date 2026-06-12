@@ -54,10 +54,15 @@
           <div class="cron-parse-result">
             <div class="cron-freq">频率: {{ cronParseResult.frequency }}</div>
             <div class="cron-next-runs" v-if="cronParseResult.next_runs && cronParseResult.next_runs.length">
-              <div class="cron-next-title">未来运行时间：</div>
-              <div v-for="(run, idx) in cronParseResult.next_runs" :key="idx" class="cron-next-item">
-                {{ idx + 1 }}. {{ run }}
+              <div class="cron-next-title" @click="showNextRuns = !showNextRuns" style="cursor: pointer; user-select: none;">
+                未来运行时间：
+                <span style="font-size: 12px; color: #999;">{{ showNextRuns ? '▼ 收起' : '▶ 展开' }}</span>
               </div>
+              <template v-if="showNextRuns">
+                <div v-for="(run, idx) in cronParseResult.next_runs" :key="idx" class="cron-next-item">
+                  {{ idx + 1 }}. {{ run }}
+                </div>
+              </template>
             </div>
           </div>
         </n-form-item>
@@ -335,6 +340,67 @@
       </n-spin>
     </n-modal>
 
+    <!-- 日志详情弹窗 -->
+    <n-modal v-model:show="showLogDetail" preset="card" title="运行详情" style="width: 900px">
+      <div v-if="logDetailData" style="max-height: 70vh; overflow-y: auto;">
+        <!-- 基本信息 -->
+        <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
+          <n-descriptions-item label="任务">{{ logDetailData.job_name }}</n-descriptions-item>
+          <n-descriptions-item label="Session">{{ logDetailData.session_id }}</n-descriptions-item>
+          <n-descriptions-item label="平台">{{ logDetailData.platform }}</n-descriptions-item>
+        </n-descriptions>
+
+        <!-- LLM 请求 -->
+        <n-divider v-if="logDetailData.llm_request" title-placement="left">LLM 请求</n-divider>
+        <n-descriptions v-if="logDetailData.llm_request" bordered :column="2" size="small" style="margin-bottom: 16px">
+          <n-descriptions-item label="模式">{{ logDetailData.llm_request.mode }}</n-descriptions-item>
+          <n-descriptions-item label="模型">{{ logDetailData.llm_request.model }}</n-descriptions-item>
+          <n-descriptions-item label="Temperature">{{ logDetailData.llm_request.temperature }}</n-descriptions-item>
+          <n-descriptions-item label="Max Tokens">{{ logDetailData.llm_request.max_tokens }}</n-descriptions-item>
+          <n-descriptions-item label="系统提示词" :span="2">
+            <pre style="white-space: pre-wrap; max-height: 200px; overflow-y: auto; font-size: 12px;">{{ logDetailData.llm_request.system_prompt }}</pre>
+          </n-descriptions-item>
+          <n-descriptions-item label="用户提示词" :span="2">
+            <pre style="white-space: pre-wrap; max-height: 200px; overflow-y: auto; font-size: 12px;">{{ logDetailData.llm_request.user_prompt }}</pre>
+          </n-descriptions-item>
+        </n-descriptions>
+
+        <!-- LLM 返回 -->
+        <n-divider v-if="logDetailData.llm_response" title-placement="left">LLM 返回</n-divider>
+        <n-descriptions v-if="logDetailData.llm_response" bordered :column="2" size="small" style="margin-bottom: 16px">
+          <n-descriptions-item label="生成内容" :span="2">
+            <pre style="white-space: pre-wrap; font-size: 12px;">{{ logDetailData.llm_response.content }}</pre>
+          </n-descriptions-item>
+          <n-descriptions-item label="耗时">{{ logDetailData.llm_response.duration }}s</n-descriptions-item>
+          <n-descriptions-item v-if="logDetailData.llm_response.error" label="错误" :span="2">
+            <pre style="white-space: pre-wrap; color: #d03050; font-size: 12px;">{{ logDetailData.llm_response.error }}</pre>
+          </n-descriptions-item>
+        </n-descriptions>
+
+        <!-- 上下文 -->
+        <n-divider v-if="logDetailData.context" title-placement="left">上下文</n-divider>
+        <div v-if="logDetailData.context" style="margin-bottom: 16px;">
+          <n-tag type="info" size="small">Session 消息 ({{ logDetailData.context.session_count }}条)</n-tag>
+          <div v-if="logDetailData.context.session_messages && logDetailData.context.session_messages.length" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px; margin-top: 4px;">
+            <div v-for="(msg, idx) in logDetailData.context.session_messages" :key="idx" style="margin-bottom: 4px; font-size: 12px;">
+              <n-tag :type="msg.role === 'user' ? 'info' : 'success'" size="tiny">{{ msg.role }}</n-tag>
+              <span style="margin-left: 4px;">{{ msg.content }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 发送结果 -->
+        <n-divider v-if="logDetailData.send_result" title-placement="left">发送结果</n-divider>
+        <n-descriptions v-if="logDetailData.send_result" bordered :column="2" size="small">
+          <n-descriptions-item label="状态">{{ logDetailData.send_result.success ? '✅ 成功' : '❌ 失败' }}</n-descriptions-item>
+          <n-descriptions-item label="消息">{{ logDetailData.send_result.message }}</n-descriptions-item>
+          <n-descriptions-item label="最终发送内容" :span="2">
+            <pre style="white-space: pre-wrap; font-size: 12px;">{{ logDetailData.send_result.final_message }}</pre>
+          </n-descriptions-item>
+        </n-descriptions>
+      </div>
+    </n-modal>
+
     <!-- 预览提示词弹窗 -->
     <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词" style="width: 800px">
       <n-spin :show="previewing">
@@ -423,8 +489,8 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { useMessage, useDialog } from 'naive-ui'
+import { ref, watch, onMounted, h } from 'vue'
+import { useMessage, useDialog, NButton } from 'naive-ui'
 import api from '../api'
 
 const message = useMessage()
@@ -436,6 +502,7 @@ const jobs = ref([])
 const editingJob = ref(null)
 const sessionOptions = ref([])
 const cronParseResult = ref(null)
+const showNextRuns = ref(false)
 const defaultPrompt = ref('')
 const soulMdContent = ref('')
 const sessionMode = ref('latest')
@@ -461,12 +528,22 @@ const showJobLogs = ref(false)
 const jobLogs = ref([])
 const jobLogsLoading = ref(false)
 const jobLogsName = ref('')
+
+// 日志详情
+const showLogDetail = ref(false)
+const logDetailData = ref(null)
+
+function viewLogDetail(log) {
+  logDetailData.value = typeof log.details === 'string' ? JSON.parse(log.details) : log.details
+  showLogDetail.value = true
+}
 const jobLogsColumns = [
   { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
   { title: '状态', key: 'status', width: 80, render: (row) => row.status === 'success' ? '✅ 成功' : '❌ 失败' },
   { title: '消息', key: 'message', ellipsis: { tooltip: true } },
   { title: '错误信息', key: 'error', ellipsis: { tooltip: true }, render: (row) => row.error || '-' },
-  { title: '耗时', key: 'duration', width: 80, render: (row) => row.duration ? `${row.duration.toFixed(1)}s` : '-' }
+  { title: '耗时', key: 'duration', width: 80, render: (row) => row.duration ? `${row.duration.toFixed(1)}s` : '-' },
+  { title: '详情', key: 'details', width: 80, render: (row) => row.details ? h(NButton, { size: 'tiny', onClick: () => viewLogDetail(row) }, { default: () => '详情' }) : '-' }
 ]
 
 const platformOptions = [
@@ -1113,5 +1190,29 @@ onMounted(() => {
 .context-msg.reflect .context-msg-content {
   color: #f0a020;
   font-style: italic;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .cron-page {
+    max-width: 100%;
+  }
+
+  .job-card {
+    padding: 12px;
+  }
+
+  .job-meta {
+    gap: 8px;
+  }
+
+  .job-actions {
+    flex-wrap: wrap;
+  }
+
+  .job-actions .n-button {
+    flex: 1;
+    min-width: 60px;
+  }
 }
 </style>

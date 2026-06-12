@@ -199,28 +199,104 @@ async def run_cron_job(job_id: str):
 
         generated_message = ""
 
+        # 收集执行详情
+        details = {
+            "job_id": job_id,
+            "job_name": target_job.get("name", ""),
+            "session_id": sid,
+            "platform": platform,
+            "context": {
+                "session_count": len(context_msgs) if session_enabled and context_msgs else 0,
+                "session_messages": [{"role": m.get("role", ""), "content": m.get("content", "")[:200]} for m in (context_msgs or [])[-10:]],
+                "context_text": context_text[:2000],
+            }
+        }
+
         # 调用 LLM 生成消息
         if use_llm:
-            llm_result = await LLMService.generate_message(
-                llm_config=llm_config,
-                prompt=user_prompt,
-                system_prompt=prompt_text,
-                temperature=0.7,
-                max_tokens=200
-            )
+            import time as _time
+            llm_start = _time.time()
 
-            if not llm_result.get("success"):
-                logger.error(f"任务 {target_job['name']} LLM 生成失败: {llm_result.get('message')}")
-                MessageService.create_task_log(
-                    task_type="cron_run",
-                    status="failed",
-                    message=f"任务 {target_job['name']} LLM 生成失败",
-                    error=llm_result.get("message", "未知错误"),
-                    duration=round(datetime.now().timestamp() - start_time, 2)
+            # 判断 LLM 模式：hermes 用 call_llm，自定义用 LLMService
+            if llm_config.get("mode") == "hermes":
+                try:
+                    import sys as _sys
+                    from pathlib import Path as _Path
+                    _sys.path.insert(0, str(_Path.home() / '.hermes' / 'hermes-agent'))
+                    from agent.auxiliary_client import call_llm
+
+                    response = call_llm(
+                        task="title_generation",
+                        messages=[
+                            {"role": "system", "content": prompt_text},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        temperature=0.7,
+                        max_tokens=200,
+                    )
+                    generated_message = response.choices[0].message.content.strip()
+                    llm_duration = round(_time.time() - llm_start, 2)
+
+                    details["llm_request"] = {
+                        "mode": "hermes",
+                        "model": getattr(response, 'model', 'default'),
+                        "temperature": 0.7,
+                        "max_tokens": 200,
+                        "system_prompt": prompt_text,
+                        "user_prompt": user_prompt,
+                    }
+                    details["llm_response"] = {
+                        "content": generated_message,
+                        "duration": llm_duration,
+                    }
+                except Exception as e:
+                    llm_duration = round(_time.time() - llm_start, 2)
+                    details["llm_request"] = {"mode": "hermes", "system_prompt": prompt_text, "user_prompt": user_prompt}
+                    details["llm_response"] = {"error": str(e), "duration": llm_duration}
+                    logger.error(f"任务 {target_job['name']} LLM 调用失败: {e}")
+                    MessageService.create_task_log(
+                        task_type="cron_run",
+                        status="failed",
+                        message=f"任务 {target_job['name']} LLM 调用失败",
+                        error=str(e),
+                        duration=round(datetime.now().timestamp() - start_time, 2),
+                        details=details
+                    )
+                    return
+            else:
+                llm_result = await LLMService.generate_message(
+                    llm_config=llm_config,
+                    prompt=user_prompt,
+                    system_prompt=prompt_text,
+                    temperature=0.7,
+                    max_tokens=200
                 )
-                return
+                llm_duration = round(_time.time() - llm_start, 2)
 
-            generated_message = llm_result["content"]
+                details["llm_request"] = {
+                    "mode": "custom",
+                    "model": llm_config.get("model", ""),
+                    "temperature": 0.7,
+                    "max_tokens": 200,
+                    "system_prompt": prompt_text,
+                    "user_prompt": user_prompt,
+                }
+
+                if not llm_result.get("success"):
+                    details["llm_response"] = {"error": llm_result.get("message", ""), "duration": llm_duration}
+                    logger.error(f"任务 {target_job['name']} LLM 生成失败: {llm_result.get('message')}")
+                    MessageService.create_task_log(
+                        task_type="cron_run",
+                        status="failed",
+                        message=f"任务 {target_job['name']} LLM 生成失败",
+                        error=llm_result.get("message", "未知错误"),
+                        duration=round(datetime.now().timestamp() - start_time, 2),
+                        details=details
+                    )
+                    return
+
+                generated_message = llm_result["content"]
+                details["llm_response"] = {"content": generated_message, "duration": llm_duration}
         else:
             generated_message = prompt_text
 
@@ -233,6 +309,12 @@ async def run_cron_job(job_id: str):
             with_mark=with_mark,
             mark_format=mark_format
         )
+
+        details["send_result"] = {
+            "success": send_result.get("success", False),
+            "message": send_result.get("message", ""),
+            "final_message": send_result.get("db_content", generated_message),
+        }
 
         duration = round(datetime.now().timestamp() - start_time, 2)
 
@@ -256,7 +338,8 @@ async def run_cron_job(job_id: str):
                 task_type="cron_run",
                 status="success",
                 message=f"任务 {target_job['name']} 运行成功，session: {sid}",
-                duration=duration
+                duration=duration,
+                details=details
             )
         else:
             logger.error(f"任务 {target_job['name']} 发送失败: {send_result.get('message')}")
@@ -265,7 +348,8 @@ async def run_cron_job(job_id: str):
                 status="failed",
                 message=f"任务 {target_job['name']} 发送失败",
                 error=send_result.get("message", "未知错误"),
-                duration=duration
+                duration=duration,
+                details=details
             )
 
     except Exception as e:
@@ -275,7 +359,8 @@ async def run_cron_job(job_id: str):
             status="failed",
             message=f"任务运行异常",
             error=str(e),
-            duration=0
+            duration=0,
+            details=locals().get('details')
         )
     finally:
         db.close()

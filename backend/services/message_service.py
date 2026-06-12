@@ -116,7 +116,9 @@ def _write_to_state_db(session_id: str, content: str) -> bool:
                 session_id=session_id,
                 role="assistant",
                 content=content,
-                timestamp=time.time()
+                timestamp=time.time(),
+                finish_reason="stop",
+                active=1
             ))
             conn.commit()
         return True
@@ -470,9 +472,11 @@ class MessageService:
         status: str,
         message: str = None,
         error: str = None,
-        duration: float = None
+        duration: float = None,
+        details: dict = None
     ):
         """创建任务日志"""
+        import json as _json
         db = ActiveSession()
         try:
             log = TaskLog(
@@ -480,7 +484,8 @@ class MessageService:
                 status=status,
                 message=message,
                 error=error,
-                duration=duration
+                duration=duration,
+                details=_json.dumps(details, ensure_ascii=False) if details else None
             )
             db.add(log)
             db.commit()

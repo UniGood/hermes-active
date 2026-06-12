@@ -1,6 +1,7 @@
 """
 active.db 数据模型
 """
+import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from sqlalchemy import Column, Integer, String, Text, Float, DateTime
@@ -40,9 +41,16 @@ class TaskLog(Base):
     message = Column(Text)
     error = Column(Text)
     duration = Column(Float)
+    details = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")), index=True)
 
     def to_dict(self):
+        details = self.details
+        if details:
+            try:
+                details = json.loads(details)
+            except (json.JSONDecodeError, TypeError):
+                pass
         return {
             "id": self.id,
             "task_type": self.task_type,
@@ -50,6 +58,7 @@ class TaskLog(Base):
             "message": self.message,
             "error": self.error,
             "duration": self.duration,
+            "details": details,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 

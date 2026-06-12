@@ -20,3 +20,195 @@
 2026-06-12 09:55:09,565 [INFO] gateway.platforms.weixin: weixin: restored 1 context token(s) for 22714e28
 2026-06-12 09:55:09,915 [INFO] hermes.scheduler: 任务 1 运行成功，耗时 9.91s
 2026-06-12 09:55:09,918 [INFO] apscheduler.executors.default: Job "1 (trigger: cron[month='*', day='*', day_of_week='*', hour='*', minute='*'], next run at: 2026-06-12 09:56:00 CST)" executed successfully
+2026-06-12 22:57:32,306 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 22:57:32,307 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 22:57:32,309 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:01:18,920 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:01:18,920 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:01:18,923 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:02:18,923 [INFO] apscheduler.executors.default: Running job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-12 23:02:18 CST)" (scheduled at 2026-06-12 23:02:18.923302+08:00)
+2026-06-12 23:02:18,924 [INFO] apscheduler.scheduler: Removed job _sync_jobs
+2026-06-12 23:02:18,925 [INFO] hermes.scheduler: 移除已删除任务: _sync_jobs
+2026-06-12 23:02:18,925 [INFO] apscheduler.executors.default: Job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-12 23:03:18 CST)" executed successfully
+2026-06-12 23:03:26,439 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:03:26,439 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:03:26,442 [INFO] hermes.scheduler: 已更新任务的 next_run_at
+2026-06-12 23:03:39,451 [INFO] hermes.scheduler: 更新任务调度: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:04:05,254 [INFO] hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-06-12 23:04:05,256 [INFO] hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-06-12 23:04:05,257 [INFO] hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-06-12 23:04:05,320 [INFO] hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-06-12 23:04:05,321 [INFO] hermes_cli.plugins: Plugin 'krea' registered image_gen provider: krea
+2026-06-12 23:04:05,322 [INFO] hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-06-12 23:04:05,323 [INFO] hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-06-12 23:04:05,325 [INFO] hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-06-12 23:04:05,330 [INFO] hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-06-12 23:04:05,332 [INFO] hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-06-12 23:04:05,334 [INFO] hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-06-12 23:04:05,335 [INFO] hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-06-12 23:04:05,337 [INFO] hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-06-12 23:04:05,339 [INFO] hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-06-12 23:04:05,340 [INFO] hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-06-12 23:04:05,342 [INFO] hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-06-12 23:04:05,343 [INFO] hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-06-12 23:04:05,345 [INFO] hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-06-12 23:04:05,639 [INFO] hermes_cli.plugins: Plugin discovery complete: 38 found, 32 enabled
+2026-06-12 23:04:05,774 [INFO] agent.auxiliary_client: Auxiliary title_generation: using xiaomi (xiaomi/mimo-v2.5-pro) at https://token-plan-cn.xiaomimimo.com/v1/
+2026-06-12 23:04:21,762 [INFO] httpx: HTTP Request: POST https://token-plan-cn.xiaomimimo.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-12 23:15:54,244 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:15:54,421 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:15:54,421 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:15:55,287 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:15:55,827 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:15:55,827 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:15:55,842 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:15:55,842 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:15:55,843 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:16:18,375 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:16:18,490 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:16:18,490 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:16:19,204 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:16:19,813 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:16:19,813 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:16:19,829 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:16:19,829 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:16:19,830 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:16:50,811 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:16:50,994 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:16:50,994 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:16:51,752 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:16:52,372 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:16:52,372 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:16:52,389 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:16:52,389 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:16:52,390 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:16:59,168 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:16:59,308 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:16:59,308 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:17:00,620 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:17:00,772 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:17:00,772 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:17:00,788 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:17:00,788 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:17:00,788 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:17:07,280 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:17:07,405 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:17:07,405 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:17:08,718 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:17:08,859 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:17:08,860 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:17:08,875 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:17:08,875 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:17:08,876 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:17:38,262 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:17:38,436 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:17:38,436 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:17:39,697 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:17:39,825 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:17:39,825 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:17:39,840 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:17:39,840 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:17:39,841 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:18:01,187 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:18:01,291 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:18:01,291 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:18:02,205 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:18:02,751 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:18:02,752 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:18:02,767 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:18:02,767 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:18:02,768 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:19:01,815 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:19:01,923 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:19:01,923 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:19:03,289 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:19:03,602 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:19:03,602 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:19:03,617 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:19:03,618 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:19:03,618 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:19:26,978 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:19:27,080 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:19:27,080 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:19:28,143 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:19:28,429 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:19:28,429 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:19:28,445 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:19:28,445 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:19:28,445 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:19:34,904 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:19:35,062 [INFO] hermes.scheduler: 调度器已停止
+2026-06-12 23:19:35,062 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-06-12 23:19:36,222 [INFO] watchfiles.main: 3 changes detected
+2026-06-12 23:19:36,491 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:19:36,491 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:19:36,507 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:19:36,507 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:19:36,508 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:20:00,001 [INFO] apscheduler.executors.default: Running job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-12 23:40:00 CST)" (scheduled at 2026-06-12 23:20:00+08:00)
+2026-06-12 23:20:00,002 [INFO] hermes.scheduler: 开始执行任务: 主动消息 (28882d27)
+2026-06-12 23:20:00,342 [INFO] hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-06-12 23:20:00,342 [INFO] hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-06-12 23:20:00,343 [INFO] hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-06-12 23:20:00,398 [INFO] hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-06-12 23:20:00,398 [INFO] hermes_cli.plugins: Plugin 'krea' registered image_gen provider: krea
+2026-06-12 23:20:00,399 [INFO] hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-06-12 23:20:00,399 [INFO] hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-06-12 23:20:00,399 [INFO] hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-06-12 23:20:00,401 [INFO] hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-06-12 23:20:00,402 [INFO] hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-06-12 23:20:00,403 [INFO] hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-06-12 23:20:00,403 [INFO] hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-06-12 23:20:00,404 [INFO] hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-06-12 23:20:00,404 [INFO] hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-06-12 23:20:00,405 [INFO] hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-06-12 23:20:00,405 [INFO] hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-06-12 23:20:00,406 [INFO] hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-06-12 23:20:00,407 [INFO] hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-06-12 23:20:00,528 [INFO] hermes_cli.plugins: Plugin discovery complete: 38 found, 32 enabled
+2026-06-12 23:20:00,654 [INFO] agent.auxiliary_client: Auxiliary title_generation: using xiaomi (xiaomi/mimo-v2.5-pro) at https://token-plan-cn.xiaomimimo.com/v1/
+2026-06-12 23:20:10,539 [INFO] httpx: HTTP Request: POST https://token-plan-cn.xiaomimimo.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-12 23:20:10,562 [INFO] gateway.platforms.weixin: weixin: restored 1 context token(s) for 22714e28
+2026-06-12 23:20:10,915 [INFO] hermes.scheduler: 任务 主动消息 运行成功，耗时 10.91s
+2026-06-12 23:20:10,919 [INFO] apscheduler.executors.default: Job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-12 23:40:00 CST)" executed successfully
+2026-06-12 23:20:36,508 [INFO] apscheduler.executors.default: Running job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-12 23:21:36 CST)" (scheduled at 2026-06-12 23:20:36.507905+08:00)
+2026-06-12 23:20:36,509 [INFO] hermes.scheduler: 更新任务调度: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:20:36,509 [INFO] apscheduler.scheduler: Removed job _sync_jobs
+2026-06-12 23:20:36,510 [INFO] hermes.scheduler: 移除已删除任务: _sync_jobs
+2026-06-12 23:20:36,510 [INFO] apscheduler.executors.default: Job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-12 23:21:36 CST)" executed successfully
+2026-06-12 23:27:04,723 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-12 23:27:04,723 [INFO] hermes.scheduler: 调度器已启动
+2026-06-12 23:27:04,739 [INFO] apscheduler.scheduler: Added job "主动消息" to job store "default"
+2026-06-12 23:27:04,739 [INFO] hermes.scheduler: 添加任务: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:27:04,740 [INFO] apscheduler.scheduler: Added job "同步任务配置" to job store "default"
+2026-06-12 23:28:04,740 [INFO] apscheduler.executors.default: Running job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-12 23:28:04 CST)" (scheduled at 2026-06-12 23:28:04.739913+08:00)
+2026-06-12 23:28:04,742 [INFO] hermes.scheduler: 更新任务调度: 主动消息 (28882d27) -> 0,20,40 6-23 * * *
+2026-06-12 23:28:04,742 [INFO] apscheduler.scheduler: Removed job _sync_jobs
+2026-06-12 23:28:04,742 [INFO] hermes.scheduler: 移除已删除任务: _sync_jobs
+2026-06-12 23:28:04,742 [INFO] apscheduler.executors.default: Job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-12 23:29:04 CST)" executed successfully
+2026-06-12 23:40:00,000 [INFO] apscheduler.executors.default: Running job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 06:00:00 CST)" (scheduled at 2026-06-12 23:40:00+08:00)
+2026-06-12 23:40:00,002 [INFO] hermes.scheduler: 开始执行任务: 主动消息 (28882d27)
+2026-06-12 23:40:00,339 [INFO] hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-06-12 23:40:00,340 [INFO] hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-06-12 23:40:00,341 [INFO] hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-06-12 23:40:00,401 [INFO] hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-06-12 23:40:00,402 [INFO] hermes_cli.plugins: Plugin 'krea' registered image_gen provider: krea
+2026-06-12 23:40:00,403 [INFO] hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-06-12 23:40:00,403 [INFO] hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-06-12 23:40:00,404 [INFO] hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-06-12 23:40:00,409 [INFO] hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-06-12 23:40:00,411 [INFO] hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-06-12 23:40:00,413 [INFO] hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-06-12 23:40:00,414 [INFO] hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-06-12 23:40:00,416 [INFO] hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-06-12 23:40:00,417 [INFO] hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-06-12 23:40:00,419 [INFO] hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-06-12 23:40:00,420 [INFO] hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-06-12 23:40:00,421 [INFO] hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-06-12 23:40:00,423 [INFO] hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-06-12 23:40:00,624 [INFO] hermes_cli.plugins: Plugin discovery complete: 38 found, 32 enabled
+2026-06-12 23:40:00,764 [INFO] agent.auxiliary_client: Auxiliary title_generation: using xiaomi (xiaomi/mimo-v2.5-pro) at https://token-plan-cn.xiaomimimo.com/v1/
+2026-06-12 23:40:12,545 [INFO] httpx: HTTP Request: POST https://token-plan-cn.xiaomimimo.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-12 23:40:12,568 [INFO] gateway.platforms.weixin: weixin: restored 1 context token(s) for 22714e28
+2026-06-12 23:40:12,992 [INFO] hermes.scheduler: 任务 主动消息 运行成功，耗时 12.99s
+2026-06-12 23:40:12,996 [INFO] apscheduler.executors.default: Job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 06:00:00 CST)" executed successfully

@@ -185,6 +185,7 @@ class TaskLogInfo(BaseModel):
     message: Optional[str] = None
     error: Optional[str] = None
     duration: Optional[float] = None
+    details: Optional[Dict[str, Any]] = None
     created_at: Optional[datetime] = None
 
 
