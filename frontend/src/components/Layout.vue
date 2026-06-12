@@ -1,7 +1,7 @@
 <template>
   <div class="layout">
     <!-- PC 端侧边栏 -->
-    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed, open: sidebarOpen }">
+    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
       <div class="sidebar-header">
         <n-avatar :size="40" round>H</n-avatar>
         <span v-if="!sidebarCollapsed" class="sidebar-title">Hermes Active</span>
@@ -72,8 +72,8 @@ import {
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const sidebarCollapsed = ref(false)
-const sidebarOpen = ref(false)
+// PC端默认展开，移动端默认折叠
+const sidebarCollapsed = ref(window.innerWidth <= 768)
 
 const menuItems = [
   { path: '/', label: '监控面板', icon: markRaw(HomeOutline) },
@@ -98,7 +98,9 @@ function handleLogout() {
 
 // 路由切换时关闭移动端侧边栏
 watch(() => route.path, () => {
-  sidebarOpen.value = false
+  if (window.innerWidth <= 768) {
+    sidebarCollapsed.value = true
+  }
 })
 </script>
 
@@ -199,25 +201,47 @@ watch(() => route.path, () => {
 /* ========== 移动端顶部栏（PC 端隐藏） ========== */
 .mobile-header {
   display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  height: 56px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99;
+}
+
+.mobile-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
 }
 
 /* ========== 移动端适配（< 768px） ========== */
 @media (max-width: 768px) {
-  /* 移动端侧边栏 - 可折叠 */
+  /* 移动端顶部栏 */
+  .mobile-header {
+    display: flex;
+  }
+
+  /* 移动端侧边栏 - 默认隐藏，点击汉堡按钮展开 */
   .sidebar {
     position: fixed;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 240px;
+    width: 200px;
     z-index: 1001;
-    transform: translateX(0);
+    transform: translateX(-100%);
     transition: transform 0.3s ease;
     background: #fff;
   }
 
-  .sidebar.collapsed {
-    transform: translateX(-100%);
+  .sidebar:not(.collapsed) {
+    transform: translateX(0);
   }
 
   /* 遮罩层 */
@@ -239,7 +263,7 @@ watch(() => route.path, () => {
   /* 主内容区 */
   .main-area {
     margin-left: 0;
-    margin-top: 52px;
+    margin-top: 56px;
   }
 }
 </style>
