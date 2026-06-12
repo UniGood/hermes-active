@@ -56,6 +56,8 @@ async def create_cron_job(
         "write_to_db": request.write_to_db,
         "with_mark": request.with_mark,
         "mark_format": request.mark_format,
+        "send_mark": request.send_mark,
+        "time_format": request.time_format,
         "last_run_at": None,
         "next_run_at": None
     }
@@ -107,6 +109,10 @@ async def update_cron_job(
                 job["with_mark"] = request.with_mark
             if request.mark_format is not None:
                 job["mark_format"] = request.mark_format
+            if request.send_mark is not None:
+                job["send_mark"] = request.send_mark
+            if request.time_format is not None:
+                job["time_format"] = request.time_format
 
             ConfigService.save_cron_jobs(db, jobs)
             # 同步到调度器
@@ -245,6 +251,8 @@ async def run_cron_job(
         write_to_db = target_job.get("write_to_db", True)
         with_mark = target_job.get("with_mark", True)
         mark_format = target_job.get("mark_format", "[凯莉主动发送] {timestamp}: {content}")
+        send_mark = target_job.get("send_mark", "[凯莉主动发送]")
+        time_format = target_job.get("time_format", "%H:%M 星期{weekday}")
 
         generated_message = ""
 
@@ -298,7 +306,9 @@ async def run_cron_job(
             platform=platform,
             write_to_db=write_to_db,
             with_mark=with_mark,
-            mark_format=mark_format
+            mark_format=mark_format,
+            send_mark=send_mark,
+            time_format=time_format
         )
 
         duration = round(time.time() - start_time, 2)

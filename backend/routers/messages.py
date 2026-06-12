@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from middleware.auth import get_current_user
 from models.database import get_active_db
 from models.active import User
-from services.message_service import MessageService, DEFAULT_MARK_FORMAT
+from services.message_service import MessageService, DEFAULT_MARK_FORMAT, DEFAULT_SEND_MARK, DEFAULT_TIME_FORMAT
 from services.config_service import ConfigService
 
 router = APIRouter(prefix="/api/messages", tags=["messages"])
@@ -23,6 +23,8 @@ class SendMessageRequest(BaseModel):
     write_to_db: bool = True
     with_mark: bool = False
     mark_format: str = DEFAULT_MARK_FORMAT
+    send_mark: str = DEFAULT_SEND_MARK
+    time_format: str = DEFAULT_TIME_FORMAT
 
 
 class SendProactiveRequest(BaseModel):
@@ -33,6 +35,8 @@ class SendProactiveRequest(BaseModel):
     write_to_db: bool = True
     with_mark: bool = True
     mark_format: str = DEFAULT_MARK_FORMAT
+    send_mark: str = DEFAULT_SEND_MARK
+    time_format: str = DEFAULT_TIME_FORMAT
 
 
 class GenerateRequest(BaseModel):
@@ -203,7 +207,9 @@ async def send_message(
         platform=request.platform,
         write_to_db=request.write_to_db,
         with_mark=request.with_mark,
-        mark_format=request.mark_format
+        mark_format=request.mark_format,
+        send_mark=request.send_mark,
+        time_format=request.time_format
     )
     if result.get("success"):
         return {"success": True, "message": result.get("message", "发送成功"), "detail": result}
@@ -230,7 +236,9 @@ async def send_proactive_message(
         prompts_config=prompts_config,
         write_to_db=request.write_to_db,
         with_mark=request.with_mark,
-        mark_format=request.mark_format
+        mark_format=request.mark_format,
+        send_mark=request.send_mark,
+        time_format=request.time_format
     )
     if result.get("success"):
         return {"success": True, "message": result.get("message", "发送成功"), "detail": result}

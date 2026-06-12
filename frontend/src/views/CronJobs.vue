@@ -243,12 +243,27 @@
             {{ formData.with_mark ? '消息带标记前缀' : '不带标记' }}
           </span>
         </n-form-item>
-        <n-form-item label="标记格式" v-if="formData.with_mark && formData.write_to_db">
-          <n-input v-model:value="formData.mark_format" placeholder="[凯莉主动发送] {timestamp}: {content}" />
-          <div style="font-size: 12px; color: #999; margin-top: 4px">
-            支持占位符: {timestamp} {content}
-          </div>
-        </n-form-item>
+        <template v-if="formData.with_mark && formData.write_to_db">
+          <n-form-item label="发送标记">
+            <n-input v-model:value="formData.send_mark" placeholder="[凯莉主动发送]" style="max-width: 300px" />
+          </n-form-item>
+          <n-form-item label="时间格式">
+            <div class="time-format-selector">
+              <div
+                v-for="opt in timeFormatOptions" :key="opt.value"
+                class="time-format-chip"
+                :class="{ active: formData.time_format === opt.value }"
+                @click="formData.time_format = opt.value"
+              >
+                <span class="chip-label">{{ opt.label }}</span>
+                <span class="chip-preview">{{ formatWithOption(opt.value) }}</span>
+              </div>
+            </div>
+            <div class="mark-preview" v-if="testMessageForPreview">
+              预览: {{ formData.send_mark }} {{ formatWithOption(formData.time_format) }}: {{ testMessageForPreview }}
+            </div>
+          </n-form-item>
+        </template>
       </n-form>
       <template #action>
         <n-space>
@@ -552,6 +567,32 @@ const platformOptions = [
   { label: 'CLI', value: 'cli' }
 ]
 
+const WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日']
+
+const timeFormatOptions = [
+  { label: '简短', value: '%H:%M 星期{weekday}', preview: () => '14:30 星期四' },
+  { label: '时分秒', value: '%H:%M:%S', preview: () => '14:30:25' },
+  { label: '日期时分', value: '%m/%d %H:%M', preview: () => '06/12 14:30' },
+  { label: '完整', value: '%Y-%m-%d %H:%M:%S', preview: () => '2026-06-12 14:30:25' },
+  { label: '日期星期', value: '%m/%d 星期{weekday}', preview: () => '06/12 星期四' },
+]
+
+function formatTimeWith(fmt, d) {
+  const weekday = WEEKDAY_NAMES[d.getDay() === 0 ? 6 : d.getDay() - 1]
+  let s = fmt.replace('{weekday}', weekday)
+  const map = { '%Y': d.getFullYear(), '%m': String(d.getMonth() + 1).padStart(2, '0'), '%d': String(d.getDate()).padStart(2, '0'), '%H': String(d.getHours()).padStart(2, '0'), '%M': String(d.getMinutes()).padStart(2, '0'), '%S': String(d.getSeconds()).padStart(2, '0') }
+  for (const [k, v] of Object.entries(map)) { s = s.replace(k, v) }
+  return s
+}
+
+function formatWithOption(fmt) {
+  const opt = timeFormatOptions.find(o => o.value === fmt)
+  if (opt) return opt.preview()
+  return formatTimeWith(fmt, new Date())
+}
+
+const testMessageForPreview = ref('你好，这是测试消息')
+
 const formData = ref({
   name: '',
   schedule: '0,20,40 6-23 * * *',
@@ -564,7 +605,9 @@ const formData = ref({
   use_llm: true,
   write_to_db: true,
   with_mark: true,
-  mark_format: '[凯莉主动发送] {timestamp}: {content}'
+  mark_format: '[凯莉主动发送] {timestamp}: {content}',
+  send_mark: '[凯莉主动发送]',
+  time_format: '%H:%M 星期{weekday}'
 })
 
 // 上下文配置
@@ -705,7 +748,9 @@ function openCreate() {
     use_llm: true,
     write_to_db: true,
     with_mark: true,
-    mark_format: '[凯莉主动发送] {timestamp}: {content}'
+    mark_format: '[凯莉主动发送] {timestamp}: {content}',
+    send_mark: '[凯莉主动发送]',
+    time_format: '%H:%M 星期{weekday}'
   }
   contextConfig.value = {
     session_enabled: true,
@@ -827,7 +872,9 @@ function editJob(job) {
       use_llm: job.use_llm !== false,
       write_to_db: job.write_to_db !== false,
       with_mark: job.with_mark !== false,
-      mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}'
+      mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}',
+      send_mark: job.send_mark || '[凯莉主动发送]',
+      time_format: job.time_format || '%H:%M 星期{weekday}'
     }
   } else {
     // 兼容旧的单一 prompt 字段
@@ -845,7 +892,9 @@ function editJob(job) {
       use_llm: job.use_llm !== false,
       write_to_db: job.write_to_db !== false,
       with_mark: job.with_mark !== false,
-      mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}'
+      mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}',
+      send_mark: job.send_mark || '[凯莉主动发送]',
+      time_format: job.time_format || '%H:%M 星期{weekday}'
     }
   }
   sessionMode.value = job.session_id ? 'fixed' : 'latest'
@@ -1208,6 +1257,65 @@ onMounted(() => {
   font-style: italic;
 }
 
+/* 时间格式选择器 */
+.time-format-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.time-format-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid #e0e0e6;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+  min-width: 80px;
+}
+
+.time-format-chip:hover {
+  border-color: #18a058;
+  background: #f0f9eb;
+}
+
+.time-format-chip.active {
+  border-color: #18a058;
+  background: #e8f5e9;
+  box-shadow: 0 0 0 1px #18a058;
+}
+
+.chip-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.time-format-chip.active .chip-label {
+  color: #18a058;
+  font-weight: 500;
+}
+
+.chip-preview {
+  font-size: 13px;
+  color: #333;
+  font-family: monospace;
+}
+
+.mark-preview {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #666;
+  font-family: monospace;
+  word-break: break-all;
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .cron-page {
@@ -1229,6 +1337,17 @@ onMounted(() => {
   .job-actions .n-button {
     flex: 1;
     min-width: 60px;
+  }
+
+  .time-format-selector {
+    gap: 6px;
+  }
+  .time-format-chip {
+    padding: 5px 8px;
+    min-width: 70px;
+  }
+  .chip-preview {
+    font-size: 11px;
   }
 }
 </style>

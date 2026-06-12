@@ -19,6 +19,15 @@ sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
 
 # 默认标记格式
 DEFAULT_MARK_FORMAT = "[凯莉主动发送] {timestamp}: {content}"
+DEFAULT_TIME_FORMAT = "%H:%M 星期{weekday}"
+DEFAULT_SEND_MARK = "[凯莉主动发送]"
+
+WEEKDAY_NAMES = ["一", "二", "三", "四", "五", "六", "日"]
+
+
+def weekday_name(dt):
+    """返回中文星期几，dt.weekday(): Monday=0 ... Sunday=6"""
+    return WEEKDAY_NAMES[dt.weekday()]
 
 
 def _get_session_user_id(session_id: str) -> Optional[str]:
@@ -204,7 +213,9 @@ class MessageService:
         platform: str = "weixin",
         write_to_db: bool = True,
         with_mark: bool = False,
-        mark_format: str = DEFAULT_MARK_FORMAT
+        mark_format: str = DEFAULT_MARK_FORMAT,
+        send_mark: str = DEFAULT_SEND_MARK,
+        time_format: str = DEFAULT_TIME_FORMAT
     ) -> Dict[str, Any]:
         """发送消息到微信并写入 state.db
 
@@ -214,7 +225,9 @@ class MessageService:
             platform: 目标平台（默认 weixin）
             write_to_db: 是否写入 state.db（默认 True）
             with_mark: 是否带标记（默认 False）
-            mark_format: 标记格式模板，支持 {timestamp} 和 {content} 占位符
+            mark_format: 标记格式模板（向后兼容），支持 {timestamp} 和 {content} 占位符
+            send_mark: 发送标记前缀（如 [凯莉主动发送]）
+            time_format: 时间格式（strftime 格式，支持 {weekday} 占位符）
         """
         start_time = time.time()
         try:
@@ -260,8 +273,10 @@ class MessageService:
             db_content = message
             if write_to_db:
                 if with_mark:
-                    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    db_content = mark_format.format(timestamp=now_str, content=message)
+                    now = datetime.now()
+                    time_str = time_format.replace("{weekday}", weekday_name(now))
+                    time_str = now.strftime(time_str)
+                    db_content = f"{send_mark} {time_str}: {message}"
                 _write_to_state_db(session_id, db_content)
 
             duration = round(time.time() - start_time, 2)
@@ -338,7 +353,9 @@ class MessageService:
         prompts_config: Optional[Dict[str, str]] = None,
         write_to_db: bool = True,
         with_mark: bool = True,
-        mark_format: str = DEFAULT_MARK_FORMAT
+        mark_format: str = DEFAULT_MARK_FORMAT,
+        send_mark: str = DEFAULT_SEND_MARK,
+        time_format: str = DEFAULT_TIME_FORMAT
     ) -> Dict[str, Any]:
         """发送主动消息"""
         start_time = time.time()
@@ -396,7 +413,9 @@ class MessageService:
                 platform=platform,
                 write_to_db=write_to_db,
                 with_mark=with_mark,
-                mark_format=mark_format
+                mark_format=mark_format,
+                send_mark=send_mark,
+                time_format=time_format
             )
 
             duration = round(time.time() - start_time, 2)

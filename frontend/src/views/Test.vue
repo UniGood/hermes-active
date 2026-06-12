@@ -251,14 +251,24 @@
             <n-checkbox v-model:checked="withMark" :disabled="!writeToDB">带标记</n-checkbox>
           </n-space>
           <div v-if="withMark && writeToDB" class="mark-format-section">
-            <div class="mark-format-label">标记格式模板：</div>
+            <div class="mark-format-label">发送标记：</div>
             <n-input
-              v-model:value="markFormat"
-              placeholder="[凯莉主动发送] {timestamp}: {content}"
+              v-model:value="sendMark"
+              placeholder="[凯莉主动发送]"
               size="small"
+              style="max-width: 300px"
             />
-            <div class="mark-format-hint">
-              支持占位符: <n-text code>{timestamp}</n-text> <n-text code>{content}</n-text>
+            <div class="mark-format-label" style="margin-top: 8px">时间格式：</div>
+            <div class="time-format-selector">
+              <div
+                v-for="opt in timeFormatOptions" :key="opt.value"
+                class="time-format-chip"
+                :class="{ active: timeFormat === opt.value }"
+                @click="timeFormat = opt.value"
+              >
+                <span class="chip-label">{{ opt.label }}</span>
+                <span class="chip-preview">{{ formatWithOption(opt.value) }}</span>
+              </div>
             </div>
             <div class="mark-format-preview" v-if="testMessage.trim()">
               预览: {{ previewMark }}
@@ -372,9 +382,34 @@ const platformLabel = computed(() => {
 const testMessage = ref('')
 const writeToDB = ref(true)
 const withMark = ref(false)
-const markFormat = ref('[凯莉主动发送] {timestamp}: {content}')
+const sendMark = ref('[凯莉主动发送]')
+const timeFormat = ref('%H:%M 星期{weekday}')
 const generatedMessage = ref('')
 const logs = ref([])
+
+// 时间格式选项（与 CronJobs.vue 保持一致）
+const WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日']
+const timeFormatOptions = [
+  { label: '简短', value: '%H:%M 星期{weekday}', preview: () => '14:30 星期四' },
+  { label: '时分秒', value: '%H:%M:%S', preview: () => '14:30:25' },
+  { label: '日期时分', value: '%m/%d %H:%M', preview: () => '06/12 14:30' },
+  { label: '完整', value: '%Y-%m-%d %H:%M:%S', preview: () => '2026-06-12 14:30:25' },
+  { label: '日期星期', value: '%m/%d 星期{weekday}', preview: () => '06/12 星期四' },
+]
+
+function formatTimeWith(fmt, d) {
+  const weekday = WEEKDAY_NAMES[d.getDay() === 0 ? 6 : d.getDay() - 1]
+  let s = fmt.replace('{weekday}', weekday)
+  const map = { '%Y': d.getFullYear(), '%m': String(d.getMonth() + 1).padStart(2, '0'), '%d': String(d.getDate()).padStart(2, '0'), '%H': String(d.getHours()).padStart(2, '0'), '%M': String(d.getMinutes()).padStart(2, '0'), '%S': String(d.getSeconds()).padStart(2, '0') }
+  for (const [k, v] of Object.entries(map)) { s = s.replace(k, v) }
+  return s
+}
+
+function formatWithOption(fmt) {
+  const opt = timeFormatOptions.find(o => o.value === fmt)
+  if (opt) return opt.preview()
+  return formatTimeWith(fmt, new Date())
+}
 
 // 提示词预览
 const promptPreview = ref(null)
@@ -382,11 +417,8 @@ const promptPreview = ref(null)
 // 标记预览
 const previewMark = computed(() => {
   if (!testMessage.value.trim()) return ''
-  const now = new Date()
-  const ts = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-  return markFormat.value
-    .replace('{timestamp}', ts)
-    .replace('{content}', testMessage.value.trim())
+  const ts = formatTimeWith(timeFormat.value, new Date())
+  return `${sendMark.value} ${ts}: ${testMessage.value.trim()}`
 })
 
 // 监听 selectedSessionId 变化
@@ -631,7 +663,8 @@ async function sendMessage() {
       platform: selectedPlatform.value,
       write_to_db: writeToDB.value,
       with_mark: withMark.value,
-      mark_format: markFormat.value
+      send_mark: sendMark.value,
+      time_format: timeFormat.value
     })
     const markLabel = withMark.value ? '带标记' : '不带标记'
     addLog('success', `发送成功（${markLabel}，写入DB=${writeToDB.value}）: ${testMessage.value.trim()}`)
@@ -670,7 +703,8 @@ async function fullTest() {
       platform: selectedPlatform.value,
       write_to_db: true,
       with_mark: true,
-      mark_format: markFormat.value
+      send_mark: sendMark.value,
+      time_format: timeFormat.value
     })
 
     addLog('success', `完整流程测试完成: ${generated}`)
@@ -966,5 +1000,78 @@ onMounted(() => {
   font-size: 13px;
   color: #666;
   font-weight: 500;
+}
+
+/* 时间格式选择器 */
+.time-format-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.time-format-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid #e0e0e6;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+  min-width: 80px;
+}
+
+.time-format-chip:hover {
+  border-color: #18a058;
+  background: #f0f9eb;
+}
+
+.time-format-chip.active {
+  border-color: #18a058;
+  background: #e8f5e9;
+  box-shadow: 0 0 0 1px #18a058;
+}
+
+.chip-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.time-format-chip.active .chip-label {
+  color: #18a058;
+  font-weight: 500;
+}
+
+.chip-preview {
+  font-size: 13px;
+  color: #333;
+  font-family: monospace;
+}
+
+.mark-format-preview {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #666;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+@media (max-width: 768px) {
+  .time-format-selector {
+    gap: 6px;
+  }
+  .time-format-chip {
+    padding: 5px 8px;
+    min-width: 70px;
+  }
+  .chip-preview {
+    font-size: 11px;
+  }
 }
 </style>
