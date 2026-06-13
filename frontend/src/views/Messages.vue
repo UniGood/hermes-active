@@ -4,30 +4,32 @@
     <div v-if="!selectedSession" class="search-bar">
       <n-input
         v-model:value="searchText"
-        placeholder="搜索 Session ID..."
+        placeholder="搜索消息内容..."
         clearable
         @clear="clearSearch"
-        @keyup.enter="searchSessions"
+        @keyup.enter="searchMessages"
       >
         <template #prefix>
           <n-icon><SearchOutline /></n-icon>
         </template>
       </n-input>
-      <n-button @click="searchSessions" :loading="searching">搜索</n-button>
+      <n-button @click="searchMessages" :loading="searching">搜索</n-button>
     </div>
 
     <!-- 搜索结果列表 -->
     <div v-if="searchResults.length > 0 && !selectedSession" class="search-results">
       <div
-        v-for="s in searchResults"
-        :key="s.id"
+        v-for="msg in searchResults"
+        :key="msg.id"
         class="search-result-item"
-        @click="selectSession(s)"
+        @click="goToMessage(msg)"
       >
-        <n-tag :type="getPlatformType(s.source)" size="small">{{ s.source }}</n-tag>
-        <span class="result-id">{{ s.id }}</span>
-        <span class="result-title">{{ s.title || '无标题' }}</span>
-        <span class="result-meta">{{ s.message_count || 0 }} 条消息</span>
+        <n-tag :type="msg.role === 'user' ? 'info' : msg.role === 'assistant' ? 'success' : 'default'" size="small">
+          {{ msg.role === 'user' ? config.user_name : msg.role === 'assistant' ? config.assistant_name : msg.role }}
+        </n-tag>
+        <span class="result-content">{{ truncate(msg.content, 60) }}</span>
+        <span class="result-sid" @click.stop="copySessionId(msg.session_id)">SID: {{ msg.session_id.slice(0, 12) }}...</span>
+        <span class="result-time">{{ formatTime(msg.timestamp) }}</span>
       </div>
     </div>
 
@@ -55,7 +57,8 @@
           v-for="msg in messages"
           :key="msg.id"
           class="message-bubble"
-          :class="msg.role"
+          :class="[msg.role, { 'highlighted': highlightedMessageId === msg.id }]"
+          :id="'msg-' + msg.id"
         >
           <div class="message-role">
             {{ msg.role === 'user' ? config.user_name : msg.role === 'assistant' ? config.assistant_name : msg.role }}
@@ -100,6 +103,7 @@ const searchResults = ref([])
 const selectedSession = ref(null)
 const newMessage = ref('')
 const messageListRef = ref(null)
+const highlightedMessageId = ref(null)
 
 function getPlatformType(source) {
   const map = { weixin: 'success', feishu: 'info', cli: 'default', telegram: 'warning' }
@@ -115,14 +119,30 @@ function formatContent(content) {
     .replace(/\n/g, '<br>')
 }
 
-async function searchSessions() {
+function truncate(str, len) {
+  if (!str) return ''
+  return str.length > len ? str.slice(0, len) + '...' : str
+}
+
+function formatTime(ts) {
+  if (!ts) return ''
+  const d = new Date(ts * 1000)
+  return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+}
+
+function copySessionId(sid) {
+  navigator.clipboard.writeText(sid)
+  message.success('已复制 Session ID')
+}
+
+async function searchMessages() {
   if (!searchText.value.trim()) return
   searching.value = true
   try {
-    const data = await api.get('/sessions', { params: { search: searchText.value.trim(), page: 1, page_size: 20 } })
+    const data = await api.get('/messages/search', { params: { keyword: searchText.value.trim(), page: 1, page_size: 50 } })
     searchResults.value = data.items || []
   } catch (e) {
-    console.error('搜索会话失败:', e)
+    console.error('搜索消息失败:', e)
   } finally {
     searching.value = false
   }
@@ -133,14 +153,39 @@ function clearSearch() {
   searchResults.value = []
 }
 
-async function selectSession(session) {
-  selectedSession.value = session
+async function goToMessage(msg) {
+  // 1. 加载该消息所在的 session
+  try {
+    const sessionData = await api.get(`/sessions/${msg.session_id}`)
+    selectedSession.value = sessionData
+  } catch (e) {
+    // 如果获取 session 详情失败，构造一个最小对象
+    selectedSession.value = { id: msg.session_id, source: 'unknown' }
+  }
+
+  // 2. 加载 session 的所有消息
   await loadMessages()
+
+  // 3. 等待 DOM 更新后，滚动到目标消息并高亮
+  highlightedMessageId.value = msg.id
+  await nextTick()
+
+  const targetEl = document.getElementById('msg-' + msg.id)
+  if (targetEl) {
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  // 4. 3秒后取消高亮
+  setTimeout(() => {
+    highlightedMessageId.value = null
+  }, 3000)
 }
 
 function clearSelection() {
   selectedSession.value = null
   messages.value = []
+  highlightedMessageId.value = null
+  // 保留搜索结果，不清空
 }
 
 async function loadMessages() {
@@ -227,20 +272,31 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-.result-id {
-  font-size: 11px;
-  color: #999;
-  font-family: monospace;
-}
-
-.result-title {
-  font-size: 14px;
-  color: #2d2d2d;
+.result-content {
   flex: 1;
+  font-size: 13px;
+  color: #2d2d2d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.result-meta {
-  font-size: 12px;
+.result-sid {
+  font-size: 11px;
+  color: #ff9a9e;
+  font-family: monospace;
+  cursor: pointer;
+  padding: 2px 6px;
+  background: rgba(255, 154, 158, 0.1);
+  border-radius: 4px;
+}
+
+.result-sid:hover {
+  background: rgba(255, 154, 158, 0.2);
+}
+
+.result-time {
+  font-size: 11px;
   color: #999;
 }
 
@@ -286,6 +342,16 @@ onMounted(() => {
 
 .message-bubble.assistant {
   margin-right: auto;
+}
+
+.message-bubble.highlighted .message-content {
+  box-shadow: 0 0 0 2px #ff9a9e, 0 4px 20px rgba(255, 154, 158, 0.3);
+  animation: highlight-pulse 1s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px #ff9a9e, 0 4px 20px rgba(255, 154, 158, 0.3); }
+  50% { box-shadow: 0 0 0 4px #ff9a9e, 0 4px 30px rgba(255, 154, 158, 0.5); }
 }
 
 .message-role {
