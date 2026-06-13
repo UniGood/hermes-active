@@ -26,8 +26,18 @@ async def test_full_flow(
     """测试完整流程"""
     start_time = time.time()
 
-    # 1. 获取最新 session
-    session = SessionService.get_latest_session(request.platform)
+    # 1. 获取最新活跃 session（自动处理过期）
+    user_id = SessionService.get_user_id_for_platform(request.platform)
+    if not user_id:
+        MessageService.create_task_log(
+            task_type="test_flow",
+            status="failed",
+            message="完整流程测试失败",
+            error=f"未找到 {request.platform} 平台的用户 ID",
+            duration=round(time.time() - start_time, 2)
+        )
+        return SuccessResponse(message=f"未找到 {request.platform} 用户 ID，测试失败")
+    session = SessionService.get_or_create_active_session(request.platform, user_id)
     if not session:
         MessageService.create_task_log(
             task_type="test_flow",

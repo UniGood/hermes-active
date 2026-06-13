@@ -538,10 +538,12 @@ async def preview_prompt(
     # 确定 session_id：优先使用传入的，否则获取最新活跃 session
     effective_session_id = request.session_id
     if not effective_session_id:
-        # 尝试获取最新活跃 session
-        latest_session = SessionService.get_latest_session("weixin")
-        if latest_session:
-            effective_session_id = latest_session.get("id")
+        # 尝试获取最新活跃 session（自动处理过期）
+        user_id = SessionService.get_user_id_for_platform("weixin")
+        if user_id:
+            latest_session = SessionService.get_or_create_active_session("weixin", user_id)
+            if latest_session:
+                effective_session_id = latest_session.get("id")
 
     # 获取 Session 上下文
     if session_enabled and effective_session_id:

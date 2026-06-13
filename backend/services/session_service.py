@@ -186,7 +186,15 @@ class SessionService:
 
     @staticmethod
     def get_latest_session(platform: str = "weixin") -> Optional[Dict[str, Any]]:
-        """获取最新 session"""
+        """[已废弃] 获取最新 session — 不检查过期，可能返回旧 session
+
+        已被 get_user_id_for_platform() + get_or_create_active_session() 替代。
+        此方法仅保留用于向后兼容，不应在新代码中使用。
+        """
+        import logging
+        logging.getLogger("hermes.session").warning(
+            "get_latest_session() 已废弃，请使用 get_user_id_for_platform() + get_or_create_active_session()"
+        )
         metadata = get_state_metadata()
 
         if 'sessions' not in metadata.tables:
@@ -257,6 +265,32 @@ class SessionService:
         latest_time = None
         for key, entry in sessions.items():
             if (entry.get('platform') == 'weixin'
+                and entry.get('chat_type') == 'dm'):
+                updated_at = entry.get('updated_at')
+                if updated_at and (latest_time is None or updated_at > latest_time):
+                    latest_time = updated_at
+                    latest_entry = entry
+        return latest_entry['origin']['user_id'] if latest_entry else None
+
+    @staticmethod
+    def get_user_id_for_platform(platform: str) -> Optional[str]:
+        """从 sessions.json 获取指定平台最新活跃 session 的 user_id
+
+        通用方法，支持 weixin、feishu 等所有平台。
+        按 updated_at 排序返回最新的 dm session 的 user_id。
+        """
+        import json
+        sessions_file = Path.home() / '.hermes' / 'sessions' / 'sessions.json'
+        if not sessions_file.exists():
+            return None
+
+        with open(sessions_file) as f:
+            sessions = json.load(f)
+
+        latest_entry = None
+        latest_time = None
+        for key, entry in sessions.items():
+            if (entry.get('platform') == platform
                 and entry.get('chat_type') == 'dm'):
                 updated_at = entry.get('updated_at')
                 if updated_at and (latest_time is None or updated_at > latest_time):

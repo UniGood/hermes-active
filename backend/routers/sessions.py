@@ -75,10 +75,23 @@ async def get_latest_session(
             auto_reset_reason=session.get('auto_reset_reason'),
         )
     else:
-        session = SessionService.get_latest_session(platform)
+        user_id = SessionService.get_user_id_for_platform(platform)
+        if not user_id:
+            raise HTTPException(status_code=404, detail=f"未找到 {platform} 用户 ID")
+        session = SessionService.get_or_create_active_session(platform, user_id)
         if not session:
             raise HTTPException(status_code=404, detail="未找到 session")
-        return SessionInfo(**session)
+        from datetime import datetime
+        created_at = session.get('created_at')
+        started_at = datetime.fromisoformat(created_at).timestamp() if created_at else None
+        return SessionInfo(
+            id=session['id'],
+            source=session.get('source'),
+            user_id=session.get('user_id'),
+            started_at=started_at,
+            was_auto_reset=session.get('was_auto_reset'),
+            auto_reset_reason=session.get('auto_reset_reason'),
+        )
 
 
 @router.get("/{session_id}", response_model=SessionInfo)
