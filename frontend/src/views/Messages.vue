@@ -28,7 +28,6 @@
           {{ msg.role === 'user' ? config.user_name : msg.role === 'assistant' ? config.assistant_name : msg.role }}
         </n-tag>
         <span class="result-content">{{ truncate(msg.content, 60) }}</span>
-        <span class="result-sid" :class="msg.role === 'user' ? 'sid-user' : msg.role === 'assistant' ? 'sid-assistant' : ''" @click.stop="copySessionId(msg.session_id)">SID: {{ msg.session_id.slice(0, 12) }}...</span>
         <span class="result-time">{{ formatTime(msg.timestamp) }}</span>
       </div>
     </div>
@@ -69,7 +68,6 @@
               <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="small">
                 {{ msg.role === 'user' ? config.user_name : msg.role === 'assistant' ? config.assistant_name : msg.role }}
               </n-tag>
-              <span class="message-id" :class="msg.role === 'user' ? 'sid-user' : msg.role === 'assistant' ? 'sid-assistant' : ''" v-if="msg.session_id">SID: {{ msg.session_id.slice(0, 12) }}...</span>
             </div>
             <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
           </div>
@@ -144,11 +142,6 @@ function formatTime(ts) {
   if (!ts) return ''
   const d = new Date(ts * 1000)
   return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
-}
-
-function copySessionId(sid) {
-  navigator.clipboard.writeText(sid)
-  message.success('已复制 Session ID')
 }
 
 async function searchMessages() {
@@ -310,29 +303,6 @@ async function loadRecentMessages() {
   white-space: nowrap;
 }
 
-.result-sid {
-  font-size: 11px;
-  color: #999;
-  font-family: monospace;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.result-sid.sid-user {
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-}
-
-.result-sid.sid-assistant {
-  color: #ff9a9e;
-  background: rgba(255, 154, 158, 0.1);
-}
-
-.result-sid:hover {
-  background: rgba(255, 154, 158, 0.2);
-}
-
 .result-time {
   font-size: 11px;
   color: #999;
@@ -389,25 +359,6 @@ async function loadRecentMessages() {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.message-id {
-  font-size: 11px;
-  color: #999;
-  font-family: monospace;
-  cursor: pointer;
-  padding: 1px 4px;
-  border-radius: 3px;
-}
-
-.sid-user {
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-}
-
-.sid-assistant {
-  color: #ff9a9e;
-  background: rgba(255, 154, 158, 0.1);
 }
 
 .message-time {
@@ -485,10 +436,6 @@ async function loadRecentMessages() {
     word-break: break-all;
   }
 
-  .result-sid {
-    font-size: 10px;
-  }
-
   .result-time {
     font-size: 10px;
   }
@@ -515,10 +462,6 @@ async function loadRecentMessages() {
   .message-header-left {
     flex-wrap: wrap;
     gap: 4px;
-  }
-
-  .message-id {
-    font-size: 10px;
   }
 
   .message-content {
