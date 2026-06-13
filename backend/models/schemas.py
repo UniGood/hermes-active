@@ -40,6 +40,8 @@ class SessionInfo(BaseModel):
     started_at: Optional[float] = None
     ended_at: Optional[float] = None
     message_count: Optional[int] = 0
+    was_auto_reset: Optional[bool] = None
+    auto_reset_reason: Optional[str] = None
 
 
 class SessionListResponse(BaseModel):

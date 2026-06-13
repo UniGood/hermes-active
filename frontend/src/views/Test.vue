@@ -536,8 +536,12 @@ async function loadLatestSession() {
     const data = await api.get(`/sessions/latest/${selectedPlatform.value}`)
     if (data && data.id) {
       selectedSessionId.value = data.id
-      selectedSession.value = data
-      addLog('info', `获取最新 ${platformLabel.value} Session: ${data.id}`)
+      selectedSession.value = { ...data, message_count: data.message_count || 0 }
+      if (data.was_auto_reset) {
+        addLog('info', `Session 已自动重置（原因: ${data.auto_reset_reason}），新 session: ${data.id}`)
+      } else {
+        addLog('info', `获取最新 ${platformLabel.value} Session: ${data.id}`)
+      }
     } else {
       addLog('error', `未找到 ${platformLabel.value} 的 Session`)
     }
