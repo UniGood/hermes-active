@@ -28,7 +28,7 @@
           {{ msg.role === 'user' ? config.user_name : msg.role === 'assistant' ? config.assistant_name : msg.role }}
         </n-tag>
         <span class="result-content">{{ truncate(msg.content, 60) }}</span>
-        <span class="result-sid" @click.stop="copySessionId(msg.session_id)">SID: {{ msg.session_id.slice(0, 12) }}...</span>
+        <span class="result-sid" :class="msg.role === 'user' ? 'sid-user' : msg.role === 'assistant' ? 'sid-assistant' : ''" @click.stop="copySessionId(msg.session_id)">SID: {{ msg.session_id.slice(0, 12) }}...</span>
         <span class="result-time">{{ formatTime(msg.timestamp) }}</span>
       </div>
     </div>
@@ -69,7 +69,7 @@
               <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="small">
                 {{ msg.role === 'user' ? config.user_name : msg.role === 'assistant' ? config.assistant_name : msg.role }}
               </n-tag>
-              <span class="message-id" v-if="msg.session_id">SID: {{ msg.session_id.slice(0, 12) }}...</span>
+              <span class="message-id" :class="msg.role === 'user' ? 'sid-user' : msg.role === 'assistant' ? 'sid-assistant' : ''" v-if="msg.session_id">SID: {{ msg.session_id.slice(0, 12) }}...</span>
             </div>
             <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
           </div>
@@ -312,12 +312,21 @@ async function loadRecentMessages() {
 
 .result-sid {
   font-size: 11px;
-  color: #ff9a9e;
+  color: #999;
   font-family: monospace;
   cursor: pointer;
   padding: 2px 6px;
-  background: rgba(255, 154, 158, 0.1);
   border-radius: 4px;
+}
+
+.result-sid.sid-user {
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.result-sid.sid-assistant {
+  color: #ff9a9e;
+  background: rgba(255, 154, 158, 0.1);
 }
 
 .result-sid:hover {
@@ -388,8 +397,17 @@ async function loadRecentMessages() {
   font-family: monospace;
   cursor: pointer;
   padding: 1px 4px;
-  background: rgba(255, 154, 158, 0.1);
   border-radius: 3px;
+}
+
+.sid-user {
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.sid-assistant {
+  color: #ff9a9e;
+  background: rgba(255, 154, 158, 0.1);
 }
 
 .message-time {
@@ -445,6 +463,7 @@ async function loadRecentMessages() {
   .messages-page {
     max-width: 100%;
     padding: 0 12px;
+    height: calc(100vh - 100px);
   }
 
   .search-bar {
@@ -456,6 +475,7 @@ async function loadRecentMessages() {
     flex-wrap: wrap;
     gap: 6px;
     padding: 10px 12px;
+    border-radius: 12px;
   }
 
   .result-content {
@@ -463,8 +483,36 @@ async function loadRecentMessages() {
     order: 3;
   }
 
+  .session-detail-card {
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .detail-info {
+    font-size: 12px;
+  }
+
+  .message-item {
+    padding: 10px 0;
+  }
+
+  .message-header {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .message-content {
+    font-size: 13px;
+  }
+
   .send-bar {
     flex-direction: column;
+    gap: 8px;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
 </style>
