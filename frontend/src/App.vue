@@ -57,50 +57,6 @@ body {
   overflow-x: hidden;
 }
 
-/* 所有弹窗全屏 */
-.n-modal {
-  padding: 0 !important;
-  margin: 0 !important;
-  --n-padding: 0 !important;
-}
-
-.n-modal-body-wrapper {
-  width: 100vw !important;
-  max-width: 100vw !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  max-height: 100vh;
-  height: 100vh;
-  background: #fff !important;
-  top: 0 !important;
-  left: 0 !important;
-  position: fixed !important;
-  transform: none !important;
-}
-
-.n-card {
-  border-radius: 0 !important;
-  background: #fff !important;
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  --n-border-radius: 0 !important;
-  --n-padding: 0 !important;
-}
-
-.n-card__content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px !important;
-}
-
-.n-card__action {
-  flex-shrink: 0;
-  border-top: 1px solid #eee;
-  padding: 12px 16px !important;
-}
-
 /* 弹窗遮罩层 */
 .n-modal-mask {
   background: rgba(0, 0, 0, 0.5) !important;

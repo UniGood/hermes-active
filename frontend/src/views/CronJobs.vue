@@ -371,7 +371,7 @@
     </n-modal>
 
     <!-- 日志弹窗 -->
-    <n-modal v-model:show="showJobLogs" preset="card" :title="`日志 - ${jobLogsName}`">
+    <n-modal v-model:show="showJobLogs" preset="card" :title="`日志 - ${jobLogsName}`" fullscreen>
       <n-spin :show="jobLogsLoading">
         <n-data-table
           v-if="jobLogs.length > 0"
@@ -386,7 +386,7 @@
     </n-modal>
 
     <!-- 日志详情弹窗 -->
-    <n-modal v-model:show="showLogDetail" preset="card" title="运行详情">
+    <n-modal v-model:show="showLogDetail" preset="card" title="运行详情" fullscreen>
       <div v-if="logDetailData">
         <!-- 基本信息 -->
         <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
@@ -447,7 +447,7 @@
     </n-modal>
 
     <!-- 预览提示词弹窗 -->
-    <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词">
+    <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词" fullscreen>
       <n-spin :show="previewing">
         <n-form label-placement="left" label-width="100">
           <n-form-item label="系统提示词">
@@ -584,12 +584,12 @@ function viewLogDetail(log) {
   showLogDetail.value = true
 }
 const jobLogsColumns = [
+  { title: '详情', key: 'details', width: 70, render: (row) => row.details ? h(NButton, { size: 'tiny', onClick: () => viewLogDetail(row) }, { default: () => '详情' }) : '-' },
   { title: '时间', key: 'created_at', width: 140, render: (row) => formatTime(row.created_at) },
   { title: '状态', key: 'status', width: 70, render: (row) => row.status === 'success' ? '✅ 成功' : '❌ 失败' },
   { title: '消息', key: 'message', minWidth: 120, ellipsis: { tooltip: true } },
   { title: '错误', key: 'error', width: 120, ellipsis: { tooltip: true }, render: (row) => row.error || '-' },
-  { title: '耗时', key: 'duration', width: 70, render: (row) => row.duration ? `${row.duration.toFixed(1)}s` : '-' },
-  { title: '详情', key: 'details', width: 70, render: (row) => row.details ? h(NButton, { size: 'tiny', onClick: () => viewLogDetail(row) }, { default: () => '详情' }) : '-' }
+  { title: '耗时', key: 'duration', width: 70, render: (row) => row.duration ? `${row.duration.toFixed(1)}s` : '-' }
 ]
 
 const platformOptions = [
