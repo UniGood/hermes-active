@@ -4,7 +4,7 @@
     <div class="search-bar">
       <n-input
         v-model:value="searchText"
-        placeholder="搜索会话..."
+        placeholder="搜索会话（标题/ID）..."
         clearable
         @clear="loadSessions"
         @keyup.enter="loadSessions"
@@ -45,6 +45,7 @@
             <span class="session-time">{{ formatTime(session.started_at) }}</span>
           </div>
           <div class="session-title">{{ session.title || '无标题' }}</div>
+          <div class="session-id">{{ session.id }}</div>
           <div class="session-meta">
             <span>消息数: {{ session.message_count || 0 }}</span>
             <span :class="{ 'status-active': !session.ended_at, 'status-ended': session.ended_at }">
@@ -184,6 +185,13 @@ onMounted(loadSessions)
   font-weight: 500;
   color: #333;
   margin-bottom: 8px;
+}
+
+.session-id {
+  font-size: 11px;
+  color: #bbb;
+  font-family: monospace;
+  margin-bottom: 4px;
 }
 
 .session-meta {

@@ -80,7 +80,7 @@ class SessionService:
                     count_sql += " AND s.source = :platform"
                     count_params["platform"] = platform
                 if search:
-                    count_sql += " AND (s.title LIKE :search OR s.user_id LIKE :search)"
+                    count_sql += " AND (s.title LIKE :search OR s.user_id LIKE :search OR s.id LIKE :search)"
                     count_params["search"] = f"%{search}%"
                 total = conn.execute(text(count_sql), count_params).scalar()
 
@@ -96,7 +96,7 @@ class SessionService:
                     sql += " AND s.source = :platform"
                     params["platform"] = platform
                 if search:
-                    sql += " AND (s.title LIKE :search OR s.user_id LIKE :search)"
+                    sql += " AND (s.title LIKE :search OR s.user_id LIKE :search OR s.id LIKE :search)"
                     params["search"] = f"%{search}%"
                 sql += """
                     GROUP BY s.id
@@ -126,11 +126,12 @@ class SessionService:
             if platform:
                 query = query.where(sessions_table.c.source == platform)
 
-            # 搜索
+            # 搜索（标题、用户ID、Session ID 模糊匹配）
             if search:
                 query = query.where(
                     sessions_table.c.title.like(f"%{search}%") |
-                    sessions_table.c.user_id.like(f"%{search}%")
+                    sessions_table.c.user_id.like(f"%{search}%") |
+                    sessions_table.c.id.like(f"%{search}%")
                 )
 
             # 获取总数
@@ -140,7 +141,8 @@ class SessionService:
             if search:
                 count_query = count_query.where(
                     sessions_table.c.title.like(f"%{search}%") |
-                    sessions_table.c.user_id.like(f"%{search}%")
+                    sessions_table.c.user_id.like(f"%{search}%") |
+                    sessions_table.c.id.like(f"%{search}%")
                 )
 
             from sqlalchemy import func
@@ -150,7 +152,8 @@ class SessionService:
             if search:
                 total_sql = total_sql.where(
                     sessions_table.c.title.like(f"%{search}%") |
-                    sessions_table.c.user_id.like(f"%{search}%")
+                    sessions_table.c.user_id.like(f"%{search}%") |
+                    sessions_table.c.id.like(f"%{search}%")
                 )
 
             with state_engine.connect() as conn:
