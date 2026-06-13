@@ -52,9 +52,13 @@
 
     <!-- 消息列表 -->
     <n-spin :show="loading">
+      <div v-if="selectedSession" class="toolbar">
+        <n-checkbox v-model:checked="hideTool">隐藏工具消息</n-checkbox>
+        <span class="result-count">共 {{ filteredMessages.length }} 条</span>
+      </div>
       <div class="message-list" ref="messageListRef">
         <div
-          v-for="msg in messages"
+          v-for="msg in filteredMessages"
           :key="msg.id"
           class="message-bubble"
           :class="[msg.role, { 'highlighted': highlightedMessageId === msg.id }]"
@@ -65,7 +69,7 @@
           </div>
           <div class="message-content" v-html="formatContent(msg.content)"></div>
         </div>
-        <n-empty v-if="!loading && messages.length === 0 && selectedSession" description="暂无消息" />
+        <n-empty v-if="!loading && filteredMessages.length === 0 && selectedSession" description="暂无消息" />
       </div>
     </n-spin>
 
@@ -86,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { SearchOutline } from '@vicons/ionicons5'
 import api from '../api'
@@ -104,6 +108,12 @@ const selectedSession = ref(null)
 const newMessage = ref('')
 const messageListRef = ref(null)
 const highlightedMessageId = ref(null)
+const hideTool = ref(true)
+
+const filteredMessages = computed(() => {
+  if (!hideTool.value) return messages.value
+  return messages.value.filter(msg => msg.role !== 'tool')
+})
 
 function getPlatformType(source) {
   const map = { weixin: 'success', feishu: 'info', cli: 'default', telegram: 'warning' }
@@ -408,10 +418,54 @@ async function loadRecentMessages() {
   flex: 1;
 }
 
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  margin-bottom: 4px;
+}
+
+.result-count {
+  font-size: 12px;
+  color: #999;
+}
+
 .tag-assistant {
   --n-color: #fff0f3 !important;
   --n-color-hover: #ffe0e6 !important;
   --n-text-color: #ff9a9e !important;
   --n-border: 1px solid #ffd0d6 !important;
+}
+
+@media (max-width: 768px) {
+  .messages-page {
+    max-width: 100%;
+    padding: 0 12px;
+  }
+
+  .search-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .search-result-item {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .result-content {
+    width: 100%;
+    order: 3;
+  }
+
+  .message-bubble {
+    max-width: 90%;
+  }
+
+  .send-bar {
+    flex-direction: column;
+  }
 }
 </style>

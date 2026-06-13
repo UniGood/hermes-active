@@ -252,11 +252,16 @@
             </div>
           </n-space>
         </n-form-item>
+        <!-- 发送消息 -->
+        <n-divider title-placement="left">发送消息</n-divider>
         <n-form-item label="使用 LLM">
           <n-switch v-model:value="formData.use_llm" />
           <span style="margin-left: 8px; color: #999; font-size: 13px">
-            {{ formData.use_llm ? '使用 LLM 生成消息' : '直接使用提示词作为消息' }}
+            {{ formData.use_llm ? '大模型生成消息' : '直接发送固定消息' }}
           </span>
+        </n-form-item>
+        <n-form-item v-if="!formData.use_llm" label="固定消息">
+          <n-input v-model:value="formData.fixed_message" type="textarea" :autosize="{ minRows: 2, maxRows: 6 }" placeholder="输入固定发送的消息内容" />
         </n-form-item>
         <n-form-item label="写入 DB">
           <n-switch v-model:value="formData.write_to_db" />
@@ -265,7 +270,8 @@
           </span>
         </n-form-item>
 
-        <div>
+        <div v-if="formData.write_to_db">
+          <n-divider title-placement="left">消息标记</n-divider>
           <n-form-item label="发送标记">
             <n-input v-model:value="formData.send_mark" placeholder="[凯莉主动发送]" style="max-width: 300px" />
           </n-form-item>
@@ -281,8 +287,10 @@
                 <span class="chip-preview">{{ formatWithOption(opt.value) }}</span>
               </div>
             </div>
+          </n-form-item>
+          <n-form-item label="预览">
             <div class="mark-preview" v-if="testMessageForPreview">
-              预览: <template v-if="formData.send_mark || formData.time_format"><template v-if="formData.send_mark">{{ formData.send_mark }}</template><template v-if="formData.time_format"> {{ formatWithOption(formData.time_format) }}</template>: </template>{{ testMessageForPreview }}
+              <template v-if="formData.send_mark || formData.time_format"><template v-if="formData.send_mark">{{ formData.send_mark }}</template><template v-if="formData.time_format"> {{ formatWithOption(formData.time_format) }}</template>: </template>{{ testMessageForPreview }}
             </div>
           </n-form-item>
         </div>
@@ -364,8 +372,7 @@
 
     <!-- 运行日志弹窗 -->
     <n-modal v-model:show="showJobLogs" preset="card" :title="`运行日志 - ${jobLogsName}`"
-      :style="{ width: isMobile ? '100%' : '900px' }"
-      :fullscreen="isMobile">
+      style="width: 900px">
       <n-spin :show="jobLogsLoading">
         <n-data-table
           v-if="jobLogs.length > 0"
@@ -381,8 +388,7 @@
 
     <!-- 日志详情弹窗 -->
     <n-modal v-model:show="showLogDetail" preset="card" title="运行详情"
-      :style="{ width: isMobile ? '100%' : '900px' }"
-      :fullscreen="isMobile">
+      style="width: 900px">
       <div v-if="logDetailData" style="max-height: 70vh; overflow-y: auto;">
         <!-- 基本信息 -->
         <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
@@ -444,8 +450,7 @@
 
     <!-- 预览提示词弹窗 -->
     <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词"
-      :style="{ width: isMobile ? '100%' : '800px' }"
-      :fullscreen="isMobile">
+      style="width: 800px">
       <n-spin :show="previewing">
         <n-form label-placement="left" label-width="100">
           <n-form-item label="系统提示词">
@@ -534,8 +539,6 @@
 <script setup>
 import { ref, watch, onMounted, h } from 'vue'
 
-const isMobile = ref(window.innerWidth <= 768)
-window.addEventListener('resize', () => { isMobile.value = window.innerWidth <= 768 })
 import { useMessage, useDialog, NButton } from 'naive-ui'
 import api from '../api'
 
@@ -641,7 +644,8 @@ const formData = ref({
   send_mark: '',
   time_format: '',
   cooldown_enabled: false,
-  cooldown_minutes: 10
+  cooldown_minutes: 10,
+  fixed_message: ''
 })
 
 // 上下文配置
@@ -786,7 +790,8 @@ function openCreate() {
     send_mark: '[凯莉主动发送]',
     time_format: '%H:%M 星期{weekday}',
     cooldown_enabled: false,
-    cooldown_minutes: 10
+    cooldown_minutes: 10,
+    fixed_message: ''
   }
   contextConfig.value = {
     session_enabled: true,
@@ -912,7 +917,8 @@ function editJob(job) {
       send_mark: job.send_mark || '',
       time_format: job.time_format || '',
       cooldown_enabled: job.cooldown_enabled || false,
-      cooldown_minutes: job.cooldown_minutes || 10
+      cooldown_minutes: job.cooldown_minutes || 10,
+      fixed_message: job.fixed_message || ''
     }
   } else {
     // 兼容旧的单一 prompt 字段
@@ -932,7 +938,8 @@ function editJob(job) {
       with_mark: job.with_mark !== false,
       mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}',
       send_mark: job.send_mark || '',
-      time_format: job.time_format || ''
+      time_format: job.time_format || '',
+      fixed_message: job.fixed_message || ''
     }
   }
   sessionMode.value = job.session_id ? 'fixed' : 'latest'

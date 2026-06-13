@@ -302,7 +302,7 @@ class MessageService:
             # 2. 写入 state.db（带标记或不带标记）
             db_content = message
             if write_to_db:
-                if with_mark and send_mark:
+                if send_mark:
                     now = datetime.now()
                     time_str = time_format.replace("{weekday}", weekday_name(now)) if time_format else ""
                     time_str = now.strftime(time_str) if time_str else ""

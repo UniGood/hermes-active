@@ -91,8 +91,9 @@ async function loadStats() {
     const total = data.total_messages || 1
     const platformData = await api.get('/stats/platforms')
     const platformColors = { weixin: '#ff9a9e', feishu: '#f6d365', cli: '#a8e6cf', cron: '#ffd3b6' }
+    const platformNames = { weixin: '微信', feishu: '飞书', cli: 'CLI', cron: '定时任务', unknown: '其他' }
     platforms.value = (platformData || []).map(p => ({
-      name: p.platform,
+      name: platformNames[p.platform] || p.platform,
       count: p.count,
       percent: Math.round((p.count / total) * 100),
       color: platformColors[p.platform] || '#999'

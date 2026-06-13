@@ -56,4 +56,18 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
+
+@media (max-width: 768px) {
+  .n-modal {
+    --n-border-radius: 0 !important;
+  }
+
+  .n-modal:not([style*="width: 100%"]) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    max-height: 100vh;
+  }
+}
 </style>
