@@ -1368,15 +1368,43 @@ onMounted(() => {
     min-width: 60px;
   }
 
+  /* 编辑弹窗移动端优化 */
+  :deep(.n-modal) {
+    --n-padding: 12px !important;
+  }
+
+  :deep(.n-form-item) {
+    margin-bottom: 12px;
+  }
+
+  :deep(.n-form-item-label) {
+    font-size: 13px;
+    padding-bottom: 4px;
+  }
+
+  :deep(.n-input),
+  :deep(.n-select),
+  :deep(.n-input-number) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
   .time-format-selector {
     gap: 6px;
   }
   .time-format-chip {
     padding: 5px 8px;
     min-width: 70px;
+    font-size: 12px;
   }
   .chip-preview {
     font-size: 11px;
   }
+
+  /* 提示词输入框移动端 */
+  :deep(.n-input--textarea textarea) {
+    min-height: 80px;
+  }
+}
 }
 </style>
