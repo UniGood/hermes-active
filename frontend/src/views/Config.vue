@@ -200,16 +200,6 @@ onMounted(() => {
   box-shadow: 0 4px 20px rgba(255, 154, 158, 0.1);
 }
 
-.config-page :deep(.n-button--primary-type) {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border: none;
-  color: #fff;
-}
-
-.config-page :deep(.n-button--primary-type:hover) {
-  opacity: 0.9;
-}
-
 .config-page :deep(.n-input) {
   border-radius: 12px;
 }

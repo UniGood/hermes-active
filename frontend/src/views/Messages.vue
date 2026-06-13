@@ -307,14 +307,14 @@ onMounted(() => {
 }
 
 .message-bubble.user .message-content {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: #fff;
+  background: #fff;
+  color: #333;
   border-bottom-right-radius: 4px;
 }
 
 .message-bubble.assistant .message-content {
-  background: linear-gradient(135deg, #ff9a9e, #f6d365);
-  color: #fff;
+  background: #fff;
+  color: #333;
   border-bottom-left-radius: 4px;
 }
 

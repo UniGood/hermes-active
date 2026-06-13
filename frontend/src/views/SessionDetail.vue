@@ -320,13 +320,13 @@ onMounted(() => {
 }
 
 .message-item.user .message-content {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: #fff;
+  background: #fff;
+  color: #333;
 }
 
 .message-item.assistant .message-content {
-  background: linear-gradient(135deg, #ff9a9e, #f6d365);
-  color: #fff;
+  background: #fff;
+  color: #333;
 }
 
 .message-item.tool .message-content {
