@@ -1423,10 +1423,6 @@ onMounted(() => {
   }
 
   /* 编辑弹窗移动端优化 */
-  :deep(.n-modal) {
-    --n-padding: 12px !important;
-  }
-
   :deep(.n-form-item) {
     margin-bottom: 12px;
   }
