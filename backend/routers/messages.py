@@ -70,6 +70,17 @@ async def search_messages(
     return result
 
 
+@router.get("/recent")
+async def get_recent_messages(
+    limit: int = Query(50, ge=1, le=200),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
+):
+    """获取最新消息列表（不区分 session）"""
+    result = MessageService.get_recent_messages(limit)
+    return result
+
+
 @router.get("/{session_id}")
 async def get_messages(
     session_id: str,

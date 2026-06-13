@@ -174,6 +174,36 @@ class MessageService:
         return {"total": total, "items": items}
 
     @staticmethod
+    def get_recent_messages(limit: int = 50) -> Dict[str, Any]:
+        """获取最新消息列表（不区分 session）"""
+        metadata = get_state_metadata()
+        if 'messages' not in metadata.tables:
+            return {"total": 0, "items": []}
+
+        messages_table = metadata.tables['messages']
+
+        # 查询最新消息，过滤掉 tool 和空 assistant 消息
+        from sqlalchemy import and_, or_
+        query = (
+            messages_table.select()
+            .where(and_(
+                messages_table.c.role != 'tool',
+                or_(
+                    messages_table.c.role != 'assistant',
+                    and_(messages_table.c.content != None, messages_table.c.content != '')
+                )
+            ))
+            .order_by(messages_table.c.timestamp.desc())
+            .limit(limit)
+        )
+
+        with state_engine.connect() as conn:
+            result = conn.execute(query)
+            items = [dict(row._mapping) for row in result]
+
+        return {"total": len(items), "items": items}
+
+    @staticmethod
     def search_messages(
         db: Session,
         keyword: str,

@@ -230,19 +230,18 @@ function scrollToBottom() {
 
 onMounted(async () => {
   await loadConfig()
-  // 默认加载最新 session 的消息
-  await loadLatestSession()
+  await loadRecentMessages()
 })
 
-async function loadLatestSession() {
+async function loadRecentMessages() {
+  loading.value = true
   try {
-    const data = await api.get('/sessions/latest/weixin')
-    if (data && data.id) {
-      selectedSession.value = data
-      await loadMessages()
-    }
+    const data = await api.get('/messages/recent', { params: { limit: 50 } })
+    searchResults.value = data.items || []
   } catch (e) {
-    // 没有 session 时不报错
+    console.error('加载最新消息失败:', e)
+  } finally {
+    loading.value = false
   }
 }
 </script>
