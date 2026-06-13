@@ -282,7 +282,7 @@
               </div>
             </div>
             <div class="mark-preview" v-if="testMessageForPreview">
-              预览: <template v-if="formData.send_mark">{{ formData.send_mark }}<template v-if="formData.time_format"> {{ formatWithOption(formData.time_format) }}</template>: </template>{{ testMessageForPreview }}
+              预览: <template v-if="formData.send_mark || formData.time_format"><template v-if="formData.send_mark">{{ formData.send_mark }}</template><template v-if="formData.time_format"> {{ formatWithOption(formData.time_format) }}</template>: </template>{{ testMessageForPreview }}
             </div>
           </n-form-item>
         </div>
