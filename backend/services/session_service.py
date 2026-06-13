@@ -253,11 +253,16 @@ class SessionService:
             sessions = json.load(f)
 
         # 找最新的微信私聊 session
+        latest_entry = None
+        latest_time = None
         for key, entry in sessions.items():
             if (entry.get('platform') == 'weixin'
                 and entry.get('chat_type') == 'dm'):
-                return entry['origin']['user_id']
-        return None
+                updated_at = entry.get('updated_at')
+                if updated_at and (latest_time is None or updated_at > latest_time):
+                    latest_time = updated_at
+                    latest_entry = entry
+        return latest_entry['origin']['user_id'] if latest_entry else None
 
     @staticmethod
     def get_or_create_active_session(platform: str, user_id: str) -> Optional[Dict[str, Any]]:
