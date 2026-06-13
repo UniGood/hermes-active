@@ -1145,9 +1145,14 @@ onMounted(() => {
 
 .job-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s;
+}
+
+.job-card:hover {
+  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.12);
 }
 
 .job-header {
@@ -1160,7 +1165,7 @@ onMounted(() => {
 .job-name {
   font-size: 16px;
   font-weight: 500;
-  color: #333;
+  color: #2d2d2d;
 }
 
 .job-meta {
@@ -1178,14 +1183,14 @@ onMounted(() => {
 }
 
 .cron-parse-result {
-  background: #f0f9eb;
+  background: rgba(255, 154, 158, 0.06);
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 13px;
 }
 
 .cron-freq {
-  color: #18a058;
+  color: #ff9a9e;
   font-weight: 500;
   margin-bottom: 8px;
 }
@@ -1266,11 +1271,11 @@ onMounted(() => {
 }
 
 .context-msg-role.user {
-  color: #18a058;
+  color: #ff9a9e;
 }
 
 .context-msg-role.assistant {
-  color: #2080f0;
+  color: #f6d365;
 }
 
 .context-msg-content {
@@ -1307,14 +1312,14 @@ onMounted(() => {
 }
 
 .time-format-chip:hover {
-  border-color: #18a058;
-  background: #f0f9eb;
+  border-color: #ff9a9e;
+  background: rgba(255, 154, 158, 0.06);
 }
 
 .time-format-chip.active {
-  border-color: #18a058;
-  background: #e8f5e9;
-  box-shadow: 0 0 0 1px #18a058;
+  border-color: #ff9a9e;
+  background: rgba(255, 154, 158, 0.1);
+  box-shadow: 0 0 0 1px #ff9a9e;
 }
 
 .chip-label {
@@ -1324,7 +1329,7 @@ onMounted(() => {
 }
 
 .time-format-chip.active .chip-label {
-  color: #18a058;
+  color: #ff9a9e;
   font-weight: 500;
 }
 

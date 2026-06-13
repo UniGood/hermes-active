@@ -761,8 +761,8 @@ onMounted(() => {
   gap: 12px;
   margin-top: 8px;
   padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
+  background: #f8f6f4;
+  border-radius: 12px;
 }
 
 .info-item {
@@ -778,7 +778,7 @@ onMounted(() => {
 
 .info-item .value {
   font-size: 14px;
-  color: #333;
+  color: #2d2d2d;
   word-break: break-all;
 }
 
@@ -790,8 +790,8 @@ onMounted(() => {
   margin-top: 12px;
   max-height: 300px;
   overflow-y: auto;
-  background: #f5f7fa;
-  border-radius: 8px;
+  background: #f8f6f4;
+  border-radius: 12px;
   padding: 12px;
 }
 
@@ -800,7 +800,7 @@ onMounted(() => {
   color: #999;
   margin-bottom: 8px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .context-item {
@@ -814,11 +814,11 @@ onMounted(() => {
 }
 
 .context-role.user {
-  color: #2080f0;
+  color: #ff9a9e;
 }
 
 .context-role.assistant {
-  color: #18a058;
+  color: #f6d365;
 }
 
 .context-content {
@@ -836,19 +836,19 @@ onMounted(() => {
   color: #999;
   margin-bottom: 8px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .recall-item {
   padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
+  background: #f8f6f4;
+  border-radius: 12px;
   margin-bottom: 8px;
 }
 
 .recall-text {
   font-size: 14px;
-  color: #333;
+  color: #2d2d2d;
   line-height: 1.6;
   margin-bottom: 8px;
 }
@@ -868,8 +868,8 @@ onMounted(() => {
 .reflect-result {
   margin-top: 12px;
   padding: 16px;
-  background: #f0f9eb;
-  border-radius: 8px;
+  background: rgba(255, 154, 158, 0.06);
+  border-radius: 12px;
 }
 
 .reflect-label {
@@ -880,7 +880,7 @@ onMounted(() => {
 
 .reflect-content {
   font-size: 14px;
-  color: #333;
+  color: #2d2d2d;
   line-height: 1.8;
   white-space: pre-wrap;
 }
@@ -890,9 +890,9 @@ onMounted(() => {
 }
 
 .mark-format-section {
-  background: #f5f7fa;
+  background: #f8f6f4;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-top: 8px;
 }
 
@@ -910,19 +910,19 @@ onMounted(() => {
 
 .mark-format-preview {
   font-size: 12px;
-  color: #18a058;
+  color: #ff9a9e;
   margin-top: 6px;
   padding: 6px 8px;
-  background: #f0f9eb;
-  border-radius: 4px;
+  background: rgba(255, 154, 158, 0.06);
+  border-radius: 8px;
   word-break: break-all;
 }
 
 .generated-message {
   margin-top: 12px;
   padding: 12px;
-  background: #f0f9eb;
-  border-radius: 8px;
+  background: rgba(255, 154, 158, 0.06);
+  border-radius: 12px;
 }
 
 .generated-label {
@@ -933,7 +933,7 @@ onMounted(() => {
 
 .generated-content {
   font-size: 14px;
-  color: #333;
+  color: #2d2d2d;
   line-height: 1.6;
 }
 
@@ -951,15 +951,15 @@ onMounted(() => {
 }
 
 .log-item.success {
-  color: #18a058;
+  color: #a8e6cf;
 }
 
 .log-item.error {
-  color: #d03050;
+  color: #ff9a9e;
 }
 
 .log-item.info {
-  color: #2080f0;
+  color: #f6d365;
 }
 
 .log-time {
@@ -968,9 +968,9 @@ onMounted(() => {
 }
 
 .prompt-config-area {
-  background: #f5f7fa;
+  background: #f8f6f4;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .prompt-config-item {
@@ -1028,14 +1028,14 @@ onMounted(() => {
 }
 
 .time-format-chip:hover {
-  border-color: #18a058;
-  background: #f0f9eb;
+  border-color: #ff9a9e;
+  background: rgba(255, 154, 158, 0.06);
 }
 
 .time-format-chip.active {
-  border-color: #18a058;
-  background: #e8f5e9;
-  box-shadow: 0 0 0 1px #18a058;
+  border-color: #ff9a9e;
+  background: rgba(255, 154, 158, 0.1);
+  box-shadow: 0 0 0 1px #ff9a9e;
 }
 
 .chip-label {
@@ -1045,7 +1045,7 @@ onMounted(() => {
 }
 
 .time-format-chip.active .chip-label {
-  color: #18a058;
+  color: #ff9a9e;
   font-weight: 500;
 }
 
@@ -1058,8 +1058,8 @@ onMounted(() => {
 .mark-format-preview {
   margin-top: 8px;
   padding: 6px 10px;
-  background: #f8f9fa;
-  border-radius: 6px;
+  background: #f8f6f4;
+  border-radius: 10px;
   font-size: 12px;
   color: #666;
   font-family: monospace;

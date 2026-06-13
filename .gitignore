@@ -5,3 +5,6 @@ data/
 .vite/
 *.db
 .idea/
+
+# Build output
+frontend/dist/

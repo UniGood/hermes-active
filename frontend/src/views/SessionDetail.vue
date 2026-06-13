@@ -253,7 +253,7 @@ onMounted(() => {
 
 .info-item .value {
   font-size: 14px;
-  color: #333;
+  color: #2d2d2d;
   word-break: break-all;
 }
 
@@ -305,23 +305,25 @@ onMounted(() => {
 
 .message-content {
   font-size: 14px;
-  color: #333;
+  color: #2d2d2d;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
   padding: 8px 12px;
-  background: #f9f9f9;
-  border-radius: 8px;
+  background: #f8f6f4;
+  border-radius: 12px;
   max-height: 300px;
   overflow-y: auto;
 }
 
 .message-item.user .message-content {
-  background: #e8f4fd;
+  background: linear-gradient(135deg, #ff9a9e, #f6d365);
+  color: #fff;
 }
 
 .message-item.assistant .message-content {
-  background: #f0f9eb;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .message-item.tool .message-content {
@@ -330,8 +332,8 @@ onMounted(() => {
 
 .message-fields {
   margin-top: 8px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid #f0ece8;
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -344,7 +346,7 @@ onMounted(() => {
   font-weight: 600;
   color: #666;
   font-family: monospace;
-  background: #f5f5f5;
+  background: #f8f6f4;
 }
 
 .field-value {

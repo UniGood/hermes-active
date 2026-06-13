@@ -157,11 +157,16 @@ onMounted(loadSessions)
 
 .session-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 16px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: box-shadow 0.2s;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s, transform 0.2s;
+}
+
+.session-card:hover {
+  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.15);
+  transform: translateY(-2px);
 }
 
 .session-card:active {
@@ -183,7 +188,7 @@ onMounted(loadSessions)
 .session-title {
   font-size: 16px;
   font-weight: 500;
-  color: #333;
+  color: #2d2d2d;
   margin-bottom: 8px;
 }
 
@@ -202,7 +207,8 @@ onMounted(loadSessions)
 }
 
 .status-active {
-  color: #18a058;
+  color: #a8e6cf;
+  font-weight: 500;
 }
 
 .status-ended {

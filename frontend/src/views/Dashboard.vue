@@ -58,10 +58,10 @@ const loading = ref(false)
 const recentMessages = ref([])
 
 const stats = ref([
-  { label: '总会话数', value: 0, icon: markRaw(ChatbubblesOutline), color: '#18a058' },
-  { label: '总消息数', value: 0, icon: markRaw(PeopleOutline), color: '#2080f0' },
-  { label: '今日消息', value: 0, icon: markRaw(TimeOutline), color: '#f0a020' },
-  { label: '本周消息', value: 0, icon: markRaw(TrendingUpOutline), color: '#d03050' }
+  { label: '总会话数', value: 0, icon: markRaw(ChatbubblesOutline), color: '#ff9a9e' },
+  { label: '总消息数', value: 0, icon: markRaw(PeopleOutline), color: '#f6d365' },
+  { label: '今日消息', value: 0, icon: markRaw(TimeOutline), color: '#a8e6cf' },
+  { label: '本周消息', value: 0, icon: markRaw(TrendingUpOutline), color: '#ffd3b6' }
 ])
 
 const platforms = ref([])
@@ -131,18 +131,24 @@ onMounted(() => {
 
 .stat-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s, transform 0.2s;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.15);
+  transform: translateY(-2px);
 }
 
 .stat-icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,7 +158,7 @@ onMounted(() => {
 .stat-value {
   font-size: 24px;
   font-weight: 700;
-  color: #333;
+  color: #2d2d2d;
 }
 
 .stat-label {
@@ -167,7 +173,7 @@ onMounted(() => {
 
 .message-item {
   padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .message-item:last-child {
@@ -188,7 +194,7 @@ onMounted(() => {
 
 .message-content {
   font-size: 14px;
-  color: #666;
+  color: #555;
   line-height: 1.5;
 }
 
@@ -207,7 +213,7 @@ onMounted(() => {
 .platform-name {
   width: 60px;
   font-size: 14px;
-  color: #333;
+  color: #2d2d2d;
 }
 
 .platform-count {

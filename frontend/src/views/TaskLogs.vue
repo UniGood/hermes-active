@@ -142,9 +142,14 @@ onMounted(loadLogs)
 
 .log-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s;
+}
+
+.log-card:hover {
+  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.12);
 }
 
 .log-header {
@@ -157,7 +162,7 @@ onMounted(loadLogs)
 .log-type {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: #2d2d2d;
 }
 
 .log-time {
@@ -175,9 +180,9 @@ onMounted(loadLogs)
 .log-error {
   font-size: 13px;
   color: #d03050;
-  background: #fef0f0;
+  background: rgba(255, 154, 158, 0.08);
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-bottom: 8px;
 }
 

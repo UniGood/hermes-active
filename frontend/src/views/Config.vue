@@ -136,4 +136,32 @@ onMounted(loadConfig)
   max-width: 800px;
   margin: 0 auto;
 }
+
+.config-page :deep(.n-card) {
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.config-page :deep(.n-card:hover) {
+  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.1);
+}
+
+.config-page :deep(.n-button--primary-type) {
+  background: linear-gradient(135deg, #ff9a9e, #f6d365);
+  border: none;
+  color: #fff;
+}
+
+.config-page :deep(.n-button--primary-type:hover) {
+  opacity: 0.9;
+}
+
+.config-page :deep(.n-input) {
+  border-radius: 12px;
+}
+
+.config-page :deep(.n-input:focus-within) {
+  box-shadow: 0 0 0 2px rgba(255, 154, 158, 0.2);
+}
 </style>

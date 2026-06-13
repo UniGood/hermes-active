@@ -133,7 +133,7 @@ onBeforeUnmount(() => {
 .log-container {
   flex: 1;
   background: #1e1e1e;
-  border-radius: 8px;
+  border-radius: 16px;
   overflow-y: auto;
   padding: 12px 16px;
   min-height: 0;

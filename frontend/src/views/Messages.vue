@@ -210,14 +210,15 @@ function scrollToBottom() {
   gap: 10px;
   padding: 12px 16px;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 16px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: box-shadow 0.2s;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s, transform 0.2s;
 }
 
 .search-result-item:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.15);
+  transform: translateY(-2px);
 }
 
 .result-id {
@@ -228,7 +229,7 @@ function scrollToBottom() {
 
 .result-title {
   font-size: 14px;
-  color: #333;
+  color: #2d2d2d;
   flex: 1;
 }
 
@@ -239,10 +240,10 @@ function scrollToBottom() {
 
 .session-detail-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .detail-header {
@@ -259,7 +260,7 @@ function scrollToBottom() {
 }
 
 .detail-info strong {
-  color: #333;
+  color: #2d2d2d;
 }
 
 .message-list {
@@ -300,16 +301,16 @@ function scrollToBottom() {
 }
 
 .message-bubble.user .message-content {
-  background: #18a058;
+  background: linear-gradient(135deg, #ff9a9e, #f6d365);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
 
 .message-bubble.assistant .message-content {
   background: #fff;
-  color: #333;
+  color: #2d2d2d;
   border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .send-bar {

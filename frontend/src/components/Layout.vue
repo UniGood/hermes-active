@@ -159,14 +159,14 @@ watch(() => route.path, () => {
 .layout {
   display: flex;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: #faf9f7;
 }
 
 /* ========== PC 端侧边栏 ========== */
 .sidebar {
   width: 220px;
   background: #fff;
-  border-right: 1px solid #e8e8e8;
+  border-right: 1px solid #f0ece8;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -187,7 +187,7 @@ watch(() => route.path, () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0ece8;
 }
 
 .sidebar-avatar-wrap {
@@ -207,7 +207,7 @@ watch(() => route.path, () => {
 .sidebar-title {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: #2d2d2d;
 }
 
 .sidebar-nav {
@@ -223,20 +223,21 @@ watch(() => route.path, () => {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   color: #666;
   text-decoration: none;
   transition: all 0.2s;
 }
 
 .nav-item:hover {
-  background: #f5f7fa;
-  color: #333;
+  background: rgba(255, 154, 158, 0.08);
+  color: #2d2d2d;
 }
 
 .nav-item.active {
-  background: #e8f5e9;
-  color: #18a058;
+  background: linear-gradient(135deg, #ff9a9e, #f6d365);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(255, 154, 158, 0.3);
 }
 
 .nav-label {
@@ -245,7 +246,17 @@ watch(() => route.path, () => {
 
 .sidebar-footer {
   padding: 12px 8px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid #f0ece8;
+}
+
+.sidebar-footer .n-button {
+  border-radius: 12px;
+  color: #999;
+}
+
+.sidebar-footer .n-button:hover {
+  color: #ff9a9e;
+  background: rgba(255, 154, 158, 0.06);
 }
 
 /* ========== 主内容区 ========== */
@@ -269,8 +280,10 @@ watch(() => route.path, () => {
   justify-content: space-between;
   padding: 0 12px;
   height: 56px;
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  background: rgba(255, 154, 158, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 154, 158, 0.2);
   position: fixed;
   top: 0;
   left: 0;
@@ -281,7 +294,7 @@ watch(() => route.path, () => {
 .mobile-title {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: #fff;
 }
 
 /* ========== 移动端适配（< 768px） ========== */

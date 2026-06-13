@@ -13,9 +13,25 @@
 <script setup>
 const themeOverrides = {
   common: {
-    primaryColor: '#18a058',
-    primaryColorHover: '#36ad6a',
-    primaryColorPressed: '#0c7a43'
+    primaryColor: '#ff9a9e',
+    primaryColorHover: '#ffb3b6',
+    primaryColorPressed: '#e8838a',
+    borderRadius: '12px',
+    borderRadiusSmall: '8px'
+  },
+  Button: {
+    borderRadiusMedium: '24px',
+    borderRadiusSmall: '16px',
+    borderRadiusLarge: '24px'
+  },
+  Input: {
+    borderRadius: '12px'
+  },
+  Card: {
+    borderRadius: '16px'
+  },
+  Tag: {
+    borderRadius: '12px'
   }
 }
 </script>
@@ -29,6 +45,8 @@ const themeOverrides = {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: #2d2d2d;
+  background: #faf9f7;
 }
 
 #app {
