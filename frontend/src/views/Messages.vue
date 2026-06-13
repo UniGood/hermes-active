@@ -43,7 +43,7 @@
       <div class="detail-info">
         <div><strong>Session ID:</strong> {{ selectedSession.id }}</div>
         <div><strong>标题:</strong> {{ selectedSession.title || '无标题' }}</div>
-        <div><strong>用户 ID:</strong> {{ selectedSession.user_id || 'N/A' }}</div>
+        <div><strong>用户 ID:</strong> {{ selectedSession.user_id || selectedSession.chat_id || selectedSession.source }}</div>
         <div><strong>消息数:</strong> {{ selectedSession.message_count || 0 }}</div>
         <div><strong>状态:</strong> {{ selectedSession.ended_at ? '已结束' : '活跃' }}</div>
       </div>

@@ -39,9 +39,9 @@ const themeOverrides = ref({
 })
 
 const THEME_MAP = {
-  kelly: { primary: '#ff9a9e', hover: '#ffb3b6', pressed: '#e8838a' },
-  elegant: { primary: '#a0c4e8', hover: '#b5d4f0', pressed: '#8ab4d8' },
-  dark: { primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0' }
+  kelly: { primary: '#ff9a9e', hover: '#ffb3b6', pressed: '#e8838a', secondary: '#fecfef', accent: '#f6d365' },
+  elegant: { primary: '#a0c4e8', hover: '#b5d4f0', pressed: '#8ab4d8', secondary: '#e8e8e8', accent: '#c0c0c0' },
+  dark: { primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0', secondary: '#2d2d2d', accent: '#4fc3f7' }
 }
 
 function applyTheme(themeId) {
@@ -54,6 +54,8 @@ function applyTheme(themeId) {
   root.style.setProperty('--theme-primary', t.primary)
   root.style.setProperty('--theme-primary-hover', t.hover)
   root.style.setProperty('--theme-primary-pressed', t.pressed)
+  root.style.setProperty('--theme-secondary', t.secondary || '#fecfef')
+  root.style.setProperty('--theme-accent', t.accent || '#f6d365')
 
   if (themeId === 'dark') {
     root.style.setProperty('--theme-bg', '#1a1a2e')

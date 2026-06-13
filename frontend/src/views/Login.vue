@@ -142,7 +142,7 @@ async function handleLogin() {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+  background: linear-gradient(135deg, var(--theme-primary, #ff9a9e) 0%, var(--theme-secondary, #fecfef) 50%, var(--theme-secondary, #fecfef) 100%);
   padding: 16px;
   position: relative;
   overflow: hidden;
@@ -214,7 +214,7 @@ async function handleLogin() {
   width: 80px;
   height: 80px;
   margin: 0 auto 16px;
-  background: linear-gradient(135deg, #ff9a9e, #fecfef);
+  background: linear-gradient(135deg, var(--theme-primary, #ff9a9e), var(--theme-secondary, #fecfef));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -246,7 +246,7 @@ async function handleLogin() {
 }
 
 .welcome-text {
-  color: #ff9a9e;
+  color: var(--theme-primary, #ff9a9e);
   font-weight: 500;
 }
 
@@ -260,7 +260,7 @@ async function handleLogin() {
   font-size: 16px;
   font-weight: 600;
   border-radius: 24px;
-  background: linear-gradient(135deg, #ff9a9e, #f6d365);
+  background: linear-gradient(135deg, var(--theme-primary, #ff9a9e), var(--theme-accent, #f6d365));
   border: none;
   letter-spacing: 2px;
 }
