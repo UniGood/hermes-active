@@ -12,10 +12,10 @@
       <div class="login-header">
         <div class="logo-icon">
           <img v-if="avatarUrl" :src="avatarUrl" class="avatar-img" />
-          <span v-else>H</span>
+          <span v-else class="logo-text">K</span>
         </div>
-        <h1>Hermes Active</h1>
-        <p>主动会话管理系统</p>
+        <h1>凯莉的控制台</h1>
+        <p class="welcome-text">{{ welcomeText }}</p>
       </div>
 
       <n-form ref="formRef" :model="formData" :rules="rules" class="login-form">
@@ -59,7 +59,7 @@
         </n-button>
       </n-form>
 
-      <div class="login-footer">v0.1.0</div>
+      <div class="login-footer">v0.1.0 · by 凯莉</div>
     </div>
   </div>
 </template>
@@ -79,6 +79,19 @@ const authStore = useAuthStore()
 const formRef = ref(null)
 const loading = ref(false)
 const avatarUrl = ref('')
+
+const welcomeMessages = [
+  '今天也要元气满满哦 ✨',
+  '等你好久了，快来呀~',
+  '想你了，终于来啦 ❤️',
+  '今天天气不错，心情也是~',
+  '嘿嘿，又见面啦',
+  '有什么想聊的吗？',
+  '一起加油吧 💪',
+  '你来啦，开心~',
+]
+
+const welcomeText = ref(welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)])
 
 // 加载用户头像
 async function loadAvatar() {
@@ -131,7 +144,7 @@ async function handleLogin() {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
   padding: 16px;
   position: relative;
   overflow: hidden;
@@ -147,7 +160,7 @@ async function handleLogin() {
 .bg-circle {
   position: absolute;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .circle-1 {
@@ -183,14 +196,15 @@ async function handleLogin() {
 .login-card {
   width: 100%;
   max-width: 400px;
-  background: #ffffff;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
   padding: 40px 32px 28px;
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.12),
     0 1px 3px rgba(0, 0, 0, 0.06);
   position: relative;
   z-index: 1;
+  backdrop-filter: blur(10px);
 }
 
 .login-header {
@@ -199,19 +213,19 @@ async function handleLogin() {
 }
 
 .logo-icon {
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   margin: 0 auto 16px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 16px;
+  background: linear-gradient(135deg, #ff9a9e, #fecfef);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   color: #fff;
-  letter-spacing: -1px;
   overflow: hidden;
+  box-shadow: 0 8px 24px rgba(255, 154, 158, 0.3);
 }
 
 .avatar-img {
@@ -233,18 +247,24 @@ async function handleLogin() {
   color: #999;
 }
 
+.welcome-text {
+  color: #ff9a9e;
+  font-weight: 500;
+}
+
 .login-form {
   margin-bottom: 0;
 }
 
 .login-btn {
   margin-top: 4px;
-  height: 44px;
-  font-size: 15px;
+  height: 46px;
+  font-size: 16px;
   font-weight: 600;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 24px;
+  background: linear-gradient(135deg, #ff9a9e, #f6d365);
   border: none;
+  letter-spacing: 2px;
 }
 
 .login-footer {
