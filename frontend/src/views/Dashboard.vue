@@ -20,7 +20,7 @@
           <div v-for="msg in recentMessages" :key="msg.id" class="message-item">
             <div class="message-header">
               <n-tag :type="msg.role === 'user' ? 'info' : 'success'" size="small">
-                {{ msg.role === 'user' ? '用户' : '凯莉' }}
+                {{ msg.role === 'user' ? config.user_name : config.assistant_name }}
               </n-tag>
               <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
             </div>
@@ -53,9 +53,11 @@ import {
   TrendingUpOutline
 } from '@vicons/ionicons5'
 import api from '../api'
+import { useConfig } from '../composables/useConfig'
 
 const loading = ref(false)
 const recentMessages = ref([])
+const { config, loadConfig } = useConfig()
 
 const stats = ref([
   { label: '总会话数', value: 0, icon: markRaw(ChatbubblesOutline), color: '#ff9a9e' },
@@ -106,6 +108,7 @@ async function loadRecentMessages() {
 }
 
 onMounted(() => {
+  loadConfig()
   loadStats()
   loadRecentMessages()
 })

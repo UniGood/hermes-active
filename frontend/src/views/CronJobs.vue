@@ -31,7 +31,7 @@
             <span>上次运行: {{ formatTime(job.last_run_at) }}</span>
           </div>
           <div class="job-actions">
-            <n-button size="small" @click="runJob(job)" :loading="job.running">运行</n-button>
+            <n-button size="small" type="success" @click="runJob(job)" :loading="job.running">运行</n-button>
             <n-button size="small" @click="editJob(job)">编辑</n-button>
             <n-button size="small" type="error" @click="deleteJob(job)">删除</n-button>
             <n-button size="small" @click="viewJobLogs(job)">运行日志</n-button>

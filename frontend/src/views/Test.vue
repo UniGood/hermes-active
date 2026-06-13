@@ -276,7 +276,7 @@
           </div>
           <n-space>
             <n-button
-              type="primary"
+              type="success"
               @click="sendMessage"
               :loading="sending"
               :disabled="!selectedSessionId || !testMessage.trim()"

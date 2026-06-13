@@ -58,7 +58,7 @@
           :class="msg.role"
         >
           <div class="message-role">
-            {{ msg.role === 'user' ? '曹凡' : msg.role === 'assistant' ? '凯莉' : msg.role }}
+            {{ msg.role === 'user' ? config.user_name : msg.role === 'assistant' ? config.assistant_name : msg.role }}
           </div>
           <div class="message-content" v-html="formatContent(msg.content)"></div>
         </div>
@@ -83,12 +83,14 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { SearchOutline } from '@vicons/ionicons5'
 import api from '../api'
+import { useConfig } from '../composables/useConfig'
 
 const message = useMessage()
+const { config, loadConfig } = useConfig()
 const loading = ref(false)
 const sending = ref(false)
 const searching = ref(false)
@@ -180,6 +182,10 @@ function scrollToBottom() {
     messageListRef.value.scrollTop = messageListRef.value.scrollHeight
   }
 }
+
+onMounted(() => {
+  loadConfig()
+})
 </script>
 
 <style scoped>
@@ -301,16 +307,15 @@ function scrollToBottom() {
 }
 
 .message-bubble.user .message-content {
-  background: linear-gradient(135deg, #ff9a9e, #f6d365);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
 
 .message-bubble.assistant .message-content {
-  background: #fff;
-  color: #2d2d2d;
+  background: linear-gradient(135deg, #ff9a9e, #f6d365);
+  color: #fff;
   border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .send-bar {

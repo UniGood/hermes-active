@@ -137,9 +137,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { SearchOutline } from '@vicons/ionicons5'
 import api from '../api'
+import { useConfig } from '../composables/useConfig'
 
 const route = useRoute()
 const router = useRouter()
+const { config, loadConfig } = useConfig()
 const loading = ref(false)
 const session = ref(null)
 const messages = ref([])
@@ -186,7 +188,7 @@ function getRoleType(role) {
 }
 
 function getRoleName(role) {
-  const map = { user: '曹凡', assistant: '凯莉', system: '系统', tool: '工具' }
+  const map = { user: config.value.user_name, assistant: config.value.assistant_name, system: '系统', tool: '工具' }
   return map[role] || role
 }
 
@@ -223,6 +225,7 @@ async function loadMessages() {
 }
 
 onMounted(() => {
+  loadConfig()
   loadSession()
   loadMessages()
 })
@@ -317,13 +320,13 @@ onMounted(() => {
 }
 
 .message-item.user .message-content {
-  background: linear-gradient(135deg, #ff9a9e, #f6d365);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: #fff;
 }
 
 .message-item.assistant .message-content {
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: linear-gradient(135deg, #ff9a9e, #f6d365);
+  color: #fff;
 }
 
 .message-item.tool .message-content {

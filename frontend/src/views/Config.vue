@@ -1,5 +1,20 @@
 <template>
   <div class="config-page">
+    <!-- 个性化设置 -->
+    <n-card title="个性化设置" style="margin-bottom: 16px">
+      <n-form label-placement="left" label-width="100">
+        <n-form-item label="用户名称">
+          <n-input v-model:value="userConfig.user_name" placeholder="曹凡" />
+        </n-form-item>
+        <n-form-item label="助手名称">
+          <n-input v-model:value="userConfig.assistant_name" placeholder="凯莉" />
+        </n-form-item>
+        <n-form-item>
+          <n-button type="primary" @click="saveUserConfig" :loading="savingUserConfig">保存</n-button>
+        </n-form-item>
+      </n-form>
+    </n-card>
+
     <!-- LLM 配置 -->
     <n-card title="LLM 配置" style="margin-bottom: 16px">
       <n-form label-placement="left" label-width="80">
@@ -55,11 +70,19 @@
 import { ref, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import api from '../api'
+import { useConfig } from '../composables/useConfig'
 
 const message = useMessage()
 const saving = ref(false)
 const testing = ref(false)
 const changingPassword = ref(false)
+const savingUserConfig = ref(false)
+const { config: globalConfig, loadConfig: loadGlobalConfig } = useConfig()
+
+const userConfig = ref({
+  user_name: '曹凡',
+  assistant_name: '凯莉'
+})
 
 const llmConfig = ref({
   mode: 'hermes',
@@ -80,6 +103,33 @@ async function loadConfig() {
     llmConfig.value = data
   } catch (e) {
     console.error('加载 LLM 配置失败:', e)
+  }
+}
+
+async function loadUserConfig() {
+  try {
+    const userName = await api.get('/config/get/user_name').catch(() => null)
+    const assistantName = await api.get('/config/get/assistant_name').catch(() => null)
+    if (userName?.value) userConfig.value.user_name = userName.value
+    if (assistantName?.value) userConfig.value.assistant_name = assistantName.value
+  } catch (e) {
+    // 使用默认值
+  }
+}
+
+async function saveUserConfig() {
+  savingUserConfig.value = true
+  try {
+    await api.put('/config/set', null, { params: { key: 'user_name', value: userConfig.value.user_name } })
+    await api.put('/config/set', null, { params: { key: 'assistant_name', value: userConfig.value.assistant_name } })
+    // 更新全局配置
+    globalConfig.value.user_name = userConfig.value.user_name
+    globalConfig.value.assistant_name = userConfig.value.assistant_name
+    message.success('个性化设置已保存')
+  } catch (e) {
+    message.error('保存失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    savingUserConfig.value = false
   }
 }
 
@@ -128,7 +178,10 @@ async function changePassword() {
   }
 }
 
-onMounted(loadConfig)
+onMounted(() => {
+  loadConfig()
+  loadUserConfig()
+})
 </script>
 
 <style scoped>
@@ -148,7 +201,7 @@ onMounted(loadConfig)
 }
 
 .config-page :deep(.n-button--primary-type) {
-  background: linear-gradient(135deg, #ff9a9e, #f6d365);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   border: none;
   color: #fff;
 }
