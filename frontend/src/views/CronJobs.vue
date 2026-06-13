@@ -1406,5 +1406,4 @@ onMounted(() => {
     min-height: 80px;
   }
 }
-}
 </style>
