@@ -196,4 +196,40 @@ onMounted(loadLogs)
   justify-content: center;
   margin-top: 16px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .task-logs-page {
+    max-width: 100%;
+  }
+
+  .filter-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .filter-bar :deep(.n-select) {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .filter-bar :deep(.n-button) {
+    flex: 1;
+  }
+
+  .log-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .log-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .log-time {
+    margin-left: 0;
+    width: 100%;
+  }
+}
 </style>

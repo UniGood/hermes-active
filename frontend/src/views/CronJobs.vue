@@ -1422,14 +1422,27 @@ onMounted(() => {
 
   .job-card {
     padding: 12px;
+    border-radius: 12px;
+  }
+
+  .job-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .job-name {
+    font-size: 15px;
+    flex: 1;
   }
 
   .job-meta {
-    gap: 8px;
+    gap: 6px;
+    font-size: 11px;
   }
 
   .job-actions {
     flex-wrap: wrap;
+    gap: 6px;
   }
 
   .job-actions .n-button {
@@ -1454,6 +1467,12 @@ onMounted(() => {
     max-width: 100% !important;
   }
 
+  :deep(.n-radio-group) {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
   .time-format-selector {
     gap: 6px;
   }
@@ -1471,6 +1490,16 @@ onMounted(() => {
   /* 提示词输入框移动端 */
   :deep(.n-input--textarea textarea) {
     min-height: 80px;
+  }
+
+  .context-status {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .log-pagination {
+    flex-direction: column;
+    gap: 8px;
   }
 }
 

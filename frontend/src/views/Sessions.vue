@@ -220,4 +220,34 @@ onMounted(loadSessions)
   justify-content: center;
   margin-top: 16px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .sessions-page {
+    max-width: 100%;
+  }
+
+  .search-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .search-bar :deep(.n-input),
+  .search-bar :deep(.n-select) {
+    width: 100% !important;
+  }
+
+  .session-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .session-title {
+    font-size: 15px;
+  }
+
+  .session-id {
+    font-size: 10px;
+  }
+}
 </style>

@@ -174,4 +174,36 @@ onBeforeUnmount(() => {
 .log-info {
   color: #6a9955;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .system-logs-page {
+    height: calc(100vh - 80px);
+    max-width: 100%;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .toolbar :deep(.n-space) {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .toolbar :deep(.n-input-number) {
+    width: 120px !important;
+  }
+
+  .log-container {
+    border-radius: 12px;
+    padding: 8px 10px;
+  }
+
+  .log-content {
+    font-size: 11px;
+  }
+}
 </style>

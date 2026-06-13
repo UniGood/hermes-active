@@ -350,4 +350,44 @@ onMounted(() => {
   color: #999;
   margin-top: 2px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .config-page {
+    max-width: 100%;
+  }
+
+  .config-page :deep(.n-form-item) {
+    margin-bottom: 12px;
+  }
+
+  .config-page :deep(.n-input),
+  .config-page :deep(.n-select) {
+    width: 100% !important;
+  }
+
+  .config-page :deep(.n-radio-group) {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .form-actions :deep(.n-button) {
+    width: 100%;
+  }
+
+  .theme-item {
+    padding: 10px 12px;
+  }
+
+  .theme-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+  }
+}
 </style>

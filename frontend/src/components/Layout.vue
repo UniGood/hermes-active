@@ -165,7 +165,7 @@ watch(() => route.path, () => {
 /* ========== PC 端侧边栏 ========== */
 .sidebar {
   width: 220px;
-  background: #fff;
+  background: var(--theme-bg, #faf9f7);
   border-right: 1px solid #f0ece8;
   display: flex;
   flex-direction: column;
@@ -235,7 +235,7 @@ watch(() => route.path, () => {
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #ff9a9e, #f6d365);
+  background: linear-gradient(135deg, var(--theme-primary, #ff9a9e), var(--theme-accent, #f6d365));
   color: #fff;
   box-shadow: 0 2px 12px rgba(255, 154, 158, 0.3);
 }
@@ -255,7 +255,7 @@ watch(() => route.path, () => {
 }
 
 .sidebar-footer .n-button:hover {
-  color: #ff9a9e;
+  color: var(--theme-primary, #ff9a9e);
   background: rgba(255, 154, 158, 0.06);
 }
 
@@ -280,10 +280,10 @@ watch(() => route.path, () => {
   justify-content: space-between;
   padding: 0 12px;
   height: 56px;
-  background: rgba(255, 154, 158, 0.85);
+  background: var(--theme-primary, #ff9a9e);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 154, 158, 0.2);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   position: fixed;
   top: 0;
   left: 0;
@@ -310,11 +310,11 @@ watch(() => route.path, () => {
     left: 0;
     top: 0;
     bottom: 0;
-    width: 200px;
+    width: 240px;
     z-index: 1001;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
-    background: #fff;
+    background: var(--theme-bg, #faf9f7);
   }
 
   .sidebar:not(.collapsed) {

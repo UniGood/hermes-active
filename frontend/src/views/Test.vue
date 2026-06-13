@@ -1069,15 +1069,77 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .test-page {
+    max-width: 100%;
+  }
+
+  .session-info {
+    grid-template-columns: 1fr;
+  }
+
+  .select-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .select-label {
+    min-width: auto;
+  }
+
+  .select-row :deep(.n-select) {
+    width: 100% !important;
+  }
+
+  .select-actions {
+    flex-wrap: wrap;
+  }
+
+  .select-actions .n-button {
+    flex: 1;
+  }
+
+  .context-preview,
+  .recall-results {
+    max-height: 200px;
+  }
+
+  .prompt-config-area {
+    padding: 8px;
+  }
+
   .time-format-selector {
     gap: 6px;
   }
+
   .time-format-chip {
     padding: 5px 8px;
     min-width: 70px;
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
   }
+
   .chip-preview {
     font-size: 11px;
+  }
+
+  :deep(.n-card) {
+    --n-padding: 12px 16px;
+  }
+
+  :deep(.n-space) {
+    flex-wrap: wrap;
+  }
+
+  :deep(.n-input),
+  :deep(.n-select),
+  :deep(.n-input-number) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .send-options :deep(.n-space) {
+    width: 100%;
   }
 }
 </style>

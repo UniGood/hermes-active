@@ -268,4 +268,55 @@ onMounted(() => {
   --n-text-color: #ff9a9e !important;
   --n-border: 1px solid #ffd0d6 !important;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .dashboard-page {
+    max-width: 100%;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px;
+    border-radius: 12px;
+    gap: 8px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .platform-name {
+    min-width: 48px;
+    font-size: 13px;
+  }
+
+  .platform-percent {
+    min-width: 32px;
+    font-size: 12px;
+  }
+
+  .platform-count {
+    min-width: 28px;
+    font-size: 12px;
+  }
+
+  .message-content {
+    font-size: 13px;
+  }
+}
 </style>

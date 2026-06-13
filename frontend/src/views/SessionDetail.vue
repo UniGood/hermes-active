@@ -374,4 +374,60 @@ onMounted(() => {
   --n-text-color: #ff9a9e !important;
   --n-border: 1px solid #ffd0d6 !important;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .session-detail-page {
+    max-width: 100%;
+  }
+
+  .session-info {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .toolbar :deep(.n-input) {
+    max-width: 100% !important;
+  }
+
+  .toolbar :deep(.n-checkbox) {
+    align-self: flex-start;
+  }
+
+  .message-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .message-time {
+    font-size: 11px;
+  }
+
+  .message-content {
+    font-size: 13px;
+    padding: 8px 10px;
+    max-height: 200px;
+  }
+
+  .message-fields {
+    overflow-x: auto;
+  }
+
+  .field-key {
+    width: 100px;
+    font-size: 11px;
+  }
+
+  .message-meta {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
 </style>
