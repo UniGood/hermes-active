@@ -1,66 +1,62 @@
 <template>
   <div class="login-page">
-    <!-- 背景层（独立） -->
-    <div class="login-bg">
-      <div class="bg-circle bg-circle-1"></div>
-      <div class="bg-circle bg-circle-2"></div>
-      <div class="bg-circle bg-circle-3"></div>
+    <!-- 背景装饰 -->
+    <div class="bg-layer">
+      <div class="bg-circle circle-1"></div>
+      <div class="bg-circle circle-2"></div>
+      <div class="bg-circle circle-3"></div>
     </div>
 
-    <!-- 卡片层（独立于背景，不使用 backdrop-filter） -->
-    <div class="login-card-wrapper">
-      <div class="login-card">
-        <div class="login-logo">
-          <div class="logo-icon">H</div>
-          <h1>Hermes Active</h1>
-          <p>主动会话管理系统</p>
-        </div>
-
-        <n-form ref="formRef" :model="formData" :rules="rules">
-          <n-form-item path="username">
-            <n-input
-              v-model:value="formData.username"
-              placeholder="用户名"
-              size="large"
-              @keyup.enter="handleLogin"
-            >
-              <template #prefix>
-                <n-icon :size="18"><PersonOutline /></n-icon>
-              </template>
-            </n-input>
-          </n-form-item>
-
-          <n-form-item path="password">
-            <n-input
-              v-model:value="formData.password"
-              type="password"
-              placeholder="密码"
-              size="large"
-              show-password-on="click"
-              @keyup.enter="handleLogin"
-            >
-              <template #prefix>
-                <n-icon :size="18"><LockClosedOutline /></n-icon>
-              </template>
-            </n-input>
-          </n-form-item>
-
-          <n-button
-            type="primary"
-            block
-            size="large"
-            :loading="loading"
-            @click="handleLogin"
-            class="login-btn"
-          >
-            登 录
-          </n-button>
-        </n-form>
-
-        <div class="login-footer">
-          <span>v0.1.0</span>
-        </div>
+    <!-- 登录卡片 -->
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo-icon">H</div>
+        <h1>Hermes Active</h1>
+        <p>主动会话管理系统</p>
       </div>
+
+      <n-form ref="formRef" :model="formData" :rules="rules" class="login-form">
+        <n-form-item path="username">
+          <n-input
+            v-model:value="formData.username"
+            placeholder="用户名"
+            size="large"
+            @keyup.enter="handleLogin"
+          >
+            <template #prefix>
+              <n-icon :size="18"><PersonOutline /></n-icon>
+            </template>
+          </n-input>
+        </n-form-item>
+
+        <n-form-item path="password">
+          <n-input
+            v-model:value="formData.password"
+            type="password"
+            placeholder="密码"
+            size="large"
+            show-password-on="click"
+            @keyup.enter="handleLogin"
+          >
+            <template #prefix>
+              <n-icon :size="18"><LockClosedOutline /></n-icon>
+            </template>
+          </n-input>
+        </n-form-item>
+
+        <n-button
+          type="primary"
+          block
+          size="large"
+          :loading="loading"
+          @click="handleLogin"
+          class="login-btn"
+        >
+          登 录
+        </n-button>
+      </n-form>
+
+      <div class="login-footer">v0.1.0</div>
     </div>
   </div>
 </template>
@@ -95,9 +91,7 @@ async function handleLogin() {
   } catch {
     return
   }
-
   loading.value = true
-
   try {
     await authStore.login(formData.username, formData.password)
     message.success('登录成功')
@@ -116,69 +110,69 @@ async function handleLogin() {
   display: flex;
   justify-content: center;
   align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 16px;
   position: relative;
+  overflow: hidden;
 }
 
-/* ========== 背景层 ========== */
-.login-bg {
-  position: fixed;
+/* 背景装饰 */
+.bg-layer {
+  position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  z-index: 0;
+  pointer-events: none;
 }
 
 .bg-circle {
   position: absolute;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.bg-circle-1 {
-  width: 300px;
-  height: 300px;
-  top: -80px;
-  right: -60px;
-  animation: float 8s ease-in-out infinite;
+.circle-1 {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -80px;
+  animation: drift 10s ease-in-out infinite;
 }
 
-.bg-circle-2 {
-  width: 200px;
-  height: 200px;
-  bottom: -40px;
-  left: -40px;
-  animation: float 6s ease-in-out infinite reverse;
+.circle-2 {
+  width: 250px;
+  height: 250px;
+  bottom: -60px;
+  left: -60px;
+  animation: drift 8s ease-in-out infinite reverse;
 }
 
-.bg-circle-3 {
-  width: 150px;
-  height: 150px;
-  top: 40%;
-  left: 10%;
-  animation: float 10s ease-in-out infinite;
+.circle-3 {
+  width: 180px;
+  height: 180px;
+  top: 50%;
+  left: 15%;
+  animation: drift 12s ease-in-out infinite;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(10px, -15px); }
 }
 
-/* ========== 卡片层（独立） ========== */
-.login-card-wrapper {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 420px;
-  padding: 16px;
-}
-
+/* 登录卡片 */
 .login-card {
+  width: 100%;
+  max-width: 400px;
   background: #ffffff;
   border-radius: 16px;
-  padding: 40px 32px 32px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  padding: 40px 32px 28px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 1;
 }
 
-.login-logo {
+.login-header {
   text-align: center;
   margin-bottom: 32px;
 }
@@ -187,28 +181,32 @@ async function handleLogin() {
   width: 64px;
   height: 64px;
   margin: 0 auto 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 800;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  letter-spacing: -1px;
 }
 
-.login-logo h1 {
+.login-header h1 {
   margin: 0 0 4px;
   font-size: 22px;
-  color: #1a1a2e;
   font-weight: 700;
+  color: #1a1a2e;
 }
 
-.login-logo p {
+.login-header p {
   margin: 0;
   font-size: 13px;
   color: #999;
+}
+
+.login-form {
+  margin-bottom: 0;
 }
 
 .login-btn {
@@ -217,30 +215,23 @@ async function handleLogin() {
   font-size: 15px;
   font-weight: 600;
   border-radius: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   border: none;
-}
-
-.login-btn:hover {
-  opacity: 0.9;
 }
 
 .login-footer {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 24px;
   font-size: 12px;
   color: #ccc;
 }
 
-/* ========== 移动端 ========== */
+/* 移动端 */
 @media (max-width: 480px) {
-  .login-card-wrapper {
-    padding: 12px;
-  }
-
   .login-card {
-    padding: 28px 20px 24px;
+    padding: 32px 20px 24px;
     border-radius: 12px;
+    max-width: 100%;
   }
 
   .logo-icon {
@@ -249,12 +240,12 @@ async function handleLogin() {
     font-size: 24px;
   }
 
-  .login-logo h1 {
+  .login-header h1 {
     font-size: 20px;
   }
 
-  .bg-circle-1 { width: 200px; height: 200px; }
-  .bg-circle-2 { width: 140px; height: 140px; }
-  .bg-circle-3 { display: none; }
+  .circle-1 { width: 250px; height: 250px; }
+  .circle-2 { width: 150px; height: 150px; }
+  .circle-3 { display: none; }
 }
 </style>
