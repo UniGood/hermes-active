@@ -19,7 +19,7 @@
         <div class="message-list">
           <div v-for="msg in recentMessages" :key="msg.id" class="message-item">
             <div class="message-header">
-              <n-tag :type="msg.role === 'user' ? 'info' : 'success'" size="small">
+              <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="small">
                 {{ msg.role === 'user' ? config.user_name : config.assistant_name }}
               </n-tag>
               <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
@@ -224,5 +224,12 @@ onMounted(() => {
   text-align: right;
   font-size: 14px;
   color: #666;
+}
+
+.tag-assistant {
+  --n-color: #fff0f3 !important;
+  --n-color-hover: #ffe0e6 !important;
+  --n-text-color: #ff9a9e !important;
+  --n-border: 1px solid #ffd0d6 !important;
 }
 </style>

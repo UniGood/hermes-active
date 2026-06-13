@@ -24,7 +24,7 @@
         class="search-result-item"
         @click="goToMessage(msg)"
       >
-        <n-tag :type="msg.role === 'user' ? 'info' : msg.role === 'assistant' ? 'success' : 'default'" size="small">
+        <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="small">
           {{ msg.role === 'user' ? config.user_name : msg.role === 'assistant' ? config.assistant_name : msg.role }}
         </n-tag>
         <span class="result-content">{{ truncate(msg.content, 60) }}</span>
@@ -228,9 +228,23 @@ function scrollToBottom() {
   }
 }
 
-onMounted(() => {
-  loadConfig()
+onMounted(async () => {
+  await loadConfig()
+  // 默认加载最新 session 的消息
+  await loadLatestSession()
 })
+
+async function loadLatestSession() {
+  try {
+    const data = await api.get('/sessions/latest/weixin')
+    if (data && data.id) {
+      selectedSession.value = data
+      await loadMessages()
+    }
+  } catch (e) {
+    // 没有 session 时不报错
+  }
+}
 </script>
 
 <style scoped>
@@ -393,5 +407,12 @@ onMounted(() => {
 
 .send-bar .n-input {
   flex: 1;
+}
+
+.tag-assistant {
+  --n-color: #fff0f3 !important;
+  --n-color-hover: #ffe0e6 !important;
+  --n-text-color: #ff9a9e !important;
+  --n-border: 1px solid #ffd0d6 !important;
 }
 </style>

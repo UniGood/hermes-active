@@ -72,7 +72,7 @@
             <!-- 基本信息 -->
             <div class="message-header">
               <div class="message-header-left">
-                <n-tag :type="getRoleType(msg.role)" size="small">
+                <n-tag :type="getRoleType(msg.role)" :class="getRoleClass(msg.role)" size="small">
                   {{ getRoleName(msg.role) }}
                 </n-tag>
                 <span class="message-id">ID: {{ msg.id }}</span>
@@ -183,8 +183,12 @@ function getPlatformType(source) {
 }
 
 function getRoleType(role) {
-  const map = { user: 'info', assistant: 'success', system: 'warning', tool: 'default' }
+  const map = { user: 'info', assistant: 'default', system: 'warning', tool: 'default' }
   return map[role] || 'default'
+}
+
+function getRoleClass(role) {
+  return role === 'assistant' ? 'tag-assistant' : ''
 }
 
 function getRoleName(role) {
@@ -362,5 +366,12 @@ onMounted(() => {
   margin-top: 8px;
   font-size: 12px;
   color: #999;
+}
+
+.tag-assistant {
+  --n-color: #fff0f3 !important;
+  --n-color-hover: #ffe0e6 !important;
+  --n-text-color: #ff9a9e !important;
+  --n-border: 1px solid #ffd0d6 !important;
 }
 </style>

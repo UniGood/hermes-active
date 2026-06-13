@@ -57,19 +57,6 @@ class PreviewRequest(BaseModel):
     append_soul_md: bool = True
 
 
-@router.get("/{session_id}")
-async def get_messages(
-    session_id: str,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=200),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_active_db)
-):
-    """获取消息列表"""
-    result = MessageService.get_messages(db, session_id, page, page_size)
-    return result
-
-
 @router.get("/search")
 async def search_messages(
     keyword: str = Query(...),
@@ -80,6 +67,19 @@ async def search_messages(
 ):
     """搜索消息"""
     result = MessageService.search_messages(db, keyword, page, page_size)
+    return result
+
+
+@router.get("/{session_id}")
+async def get_messages(
+    session_id: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
+):
+    """获取消息列表"""
+    result = MessageService.get_messages(db, session_id, page, page_size)
     return result
 
 

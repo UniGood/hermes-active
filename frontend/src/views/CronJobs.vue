@@ -420,7 +420,7 @@
           <n-tag type="info" size="small">Session 消息 ({{ logDetailData.context.session_count }}条)</n-tag>
           <div v-if="logDetailData.context.session_messages && logDetailData.context.session_messages.length" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px; margin-top: 4px;">
             <div v-for="(msg, idx) in logDetailData.context.session_messages" :key="idx" style="margin-bottom: 4px; font-size: 12px;">
-              <n-tag :type="msg.role === 'user' ? 'info' : 'success'" size="tiny">{{ msg.role }}</n-tag>
+              <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="tiny">{{ msg.role }}</n-tag>
               <span style="margin-left: 4px;">{{ msg.content }}</span>
             </div>
           </div>
@@ -1410,5 +1410,12 @@ onMounted(() => {
   :deep(.n-input--textarea textarea) {
     min-height: 80px;
   }
+}
+
+.tag-assistant {
+  --n-color: #fff0f3 !important;
+  --n-color-hover: #ffe0e6 !important;
+  --n-text-color: #ff9a9e !important;
+  --n-border: 1px solid #ffd0d6 !important;
 }
 </style>
