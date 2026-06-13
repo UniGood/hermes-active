@@ -86,6 +86,17 @@ async function loadStats() {
     stats.value[1].value = data.total_messages || 0
     stats.value[2].value = data.today_messages || 0
     stats.value[3].value = data.week_messages || 0
+
+    // 加载平台分布
+    const total = data.total_messages || 1
+    const platformData = await api.get('/stats/platforms')
+    const platformColors = { weixin: '#ff9a9e', feishu: '#f6d365', cli: '#a8e6cf', cron: '#ffd3b6' }
+    platforms.value = (platformData || []).map(p => ({
+      name: p.platform,
+      count: p.count,
+      percent: Math.round((p.count / total) * 100),
+      color: platformColors[p.platform] || '#999'
+    }))
   } catch (e) {
     console.error('加载统计失败:', e)
   }

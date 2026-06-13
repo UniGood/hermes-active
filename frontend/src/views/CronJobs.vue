@@ -363,7 +363,9 @@
     </n-modal>
 
     <!-- 运行日志弹窗 -->
-    <n-modal v-model:show="showJobLogs" preset="card" :title="`运行日志 - ${jobLogsName}`" style="width: 900px">
+    <n-modal v-model:show="showJobLogs" preset="card" :title="`运行日志 - ${jobLogsName}`"
+      :style="{ width: isMobile ? '100%' : '900px' }"
+      :fullscreen="isMobile">
       <n-spin :show="jobLogsLoading">
         <n-data-table
           v-if="jobLogs.length > 0"
@@ -378,7 +380,9 @@
     </n-modal>
 
     <!-- 日志详情弹窗 -->
-    <n-modal v-model:show="showLogDetail" preset="card" title="运行详情" style="width: 900px">
+    <n-modal v-model:show="showLogDetail" preset="card" title="运行详情"
+      :style="{ width: isMobile ? '100%' : '900px' }"
+      :fullscreen="isMobile">
       <div v-if="logDetailData" style="max-height: 70vh; overflow-y: auto;">
         <!-- 基本信息 -->
         <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
@@ -439,7 +443,9 @@
     </n-modal>
 
     <!-- 预览提示词弹窗 -->
-    <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词" style="width: 800px">
+    <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词"
+      :style="{ width: isMobile ? '100%' : '800px' }"
+      :fullscreen="isMobile">
       <n-spin :show="previewing">
         <n-form label-placement="left" label-width="100">
           <n-form-item label="系统提示词">
@@ -527,6 +533,9 @@
 
 <script setup>
 import { ref, watch, onMounted, h } from 'vue'
+
+const isMobile = ref(window.innerWidth <= 768)
+window.addEventListener('resize', () => { isMobile.value = window.innerWidth <= 768 })
 import { useMessage, useDialog, NButton } from 'naive-ui'
 import api from '../api'
 
@@ -1401,6 +1410,8 @@ onMounted(() => {
     padding: 5px 8px;
     min-width: 70px;
     font-size: 12px;
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
   }
   .chip-preview {
     font-size: 11px;

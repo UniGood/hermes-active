@@ -47,10 +47,13 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   color: #2d2d2d;
   background: #faf9f7;
+  overflow-x: hidden;
 }
 
 #app {
   width: 100%;
+  max-width: 100vw;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 </style>
