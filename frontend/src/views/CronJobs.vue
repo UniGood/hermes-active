@@ -388,12 +388,35 @@
     <!-- 日志详情弹窗 -->
     <n-modal v-model:show="showLogDetail" preset="card" title="运行详情" fullscreen>
       <div v-if="logDetailData">
-        <!-- 基本信息 -->
+        <!-- 执行概要 -->
         <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-          <n-descriptions-item label="任务">{{ logDetailData.job_name }}</n-descriptions-item>
-          <n-descriptions-item label="Session">{{ logDetailData.session_id }}</n-descriptions-item>
-          <n-descriptions-item label="平台">{{ logDetailData.platform }}</n-descriptions-item>
+          <n-descriptions-item label="状态">
+            <n-tag :type="logDetailData._status === 'success' ? 'success' : logDetailData._status === 'skipped' ? 'warning' : 'error'" size="small">
+              {{ logDetailData._status === 'success' ? '✅ 成功' : logDetailData._status === 'skipped' ? '⏭️ 跳过' : '❌ 失败' }}
+            </n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="耗时">{{ logDetailData._duration ? logDetailData._duration.toFixed(1) + 's' : '-' }}</n-descriptions-item>
+          <n-descriptions-item label="时间">{{ formatTime(logDetailData._created_at) }}</n-descriptions-item>
+          <n-descriptions-item label="任务">{{ logDetailData.job_name || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="Session" :span="2" v-if="logDetailData.session_id">
+            <span style="font-family: monospace; font-size: 12px;">{{ logDetailData.session_id }}</span>
+          </n-descriptions-item>
+          <n-descriptions-item label="平台">{{ logDetailData.platform || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="消息" :span="2" v-if="logDetailData._message">{{ logDetailData._message }}</n-descriptions-item>
         </n-descriptions>
+
+        <!-- 错误信息 -->
+        <n-alert v-if="logDetailData._error" type="error" style="margin-bottom: 16px;" :title="'错误信息'">
+          <pre style="white-space: pre-wrap; font-size: 13px; color: #d03050;">{{ logDetailData._error }}</pre>
+        </n-alert>
+
+        <!-- 跳过原因 -->
+        <n-alert v-if="logDetailData.skip_reason" type="warning" style="margin-bottom: 16px;" title="跳过原因">
+          <div style="font-size: 13px;">
+            {{ logDetailData.skip_reason }}
+            <span v-if="logDetailData.cooldown_minutes">（冷却时间: {{ logDetailData.cooldown_minutes }}分钟，已过 {{ logDetailData.elapsed_minutes }}分钟）</span>
+          </div>
+        </n-alert>
 
         <!-- LLM 请求 -->
         <n-divider v-if="logDetailData.llm_request" title-placement="left">LLM 请求</n-divider>
@@ -437,10 +460,14 @@
         <!-- 发送结果 -->
         <n-divider v-if="logDetailData.send_result" title-placement="left">发送结果</n-divider>
         <n-descriptions v-if="logDetailData.send_result" bordered :column="2" size="small">
-          <n-descriptions-item label="状态">{{ logDetailData.send_result.success ? '✅ 成功' : '❌ 失败' }}</n-descriptions-item>
-          <n-descriptions-item label="消息">{{ logDetailData.send_result.message }}</n-descriptions-item>
+          <n-descriptions-item label="状态">
+            <n-tag :type="logDetailData.send_result.success ? 'success' : 'error'" size="small">
+              {{ logDetailData.send_result.success ? '✅ 成功' : '❌ 失败' }}
+            </n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="消息">{{ logDetailData.send_result.message || '-' }}</n-descriptions-item>
           <n-descriptions-item label="最终发送内容" :span="2">
-            <pre style="white-space: pre-wrap; font-size: 12px;">{{ logDetailData.send_result.final_message }}</pre>
+            <pre style="white-space: pre-wrap; font-size: 12px; max-height: 200px; overflow-y: auto;">{{ logDetailData.send_result.final_message }}</pre>
           </n-descriptions-item>
         </n-descriptions>
       </div>
@@ -580,7 +607,15 @@ const showLogDetail = ref(false)
 const logDetailData = ref(null)
 
 function viewLogDetail(log) {
-  logDetailData.value = typeof log.details === 'string' ? JSON.parse(log.details) : log.details
+  const details = typeof log.details === 'string' ? JSON.parse(log.details) : (log.details || {})
+  logDetailData.value = {
+    ...details,
+    _status: log.status,
+    _message: log.message,
+    _error: log.error,
+    _duration: log.duration,
+    _created_at: log.created_at
+  }
   showLogDetail.value = true
 }
 const jobLogsColumns = [
