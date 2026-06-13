@@ -371,8 +371,7 @@
     </n-modal>
 
     <!-- 运行日志弹窗 -->
-    <n-modal v-model:show="showJobLogs" preset="card" :title="`运行日志 - ${jobLogsName}`"
-      style="width: 900px">
+    <n-modal v-model:show="showJobLogs" preset="card" :title="`运行日志 - ${jobLogsName}`">
       <n-spin :show="jobLogsLoading">
         <n-data-table
           v-if="jobLogs.length > 0"
@@ -387,9 +386,8 @@
     </n-modal>
 
     <!-- 日志详情弹窗 -->
-    <n-modal v-model:show="showLogDetail" preset="card" title="运行详情"
-      style="width: 900px">
-      <div v-if="logDetailData" style="max-height: 70vh; overflow-y: auto;">
+    <n-modal v-model:show="showLogDetail" preset="card" title="运行详情">
+      <div v-if="logDetailData">
         <!-- 基本信息 -->
         <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
           <n-descriptions-item label="任务">{{ logDetailData.job_name }}</n-descriptions-item>
@@ -449,8 +447,7 @@
     </n-modal>
 
     <!-- 预览提示词弹窗 -->
-    <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词"
-      style="width: 800px">
+    <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词">
       <n-spin :show="previewing">
         <n-form label-placement="left" label-width="100">
           <n-form-item label="系统提示词">
@@ -1196,6 +1193,7 @@ onMounted(() => {
 .job-actions {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .cron-parse-result {
