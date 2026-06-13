@@ -11,7 +11,10 @@
 </template>
 
 <script setup>
-const themeOverrides = {
+import { ref, onMounted } from 'vue'
+import api from './api'
+
+const themeOverrides = ref({
   common: {
     primaryColor: '#ff9a9e',
     primaryColorHover: '#ffb3b6',
@@ -33,7 +36,56 @@ const themeOverrides = {
   Tag: {
     borderRadius: '12px'
   }
+})
+
+const THEME_MAP = {
+  kelly: { primary: '#ff9a9e', hover: '#ffb3b6', pressed: '#e8838a' },
+  elegant: { primary: '#a0c4e8', hover: '#b5d4f0', pressed: '#8ab4d8' },
+  dark: { primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0' }
 }
+
+function applyTheme(themeId) {
+  const t = THEME_MAP[themeId] || THEME_MAP.kelly
+  themeOverrides.value.common.primaryColor = t.primary
+  themeOverrides.value.common.primaryColorHover = t.hover
+  themeOverrides.value.common.primaryColorPressed = t.pressed
+
+  const root = document.documentElement
+  root.style.setProperty('--theme-primary', t.primary)
+  root.style.setProperty('--theme-primary-hover', t.hover)
+  root.style.setProperty('--theme-primary-pressed', t.pressed)
+
+  if (themeId === 'dark') {
+    root.style.setProperty('--theme-bg', '#1a1a2e')
+    root.style.setProperty('--theme-text', '#e0e0e0')
+    root.style.setProperty('--theme-card-bg', '#16213e')
+    document.body.style.background = '#1a1a2e'
+    document.body.style.color = '#e0e0e0'
+  } else if (themeId === 'elegant') {
+    root.style.setProperty('--theme-bg', '#f5f7fa')
+    root.style.setProperty('--theme-text', '#2d2d2d')
+    root.style.setProperty('--theme-card-bg', '#ffffff')
+    document.body.style.background = '#f5f7fa'
+    document.body.style.color = '#2d2d2d'
+  } else {
+    root.style.setProperty('--theme-bg', '#faf9f7')
+    root.style.setProperty('--theme-text', '#2d2d2d')
+    root.style.setProperty('--theme-card-bg', '#ffffff')
+    document.body.style.background = '#faf9f7'
+    document.body.style.color = '#2d2d2d'
+  }
+}
+
+onMounted(async () => {
+  try {
+    const data = await api.get('/config/get/theme').catch(() => null)
+    if (data?.value) {
+      applyTheme(data.value)
+    }
+  } catch (e) {
+    // 使用默认主题
+  }
+})
 </script>
 
 <style>
@@ -45,8 +97,8 @@ const themeOverrides = {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  color: #2d2d2d;
-  background: #faf9f7;
+  color: var(--theme-text, #2d2d2d);
+  background: var(--theme-bg, #faf9f7);
   overflow-x: hidden;
 }
 

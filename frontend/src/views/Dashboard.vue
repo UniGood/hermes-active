@@ -17,15 +17,17 @@
     <n-card title="最近消息" style="margin-top: 16px">
       <n-spin :show="loading">
         <div class="message-list">
-          <div v-for="msg in recentMessages" :key="msg.id" class="message-item">
-            <div class="message-header">
-              <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="small">
-                {{ msg.role === 'user' ? config.user_name : config.assistant_name }}
-              </n-tag>
-              <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
+          <template v-for="msg in recentMessages" :key="msg.id">
+            <div v-if="msg.content" class="message-item">
+              <div class="message-header">
+                <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="small">
+                  {{ msg.role === 'user' ? config.user_name : config.assistant_name }}
+                </n-tag>
+                <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
+              </div>
+              <div class="message-content">{{ truncate(msg.content, 100) }}</div>
             </div>
-            <div class="message-content">{{ truncate(msg.content, 100) }}</div>
-          </div>
+          </template>
           <n-empty v-if="!loading && recentMessages.length === 0" description="暂无消息" />
         </div>
       </n-spin>
@@ -36,7 +38,10 @@
       <div class="platform-list">
         <div v-for="p in platforms" :key="p.name" class="platform-item">
           <span class="platform-name">{{ p.name }}</span>
-          <n-progress :percentage="p.percent" :color="p.color" />
+          <div class="platform-bar-wrap">
+            <div class="platform-bar" :style="{ width: p.percent + '%', background: p.color }"></div>
+          </div>
+          <span class="platform-percent">{{ p.percent }}%</span>
           <span class="platform-count">{{ p.count }}</span>
         </div>
       </div>
@@ -106,12 +111,8 @@ async function loadStats() {
 async function loadRecentMessages() {
   loading.value = true
   try {
-    const data = await api.get('/sessions', { params: { page: 1, page_size: 5 } })
-    if (data.items && data.items.length > 0) {
-      const firstSession = data.items[0]
-      const msgs = await api.get(`/messages/${firstSession.id}`, { params: { page: 1, page_size: 10 } })
-      recentMessages.value = msgs.items || []
-    }
+    const data = await api.get('/messages/recent', { params: { limit: 20 } })
+    recentMessages.value = (data.items || []).filter(msg => msg.content)
   } catch (e) {
     console.error('加载消息失败:', e)
   } finally {
@@ -226,16 +227,39 @@ onMounted(() => {
 }
 
 .platform-name {
-  width: 60px;
+  min-width: 56px;
   font-size: 14px;
   color: #2d2d2d;
+  white-space: nowrap;
+}
+
+.platform-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.platform-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.platform-percent {
+  min-width: 36px;
+  text-align: right;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
 }
 
 .platform-count {
-  width: 40px;
+  min-width: 32px;
   text-align: right;
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: #999;
 }
 
 .tag-assistant {

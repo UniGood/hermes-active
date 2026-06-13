@@ -376,12 +376,15 @@
         <n-data-table
           v-if="jobLogs.length > 0"
           :columns="jobLogsColumns"
-          :data="jobLogs"
+          :data="jobLogsPaged"
           :bordered="false"
           size="small"
-          :max-height="500"
         />
         <n-empty v-else description="暂无日志" />
+        <div v-if="jobLogsTotalPages > 1" class="log-pagination">
+          <n-pagination v-model:page="jobLogsPage" :page-count="jobLogsTotalPages" :page-slot="5" />
+          <span class="log-total">共 {{ jobLogs.length }} 条</span>
+        </div>
       </n-spin>
     </n-modal>
 
@@ -561,7 +564,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, h } from 'vue'
+import { ref, watch, onMounted, computed, h } from 'vue'
 
 import { useMessage, useDialog, NButton } from 'naive-ui'
 import api from '../api'
@@ -621,11 +624,20 @@ function viewLogDetail(log) {
 const jobLogsColumns = [
   { title: '详情', key: 'details', width: 70, render: (row) => row.details ? h(NButton, { size: 'tiny', onClick: () => viewLogDetail(row) }, { default: () => '详情' }) : '-' },
   { title: '时间', key: 'created_at', width: 140, render: (row) => formatTime(row.created_at) },
-  { title: '状态', key: 'status', width: 70, render: (row) => row.status === 'success' ? '✅ 成功' : '❌ 失败' },
+  { title: '状态', key: 'status', width: 80, render: (row) => row.status === 'success' ? '✅ 成功' : row.status === 'skipped' ? '⏭️ 跳过' : '❌ 失败' },
   { title: '消息', key: 'message', width: 200, ellipsis: { tooltip: true } },
   { title: '错误', key: 'error', width: 120, ellipsis: { tooltip: true }, render: (row) => row.error || '-' },
   { title: '耗时', key: 'duration', width: 70, render: (row) => row.duration ? `${row.duration.toFixed(1)}s` : '-' }
 ]
+
+// 日志分页
+const jobLogsPage = ref(1)
+const jobLogsPageSize = 20
+const jobLogsTotalPages = computed(() => Math.max(1, Math.ceil(jobLogs.value.length / jobLogsPageSize)))
+const jobLogsPaged = computed(() => {
+  const start = (jobLogsPage.value - 1) * jobLogsPageSize
+  return jobLogs.value.slice(start, start + jobLogsPageSize)
+})
 
 const platformOptions = [
   { label: '微信', value: 'weixin' },
@@ -985,8 +997,9 @@ async function viewJobLogs(job) {
   jobLogsName.value = job.name
   jobLogsLoading.value = true
   showJobLogs.value = true
+  jobLogsPage.value = 1
   try {
-    const data = await api.get('/task-logs', { params: { task_type: 'cron_run', message: job.name, page_size: 100 } })
+    const data = await api.get('/task-logs', { params: { task_type: 'cron_run', message: job.name, page_size: 200 } })
     jobLogs.value = data.items || []
   } catch (e) {
     message.error('加载日志失败')
@@ -1351,6 +1364,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 6px 12px;
   border: 1px solid #e0e0e6;
   border-radius: 8px;
@@ -1358,6 +1372,7 @@ onMounted(() => {
   transition: all 0.2s;
   background: #fff;
   min-width: 80px;
+  min-height: 48px;
 }
 
 .time-format-chip:hover {
@@ -1464,5 +1479,18 @@ onMounted(() => {
   --n-color-hover: #ffe0e6 !important;
   --n-text-color: #ff9a9e !important;
   --n-border: 1px solid #ffd0d6 !important;
+}
+
+.log-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px 0 8px;
+}
+
+.log-total {
+  font-size: 12px;
+  color: #999;
 }
 </style>

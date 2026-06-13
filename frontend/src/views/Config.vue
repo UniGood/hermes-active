@@ -10,9 +10,33 @@
           <n-input v-model:value="userConfig.assistant_name" placeholder="凯莉" />
         </n-form-item>
         <n-form-item>
-          <n-button type="primary" @click="saveUserConfig" :loading="savingUserConfig">保存</n-button>
+          <div class="form-actions">
+            <n-button type="primary" @click="saveUserConfig" :loading="savingUserConfig">保存</n-button>
+          </div>
         </n-form-item>
       </n-form>
+    </n-card>
+
+    <!-- 主题配置 -->
+    <n-card title="主题配置" style="margin-bottom: 16px">
+      <div class="theme-list">
+        <div
+          v-for="t in themes" :key="t.id"
+          class="theme-item"
+          :class="{ active: currentTheme === t.id }"
+          @click="selectTheme(t.id)"
+        >
+          <div class="theme-preview">
+            <div class="theme-color" :style="{ background: t.color1 }"></div>
+            <div class="theme-color" :style="{ background: t.color2 }"></div>
+          </div>
+          <div class="theme-info">
+            <div class="theme-name">{{ t.name }}</div>
+            <div class="theme-desc">{{ t.desc }}</div>
+          </div>
+          <n-tag v-if="currentTheme === t.id" type="success" size="small">当前</n-tag>
+        </div>
+      </div>
     </n-card>
 
     <!-- LLM 配置 -->
@@ -41,10 +65,12 @@
         </template>
 
         <n-form-item>
-          <n-space>
-            <n-button type="primary" @click="saveLLMConfig" :loading="saving">保存</n-button>
-            <n-button @click="testLLM" :loading="testing" v-if="llmConfig.mode === 'custom'">测试连通性</n-button>
-          </n-space>
+          <div class="form-actions">
+            <n-space>
+              <n-button type="primary" @click="saveLLMConfig" :loading="saving">保存</n-button>
+              <n-button @click="testLLM" :loading="testing" v-if="llmConfig.mode === 'custom'">测试连通性</n-button>
+            </n-space>
+          </div>
         </n-form-item>
       </n-form>
     </n-card>
@@ -59,7 +85,9 @@
           <n-input v-model:value="passwordForm.new_password" type="password" show-password-on="click" />
         </n-form-item>
         <n-form-item>
-          <n-button type="warning" @click="changePassword" :loading="changingPassword">修改密码</n-button>
+          <div class="form-actions">
+            <n-button type="warning" @click="changePassword" :loading="changingPassword">修改密码</n-button>
+          </div>
         </n-form-item>
       </n-form>
     </n-card>
@@ -96,6 +124,14 @@ const passwordForm = ref({
   old_password: '',
   new_password: ''
 })
+
+// 主题配置
+const themes = [
+  { id: 'kelly', name: '凯莉', desc: '珊瑚粉 + 暖橙', color1: '#ff9a9e', color2: '#f6d365' },
+  { id: 'elegant', name: '素雅', desc: '淡蓝 + 浅灰', color1: '#a0c4e8', color2: '#e8e8e8' },
+  { id: 'dark', name: '酷黑', desc: '深灰 + 亮蓝', color1: '#2d2d2d', color2: '#4fc3f7' }
+]
+const currentTheme = ref('kelly')
 
 async function loadConfig() {
   try {
@@ -178,9 +214,54 @@ async function changePassword() {
   }
 }
 
+async function loadTheme() {
+  try {
+    const data = await api.get('/config/get/theme').catch(() => null)
+    if (data?.value) {
+      currentTheme.value = data.value
+      applyTheme(data.value)
+    }
+  } catch (e) {
+    // 使用默认主题
+  }
+}
+
+function selectTheme(themeId) {
+  currentTheme.value = themeId
+  applyTheme(themeId)
+  api.put('/config/set', null, { params: { key: 'theme', value: themeId } }).catch(() => {})
+  message.success('主题已切换')
+}
+
+function applyTheme(themeId) {
+  const root = document.documentElement
+  const themeMap = {
+    kelly: { primary: '#ff9a9e', primaryHover: '#ffb3b6', primaryPressed: '#e8838a', bg: '#faf9f7', accent: '#f6d365' },
+    elegant: { primary: '#a0c4e8', primaryHover: '#b5d4f0', primaryPressed: '#8ab4d8', bg: '#f5f7fa', accent: '#e8e8e8' },
+    dark: { primary: '#4fc3f7', primaryHover: '#72d0fa', primaryPressed: '#3ab0e0', bg: '#1a1a2e', accent: '#2d2d2d' }
+  }
+  const t = themeMap[themeId] || themeMap.kelly
+  root.style.setProperty('--theme-primary', t.primary)
+  root.style.setProperty('--theme-primary-hover', t.primaryHover)
+  root.style.setProperty('--theme-primary-pressed', t.primaryPressed)
+  root.style.setProperty('--theme-bg', t.bg)
+  root.style.setProperty('--theme-accent', t.accent)
+
+  // 更新 body 背景
+  document.body.style.background = t.bg
+
+  // 深色主题特殊处理
+  if (themeId === 'dark') {
+    document.body.style.color = '#e0e0e0'
+  } else {
+    document.body.style.color = '#2d2d2d'
+  }
+}
+
 onMounted(() => {
   loadConfig()
   loadUserConfig()
+  loadTheme()
 })
 </script>
 
@@ -206,5 +287,67 @@ onMounted(() => {
 
 .config-page :deep(.n-input:focus-within) {
   box-shadow: 0 0 0 2px rgba(255, 154, 158, 0.2);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.theme-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e6;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-item:hover {
+  border-color: var(--theme-primary, #ff9a9e);
+  background: rgba(255, 154, 158, 0.04);
+}
+
+.theme-item.active {
+  border-color: var(--theme-primary, #ff9a9e);
+  background: rgba(255, 154, 158, 0.08);
+  box-shadow: 0 0 0 1px var(--theme-primary, #ff9a9e);
+}
+
+.theme-preview {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.theme-color {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.theme-info {
+  flex: 1;
+}
+
+.theme-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2d2d2d;
+}
+
+.theme-desc {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
 }
 </style>

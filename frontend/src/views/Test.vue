@@ -1018,6 +1018,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 6px 12px;
   border: 1px solid #e0e0e6;
   border-radius: 8px;
@@ -1025,6 +1026,7 @@ onMounted(() => {
   transition: all 0.2s;
   background: #fff;
   min-width: 80px;
+  min-height: 48px;
 }
 
 .time-format-chip:hover {
