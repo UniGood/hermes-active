@@ -2,7 +2,10 @@
 定时任务路由
 """
 import time
+import logging
 from datetime import datetime
+
+logger = logging.getLogger("hermes.cron")
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -174,9 +177,21 @@ async def run_cron_job(
             # 指定了 session_id，直接使用
             session = SessionService.get_session_by_id(db, session_id)
         else:
-            # 未指定 session_id，获取该平台最新活跃 session
-            session = SessionService.get_latest_session(platform)
+            # 未指定 session_id，使用 get_or_create 自动处理过期
+            user_id = SessionService.get_weixin_user_id()
+            if not user_id:
+                MessageService.create_task_log(
+                    task_type="cron_run",
+                    status="failed",
+                    message=f"任务 {target_job['name']} 运行失败",
+                    error="未找到微信用户 ID（sessions.json 中无 weixin dm session）",
+                    duration=round(time.time() - start_time, 2)
+                )
+                raise HTTPException(status_code=400, detail="未找到微信用户 ID")
 
+            session = SessionService.get_or_create_active_session(platform, user_id)
+            if session and session.get("was_auto_reset"):
+                logger.info(f"Session 已自动重置（原因: {session.get('auto_reset_reason')}），新 session: {session['id']}")
         if not session:
             MessageService.create_task_log(
                 task_type="cron_run",
