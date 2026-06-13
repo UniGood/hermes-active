@@ -73,7 +73,19 @@ body {
     border-radius: 0 !important;
     background: #fff !important;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .n-card__content {
+    flex: 1;
     overflow-y: auto;
+  }
+
+  .n-card__action {
+    flex-shrink: 0;
+    border-top: 1px solid #eee;
+    padding: 12px !important;
   }
 
   /* 弹窗遮罩层 */
