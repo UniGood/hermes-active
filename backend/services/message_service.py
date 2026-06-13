@@ -307,9 +307,9 @@ class MessageService:
                     time_str = time_format.replace("{weekday}", weekday_name(now)) if time_format else ""
                     time_str = now.strftime(time_str) if time_str else ""
                     if time_str:
-                        db_content = f"{send_mark} {time_str}: {message}"
+                        db_content = f"[{send_mark} {time_str}]: {message}"
                     else:
-                        db_content = f"{send_mark}: {message}"
+                        db_content = f"[{send_mark}]: {message}"
                 _write_to_state_db(session_id, db_content)
 
             duration = round(time.time() - start_time, 2)

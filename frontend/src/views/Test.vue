@@ -254,7 +254,7 @@
             <div class="mark-format-label">发送标记：</div>
             <n-input
               v-model:value="sendMark"
-              placeholder="[凯莉主动发送]"
+              placeholder="凯莉"
               size="small"
               style="max-width: 300px"
             />
@@ -382,7 +382,7 @@ const platformLabel = computed(() => {
 const testMessage = ref('')
 const writeToDB = ref(true)
 const withMark = ref(false)
-const sendMark = ref('[凯莉主动发送]')
+const sendMark = ref('凯莉')
 const timeFormat = ref('%H:%M 星期{weekday}')
 const generatedMessage = ref('')
 const logs = ref([])
@@ -418,7 +418,7 @@ const promptPreview = ref(null)
 const previewMark = computed(() => {
   if (!testMessage.value.trim()) return ''
   const ts = formatTimeWith(timeFormat.value, new Date())
-  return `${sendMark.value} ${ts}: ${testMessage.value.trim()}`
+  return `[${sendMark.value} ${ts}]: ${testMessage.value.trim()}`
 })
 
 // 监听 selectedSessionId 变化

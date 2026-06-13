@@ -273,7 +273,7 @@
         <div v-if="formData.write_to_db">
           <n-divider title-placement="left">消息标记</n-divider>
           <n-form-item label="发送标记">
-            <n-input v-model:value="formData.send_mark" placeholder="[凯莉主动发送]" style="max-width: 300px" />
+            <n-input v-model:value="formData.send_mark" placeholder="凯莉" style="max-width: 300px" />
           </n-form-item>
           <n-form-item label="时间格式">
             <div class="time-format-selector">
@@ -290,7 +290,7 @@
           </n-form-item>
           <n-form-item label="预览">
             <div class="mark-preview" v-if="testMessageForPreview">
-              <template v-if="formData.send_mark || formData.time_format"><template v-if="formData.send_mark">{{ formData.send_mark }}</template><template v-if="formData.time_format"> {{ formatWithOption(formData.time_format) }}</template>: </template>{{ testMessageForPreview }}
+              <template v-if="formData.send_mark || formData.time_format">[<template v-if="formData.send_mark">{{ formData.send_mark }}</template><template v-if="formData.time_format"> {{ formatWithOption(formData.time_format) }}</template>]: </template>{{ testMessageForPreview }}
             </div>
           </n-form-item>
         </div>
@@ -673,8 +673,8 @@ const formData = ref({
   write_to_db: true,
   with_mark: true,
   mark_format: '[凯莉主动发送] {timestamp}: {content}',
-  send_mark: '',
-  time_format: '',
+  send_mark: '凯莉',
+  time_format: '%H:%M 星期{weekday}',
   cooldown_enabled: false,
   cooldown_minutes: 10,
   fixed_message: ''
@@ -819,7 +819,7 @@ function openCreate() {
     write_to_db: true,
     with_mark: true,
     mark_format: '[凯莉主动发送] {timestamp}: {content}',
-    send_mark: '[凯莉主动发送]',
+    send_mark: '凯莉',
     time_format: '%H:%M 星期{weekday}',
     cooldown_enabled: false,
     cooldown_minutes: 10,

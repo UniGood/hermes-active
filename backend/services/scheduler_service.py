@@ -246,7 +246,7 @@ async def run_cron_job(job_id: str):
         write_to_db = target_job.get("write_to_db", True)
         with_mark = target_job.get("with_mark", True)
         mark_format = target_job.get("mark_format", "[凯莉主动发送] {timestamp}: {content}")
-        send_mark = target_job.get("send_mark", "[凯莉主动发送]")
+        send_mark = target_job.get("send_mark", "凯莉")
         time_format = target_job.get("time_format", "%H:%M 星期{weekday}")
 
         generated_message = ""
