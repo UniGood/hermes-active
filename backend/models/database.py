@@ -1,7 +1,7 @@
 """
 数据库连接管理
 """
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
 from contextlib import contextmanager
 
@@ -56,6 +56,14 @@ def init_active_db():
     """初始化 active.db 表结构"""
     from .active import Base
     Base.metadata.create_all(bind=active_engine)
+
+    # 自动迁移：给 users 表增加 avatar 列（如果不存在）
+    try:
+        with active_engine.connect() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN avatar TEXT"))
+            conn.commit()
+    except Exception:
+        pass  # 列已存在则忽略
 
 
 def get_state_metadata():

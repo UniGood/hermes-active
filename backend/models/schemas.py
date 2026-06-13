@@ -26,6 +26,7 @@ class TokenResponse(BaseModel):
 class UserInfo(BaseModel):
     id: int
     username: str
+    avatar: Optional[str] = None
     created_at: Optional[datetime] = None
 
 

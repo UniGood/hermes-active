@@ -55,8 +55,38 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return UserInfo(
         id=current_user.id,
         username=current_user.username,
+        avatar=current_user.avatar,
         created_at=current_user.created_at
     )
+
+
+@router.post("/avatar")
+async def upload_avatar(
+    request: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
+):
+    """上传头像（base64）"""
+    avatar_data = request.get("avatar", "")
+    if not avatar_data:
+        raise HTTPException(status_code=400, detail="头像数据不能为空")
+    # 限制大小：约 500KB 的 base64
+    if len(avatar_data) > 700000:
+        raise HTTPException(status_code=400, detail="头像图片过大，请压缩后重试")
+    current_user.avatar = avatar_data
+    db.commit()
+    return {"success": True, "message": "头像上传成功"}
+
+
+@router.delete("/avatar")
+async def delete_avatar(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
+):
+    """删除头像"""
+    current_user.avatar = None
+    db.commit()
+    return {"success": True, "message": "头像已删除"}
 
 
 @router.post("/refresh", response_model=TokenResponse)

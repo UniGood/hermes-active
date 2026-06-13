@@ -19,6 +19,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(50), unique=True, nullable=False, index=True)
     password_hash = Column(String(128), nullable=False)
+    avatar = Column(Text, nullable=True)  # base64 编码的头像图片
     created_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")))
     updated_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")), onupdate=lambda: datetime.now(ZoneInfo("Asia/Shanghai")))
 
@@ -26,6 +27,7 @@ class User(Base):
         return {
             "id": self.id,
             "username": self.username,
+            "avatar": self.avatar,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }

@@ -10,7 +10,10 @@
     <!-- 登录卡片 -->
     <div class="login-card">
       <div class="login-header">
-        <div class="logo-icon">H</div>
+        <div class="logo-icon">
+          <img v-if="avatarUrl" :src="avatarUrl" class="avatar-img" />
+          <span v-else>H</span>
+        </div>
         <h1>Hermes Active</h1>
         <p>主动会话管理系统</p>
       </div>
@@ -62,11 +65,12 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, NIcon } from 'naive-ui'
 import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '../store/auth'
+import api from '../api'
 
 const router = useRouter()
 const message = useMessage()
@@ -74,6 +78,23 @@ const authStore = useAuthStore()
 
 const formRef = ref(null)
 const loading = ref(false)
+const avatarUrl = ref('')
+
+// 加载用户头像
+async function loadAvatar() {
+  try {
+    const token = authStore.token
+    if (!token) return
+    const data = await api.get('/auth/me')
+    if (data.avatar) {
+      avatarUrl.value = data.avatar
+    }
+  } catch (e) {
+    // 未登录时忽略
+  }
+}
+
+onMounted(loadAvatar)
 
 const formData = reactive({
   username: '',
@@ -190,6 +211,13 @@ async function handleLogin() {
   font-weight: 800;
   color: #fff;
   letter-spacing: -1px;
+  overflow: hidden;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .login-header h1 {
