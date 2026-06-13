@@ -481,6 +481,16 @@ async function loadRecentMessages() {
   .result-content {
     width: 100%;
     order: 3;
+    white-space: normal;
+    word-break: break-all;
+  }
+
+  .result-sid {
+    font-size: 10px;
+  }
+
+  .result-time {
+    font-size: 10px;
   }
 
   .session-detail-card {
@@ -490,6 +500,7 @@ async function loadRecentMessages() {
 
   .detail-info {
     font-size: 12px;
+    word-break: break-all;
   }
 
   .message-item {
@@ -501,8 +512,19 @@ async function loadRecentMessages() {
     gap: 4px;
   }
 
+  .message-header-left {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .message-id {
+    font-size: 10px;
+  }
+
   .message-content {
     font-size: 13px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .send-bar {
