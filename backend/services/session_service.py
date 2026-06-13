@@ -217,7 +217,11 @@ class SessionService:
 
     @staticmethod
     def get_session_context(db: Session, session_id: str, limit: int = 50, include_tool: bool = False) -> List[Dict[str, Any]]:
-        """获取 session 上下文（消息历史）"""
+        """获取 session 上下文（消息历史）
+
+        Args:
+            include_tool: 为 False 时，同时过滤掉 tool 消息和只有 tool_call 没有文本的空 assistant 消息
+        """
         metadata = get_state_metadata()
 
         if 'messages' not in metadata.tables:
@@ -226,12 +230,19 @@ class SessionService:
         messages_table = metadata.tables['messages']
 
         # 构建查询条件
+        from sqlalchemy import and_, or_
         conditions = [messages_table.c.session_id == session_id]
         if not include_tool:
-            conditions.append(messages_table.c.role != 'tool')
+            # 过滤 tool 消息 + 空 assistant 消息（只有 tool_call 没有文本）
+            conditions.append(and_(
+                messages_table.c.role != 'tool',
+                or_(
+                    messages_table.c.role != 'assistant',
+                    and_(messages_table.c.content != None, messages_table.c.content != '')
+                )
+            ))
 
         # 使用子查询先过滤再取 limit 条
-        from sqlalchemy import and_
         query = (
             messages_table.select()
             .where(and_(*conditions))

@@ -466,7 +466,9 @@ class MessageService:
             session_id: session ID
             limit: 读取消息条数
             include_tool: 是否包含 tool 角色的消息（默认 False）
+                         为 False 时，同时过滤掉 tool 消息和只有 tool_call 没有文本的空 assistant 消息
         """
+        from sqlalchemy import and_, or_
         metadata = get_state_metadata()
         if 'messages' not in metadata.tables:
             return []
@@ -478,7 +480,14 @@ class MessageService:
         )
 
         if not include_tool:
-            query = query.where(messages_table.c.role != 'tool')
+            # 过滤 tool 消息 + 空 assistant 消息（只有 tool_call 没有文本）
+            query = query.where(and_(
+                messages_table.c.role != 'tool',
+                or_(
+                    messages_table.c.role != 'assistant',
+                    and_(messages_table.c.content != None, messages_table.c.content != '')
+                )
+            ))
 
         query = query.order_by(messages_table.c.timestamp.desc()).limit(limit)
 
