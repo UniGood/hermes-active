@@ -60,6 +60,15 @@ async def get_me(current_user: User = Depends(get_current_user)):
     )
 
 
+@router.get("/avatar")
+async def get_avatar(db: Session = Depends(get_active_db)):
+    """获取用户头像（公开接口，用于登录页显示）"""
+    user = db.query(User).first()
+    if user and user.avatar:
+        return {"avatar": user.avatar}
+    return {"avatar": None}
+
+
 @router.post("/avatar")
 async def upload_avatar(
     request: dict,

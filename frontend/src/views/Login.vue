@@ -93,17 +93,15 @@ const welcomeMessages = [
 
 const welcomeText = ref(welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)])
 
-// 加载用户头像
+// 加载用户头像（公开接口，不需要登录）
 async function loadAvatar() {
   try {
-    const token = authStore.token
-    if (!token) return
-    const data = await api.get('/auth/me')
+    const data = await api.get('/auth/avatar')
     if (data.avatar) {
       avatarUrl.value = data.avatar
     }
   } catch (e) {
-    // 未登录时忽略
+    // 忽略错误
   }
 }
 
