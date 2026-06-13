@@ -58,16 +58,27 @@ body {
 }
 
 @media (max-width: 768px) {
-  .n-modal {
-    --n-border-radius: 0 !important;
-  }
-
-  .n-modal:not([style*="width: 100%"]) {
+  /* 所有弹窗全屏 */
+  .n-modal-body-wrapper {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
     border-radius: 0 !important;
     max-height: 100vh;
+    height: 100vh;
+    background: #fff !important;
+  }
+
+  .n-card {
+    border-radius: 0 !important;
+    background: #fff !important;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  /* 弹窗遮罩层 */
+  .n-modal-mask {
+    background: rgba(0, 0, 0, 0.5) !important;
   }
 }
 </style>

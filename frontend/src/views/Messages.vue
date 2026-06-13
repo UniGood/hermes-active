@@ -60,12 +60,18 @@
         <div
           v-for="msg in filteredMessages"
           :key="msg.id"
-          class="message-bubble"
+          class="message-item"
           :class="[msg.role, { 'highlighted': highlightedMessageId === msg.id }]"
           :id="'msg-' + msg.id"
         >
-          <div class="message-role">
-            {{ msg.role === 'user' ? config.user_name : msg.role === 'assistant' ? config.assistant_name : msg.role }}
+          <div class="message-header">
+            <div class="message-header-left">
+              <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="small">
+                {{ msg.role === 'user' ? config.user_name : msg.role === 'assistant' ? config.assistant_name : msg.role }}
+              </n-tag>
+              <span class="message-id" v-if="msg.session_id">SID: {{ msg.session_id.slice(0, 12) }}...</span>
+            </div>
+            <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
           </div>
           <div class="message-content" v-html="formatContent(msg.content)"></div>
         </div>
@@ -354,57 +360,54 @@ async function loadRecentMessages() {
   padding: 8px 0;
 }
 
-.message-bubble {
-  margin-bottom: 16px;
-  max-width: 80%;
+.message-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.message-bubble.user {
-  margin-left: auto;
+.message-item:last-child {
+  border-bottom: none;
 }
 
-.message-bubble.assistant {
-  margin-right: auto;
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
-.message-bubble.highlighted .message-content {
-  box-shadow: 0 0 0 2px #ff9a9e, 0 4px 20px rgba(255, 154, 158, 0.3);
-  animation: highlight-pulse 1s ease-in-out;
+.message-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-@keyframes highlight-pulse {
-  0%, 100% { box-shadow: 0 0 0 2px #ff9a9e, 0 4px 20px rgba(255, 154, 158, 0.3); }
-  50% { box-shadow: 0 0 0 4px #ff9a9e, 0 4px 30px rgba(255, 154, 158, 0.5); }
+.message-id {
+  font-size: 11px;
+  color: #999;
+  font-family: monospace;
+  cursor: pointer;
+  padding: 1px 4px;
+  background: rgba(255, 154, 158, 0.1);
+  border-radius: 3px;
 }
 
-.message-role {
+.message-time {
   font-size: 12px;
   color: #999;
-  margin-bottom: 4px;
-}
-
-.message-bubble.user .message-role {
-  text-align: right;
 }
 
 .message-content {
-  padding: 12px 16px;
-  border-radius: 16px;
   font-size: 14px;
   line-height: 1.6;
+  color: #2d2d2d;
   word-break: break-word;
 }
 
-.message-bubble.user .message-content {
-  background: #fff;
-  color: #333;
-  border-bottom-right-radius: 4px;
-}
-
-.message-bubble.assistant .message-content {
-  background: #fff;
-  color: #333;
-  border-bottom-left-radius: 4px;
+.message-item.highlighted {
+  background: rgba(255, 154, 158, 0.05);
+  border-radius: 8px;
+  padding: 12px 8px;
 }
 
 .send-bar {
@@ -458,10 +461,6 @@ async function loadRecentMessages() {
   .result-content {
     width: 100%;
     order: 3;
-  }
-
-  .message-bubble {
-    max-width: 90%;
   }
 
   .send-bar {
