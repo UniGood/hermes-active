@@ -584,12 +584,12 @@ function viewLogDetail(log) {
   showLogDetail.value = true
 }
 const jobLogsColumns = [
-  { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
-  { title: '状态', key: 'status', width: 80, render: (row) => row.status === 'success' ? '✅ 成功' : '❌ 失败' },
-  { title: '消息', key: 'message', ellipsis: { tooltip: true } },
-  { title: '错误信息', key: 'error', ellipsis: { tooltip: true }, render: (row) => row.error || '-' },
-  { title: '耗时', key: 'duration', width: 80, render: (row) => row.duration ? `${row.duration.toFixed(1)}s` : '-' },
-  { title: '详情', key: 'details', width: 80, render: (row) => row.details ? h(NButton, { size: 'tiny', onClick: () => viewLogDetail(row) }, { default: () => '详情' }) : '-' }
+  { title: '时间', key: 'created_at', width: 140, render: (row) => formatTime(row.created_at) },
+  { title: '状态', key: 'status', width: 70, render: (row) => row.status === 'success' ? '✅ 成功' : '❌ 失败' },
+  { title: '消息', key: 'message', minWidth: 120, ellipsis: { tooltip: true } },
+  { title: '错误', key: 'error', width: 120, ellipsis: { tooltip: true }, render: (row) => row.error || '-' },
+  { title: '耗时', key: 'duration', width: 70, render: (row) => row.duration ? `${row.duration.toFixed(1)}s` : '-' },
+  { title: '详情', key: 'details', width: 70, render: (row) => row.details ? h(NButton, { size: 'tiny', onClick: () => viewLogDetail(row) }, { default: () => '详情' }) : '-' }
 ]
 
 const platformOptions = [
