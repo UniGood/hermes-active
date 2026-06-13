@@ -34,7 +34,7 @@
             <n-button size="small" type="success" @click="runJob(job)" :loading="job.running">运行</n-button>
             <n-button size="small" @click="editJob(job)">编辑</n-button>
             <n-button size="small" type="error" @click="deleteJob(job)">删除</n-button>
-            <n-button size="small" @click="viewJobLogs(job)">运行日志</n-button>
+            <n-button size="small" @click="viewJobLogs(job)">日志</n-button>
           </div>
         </div>
         <n-empty v-if="!loading && jobs.length === 0" description="暂无定时任务" />
@@ -370,8 +370,8 @@
       </template>
     </n-modal>
 
-    <!-- 运行日志弹窗 -->
-    <n-modal v-model:show="showJobLogs" preset="card" :title="`运行日志 - ${jobLogsName}`">
+    <!-- 日志弹窗 -->
+    <n-modal v-model:show="showJobLogs" preset="card" :title="`日志 - ${jobLogsName}`">
       <n-spin :show="jobLogsLoading">
         <n-data-table
           v-if="jobLogs.length > 0"
@@ -381,7 +381,7 @@
           size="small"
           :max-height="500"
         />
-        <n-empty v-else description="暂无运行日志" />
+        <n-empty v-else description="暂无日志" />
       </n-spin>
     </n-modal>
 
@@ -569,7 +569,7 @@ const showPreview = ref(false)
 const previewData = ref({ system_prompt: '', user_prompt: '', soul_md: '', context_summary: '', context_data: null })
 const previewing = ref(false)
 
-// 运行日志
+// 日志
 const showJobLogs = ref(false)
 const jobLogs = ref([])
 const jobLogsLoading = ref(false)
@@ -954,7 +954,7 @@ async function viewJobLogs(job) {
     const data = await api.get('/task-logs', { params: { task_type: 'cron_run', message: job.name, page_size: 100 } })
     jobLogs.value = data.items || []
   } catch (e) {
-    message.error('加载运行日志失败')
+    message.error('加载日志失败')
     jobLogs.value = []
   } finally {
     jobLogsLoading.value = false

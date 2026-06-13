@@ -58,14 +58,23 @@ body {
 }
 
 /* 所有弹窗全屏 */
+.n-modal {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
 .n-modal-body-wrapper {
   width: 100% !important;
   max-width: 100% !important;
   margin: 0 !important;
+  padding: 0 !important;
   border-radius: 0 !important;
   max-height: 100vh;
   height: 100vh;
   background: #fff !important;
+  top: 0 !important;
+  left: 0 !important;
+  position: fixed !important;
 }
 
 .n-card {
@@ -79,6 +88,7 @@ body {
 .n-card__content {
   flex: 1;
   overflow-y: auto;
+  padding: 16px !important;
 }
 
 .n-card__action {
