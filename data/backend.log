@@ -377,3 +377,66 @@
 2026-06-13 00:58:02,930 [INFO] apscheduler.scheduler: Removed job _sync_jobs
 2026-06-13 00:58:02,930 [INFO] hermes.scheduler: 移除已删除任务: _sync_jobs
 2026-06-13 00:58:02,931 [INFO] apscheduler.executors.default: Job "同步任务配置 (trigger: interval[0:01:00], next run at: 2026-06-13 00:59:02 CST)" executed successfully
+2026-06-13 06:00:00,001 [INFO] apscheduler.executors.default: Running job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 06:20:00 CST)" (scheduled at 2026-06-13 06:00:00+08:00)
+2026-06-13 06:00:00,002 [INFO] hermes.scheduler: 开始执行任务: 主动消息 (28882d27)
+2026-06-13 06:00:00,002 [ERROR] hermes.scheduler: 任务 28882d27 运行异常: cannot access local variable 'datetime' where it is not associated with a value
+Traceback (most recent call last):
+  File "/home/ubuntu/.hermes/hermes-active/backend/services/scheduler_service.py", line 88, in run_cron_job
+    start_time = datetime.now().timestamp()
+                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2026-06-13 06:00:00,007 [INFO] apscheduler.executors.default: Job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 06:20:00 CST)" executed successfully
+2026-06-13 06:20:00,000 [INFO] apscheduler.executors.default: Running job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 06:40:00 CST)" (scheduled at 2026-06-13 06:20:00+08:00)
+2026-06-13 06:20:00,001 [INFO] hermes.scheduler: 开始执行任务: 主动消息 (28882d27)
+2026-06-13 06:20:00,001 [ERROR] hermes.scheduler: 任务 28882d27 运行异常: cannot access local variable 'datetime' where it is not associated with a value
+Traceback (most recent call last):
+  File "/home/ubuntu/.hermes/hermes-active/backend/services/scheduler_service.py", line 88, in run_cron_job
+    start_time = datetime.now().timestamp()
+                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2026-06-13 06:20:00,004 [INFO] apscheduler.executors.default: Job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 06:40:00 CST)" executed successfully
+2026-06-13 06:40:00,000 [INFO] apscheduler.executors.default: Running job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 07:00:00 CST)" (scheduled at 2026-06-13 06:40:00+08:00)
+2026-06-13 06:40:00,001 [INFO] hermes.scheduler: 开始执行任务: 主动消息 (28882d27)
+2026-06-13 06:40:00,001 [ERROR] hermes.scheduler: 任务 28882d27 运行异常: cannot access local variable 'datetime' where it is not associated with a value
+Traceback (most recent call last):
+  File "/home/ubuntu/.hermes/hermes-active/backend/services/scheduler_service.py", line 88, in run_cron_job
+    start_time = datetime.now().timestamp()
+                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2026-06-13 06:40:00,005 [INFO] apscheduler.executors.default: Job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 07:00:00 CST)" executed successfully
+2026-06-13 07:00:00,000 [INFO] apscheduler.executors.default: Running job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 07:20:00 CST)" (scheduled at 2026-06-13 07:00:00+08:00)
+2026-06-13 07:00:00,001 [INFO] hermes.scheduler: 开始执行任务: 主动消息 (28882d27)
+2026-06-13 07:00:00,001 [ERROR] hermes.scheduler: 任务 28882d27 运行异常: cannot access local variable 'datetime' where it is not associated with a value
+Traceback (most recent call last):
+  File "/home/ubuntu/.hermes/hermes-active/backend/services/scheduler_service.py", line 88, in run_cron_job
+    start_time = datetime.now().timestamp()
+                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2026-06-13 07:00:00,004 [INFO] apscheduler.executors.default: Job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 07:20:00 CST)" executed successfully
+2026-06-13 07:20:00,000 [INFO] apscheduler.executors.default: Running job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 07:40:00 CST)" (scheduled at 2026-06-13 07:20:00+08:00)
+2026-06-13 07:20:00,001 [INFO] hermes.scheduler: 开始执行任务: 主动消息 (28882d27)
+2026-06-13 07:20:00,001 [ERROR] hermes.scheduler: 任务 28882d27 运行异常: cannot access local variable 'datetime' where it is not associated with a value
+Traceback (most recent call last):
+  File "/home/ubuntu/.hermes/hermes-active/backend/services/scheduler_service.py", line 88, in run_cron_job
+    start_time = datetime.now().timestamp()
+                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2026-06-13 07:20:00,004 [INFO] apscheduler.executors.default: Job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 07:40:00 CST)" executed successfully
+2026-06-13 07:40:00,000 [INFO] apscheduler.executors.default: Running job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 08:00:00 CST)" (scheduled at 2026-06-13 07:40:00+08:00)
+2026-06-13 07:40:00,001 [INFO] hermes.scheduler: 开始执行任务: 主动消息 (28882d27)
+2026-06-13 07:40:00,001 [ERROR] hermes.scheduler: 任务 28882d27 运行异常: cannot access local variable 'datetime' where it is not associated with a value
+Traceback (most recent call last):
+  File "/home/ubuntu/.hermes/hermes-active/backend/services/scheduler_service.py", line 88, in run_cron_job
+    start_time = datetime.now().timestamp()
+                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2026-06-13 07:40:00,005 [INFO] apscheduler.executors.default: Job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 08:00:00 CST)" executed successfully
+2026-06-13 08:00:00,000 [INFO] apscheduler.executors.default: Running job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 08:20:00 CST)" (scheduled at 2026-06-13 08:00:00+08:00)
+2026-06-13 08:00:00,001 [INFO] hermes.scheduler: 开始执行任务: 主动消息 (28882d27)
+2026-06-13 08:00:00,002 [ERROR] hermes.scheduler: 任务 28882d27 运行异常: cannot access local variable 'datetime' where it is not associated with a value
+Traceback (most recent call last):
+  File "/home/ubuntu/.hermes/hermes-active/backend/services/scheduler_service.py", line 88, in run_cron_job
+    start_time = datetime.now().timestamp()
+                 ^^^^^^^^
+UnboundLocalError: cannot access local variable 'datetime' where it is not associated with a value
+2026-06-13 08:00:00,005 [INFO] apscheduler.executors.default: Job "主动消息 (trigger: cron[month='*', day='*', day_of_week='*', hour='6-23', minute='0,20,40'], next run at: 2026-06-13 08:20:00 CST)" executed successfully

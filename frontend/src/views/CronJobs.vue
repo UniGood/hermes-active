@@ -265,7 +265,7 @@
           </span>
         </n-form-item>
 
-        <template>
+        <div>
           <n-form-item label="发送标记">
             <n-input v-model:value="formData.send_mark" placeholder="[凯莉主动发送]" style="max-width: 300px" />
           </n-form-item>
@@ -285,7 +285,7 @@
               预览: <template v-if="formData.send_mark">{{ formData.send_mark }}<template v-if="formData.time_format"> {{ formatWithOption(formData.time_format) }}</template>: </template>{{ testMessageForPreview }}
             </div>
           </n-form-item>
-        </template>
+        </div>
       </n-form>
       <template #action>
         <n-space>
