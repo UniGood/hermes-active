@@ -61,4 +61,29 @@ body {
 .n-modal-mask {
   background: rgba(0, 0, 0, 0.5) !important;
 }
+
+/* 强制所有弹窗真正全屏 */
+.n-card.n-modal {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  border-radius: 0 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 2000;
+}
+
+.n-card.n-modal .n-card-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.n-card.n-modal .n-card__action {
+  flex-shrink: 0;
+  border-top: 1px solid #eee;
+}
 </style>
