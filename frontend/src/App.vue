@@ -131,7 +131,7 @@ body {
   z-index: 2000;
 }
 
-.n-card.n-modal .n-card-content {
+.n-card.n-modal .n-card__content {
   flex: 1;
   overflow-y: auto;
 }
