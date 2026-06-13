@@ -1,6 +1,7 @@
 """
 Session 服务
 """
+from pathlib import Path
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -235,3 +236,77 @@ class SessionService:
             items = [dict(row._mapping) for row in result]
 
         return list(reversed(items))
+
+    @staticmethod
+    def get_weixin_user_id() -> Optional[str]:
+        """从 sessions.json 获取微信用户的 user_id
+
+        sessions.json 是 gateway 维护的实时数据，包含每个 session 的 origin 信息。
+        微信私聊的 user_id 格式：o9cq800B700qFq20-npef3QLNKSQ@im.wechat
+        """
+        import json
+        sessions_file = Path.home() / '.hermes' / 'sessions' / 'sessions.json'
+        if not sessions_file.exists():
+            return None
+
+        with open(sessions_file) as f:
+            sessions = json.load(f)
+
+        # 找最新的微信私聊 session
+        for key, entry in sessions.items():
+            if (entry.get('platform') == 'weixin'
+                and entry.get('chat_type') == 'dm'):
+                return entry['origin']['user_id']
+        return None
+
+    @staticmethod
+    def get_or_create_active_session(platform: str, user_id: str) -> Optional[Dict[str, Any]]:
+        """获取或创建活跃 session（调用 gateway 的 get_or_create_session）
+
+        自动处理 session 过期：
+        - session 没过期 → 返回现有 session
+        - session 过期 → 创建新 session，写入 state.db + sessions.json
+
+        Args:
+            platform: 平台名称，如 "weixin"
+            user_id: 用户 ID，微信私聊时 = chat_id
+
+        Returns:
+            dict with keys: id, source, user_id, created_at, was_auto_reset, auto_reset_reason
+        """
+        import sys
+        sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
+
+        from gateway.session import SessionStore, SessionSource
+        from gateway.config import GatewayConfig, Platform
+        import yaml
+
+        # 加载配置
+        with open(Path.home() / '.hermes' / 'config.yaml') as f:
+            config = GatewayConfig.from_dict(yaml.safe_load(f))
+
+        # 创建 SessionStore
+        store = SessionStore(
+            sessions_dir=Path.home() / '.hermes' / 'sessions',
+            config=config
+        )
+
+        # 构造 SessionSource
+        source = SessionSource(
+            platform=Platform(platform),
+            chat_id=user_id,
+            chat_type="dm",
+            user_id=user_id,
+        )
+
+        # 调用 gateway 的方法（自动处理过期 + 创建）
+        entry = store.get_or_create_session(source)
+
+        return {
+            "id": entry.session_id,
+            "source": platform,
+            "user_id": user_id,
+            "created_at": entry.created_at.isoformat() if entry.created_at else None,
+            "was_auto_reset": entry.was_auto_reset,
+            "auto_reset_reason": entry.auto_reset_reason,
+        }

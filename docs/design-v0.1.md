@@ -726,3 +726,71 @@ uvicorn main:app --host 0.0.0.0 --port 8080
 ### 6. 定时任务
 - 使用 APScheduler 独立管理
 - 不与 hermes cron 混在一起
+
+---
+
+## 附录：Session 重置规则验证
+
+### 当前配置（config.yaml）
+
+```yaml
+gateway:
+  session_reset:
+    mode: both          # daily + idle 谁先触发算谁
+    at_hour: 4          # 每天凌晨 4 点重置
+    idle_minutes: 1440  # 24 小时无活动也重置
+    notify: True        # 重置时通知用户
+    reset_by_platform:  # 无平台特例（微信用默认策略）
+    reset_by_type:      # 无类型特例
+```
+
+### 行为说明
+
+- **mode: both** = daily 和 idle 两个条件同时生效，谁先触发算谁
+- 昨晚的 session `updated_at` 在凌晨 4 点之前 → 今天发消息时 `_should_reset()` 返回 `"daily"` → 自动创建新 session
+- 微信没有单独的重置规则，用的就是 `default_reset_policy`
+
+### 获取重置策略的方式
+
+#### 方式 1：代码调用（推荐，可二次开发）
+
+```python
+from gateway.config import GatewayConfig
+import yaml
+from pathlib import Path
+
+with open(Path.home() / '.hermes' / 'config.yaml') as f:
+    data = yaml.safe_load(f)
+
+config = GatewayConfig.from_dict(data)
+policy = config.get_reset_policy(platform=Platform("weixin"), session_type="dm")
+
+# policy.mode, policy.at_hour, policy.idle_minutes
+```
+
+#### 方式 2：环境变量覆盖
+
+```bash
+export SESSION_IDLE_MINUTES=60   # 改 idle 超时
+export SESSION_RESET_HOUR=2     # 改每日重置时间
+```
+
+#### 方式 3：config.yaml 配置平台特例
+
+```yaml
+reset_by_platform:
+  weixin:
+    mode: daily
+    at_hour: 4
+```
+
+### 关键函数
+
+| 函数 | 位置 | 用途 |
+|------|------|------|
+| `SessionStore._is_session_expired(entry)` | session.py:769 | 检查 session 是否过期 |
+| `SessionStore._should_reset(entry, source)` | session.py:807 | 判断是否需要重置（返回 `"daily"`/`"idle"`/`None`） |
+| `SessionStore.get_or_create_session(source)` | session.py:873 | 获取或创建 session（自动判断重置） |
+| `GatewayConfig.get_reset_policy(platform, type)` | config.py:600 | 获取适用的重置策略 |
+
+> 以上均为公开方法，可直接 import 用于二次开发。

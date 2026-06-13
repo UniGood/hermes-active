@@ -92,9 +92,29 @@ async def run_cron_job(job_id: str):
         platform = target_job.get("platform", "weixin")
 
         if session_id:
+            # 指定 session_id 的情况，直接使用
             session = SessionService.get_session_by_id(db, session_id)
         else:
-            session = SessionService.get_latest_session(platform)
+            # 使用 get_or_create 自动处理过期
+            user_id = SessionService.get_weixin_user_id()
+            if not user_id:
+                logger.error(f"任务 {target_job['name']} 未找到微信用户 ID (sessions.json 中无 weixin dm session)")
+                MessageService.create_task_log(
+                    task_type="cron_run",
+                    status="failed",
+                    message=f"任务 {target_job['name']} 运行失败",
+                    error="未找到微信用户 ID（sessions.json 中无 weixin dm session）",
+                    duration=round(datetime.now().timestamp() - start_time, 2)
+                )
+                return
+
+            session = SessionService.get_or_create_active_session(
+                platform=platform,
+                user_id=user_id
+            )
+
+            if session and session.get("was_auto_reset"):
+                logger.info(f"Session 已自动重置（原因: {session.get('auto_reset_reason')}），新 session: {session['id']}")
 
         if not session:
             logger.error(f"任务 {target_job['name']} 未找到可用 session (平台: {platform})")
