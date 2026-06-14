@@ -1485,6 +1485,11 @@ onMounted(() => {
     overflow-x: auto;
   }
 
+  /* 表格容器底部留出分页空间 */
+  :deep(.n-spin-content) {
+    padding-bottom: 80px;
+  }
+
   :deep(.n-data-table-wrapper) {
     min-width: 600px;
   }
@@ -1525,6 +1530,16 @@ onMounted(() => {
   .log-pagination {
     flex-direction: column;
     gap: 8px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid #eee;
+    z-index: 100;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
   }
 }
 
