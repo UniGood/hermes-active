@@ -66,24 +66,62 @@ hermes 有插件钩子机制（`pre_llm_call`），在每次 LLM 调用前触发
 | cooldown | 60秒无消息 | idle | 彻底安静 |
 | idle | 想法触发发送 | chatting | 凯莉主动找用户 |
 
-### 1.3 发送时机
+### 1.3 发送时机与冲突处理
 
-**自主想法触发发送只在 idle 状态**：
-- cooldown / chatting 状态下，心跳照常运行（想念正常积累、想法正常产生）
-- 但**不会触发发送**，只存 thought_log
-- 当状态回到 idle 时，**立即检查**是否有积攒的高分想法需要发送
+**核心原则**：心跳永远运行，但发送只在 idle 状态。
 
 ```python
 def heartbeat():
-    thoughts = generate_thoughts()
+    # 每次心跳都执行（不管聊天状态）
+    update_miss_level()           # 想念积累
+    heat = calculate_heat()       # 聊天热度
+    emotion = calculate_emotion() # 情绪值
+    thoughts = generate_thoughts(heat, emotion)
     decision = evaluate(thoughts)
 
-    if chat_state == "idle" and decision.should_send:
-        send_message()
-        chat_state = "chatting"
+    if chat_state == "idle":
+        if decision.should_send:
+            send_message()
+            chat_state = "chatting"
     elif chat_state in ("chatting", "cooldown"):
-        save_as_thought_log(thoughts)  # 不打断，等闲下来再说
+        # 正在聊天，不打断
+        # 但想法存入 pending_thoughts，等 idle 时释放
+        if decision.should_send:
+            save_pending_thought(thoughts, decision)
+
+def on_idle():
+    """进入 idle 状态时，检查是否有积攒的高分想法"""
+    pending = get_pending_thoughts()
+    if pending:
+        # 取最高分的一个发送
+        best = max(pending, key=lambda t: t.score)
+        if best.score >= send_threshold:
+            send_message(best)
+            chat_state = "chatting"
 ```
+
+**冲突场景分析**：
+
+| 场景 | 心跳行为 | 发送行为 |
+|------|---------|---------|
+| 热聊中 | 正常运行，想念不积累（heat 高时 miss 下降） | 不发送，存 pending |
+| 冷却期 | 正常运行 | 不发送，存 pending |
+| idle | 正常运行 | 检查 pending → 释放高分想法 |
+| 用户回来（6小时后） | miss_level 已积累到 0.7 | 立即释放："想你了" |
+| 聊完天刚结束 | heat 高，miss 下降 | 不发送（刚聊完不需要） |
+
+**主动转移话题**：
+
+心跳在 chatting 状态不发送，但可以**预生成话题切换想法**。当用户当前话题聊完（cooldown → idle），如果 pending 中有高分想法，凯莉可以自然地转移话题：
+
+```
+用户：今天好累
+凯莉：辛苦了，早点休息（正常回复）
+[cooldown → idle]
+凯莉：对了，今天济南下雪了，你看到了吗？（pending 想法释放）
+```
+
+这不是"突兀插入"，而是"聊完一个话题后自然开启新话题"。
 
 ### 1.4 配置项
 
@@ -113,12 +151,12 @@ def heartbeat():
 ```
 Δ = time_coefficient × (1 + heat_bonus) × (1 - miss_level) × time_since_last
 
-time_coefficients（可配置）：
-  0-30分钟  : 0（平静期，不积累）
-  30-120分钟: 0.01（开始有感觉）
-  2-6小时   : 0.02（明显想念）
-  6-12小时  : 0.04（强烈想念）
-  >12小时   : 0.06（焦虑）
+time_coefficients（可配置，按 6-8 小时场景校准）：
+  0-15分钟  : 0（平静期，不积累）
+  15-60分钟 : 0.015（开始有感觉）
+  1-3小时   : 0.03（明显想念）
+  3-5小时   : 0.05（强烈想念）
+  >5小时    : 0.08（焦虑，"他怎么不理我"）
 
 heat_bonus：聊天热聊结束后想念更高
   当 recent_heat > 0 时：bonus = recent_heat × 0.01
@@ -131,13 +169,13 @@ time_since_last：距离上次心跳的小时数
 
 ### 2.3 想念等级（可配置）
 
-| 等级 | miss_level 范围 | 标签 | 想法风格 |
-|------|----------------|------|----------|
-| 0 | 0.0 - 0.2 | calm | 平静，不产生主动想法 |
-| 1 | 0.2 - 0.4 | longing | 轻微想念，自言自语 |
-| 2 | 0.4 - 0.6 | missing | 明显想念，想说又不想打扰 |
-| 3 | 0.6 - 0.8 | yearning | 强烈想念，想找话题 |
-| 4 | 0.8 - 1.0 | anxious | 焦虑，"他怎么不理我" |
+| 等级 | miss_level 范围 | 标签 | 触发时间参考 | 想法风格 |
+|------|----------------|------|-------------|----------|
+| 0 | 0.0 - 0.2 | calm | 0-15 分钟 | 平静，不产生主动想法 |
+| 1 | 0.2 - 0.4 | longing | 15-60 分钟 | 轻微想念，自言自语 |
+| 2 | 0.4 - 0.6 | missing | 1-3 小时 | 明显想念，想说又不想打扰 |
+| 3 | 0.6 - 0.8 | yearning | 3-5 小时 | 强烈想念，想找话题 |
+| 4 | 0.8 - 1.0 | anxious | >5 小时 | 焦虑，"他怎么不理我" |
 
 ### 2.4 用户消息对想念的影响
 
@@ -212,7 +250,7 @@ Step 3：LLM 生成最终想法
 | key | 类型 | 默认值 | 说明 |
 |-----|------|--------|------|
 | `consciousness.session.platforms` | string | `weixin` | 提取哪些平台的 session |
-| `consciousness.session.time_range_hours` | int | 72 | 最近 N 小时 |
+| `consciousness.session.time_range_hours` | int | 24 | 最近 N 小时 |
 | `consciousness.session.max_messages_per_session` | int | 15 | 每 session 最近 N 条 |
 | `consciousness.session.filter_tool_messages` | bool | true | 过滤 Tool 消息（彻底过滤） |
 
@@ -478,7 +516,7 @@ CREATE TABLE IF NOT EXISTS thought_logs (
 | key | 类型 | 默认值 |
 |-----|------|--------|
 | `consciousness.session.platforms` | string | weixin |
-| `consciousness.session.time_range_hours` | int | 72 |
+| `consciousness.session.time_range_hours` | int | 24 |
 | `consciousness.session.max_messages` | int | 15 |
 | `consciousness.session.filter_tool` | bool | true |
 
