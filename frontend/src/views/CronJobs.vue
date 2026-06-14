@@ -1479,6 +1479,27 @@ onMounted(() => {
   .time-format-selector {
     gap: 6px;
   }
+
+  /* 表格横向滚动 */
+  :deep(.n-data-table) {
+    overflow-x: auto;
+  }
+
+  :deep(.n-data-table-wrapper) {
+    min-width: 600px;
+  }
+
+  /* 分页固定在底部，避免被浏览器菜单栏遮挡 */
+  .log-pagination {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding: 12px 0;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 20px));
+    border-top: 1px solid #eee;
+    z-index: 10;
+  }
+}
   .time-format-chip {
     padding: 5px 8px;
     min-width: 70px;
