@@ -134,7 +134,7 @@ body {
   overflow: hidden !important;
 }
 
-.n-card.n-modal .n-card__content {
+.n-card.n-modal .n-card-content {
   flex: 1 1 0% !important;
   min-height: 0 !important;
   overflow-y: auto !important;
@@ -143,7 +143,7 @@ body {
   overscroll-behavior: contain;
 }
 
-.n-card.n-modal .n-card__action {
+.n-card.n-modal .n-card-action {
   flex-shrink: 0 !important;
   border-top: 1px solid #eee;
 }
