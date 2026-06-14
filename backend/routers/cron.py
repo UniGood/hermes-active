@@ -189,7 +189,8 @@ async def run_cron_job(
                 )
                 raise HTTPException(status_code=400, detail="未找到微信用户 ID")
 
-            session = SessionService.get_or_create_active_session(platform, user_id)
+            from services.fallback_session_service import FallbackSessionService
+            session = FallbackSessionService.get_or_create_active_session(platform, user_id)
             if session and session.get("was_auto_reset"):
                 logger.info(f"Session 已自动重置（原因: {session.get('auto_reset_reason')}），新 session: {session['id']}")
         if not session:
@@ -541,7 +542,8 @@ async def preview_prompt(
         # 尝试获取最新活跃 session（自动处理过期）
         user_id = SessionService.get_user_id_for_platform("weixin")
         if user_id:
-            latest_session = SessionService.get_or_create_active_session("weixin", user_id)
+            from services.fallback_session_service import FallbackSessionService
+            latest_session = FallbackSessionService.get_or_create_active_session("weixin", user_id)
             if latest_session:
                 effective_session_id = latest_session.get("id")
 

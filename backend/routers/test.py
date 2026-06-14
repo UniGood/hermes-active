@@ -37,7 +37,8 @@ async def test_full_flow(
             duration=round(time.time() - start_time, 2)
         )
         return SuccessResponse(message=f"未找到 {request.platform} 用户 ID，测试失败")
-    session = SessionService.get_or_create_active_session(request.platform, user_id)
+    from services.fallback_session_service import FallbackSessionService
+    session = FallbackSessionService.get_or_create_active_session(request.platform, user_id)
     if not session:
         MessageService.create_task_log(
             task_type="test_flow",

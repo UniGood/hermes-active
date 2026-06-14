@@ -59,7 +59,8 @@ async def get_latest_session(
         user_id = SessionService.get_weixin_user_id()
         if not user_id:
             raise HTTPException(status_code=404, detail="未找到微信用户 ID")
-        session = SessionService.get_or_create_active_session(platform, user_id)
+        from services.fallback_session_service import FallbackSessionService
+        session = FallbackSessionService.get_or_create_active_session(platform, user_id)
         if not session:
             raise HTTPException(status_code=404, detail="未找到 session")
         # 转换为 SessionInfo 格式
@@ -78,7 +79,8 @@ async def get_latest_session(
         user_id = SessionService.get_user_id_for_platform(platform)
         if not user_id:
             raise HTTPException(status_code=404, detail=f"未找到 {platform} 用户 ID")
-        session = SessionService.get_or_create_active_session(platform, user_id)
+        from services.fallback_session_service import FallbackSessionService
+        session = FallbackSessionService.get_or_create_active_session(platform, user_id)
         if not session:
             raise HTTPException(status_code=404, detail="未找到 session")
         from datetime import datetime

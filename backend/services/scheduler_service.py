@@ -108,7 +108,8 @@ async def run_cron_job(job_id: str):
                 )
                 return
 
-            session = SessionService.get_or_create_active_session(
+            from services.fallback_session_service import FallbackSessionService
+            session = FallbackSessionService.get_or_create_active_session(
                 platform=platform,
                 user_id=user_id
             )
