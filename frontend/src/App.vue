@@ -129,11 +129,15 @@ body {
   transform: none !important;
   margin: 0 !important;
   z-index: 2000;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .n-card.n-modal .n-card__content {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .n-card.n-modal .n-card__action {
