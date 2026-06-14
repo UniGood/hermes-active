@@ -18,6 +18,7 @@
 | [design-v0.2-brainstorm.md](design-v0.2-brainstorm.md) | 头脑风暴、逻辑闭环验证、完整数据流 | ~23K |
 | [v0.2-implementation-plan.md](v0.2-implementation-plan.md) | 完整实施方案：6 Phase、42 任务、数据模型、完整代码 | ~54K |
 | [v0.2-world-perception.md](v0.2-world-perception.md) | 外界感知层：高德天气 API 接入 | ~8K |
+| [consciousness-config-design.md](consciousness-config-design.md) | **配置卡片设计**：UI、参数清单、API 设计 | ~12K |
 
 ## 两个方案的关系
 
