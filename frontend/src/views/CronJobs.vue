@@ -999,7 +999,7 @@ async function viewJobLogs(job) {
   showJobLogs.value = true
   jobLogsPage.value = 1
   try {
-    const data = await api.get('/task-logs', { params: { task_type: 'cron_run', page_size: 200 } })
+    const data = await api.get('/task-logs', { params: { task_type: 'cron_run', job_name: job.name, page_size: 200 } })
     // 前端按任务名称过滤
     jobLogs.value = (data.items || []).filter(log => 
       log.message && log.message.includes(job.name)

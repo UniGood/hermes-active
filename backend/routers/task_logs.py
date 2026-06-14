@@ -21,6 +21,7 @@ async def get_task_logs(
     task_type: Optional[str] = None,
     status: Optional[str] = None,
     message: Optional[str] = None,
+    job_name: Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
@@ -34,6 +35,8 @@ async def get_task_logs(
         query = query.filter(TaskLog.status == status)
     if message:
         query = query.filter(TaskLog.message.like(f"%{message}%"))
+    if job_name:
+        query = query.filter(TaskLog.message.like(f"%{job_name}%"))
 
     # 获取总数
     total = query.count()
