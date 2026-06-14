@@ -4,31 +4,14 @@
 
 ## 文档索引
 
-### 🆕 推荐先看这个（精简方案，5天可交付）
+| 文档 | 内容 |
+|------|------|
+| [consciousness-design.md](consciousness-design.md) | **核心设计**：闭环架构、想法生成流程（跨 session + Hindsight）、决策引擎、配置设计、实施计划 |
+| [consciousness-config-design.md](consciousness-config-design.md) | **配置卡片设计**：UI 布局、参数清单、API 设计、测试按钮 |
 
-| 文档 | 内容 | 字数 |
-|------|------|------|
-| [consciousness-design.md](consciousness-design.md) | **自主意识设计**：最小闭环、情绪=上次的想法、规则评分决策 | ~13K |
+## 核心理念
 
-### 原始设计文档（完整版，14天方案）
-
-| 文档 | 内容 | 字数 |
-|------|------|------|
-| [design-v0.2.md](design-v0.2.md) | 核心设计理念、架构总览、模块划分 | ~7K |
-| [design-v0.2-brainstorm.md](design-v0.2-brainstorm.md) | 头脑风暴、逻辑闭环验证、完整数据流 | ~23K |
-| [v0.2-implementation-plan.md](v0.2-implementation-plan.md) | 完整实施方案：6 Phase、42 任务、数据模型、完整代码 | ~54K |
-| [v0.2-world-perception.md](v0.2-world-perception.md) | 外界感知层：高德天气 API 接入 | ~8K |
-| [consciousness-config-design.md](consciousness-config-design.md) | **配置卡片设计**：UI、参数清单、API 设计 | ~12K |
-
-## 两个方案的关系
-
-| | 精简方案 (consciousness-design) | 完整方案 (implementation-plan) |
-|---|---|---|
-| 情绪模型 | last_thought（自然语言） | 6 维浮点数（valence/arousal/...） |
-| 心跳周期 | 10 分钟 | 5 分钟 |
-| 想法生成 | LLM 直接读上下文 | 规则模板 + LLM 深度模式 |
-| 决策 | 简单 3 因子公式 | 4 因子公式 + 延迟队列 |
-| 交付时间 | 5 天 | 14 天 |
-| 扩展性 | 后续可升级到完整版 | 已包含所有设计 |
-
-**建议**：先实现精简方案，验证闭环可行后，再逐步扩展到完整版。
+- **情绪 = 上次的想法**（自然语言，不是浮点数）
+- **想法生成 = 跨 session 提取 + Hindsight 记忆 + LLM 生成**（三步流程）
+- **决策 = 规则评分**（不用 LLM，所有阈值从配置读取）
+- **所有参数可配置**（不硬编码任何阈值）
