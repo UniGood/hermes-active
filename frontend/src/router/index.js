@@ -37,6 +37,11 @@ const routes = [
         component: () => import('../views/Config.vue')
       },
       {
+        path: 'consciousness',
+        name: 'Consciousness',
+        component: () => import('../views/Consciousness.vue')
+      },
+      {
         path: 'cron-jobs',
         name: 'CronJobs',
         component: () => import('../views/CronJobs.vue')
