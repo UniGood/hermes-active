@@ -155,3 +155,37 @@ async def get_or_create_session_via_gateway(platform: str, user_id: str) -> dict
 2. 在 hermes-active 中配置 API Key
 3. 实现通过 Gateway API 获取/创建 session 的逻辑
 4. 测试验证 session 同步是否正常
+
+## 验证结果
+
+### Gateway API 已验证
+- **地址**: `http://localhost:8642`
+- **认证**: Bearer Token `7b905f959ad54cdc4a0f26216919f1ea4b00c2afae7dcbcd159b38ef5e161871`
+- **环境变量**: `API_SERVER_KEY` in `~/.hermes/.env`
+
+### 已验证端点
+```bash
+# 获取 session 列表（支持 source 和 chat_id 过滤）
+GET /api/sessions?source=weixin&chat_id=xxx
+Authorization: Bearer $API_KEY
+
+# 创建新 session
+POST /api/sessions
+Authorization: Bearer $API_KEY
+Content-Type: application/json
+{"source":"weixin","chat_id":"xxx","user_id":"xxx"}
+```
+
+### 验证结论
+1. `GET /api/sessions` 返回的数据与 sessions.json 一致
+2. Gateway API 是 SessionStore 的真实数据源
+3. 可以通过 `source` + `chat_id` 参数获取特定用户的 session
+4. `POST /api/sessions` 可以创建新 session
+
+### 实现方案
+
+hermes-active 的 `SessionService` 改为：
+1. 先调用 `GET /api/sessions?source=weixin&chat_id=xxx` 获取现有 session
+2. 如果找到活跃 session，直接使用
+3. 如果没找到，调用 `POST /api/sessions` 创建新 session
+4. 不再自己创建 SessionStore 实例
