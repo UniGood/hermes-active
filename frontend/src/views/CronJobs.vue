@@ -1499,7 +1499,7 @@ onMounted(() => {
     border-top: 1px solid #eee;
     z-index: 10;
   }
-}
+
   .time-format-chip {
     padding: 5px 8px;
     min-width: 70px;
@@ -1507,6 +1507,7 @@ onMounted(() => {
     flex: 1 1 calc(50% - 8px);
     min-width: 0;
   }
+
   .chip-preview {
     font-size: 11px;
   }
