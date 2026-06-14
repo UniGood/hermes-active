@@ -274,3 +274,111 @@ hermes-active 需要 session 时：
 - 后续的主动消息就能正常写入
 
 这比原来的问题（主动消息写入旧 session）要好得多。
+
+## 修正方案（2026-06-14）
+
+### 核心问题
+
+Gateway 的 SessionStore 只加载 sessions.json 一次，hermes-active 创建的 session 不会同步到 Gateway 内存。
+
+### 解决思路
+
+**让 Gateway 支持 reload sessions.json。**
+
+```
+修复后流程：
+┌─────────────────┐     ┌─────────────────┐
+│  hermes-active  │     │    Gateway      │
+│                 │     │                 │
+│  1. 创建 session │────▶│  2. 写入         │
+│     (sessions.json)   │     sessions.json│
+│                 │     │                 │
+│  3. 调用 API    │────▶│  4. reload      │
+│     触发 reload │     │     SessionStore│
+│                 │     │                 │
+└─────────────────┘     └────────┬────────┘
+                                 │
+                                 ▼
+                           sessions.json
+                           (统一数据源)
+```
+
+### 实施步骤
+
+#### Step 1: 修改 Gateway 的 SessionStore
+
+**文件**: `~/.hermes/hermes-agent/gateway/session.py`
+
+添加 `reload()` 方法：
+```python
+def reload(self):
+    """Reload sessions from sessions.json."""
+    with self._lock:
+        self._loaded = False
+        self._entries.clear()
+        self._ensure_loaded_locked()
+```
+
+#### Step 2: 添加 Gateway API 端点
+
+**文件**: `~/.hermes/hermes-agent/gateway/platforms/api_server.py`
+
+添加 `POST /api/sessions/reload` 端点：
+```python
+async def _handle_reload_sessions(self, request):
+    """POST /api/sessions/reload — reload sessions from sessions.json."""
+    auth_err = self._check_auth(request)
+    if auth_err:
+        return auth_err
+    
+    # 获取 Gateway 的 SessionStore 并触发 reload
+    runner = self._app.get("gateway_runner")
+    if runner and hasattr(runner, "session_store"):
+        runner.session_store.reload()
+        return web.json_response({"status": "ok"})
+    return web.json_response({"error": "SessionStore not found"}, status=500)
+```
+
+#### Step 3: 修改 hermes-active 的 SessionService
+
+**文件**: `backend/services/session_service.py`
+
+```python
+@staticmethod
+async def get_or_create_session_via_gateway(platform: str, user_id: str) -> dict:
+    """通过 Gateway API 获取/创建 session"""
+    api_key = os.getenv("API_SERVER_KEY")
+    base_url = "http://localhost:8642"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    
+    # 1. 获取现有 session
+    resp = requests.get(f"{base_url}/api/sessions", 
+                       params={"source": platform, "chat_id": user_id},
+                       headers=headers)
+    sessions = resp.json().get("data", [])
+    if sessions:
+        return sessions[0]  # 返回最新的 session
+    
+    # 2. 创建新 session（写入 sessions.json）
+    session_id = create_session_in_sessions_json(platform, user_id)
+    
+    # 3. 触发 Gateway reload
+    requests.post(f"{base_url}/api/sessions/reload", headers=headers)
+    
+    return {"id": session_id, "source": platform}
+```
+
+### 优点
+
+1. **最小改动**：只修改 Gateway 的两个文件
+2. **数据一致**：Gateway 始终使用最新的 sessions.json
+3. **向后兼容**：不影响现有功能
+4. **可追溯**：所有 session 操作都通过 sessions.json
+
+### 风险评估
+
+| 风险 | 概率 | 影响 | 缓解措施 |
+|------|------|------|----------|
+| reload 时并发问题 | 低 | 低 | 使用锁机制 |
+| sessions.json 格式错误 | 低 | 中 | 添加验证逻辑 |
+| API 调用失败 | 低 | 中 | 降级为跳过本次操作 |
