@@ -382,3 +382,106 @@ async def get_or_create_session_via_gateway(platform: str, user_id: str) -> dict
 | reload 时并发问题 | 低 | 低 | 使用锁机制 |
 | sessions.json 格式错误 | 低 | 中 | 添加验证逻辑 |
 | API 调用失败 | 低 | 中 | 降级为跳过本次操作 |
+
+## 方案对比
+
+### 方案 A：Gateway 支持 reload sessions.json（已提出）
+
+**原理**：添加 `reload()` 方法 + API 端点，hermes-active 创建 session 后触发 reload。
+
+**改动**：
+- `gateway/session.py` — 添加 `reload()` 方法
+- `gateway/platforms/api_server.py` — 添加 `POST /api/sessions/reload` 端点
+- `hermes-active/session_service.py` — 调用 reload API
+
+**优点**：最小改动，数据一致
+**缺点**：需要修改 Gateway 代码，每次创建 session 都要调用 API
+
+---
+
+### 方案 B：Gateway 从 state.db 加载 session（推荐）
+
+**原理**：修改 Gateway 的 `get_or_create_session`，当 `_entries` 中找不到 session 时，自动从 state.db 查询并加载。
+
+**改动**：
+- `gateway/session.py` — 修改 `get_or_create_session` 方法
+- `hermes_state.py` — 添加 `get_latest_session_by_source()` 方法
+
+**实现逻辑**：
+```python
+def get_or_create_session(self, source, force_new=False):
+    session_key = self._generate_session_key(source)
+    
+    with self._lock:
+        self._ensure_loaded_locked()
+        
+        # 1. 先从内存查找
+        if session_key in self._entries and not force_new:
+            entry = self._entries[session_key]
+            # ... 正常处理 ...
+        
+        # 2. 内存找不到，从 state.db 加载
+        if self._db:
+            db_session = self._db.get_latest_session_by_source(
+                source.platform.value, 
+                source.user_id
+            )
+            if db_session and not self._is_session_expired_from_db(db_session):
+                # 创建 SessionEntry 并加入 _entries
+                entry = SessionEntry.from_db_session(db_session)
+                self._entries[session_key] = entry
+                return entry
+        
+        # 3. 都找不到，创建新 session
+        # ... 原有逻辑 ...
+```
+
+**优点**：
+- 不需要修改 hermes-active 代码
+- Gateway 自动从 state.db 加载 session
+- 向后兼容，不影响现有功能
+- 性能影响小（只在找不到时查一次 state.db）
+
+**缺点**：
+- 需要修改 Gateway 代码
+- 需要添加新的 SessionDB 方法
+
+---
+
+### 方案 C：Gateway 定期 reload sessions.json
+
+**原理**：添加后台任务，每隔 N 秒自动 reload sessions.json。
+
+**改动**：
+- `gateway/session.py` — 添加后台 reload 任务
+
+**优点**：自动同步，不需要手动触发
+**缺点**：有延迟（最多 N 秒），浪费资源（即使没有变化也 reload）
+
+---
+
+### 方案 D：hermes-active 直接写入 Gateway 的内存
+
+**原理**：通过 API 让 hermes-active 直接操作 Gateway 的 SessionStore 内存。
+
+**改动**：
+- `gateway/platforms/api_server.py` — 添加 `POST /api/sessions/sync` 端点
+- `hermes-active/session_service.py` — 调用 sync API
+
+**优点**：实时同步，无延迟
+**缺点**：需要修改 Gateway 代码，增加复杂度
+
+---
+
+## 推荐方案：方案 B
+
+**理由**：
+1. **最优雅**：Gateway 自动从权威数据源（state.db）加载 session
+2. **最简单**：不需要修改 hermes-active 代码
+3. **最可靠**：state.db 是所有 session 的最终存储
+4. **向后兼容**：不影响现有功能
+
+**实施步骤**：
+1. 在 `hermes_state.py` 添加 `get_latest_session_by_source()` 方法
+2. 在 `gateway/session.py` 修改 `get_or_create_session()` 添加 state.db fallback
+3. 测试验证 session 同步正常
