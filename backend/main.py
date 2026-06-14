@@ -49,7 +49,8 @@ from routers import (
     stats_router,
     test_router,
     hindsight_router,
-    system_logs_router
+    system_logs_router,
+    consciousness_router
 )
 
 
@@ -106,6 +107,7 @@ app.include_router(stats_router)
 app.include_router(test_router)
 app.include_router(hindsight_router)
 app.include_router(system_logs_router)
+app.include_router(consciousness_router)
 
 
 @app.get("/health")

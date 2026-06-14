@@ -3,20 +3,28 @@
  */
 import http from './http'
 
-// ============ 配置 ============
+export default {
+  // 配置
+  getConfig: () => http.get('/consciousness/config'),
+  saveConfig: (data) => http.put('/consciousness/config', data),
 
-export const getConsciousnessConfig = () => http.get('/consciousness/config')
-export const saveConsciousnessConfig = (data) => http.put('/consciousness/config', data)
+  // 状态
+  getStatus: () => http.get('/consciousness/status'),
 
-// ============ 状态 ============
+  // 日志
+  getThoughts: (page = 1) => http.get('/consciousness/thoughts', { params: { page, page_size: 20 } }),
+  deleteThought: (id) => http.delete(`/consciousness/thoughts/${id}`),
+  retryThought: (id) => http.post(`/consciousness/thoughts/${id}/retry`),
 
-export const getConsciousnessStatus = () => http.get('/consciousness/status')
+  getHeartbeats: (page = 1) => http.get('/consciousness/heartbeats', { params: { page, page_size: 20 } }),
+  deleteHeartbeat: (id) => http.delete(`/consciousness/heartbeats/${id}`),
 
-// ============ 日志 ============
+  // 聊天记录
+  getChats: (limit = 50) => http.get('/consciousness/chats', { params: { limit } }),
 
-export const getConsciousnessLogs = (params) => http.get('/consciousness/logs', { params })
-
-// ============ 测试 ============
-
-export const testWeather = () => http.get('/consciousness/test/weather')
-export const testHindsight = (query) => http.get('/consciousness/test/hindsight', { params: { query } })
+  // 测试
+  testWeather: () => http.post('/consciousness/test/weather'),
+  testHindsightRecall: () => http.post('/consciousness/test/hindsight-recall'),
+  testHindsightReflect: () => http.post('/consciousness/test/hindsight-reflect'),
+  testThoughtGeneration: () => http.post('/consciousness/test/thought-generation')
+}
