@@ -189,3 +189,88 @@ hermes-active 的 `SessionService` 改为：
 2. 如果找到活跃 session，直接使用
 3. 如果没找到，调用 `POST /api/sessions` 创建新 session
 4. 不再自己创建 SessionStore 实例
+
+## 关键发现（2026-06-14 验证）
+
+### 架构分析
+
+Gateway 内部有两个独立的数据源：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Gateway 进程                            │
+│                                                             │
+│  ┌─────────────────┐        ┌─────────────────┐           │
+│  │  SessionStore   │        │   SessionDB     │           │
+│  │  (内存对象)      │        │  (SQLite)       │           │
+│  │                 │        │                 │           │
+│  │  - 加载         │        │  - 直接读写      │           │
+│  │    sessions.json│        │    state.db     │           │
+│  │  - 只加载一次    │        │  - 实时查询      │           │
+│  │  - 无 reload    │        │                 │           │
+│  └────────┬────────┘        └────────┬────────┘           │
+│           │                          │                     │
+│           ▼                          ▼                     │
+│     sessions.json              state.db                    │
+│     (session 映射)            (session 元数据)              │
+└─────────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │    API Server         │
+        │    (端口 8642)         │
+        │                       │
+        │  GET /api/sessions    │──▶ 读 state.db（实时）
+        │  POST /api/sessions   │──▶ 写 state.db（实时）
+        └───────────────────────┘
+```
+
+### 数据流对比
+
+| 操作 | SessionStore（内存） | SessionDB（SQLite） | API Server |
+|------|---------------------|---------------------|------------|
+| 读取 | 从 sessions.json 加载（一次） | 直接查 state.db | 调用 SessionDB |
+| 写入 | 更新内存 + sessions.json | 直接写 state.db | 调用 SessionDB |
+| 同步 | 启动时加载一次，之后独立 | 实时读写 | 实时读写 |
+
+### 验证结论
+
+**用户假设验证：**
+> "Gateway 的 SessionStore 是进程内的内存对象，只在启动时加载一次 sessions.json"
+
+**✅ 正确** — `_ensure_loaded_locked()` 方法有 `if self._loaded: return` 检查，只加载一次。
+
+> "hermes-active 是另一个进程，任何对 session 的操作都无法同步到 Gateway 的内存里"
+
+**✅ 部分正确**：
+- hermes-active 通过 API 创建的 session 会写入 state.db
+- Gateway 的 SessionStore 不会自动 reload sessions.json
+- 但 Gateway 在某些操作时会重新读取 state.db
+
+### 关键问题
+
+`GET /api/sessions` 返回的是 state.db 的数据，不是 Gateway SessionStore 的内存数据。这意味着：
+
+1. ✅ hermes-active 可以通过 API 读取到最新 session
+2. ❌ hermes-active 通过 API 创建的 session 不会同步到 Gateway 的 SessionStore
+3. ❌ Gateway 使用 SessionStore 判断 session 过期，不是 state.db
+
+### 修正后的方案
+
+**核心原则：** hermes-active 不创建 session，只读取现有 session。
+
+```
+hermes-active 需要 session 时：
+1. GET /api/sessions?source=weixin&chat_id=xxx
+2. 找到活跃 session → 直接使用
+3. 没找到 → 不创建，跳过本次操作
+4. 用户发消息时，Gateway 自然创建 session
+5. 下次 hermes-active 检查时，就能找到新 session
+```
+
+**对于主动消息的影响：**
+- 如果用户今天还没发过消息，主动消息会跳过
+- 用户发第一条消息后，Gateway 创建 session
+- 后续的主动消息就能正常写入
+
+这比原来的问题（主动消息写入旧 session）要好得多。
