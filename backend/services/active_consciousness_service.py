@@ -321,7 +321,7 @@ class ActiveConsciousnessService:
         db = ActiveSession()
         try:
             # 检查表是否存在
-            with state_engine.connect() as conn:
+            with active_engine.connect() as conn:
                 tables = conn.execute(text(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name='thought_logs'"
                 )).fetchall()
@@ -351,7 +351,7 @@ class ActiveConsciousnessService:
         """获取心跳日志"""
         db = ActiveSession()
         try:
-            with state_engine.connect() as conn:
+            with active_engine.connect() as conn:
                 tables = conn.execute(text(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name='heartbeat_logs'"
                 )).fetchall()
@@ -381,7 +381,7 @@ class ActiveConsciousnessService:
         """删除念头"""
         db = ActiveSession()
         try:
-            with state_engine.connect() as conn:
+            with active_engine.connect() as conn:
                 conn.execute(text("DELETE FROM thought_logs WHERE id = :id"), {"id": thought_id})
                 conn.commit()
             return True
@@ -402,7 +402,7 @@ class ActiveConsciousnessService:
         """删除心跳日志"""
         db = ActiveSession()
         try:
-            with state_engine.connect() as conn:
+            with active_engine.connect() as conn:
                 conn.execute(text("DELETE FROM heartbeat_logs WHERE id = :id"), {"id": heartbeat_id})
                 conn.commit()
             return True
