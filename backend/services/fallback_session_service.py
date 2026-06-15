@@ -169,55 +169,23 @@ class FallbackSessionService:
     def _create_via_gateway_api(
         platform: str, user_id: str
     ) -> Optional[Dict[str, Any]]:
-        """通过 Gateway API 创建 session。
+        """通过 Gateway 的 SessionStore 创建 session。
 
-        Gateway 的 SessionStore (已安装 fallback) 会：
-        1. 在 _entries 中查找 → 没有
-        2. fallback 查 state.db → 没有
-        3. 创建新 session → 写入 state.db + _entries + sessions.json
+        调用 SessionService.get_or_create_active_session()，
+        使用 Gateway 原生的 SessionStore.get_or_create_session() 方法。
+        自动处理 session 过期 + 创建，写入 state.db + sessions.json。
+
+        Gateway 同步：session_fallback 扩展会从 state.db 加载注入内存。
         """
-        import os
-        import json as _json
-        import urllib.request
-        import urllib.error
-
-        gateway_url = os.getenv("GATEWAY_API_URL", "http://127.0.0.1:8642")
-        api_key = os.getenv("API_SERVER_KEY", "")
-
         try:
-            payload = _json.dumps({
-                "source": platform,
-                "user_id": user_id,
-            }).encode("utf-8")
-
-            headers = {"Content-Type": "application/json"}
-            if api_key:
-                headers["Authorization"] = f"Bearer {api_key}"
-
-            req = urllib.request.Request(
-                f"{gateway_url}/api/sessions",
-                data=payload,
-                headers=headers,
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = _json.loads(resp.read().decode("utf-8"))
-                session = data.get("session", data)
-                return {
-                    "id": session.get("id") or session.get("session_id"),
-                    "source": platform,
-                    "user_id": user_id,
-                    "created_at": None,
-                    "was_auto_reset": False,
-                    "auto_reset_reason": None,
-                }
-        except urllib.error.HTTPError as e:
-            if e.code == 409:
-                # Session 已存在 — 从 state.db 获取
-                logger.info("Session already exists via API (409), querying state.db")
-                return FallbackSessionService._find_active_session(platform, user_id)
-            logger.error("Gateway session API error: %s", e)
-            return None
+            from services.session_service import SessionService
+            result = SessionService.get_or_create_active_session(platform, user_id)
+            if result:
+                logger.info(
+                    "Created session via SessionStore: %s (source=%s, user_id=%s)",
+                    result["id"], platform, user_id,
+                )
+            return result
         except Exception as e:
-            logger.error("Gateway session API failed: %s", e)
+            logger.error("Failed to create session via SessionStore: %s", e)
             return None
