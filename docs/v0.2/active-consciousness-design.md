@@ -203,12 +203,129 @@ frontend/src/
 └── api/active_consciousness.js        # API 封装
 ```
 
+--- 
+
+## 问题与待实现
+
+### 问题 1：retry_thought 未实现
+
+**问题描述**：`retry_thought` 函数返回 `{"success": False, "error": "重试功能待实现"}`，没有实际的重试逻辑。
+
+**影响**：
+- 用户点击"重试"按钮无效
+- 发送失败的想法无法重新发送
+
+**实现方案**：
+1. 查询 thought_logs 获取原始想法内容
+2. 重新调用 send_message_to_target 发送
+3. 记录重试日志
+
+**代码位置**：`backend/services/active_consciousness_service.py` 第 395 行
+
+**优先级**：中
+
 ---
 
-## 不合理之处
+### 问题 2：情绪值计算简单
 
-1. **retry_thought 未实现**：函数返回 "待实现"，需要补充重试逻辑
-2. **情绪值计算简单**：当前直接用 chat_heat 作为 emotional_intensity，应该用 LLM 分析情绪
-3. **消息发送依赖 inject_love_message API**：当前直接调用 HTTP API，如果 API 不可用会失败
-4. **缺少发送失败重试**：消息发送失败后没有重试机制
-5. **心跳间隔更新不重启调度器**：当前用 reschedule_job，但 APScheduler 的 IntervalTrigger 不支持动态更新间隔
+**问题描述**：当前 `get_status` 函数中，`emotional_intensity` 直接使用 `chat_heat` 的值，没有用 LLM 分析情绪。
+
+**当前代码**：
+```python
+# 情绪值（简化：直接用 chat_heat）
+emotional_intensity = min(chat_heat, 1.0)
+```
+
+**影响**：
+- 情绪值不准确，只是聊天热度的反映
+- 无法区分开心、平静、想念等不同情绪
+
+**实现方案**：
+1. 调用 LLM 分析最近的聊天记录
+2. 输出情绪值（0-1）和情绪标签（开心/平静/想念/工作）
+3. 缓存分析结果，避免每次都调用 LLM
+
+**优先级**：中
+
+---
+
+### 问题 3：消息发送依赖 HTTP API
+
+**问题描述**：`send_message_to_target` 函数直接调用 `http://localhost:18720/api/messages/send-and-inject` HTTP API，如果 API 不可用会失败。
+
+**当前代码**：
+```python
+async with httpx.AsyncClient(timeout=10) as client:
+    resp = await client.post(
+        "http://localhost:18720/api/messages/send-and-inject",
+        json={...}
+    )
+```
+
+**影响**：
+- 如果 hermes-active 服务重启，心跳会失败
+- 如果端口改变，需要修改代码
+
+**实现方案**：
+1. 使用 hermes 的 `send_message` 函数直接发送（需要导入 hermes 模块）
+2. 或者使用 hermes 的 Gateway API
+3. 添加重试机制，失败后等待一段时间再重试
+
+**优先级**：低
+
+---
+
+### 问题 4：缺少发送失败重试
+
+**问题描述**：消息发送失败后，只是记录日志，没有重试机制。
+
+**影响**：
+- 临时网络问题会导致消息丢失
+- 用户需要手动重试
+
+**实现方案**：
+1. 在 `run_heartbeat` 中捕获发送失败异常
+2. 将失败的想法加入待发送队列
+3. 下次心跳时重试
+
+**优先级**：低
+
+---
+
+### 问题 5：心跳间隔更新不重启调度器
+
+**问题描述**：当前 `update_heartbeat_interval` 使用 `reschedule_job`，但 APScheduler 的 IntervalTrigger 不支持动态更新间隔。
+
+**当前代码**：
+```python
+def update_heartbeat_interval(interval_seconds: int):
+    if heartbeat_scheduler.running:
+        heartbeat_scheduler.reschedule_job(
+            "active_consciousness_heartbeat",
+            trigger=IntervalTrigger(seconds=interval_seconds)
+        )
+```
+
+**影响**：
+- 修改心跳间隔后，可能不会立即生效
+- 需要重启服务才能生效
+
+**实现方案**：
+1. 删除旧任务，添加新任务
+2. 或者重启调度器
+
+**代码示例**：
+```python
+def update_heartbeat_interval(interval_seconds: int):
+    if heartbeat_scheduler.running:
+        heartbeat_scheduler.remove_job("active_consciousness_heartbeat")
+        heartbeat_scheduler.add_job(
+            run_heartbeat,
+            trigger=IntervalTrigger(seconds=interval_seconds),
+            id="active_consciousness_heartbeat",
+            name="主动意识心跳",
+            replace_existing=True
+        )
+```
+
+**优先级**：中
