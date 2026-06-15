@@ -17,6 +17,48 @@ from typing import Optional, Dict, Any
 logger = logging.getLogger("hermes.session")
 
 
+def _get_last_active(session_id: str) -> Optional[float]:
+    """从 messages 表获取 session 的最后活动时间（timestamp）。"""
+    try:
+        from models.database import state_engine
+        from sqlalchemy import text
+
+        with state_engine.connect() as conn:
+            result = conn.execute(
+                text("SELECT MAX(timestamp) FROM messages WHERE session_id = :sid"),
+                {"sid": session_id},
+            )
+            row = result.first()
+            if row and row[0] is not None:
+                return float(row[0])
+    except Exception as e:
+        logger.warning("Failed to get last active time: %s", e)
+    return None
+
+
+def _is_expired(last_active: float, mode: str, idle_minutes: int, at_hour: int) -> bool:
+    """判断 session 是否过期（模拟 Gateway 的 _should_reset 逻辑）。"""
+    from datetime import datetime, timedelta
+
+    now = datetime.now()
+    last_active_dt = datetime.fromtimestamp(last_active)
+
+    # idle 检查
+    if mode in {"idle", "both"}:
+        if now > last_active_dt + timedelta(minutes=idle_minutes):
+            return True
+
+    # daily 检查
+    if mode in {"daily", "both"}:
+        today_reset = now.replace(hour=at_hour, minute=0, second=0, microsecond=0)
+        if now.hour < at_hour:
+            today_reset -= timedelta(days=1)
+        if last_active_dt < today_reset:
+            return True
+
+    return False
+
+
 class FallbackSessionService:
     """直接操作 state.db 的 Session 服务，绕过 SessionStore 同步问题。"""
 
@@ -80,8 +122,40 @@ class FallbackSessionService:
                 )
                 row = result.first()
                 if row:
+                    # 检查是否过期
+                    session_id = row[0]
+                    last_active = _get_last_active(session_id)
+                    if last_active is None:
+                        # 没有消息，用 started_at
+                        last_active = float(row[3]) if row[3] else None
+
+                    if last_active:
+                        # 获取 reset policy 配置
+                        import sys
+                        sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
+                        from gateway.config import GatewayConfig, Platform
+                        import yaml
+
+                        config_path = Path.home() / '.hermes' / 'config.yaml'
+                        with open(config_path) as f:
+                            config = GatewayConfig.from_dict(yaml.safe_load(f) or {})
+                        policy = config.get_reset_policy(
+                            platform=Platform(platform), session_type="dm"
+                        )
+
+                        if _is_expired(last_active, policy.mode, policy.idle_minutes, policy.at_hour):
+                            # 过期，关闭旧 session
+                            logger.info("Session %s expired, closing it", session_id)
+                            with state_engine.connect() as conn:
+                                conn.execute(
+                                    text("UPDATE sessions SET ended_at = :now WHERE id = :sid"),
+                                    {"now": time.time(), "sid": session_id},
+                                )
+                                conn.commit()
+                            return None
+
                     return {
-                        "id": row[0],
+                        "id": session_id,
                         "source": row[1],
                         "user_id": row[2],
                         "started_at": row[3],
