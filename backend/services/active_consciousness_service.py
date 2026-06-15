@@ -11,6 +11,7 @@ from typing import Optional, Dict, Any, List
 from sqlalchemy import text
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from hindsight_client import Hindsight
 
 from models.database import ActiveSession, state_engine, active_engine
 from models.active_consciousness import (
@@ -23,6 +24,17 @@ logger = logging.getLogger("hermes.active_consciousness")
 
 # 全局心跳调度器实例
 heartbeat_scheduler = AsyncIOScheduler(timezone="Asia/Shanghai")
+
+# 全局 Hindsight 客户端实例
+_hindsight_client: Optional[Hindsight] = None
+
+
+def get_hindsight_client(base_url: str = "http://localhost:8888", timeout: float = 30.0) -> Hindsight:
+    """获取 Hindsight 客户端实例（懒加载，base_url 或 timeout 变化时重建）"""
+    global _hindsight_client
+    if _hindsight_client is None:
+        _hindsight_client = Hindsight(base_url=base_url, timeout=timeout)
+    return _hindsight_client
 
 # 配置 key 前缀
 PREFIX = "active_consciousness."
@@ -54,8 +66,11 @@ _DEFAULTS = {
     "active_consciousness.decision.max_per_day": "5",
     "active_consciousness.decision.longing_gap_threshold": "3",
     "active_consciousness.hindsight.enabled": "true",
+    "active_consciousness.hindsight.base_url": "http://localhost:8888",
+    "active_consciousness.hindsight.bank_id": "hermes",
     "active_consciousness.hindsight.recall_limit": "5",
     "active_consciousness.hindsight.reflect_enabled": "true",
+    "active_consciousness.hindsight.timeout": "30",
     "active_consciousness.notify.platform": "weixin",
     "active_consciousness.notify.chat_id": "",
 }
@@ -556,35 +571,34 @@ async def extract_session_context(session_config: Dict[str, Any]) -> str:
         return ""
 
 
-async def call_hindsight_recall(query: str, limit: int = 5) -> List[Dict]:
-    """调用 Hindsight Recall API"""
+async def call_hindsight_recall(
+    query: str,
+    limit: int = 5,
+    bank_id: str = "hermes",
+    base_url: str = "http://localhost:8888",
+    timeout: float = 30.0,
+) -> List[Dict]:
+    """调用 Hindsight Recall API（使用 Python SDK）"""
     try:
-        import aiohttp
-        url = "http://localhost:8888/v1/default/banks/hermes/memories/recall"
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json={"query": query, "limit": limit},
-                                   timeout=aiohttp.ClientTimeout(total=10)) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    return data.get("results", data.get("memories", []))
-        return []
+        client = get_hindsight_client(base_url=base_url, timeout=timeout)
+        response = await client.arecall(bank_id=bank_id, query=query)
+        return [{"text": r.text, "type": r.type, "id": r.id} for r in response.results[:limit]]
     except Exception as e:
         logger.warning("Hindsight Recall 失败: %s", e)
         return []
 
 
-async def call_hindsight_reflect(query: str) -> str:
-    """调用 Hindsight Reflect API"""
+async def call_hindsight_reflect(
+    query: str,
+    bank_id: str = "hermes",
+    base_url: str = "http://localhost:8888",
+    timeout: float = 30.0,
+) -> str:
+    """调用 Hindsight Reflect API（使用 Python SDK）"""
     try:
-        import aiohttp
-        url = "http://localhost:8888/v1/default/banks/hermes/reflect"
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json={"query": query},
-                                   timeout=aiohttp.ClientTimeout(total=30)) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    return data.get("reflection", data.get("result", ""))
-        return ""
+        client = get_hindsight_client(base_url=base_url, timeout=timeout)
+        response = await client.areflect(bank_id=bank_id, query=query)
+        return response.text
     except Exception as e:
         logger.warning("Hindsight Reflect 失败: %s", e)
         return ""
@@ -604,9 +618,16 @@ async def generate_thought(config: Dict[str, Any], status: Dict[str, Any]) -> Di
     # Step 2: Hindsight Recall/Reflect
     hindsight_context = ""
     if hindsight_config.get("enabled", True):
+        base_url = hindsight_config.get("base_url", "http://localhost:8888")
+        bank_id = hindsight_config.get("bank_id", "hermes")
+        hs_timeout = float(hindsight_config.get("timeout", 30))
+
         recall_results = await call_hindsight_recall(
             "最近的对话和情绪",
-            limit=hindsight_config.get("recall_limit", 5)
+            limit=hindsight_config.get("recall_limit", 5),
+            bank_id=bank_id,
+            base_url=base_url,
+            timeout=hs_timeout,
         )
         if recall_results:
             recall_count = len(recall_results)
@@ -615,7 +636,12 @@ async def generate_thought(config: Dict[str, Any], status: Dict[str, Any]) -> Di
             )
 
         if hindsight_config.get("reflect_enabled", True):
-            reflect_result = await call_hindsight_reflect("总结最近的对话和情绪变化")
+            reflect_result = await call_hindsight_reflect(
+                "总结最近的对话和情绪变化",
+                bank_id=bank_id,
+                base_url=base_url,
+                timeout=hs_timeout,
+            )
             if reflect_result:
                 reflect_count = 1
                 hindsight_context += "\n\n综合分析:\n" + reflect_result
