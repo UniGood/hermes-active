@@ -581,7 +581,7 @@ async def call_hindsight_recall(
     """调用 Hindsight Recall API（使用 Python SDK）"""
     try:
         client = get_hindsight_client(base_url=base_url, timeout=timeout)
-        response = await client.arecall(bank_id=bank_id, query=query)
+        response = await client.arecall(bank_id=bank_id, query=query, max_tokens=4096)
         return [{"text": r.text, "type": r.type, "id": r.id} for r in response.results[:limit]]
     except Exception as e:
         logger.warning("Hindsight Recall 失败: %s", e)
@@ -597,7 +597,7 @@ async def call_hindsight_reflect(
     """调用 Hindsight Reflect API（使用 Python SDK）"""
     try:
         client = get_hindsight_client(base_url=base_url, timeout=timeout)
-        response = await client.areflect(bank_id=bank_id, query=query)
+        response = await client.areflect(bank_id=bank_id, query=query, budget="low")
         return response.text
     except Exception as e:
         logger.warning("Hindsight Reflect 失败: %s", e)

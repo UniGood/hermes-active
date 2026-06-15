@@ -73,10 +73,10 @@ async def test_hindsight_recall():
         base_url = hindsight_config.get("base_url", "http://localhost:8888")
         bank_id = hindsight_config.get("bank_id", "hermes")
         limit = hindsight_config.get("recall_limit", 5)
-        timeout = hindsight_config.get("timeout", 30)
+        timeout = hindsight_config.get("timeout", 120)
 
         client = Hindsight(base_url=base_url, timeout=timeout)
-        response = await client.arecall(bank_id=bank_id, query="最近的对话和情绪", limit=limit)
+        response = await client.arecall(bank_id=bank_id, query="最近的对话和情绪", max_tokens=4096)
         results = [{"text": r.text, "type": r.type, "id": r.id} for r in response.results]
         return {
             "success": True,
@@ -101,10 +101,10 @@ async def test_hindsight_reflect():
         from hindsight_client import Hindsight
         base_url = hindsight_config.get("base_url", "http://localhost:8888")
         bank_id = hindsight_config.get("bank_id", "hermes")
-        timeout = hindsight_config.get("timeout", 30)
+        timeout = hindsight_config.get("timeout", 120)
 
         client = Hindsight(base_url=base_url, timeout=timeout)
-        answer = await client.areflect(bank_id=bank_id, query="总结最近的对话和情绪变化")
+        answer = await client.areflect(bank_id=bank_id, query="总结最近的对话和情绪变化", budget="low")
         return {
             "success": True,
             "data": {
