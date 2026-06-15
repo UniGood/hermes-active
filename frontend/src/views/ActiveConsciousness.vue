@@ -88,29 +88,6 @@
               <n-input-number v-model:value="config.decision.max_per_day" :min="1" :max="50" />
             </n-form-item>
 
-            <!-- Hindsight 记忆 -->
-            <n-divider>Hindsight 记忆</n-divider>
-            <n-form-item label="启用 Hindsight">
-              <n-switch v-model:value="config.hindsight.enabled" />
-            </n-form-item>
-            <template v-if="config.hindsight.enabled">
-              <n-form-item label="Base URL">
-                <n-input v-model:value="config.hindsight.base_url" placeholder="http://localhost:8888" />
-              </n-form-item>
-              <n-form-item label="Bank ID">
-                <n-input v-model:value="config.hindsight.bank_id" placeholder="hermes" />
-              </n-form-item>
-              <n-form-item label="Recall 结果数">
-                <n-input-number v-model:value="config.hindsight.recall_limit" :min="1" :max="20" />
-              </n-form-item>
-              <n-form-item label="启用 Reflect">
-                <n-switch v-model:value="config.hindsight.reflect_enabled" />
-              </n-form-item>
-              <n-form-item label="超时时间（秒）">
-                <n-input-number v-model:value="config.hindsight.timeout" :min="5" :max="120" />
-              </n-form-item>
-            </template>
-
             <!-- 通知目标 -->
             <n-divider>通知目标</n-divider>
             <n-form-item label="目标平台">

@@ -170,3 +170,40 @@ async def get_hermes_memory(
     """获取 Hermes MEMORY.md 内容"""
     content = ConfigService.read_hermes_memory()
     return {"content": content}
+
+
+# ============ Hindsight 配置 ============
+
+@router.get("/hindsight")
+async def get_hindsight_config(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
+):
+    """获取 Hindsight 配置"""
+    import json
+    config_str = ConfigService.get_config(db, "active_consciousness.hindsight")
+    if config_str:
+        try:
+            return json.loads(config_str) if isinstance(config_str, str) else config_str
+        except json.JSONDecodeError:
+            pass
+    return {
+        "enabled": True,
+        "base_url": "http://localhost:8888",
+        "bank_id": "hermes",
+        "recall_limit": 5,
+        "reflect_enabled": True,
+        "timeout": 120
+    }
+
+
+@router.put("/hindsight", response_model=SuccessResponse)
+async def update_hindsight_config(
+    config: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db)
+):
+    """更新 Hindsight 配置"""
+    import json
+    ConfigService.set_config(db, "active_consciousness.hindsight", json.dumps(config), "Hindsight 记忆配置")
+    return SuccessResponse(message="Hindsight 配置更新成功")

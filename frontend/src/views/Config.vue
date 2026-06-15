@@ -75,6 +75,43 @@
       </n-form>
     </n-card>
 
+    <!-- Hindsight 记忆配置 -->
+    <n-card title="Hindsight 记忆配置" style="margin-bottom: 16px">
+      <n-form label-placement="left" label-width="100">
+        <n-form-item label="启用 Hindsight">
+          <n-switch v-model:value="hindsightConfig.enabled" />
+        </n-form-item>
+
+        <template v-if="hindsightConfig.enabled">
+          <n-form-item label="Base URL">
+            <n-input v-model:value="hindsightConfig.base_url" placeholder="http://localhost:8888" />
+          </n-form-item>
+          <n-form-item label="Bank ID">
+            <n-input v-model:value="hindsightConfig.bank_id" placeholder="hermes" />
+          </n-form-item>
+          <n-form-item label="Recall 结果数">
+            <n-input-number v-model:value="hindsightConfig.recall_limit" :min="1" :max="20" />
+          </n-form-item>
+          <n-form-item label="启用 Reflect">
+            <n-switch v-model:value="hindsightConfig.reflect_enabled" />
+          </n-form-item>
+          <n-form-item label="超时时间（秒）">
+            <n-input-number v-model:value="hindsightConfig.timeout" :min="5" :max="300" />
+          </n-form-item>
+        </template>
+
+        <n-form-item>
+          <div class="form-actions">
+            <n-space>
+              <n-button type="primary" @click="saveHindsightConfig" :loading="savingHindsight">保存</n-button>
+              <n-button @click="testHindsightRecall" :loading="testingRecall">测试 Recall</n-button>
+              <n-button @click="testHindsightReflect" :loading="testingReflect" v-if="hindsightConfig.reflect_enabled">测试 Reflect</n-button>
+            </n-space>
+          </div>
+        </n-form-item>
+      </n-form>
+    </n-card>
+
     <!-- 修改密码 -->
     <n-card title="修改密码" style="margin-top: 16px">
       <n-form label-placement="left" label-width="80">
@@ -120,6 +157,18 @@ const llmConfig = ref({
   base_url: ''
 })
 
+const hindsightConfig = ref({
+  enabled: true,
+  base_url: 'http://localhost:8888',
+  bank_id: 'hermes',
+  recall_limit: 5,
+  reflect_enabled: true,
+  timeout: 120
+})
+const savingHindsight = ref(false)
+const testingRecall = ref(false)
+const testingReflect = ref(false)
+
 const passwordForm = ref({
   old_password: '',
   new_password: ''
@@ -139,6 +188,61 @@ async function loadConfig() {
     llmConfig.value = data
   } catch (e) {
     console.error('加载 LLM 配置失败:', e)
+  }
+}
+
+async function loadHindsightConfig() {
+  try {
+    const data = await api.get('/config/hindsight')
+    if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+      hindsightConfig.value = { ...hindsightConfig.value, ...data }
+    }
+  } catch (e) {
+    // 使用默认值
+  }
+}
+
+async function saveHindsightConfig() {
+  savingHindsight.value = true
+  try {
+    await api.put('/config/hindsight', hindsightConfig.value)
+    message.success('Hindsight 配置已保存')
+  } catch (e) {
+    message.error('保存失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    savingHindsight.value = false
+  }
+}
+
+async function testHindsightRecall() {
+  testingRecall.value = true
+  try {
+    const result = await api.post('/hindsight/recall?query=测试recall&limit=3')
+    if (result.success) {
+      message.success(`Recall 测试成功，返回 ${result.total} 条结果`)
+    } else {
+      message.error('测试失败: ' + (result.message || '未知错误'))
+    }
+  } catch (e) {
+    message.error('测试失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    testingRecall.value = false
+  }
+}
+
+async function testHindsightReflect() {
+  testingReflect.value = true
+  try {
+    const result = await api.post('/hindsight/reflect?query=测试reflect')
+    if (result.success) {
+      message.success('Reflect 测试成功')
+    } else {
+      message.error('测试失败: ' + (result.message || '未知错误'))
+    }
+  } catch (e) {
+    message.error('测试失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    testingReflect.value = false
   }
 }
 
