@@ -148,10 +148,16 @@
             <!-- 通知目标 -->
             <n-divider>通知目标</n-divider>
             <n-form-item label="目标平台">
-              <n-select v-model:value="config.notify.platform" :options="platformOptions" />
+              <n-select v-model:value="config.notify.platform" :options="platformOptions" @update:value="loadNotifySessions" />
             </n-form-item>
-            <n-form-item label="Chat ID">
-              <n-input v-model:value="config.notify.chat_id" placeholder="输入 Chat ID" />
+            <n-form-item label="目标 Session">
+              <n-select
+                v-model:value="config.notify.chat_id"
+                :options="notifySessionOptions"
+                :loading="loadingNotifySessions"
+                placeholder="选择目标 Session"
+                filterable
+              />
             </n-form-item>
           </template>
 
@@ -313,6 +319,27 @@ const platformOptions = [
   { label: '微信', value: 'weixin' },
   { label: '飞书', value: 'feishu' }
 ]
+
+// 通知目标 Session 选项
+const notifySessionOptions = ref([])
+const loadingNotifySessions = ref(false)
+
+async function loadNotifySessions(platform) {
+  loadingNotifySessions.value = true
+  try {
+    const data = await api.get("/sessions", {
+      params: { platform, page: 1, page_size: 50, active_only: true }
+    })
+    notifySessionOptions.value = (data.items || []).map(s => ({
+      label: `${s.title || s.id} (${s.message_count || 0} 条消息)`,
+      value: s.id
+    }))
+  } catch (e) {
+    console.error("加载 Session 列表失败:", e)
+  } finally {
+    loadingNotifySessions.value = false
+  }
+}
 
 // 计算属性
 const longingTagType = computed(() => {
@@ -485,7 +512,8 @@ onMounted(async () => {
     loadStatus(),
     loadThoughts(),
     loadHeartbeats(),
-    loadChats()
+    loadChats(),
+    loadNotifySessions(config.value.notify.platform),
   ])
 })
 </script>
