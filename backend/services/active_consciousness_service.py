@@ -12,7 +12,7 @@ from sqlalchemy import text
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from models.database import ActiveSession, state_engine
+from models.database import ActiveSession, state_engine, active_engine
 from models.active_consciousness import (
     ActiveConsciousnessConfig, ActiveConsciousnessStatus,
     LongingState, ChatHeat, EmotionalIntensity,
@@ -431,7 +431,7 @@ class ActiveConsciousnessService:
         """记录想法日志"""
         db = ActiveSession()
         try:
-            with state_engine.connect() as conn:
+            with active_engine.connect() as conn:
                 result = conn.execute(text("""
                     INSERT INTO thought_logs
                     (heartbeat_id, type, content, intensity, decision, reason, score,
@@ -477,7 +477,7 @@ class ActiveConsciousnessService:
         """记录心跳日志"""
         db = ActiveSession()
         try:
-            with state_engine.connect() as conn:
+            with active_engine.connect() as conn:
                 result = conn.execute(text("""
                     INSERT INTO heartbeat_logs
                     (started_at, duration_ms, longing_before, longing_after, chat_heat,
@@ -859,7 +859,7 @@ async def run_heartbeat():
         if heartbeat_id:
             db = ActiveSession()
             try:
-                with state_engine.connect() as conn:
+                with active_engine.connect() as conn:
                     conn.execute(text("""
                         UPDATE heartbeat_logs
                         SET duration_ms = :duration_ms, message_sent = :message_sent
