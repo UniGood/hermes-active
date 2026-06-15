@@ -38,6 +38,7 @@ from config import SERVER_HOST, SERVER_PORT
 from models.database import init_active_db, ActiveSession
 from services.auth_service import AuthService
 from services.scheduler_service import start_scheduler, stop_scheduler
+from services.active_consciousness_service import start_heartbeat_scheduler, stop_heartbeat_scheduler
 from routers import (
     auth_router,
     sessions_router,
@@ -50,7 +51,8 @@ from routers import (
     test_router,
     hindsight_router,
     system_logs_router,
-    consciousness_router
+    passive_consciousness,
+    active_consciousness
 )
 
 
@@ -71,8 +73,15 @@ async def lifespan(app: FastAPI):
     print("正在启动定时任务调度器...")
     start_scheduler()
 
+    # 启动主动意识心跳调度器
+    print("正在启动主动意识心跳调度器...")
+    start_heartbeat_scheduler()
+
     print("后端服务启动完成")
     yield
+
+    # 停止主动意识心跳调度器
+    stop_heartbeat_scheduler()
 
     # 停止调度器
     stop_scheduler()
@@ -107,7 +116,8 @@ app.include_router(stats_router)
 app.include_router(test_router)
 app.include_router(hindsight_router)
 app.include_router(system_logs_router)
-app.include_router(consciousness_router)
+app.include_router(passive_consciousness.router)
+app.include_router(active_consciousness.router)
 
 
 @app.get("/health")
