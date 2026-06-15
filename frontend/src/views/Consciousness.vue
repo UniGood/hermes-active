@@ -148,9 +148,17 @@
             <!-- 通知目标 -->
             <n-divider>通知目标</n-divider>
             <n-form-item label="目标平台">
-              <n-select v-model:value="config.notify.platform" :options="platformOptions" @update:value="loadNotifySessions" />
+              <n-select v-model:value="config.notify.platform" :options="platformOptions" @update:value="onNotifyPlatformChange" />
             </n-form-item>
-            <n-form-item label="目标 Session">
+            <n-form-item label="Session 来源">
+              <n-radio-group v-model:value="notifySessionMode">
+                <n-space vertical>
+                  <n-radio value="latest">每次获取最新活跃 Session</n-radio>
+                  <n-radio value="fixed">指定 Session</n-radio>
+                </n-space>
+              </n-radio-group>
+            </n-form-item>
+            <n-form-item label="指定 Session" v-if="notifySessionMode === 'fixed'">
               <n-select
                 v-model:value="config.notify.chat_id"
                 :options="notifySessionOptions"
@@ -321,6 +329,7 @@ const platformOptions = [
 ]
 
 // 通知目标 Session 选项
+const notifySessionMode = ref('latest')
 const notifySessionOptions = ref([])
 const loadingNotifySessions = ref(false)
 
@@ -338,6 +347,14 @@ async function loadNotifySessions(platform) {
     console.error("加载 Session 列表失败:", e)
   } finally {
     loadingNotifySessions.value = false
+  }
+}
+
+function onNotifyPlatformChange(platform) {
+  loadNotifySessions(platform)
+  // 切换平台时，如果不是指定模式，清空 chat_id
+  if (notifySessionMode.value !== 'fixed') {
+    config.value.notify.chat_id = ''
   }
 }
 
@@ -513,7 +530,14 @@ onMounted(async () => {
     loadThoughts(),
     loadHeartbeats(),
     loadChats(),
-    loadNotifySessions(config.value.notify.platform),
+    loadNotifySessions(config.value.notify.platform).then(() => {
+      // 如果 chat_id 为空或不在列表中，切换到 latest 模式
+      if (!config.value.notify.chat_id || !notifySessionOptions.value.find(s => s.value === config.value.notify.chat_id)) {
+        notifySessionMode.value = 'latest'
+      } else {
+        notifySessionMode.value = 'fixed'
+      }
+    }),
   ])
 })
 </script>
