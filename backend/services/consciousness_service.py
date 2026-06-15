@@ -23,6 +23,7 @@ PREFIX = "consciousness."
 # 默认配置（扁平 key → 默认值）
 _DEFAULTS = {
     "consciousness.enabled": "false",
+    "consciousness.llm.mode": "hermes",
     "consciousness.llm.provider": "openai",
     "consciousness.llm.model": "deepseek-chat",
     "consciousness.llm.api_key": "",

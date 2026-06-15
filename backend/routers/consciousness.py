@@ -199,8 +199,6 @@ async def test_thought_generation():
             return {"success": False, "error": "自主意识未启用"}
 
         llm_config = config.get("llm", {})
-        if not llm_config.get("api_key"):
-            return {"success": False, "error": "未配置 LLM API Key"}
 
         # 获取当前状态
         status = ConsciousnessService.get_status()
@@ -219,29 +217,53 @@ async def test_thought_generation():
 
 请用第一人称产生一个自然的想法（1-2句话）。"""
 
-        import httpx
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(
-                f"{llm_config.get('base_url', 'https://api.openai.com/v1')}/chat/completions",
-                headers={"Authorization": f"Bearer {llm_config['api_key']}"},
-                json={
-                    "model": llm_config.get("model", "deepseek-chat"),
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 200,
-                    "temperature": 0.9
-                }
+        thought = None
+
+        # 判断 LLM 模式
+        if llm_config.get("mode") == "hermes":
+            # 使用 hermes 的 LLM
+            import sys
+            from pathlib import Path
+            sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
+            from agent.auxiliary_client import call_llm
+
+            response = call_llm(
+                task='title_generation',
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.9,
+                max_tokens=200,
             )
-            data = resp.json()
-            if "choices" in data and data["choices"]:
-                thought = data["choices"][0]["message"]["content"]
-                return {
-                    "success": True,
+            thought = response.choices[0].message.content
+        else:
+            # 使用自定义 LLM
+            if not llm_config.get("api_key"):
+                return {"success": False, "error": "未配置 LLM API Key"}
+
+            import httpx
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    f"{llm_config.get('base_url', 'https://api.openai.com/v1')}/chat/completions",
+                    headers={"Authorization": f"Bearer {llm_config['api_key']}"},
+                    json={
+                        "model": llm_config.get("model", "deepseek-chat"),
+                        "messages": [{"role": "user", "content": prompt}],
+                        "max_tokens": 200,
+                        "temperature": 0.9
+                    }
+                )
+                data = resp.json()
+                if "choices" in data and data["choices"]:
+                    thought = data["choices"][0]["message"]["content"]
+                else:
+                    return {"success": False, "error": f"LLM 返回异常: {data}"}
+
+        if thought:
+            return {
+                "success": True,
                     "data": {
                         "thought": thought,
                         "status": status
                     }
-                }
-            else:
-                return {"success": False, "error": f"LLM 返回异常: {data}"}
+                    }
     except Exception as e:
         return {"success": False, "error": str(e)}

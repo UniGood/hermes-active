@@ -12,16 +12,22 @@
           <template v-if="config.enabled">
             <!-- LLM 配置 -->
             <n-divider>LLM 配置（独立）</n-divider>
-            <n-form-item label="Provider">
+            <n-form-item label="LLM 模式">
+              <n-radio-group v-model:value="config.llm.mode">
+                <n-radio value="hermes">使用 Hermes LLM</n-radio>
+                <n-radio value="custom">自定义 LLM</n-radio>
+              </n-radio-group>
+            </n-form-item>
+            <n-form-item label="Provider" v-if="config.llm.mode === 'custom'">
               <n-select v-model:value="config.llm.provider" :options="providerOptions" />
             </n-form-item>
-            <n-form-item label="Model">
+            <n-form-item label="Model" v-if="config.llm.mode === 'custom'">
               <n-input v-model:value="config.llm.model" placeholder="deepseek-chat" />
             </n-form-item>
-            <n-form-item label="API Key">
+            <n-form-item label="API Key" v-if="config.llm.mode === 'custom'">
               <n-input v-model:value="config.llm.api_key" type="password" show-password-on="mousedown" placeholder="输入 API Key" />
             </n-form-item>
-            <n-form-item label="Base URL">
+            <n-form-item label="Base URL" v-if="config.llm.mode === 'custom'">
               <n-input v-model:value="config.llm.base_url" placeholder="https://api.openai.com/v1" />
             </n-form-item>
 
@@ -263,7 +269,7 @@ const activeTab = ref('config')
 // 配置
 const config = ref({
   enabled: false,
-  llm: { provider: 'openai', model: 'deepseek-chat', api_key: '', base_url: '' },
+  llm: { mode: 'hermes', provider: 'openai', model: 'deepseek-chat', api_key: '', base_url: '' },
   passive: { enabled: true, inject_emotion: true, inject_heat: true, inject_memory: true, inject_thought: true, thought_max_chars: 200, vibe_max_chars: 50, inject_tag: '[CONSCIOUSNESS_CONTEXT]', time_format: '%H:%M' },
   active: { enabled: true, heartbeat_interval: 600, send_tag: '[凯莉主动发送]', time_format: '%H:%M', no_send_after_user_msg_minutes: 10, no_send_while_heat_above: 0.5, no_send_while_vibe_below: 0.3 },
   session: { sources: ['weixin'], time_range_hours: 24, max_messages_per_session: 15, filter_tool_messages: true },
