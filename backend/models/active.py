@@ -89,7 +89,7 @@ class Config(Base):
 
 class ThoughtLog(Base):
     """想法日志表"""
-    __tablename__ = "thought_logs"
+    __tablename__ = "active_thought_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     heartbeat_id = Column(Integer, nullable=True)
@@ -125,7 +125,7 @@ class ThoughtLog(Base):
 
 class HeartbeatLog(Base):
     """心跳日志表"""
-    __tablename__ = "heartbeat_logs"
+    __tablename__ = "active_heartbeat_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     started_at = Column(DateTime, nullable=True)

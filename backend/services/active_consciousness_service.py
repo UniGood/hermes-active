@@ -323,15 +323,15 @@ class ActiveConsciousnessService:
             # 检查表是否存在
             with active_engine.connect() as conn:
                 tables = conn.execute(text(
-                    "SELECT name FROM sqlite_master WHERE type='table' AND name='thought_logs'"
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='active_thought_logs'"
                 )).fetchall()
                 if not tables:
                     return {"total": 0, "items": []}
 
-                total = conn.execute(text("SELECT COUNT(*) FROM thought_logs")).scalar() or 0
+                total = conn.execute(text("SELECT COUNT(*) FROM active_thought_logs")).scalar() or 0
                 offset = (page - 1) * page_size
                 rows = conn.execute(text(
-                    "SELECT * FROM thought_logs ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+                    "SELECT * FROM active_thought_logs ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
                 ), {"limit": page_size, "offset": offset}).fetchall()
 
                 items = []
@@ -353,15 +353,15 @@ class ActiveConsciousnessService:
         try:
             with active_engine.connect() as conn:
                 tables = conn.execute(text(
-                    "SELECT name FROM sqlite_master WHERE type='table' AND name='heartbeat_logs'"
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='active_heartbeat_logs'"
                 )).fetchall()
                 if not tables:
                     return {"total": 0, "items": []}
 
-                total = conn.execute(text("SELECT COUNT(*) FROM heartbeat_logs")).scalar() or 0
+                total = conn.execute(text("SELECT COUNT(*) FROM active_heartbeat_logs")).scalar() or 0
                 offset = (page - 1) * page_size
                 rows = conn.execute(text(
-                    "SELECT * FROM heartbeat_logs ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+                    "SELECT * FROM active_heartbeat_logs ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
                 ), {"limit": page_size, "offset": offset}).fetchall()
 
                 items = []
@@ -382,7 +382,7 @@ class ActiveConsciousnessService:
         db = ActiveSession()
         try:
             with active_engine.connect() as conn:
-                conn.execute(text("DELETE FROM thought_logs WHERE id = :id"), {"id": thought_id})
+                conn.execute(text("DELETE FROM active_thought_logs WHERE id = :id"), {"id": thought_id})
                 conn.commit()
             return True
         except Exception as e:
@@ -403,7 +403,7 @@ class ActiveConsciousnessService:
         db = ActiveSession()
         try:
             with active_engine.connect() as conn:
-                conn.execute(text("DELETE FROM heartbeat_logs WHERE id = :id"), {"id": heartbeat_id})
+                conn.execute(text("DELETE FROM active_heartbeat_logs WHERE id = :id"), {"id": heartbeat_id})
                 conn.commit()
             return True
         except Exception as e:
@@ -433,7 +433,7 @@ class ActiveConsciousnessService:
         try:
             with active_engine.connect() as conn:
                 result = conn.execute(text("""
-                    INSERT INTO thought_logs
+                    INSERT INTO active_thought_logs
                     (heartbeat_id, type, content, intensity, decision, reason, score,
                      recall_count, recall_source, chat_heat, emotional_intensity, created_at)
                     VALUES (:heartbeat_id, :type, :content, :intensity, :decision, :reason, :score,
@@ -479,7 +479,7 @@ class ActiveConsciousnessService:
         try:
             with active_engine.connect() as conn:
                 result = conn.execute(text("""
-                    INSERT INTO heartbeat_logs
+                    INSERT INTO active_heartbeat_logs
                     (started_at, duration_ms, longing_before, longing_after, chat_heat,
                      emotional_intensity, recall_count, reflect_count, thoughts_generated,
                      message_sent, error, created_at)
@@ -861,7 +861,7 @@ async def run_heartbeat():
             try:
                 with active_engine.connect() as conn:
                     conn.execute(text("""
-                        UPDATE heartbeat_logs
+                        UPDATE active_heartbeat_logs
                         SET duration_ms = :duration_ms, message_sent = :message_sent
                         WHERE id = :id
                     """), {
