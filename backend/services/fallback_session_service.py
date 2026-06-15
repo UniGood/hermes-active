@@ -95,10 +95,10 @@ class FallbackSessionService:
         # Gateway 的 SessionStore fallback 会自动从 state.db 加载
         logger.info(
             "No active session in state.db for source=%s user_id=%s, "
-            "creating via Gateway API",
+            "creating via SessionStore",
             platform, user_id,
         )
-        return FallbackSessionService._create_via_gateway_api(platform, user_id)
+        return FallbackSessionService._create_via_session_store(platform, user_id)
 
     @staticmethod
     def _find_active_session(
@@ -166,7 +166,7 @@ class FallbackSessionService:
         return None
 
     @staticmethod
-    def _create_via_gateway_api(
+    def _create_via_session_store(
         platform: str, user_id: str
     ) -> Optional[Dict[str, Any]]:
         """通过 Gateway 的 SessionStore 创建 session。
