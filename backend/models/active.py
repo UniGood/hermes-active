@@ -139,9 +139,16 @@ class HeartbeatLog(Base):
     thoughts_generated = Column(Integer, nullable=True)
     message_sent = Column(Boolean, default=False)
     error = Column(Text, nullable=True)
+    details = Column(Text, nullable=True)  # JSON格式的详细日志（LLM请求/响应等）
     created_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")), index=True)
 
     def to_dict(self):
+        details = self.details
+        if details:
+            try:
+                details = json.loads(details)
+            except (json.JSONDecodeError, TypeError):
+                pass
         return {
             "id": self.id,
             "started_at": self.started_at.isoformat() if self.started_at else None,
@@ -155,5 +162,6 @@ class HeartbeatLog(Base):
             "thoughts_generated": self.thoughts_generated,
             "message_sent": self.message_sent,
             "error": self.error,
+            "details": details,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }

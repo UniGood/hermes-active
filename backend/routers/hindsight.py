@@ -1,10 +1,13 @@
 """
 Hindsight 路由 - 集成 Hindsight 记忆系统（使用 Python SDK）
 """
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from models.active import User
 from middleware.auth import get_current_user
 from hindsight_client import Hindsight
+
+logger = logging.getLogger("hermes.hindsight")
 
 router = APIRouter(prefix="/api/hindsight", tags=["hindsight"])
 
@@ -56,9 +59,12 @@ async def hindsight_recall(
             "total": len(response.results)
         }
     except Exception as e:
+        import traceback
+        error_detail = repr(e) if str(e) else traceback.format_exc()
+        logger.error("Hindsight Recall 失败: %s", error_detail)
         return {
             "success": False,
-            "message": f"Recall 失败: {str(e)}",
+            "message": f"Recall 失败: {error_detail}",
             "results": []
         }
 
@@ -78,8 +84,11 @@ async def hindsight_reflect(
             "reflection": answer.text
         }
     except Exception as e:
+        import traceback
+        error_detail = repr(e) if str(e) else traceback.format_exc()
+        logger.error("Hindsight Reflect 失败: %s", error_detail)
         return {
             "success": False,
-            "message": f"Reflect 失败: {str(e)}",
+            "message": f"Reflect 失败: {error_detail}",
             "reflection": ""
         }

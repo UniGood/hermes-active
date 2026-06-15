@@ -55,39 +55,6 @@
               <n-input-number v-model:value="config.active.no_send_while_vibe_below" :min="0" :max="1" :step="0.1" />
             </n-form-item>
 
-            <!-- Session 来源配置 -->
-            <n-divider>Session 来源</n-divider>
-            <n-form-item label="来源平台">
-              <n-select v-model:value="config.session.sources" multiple :options="platformOptions" />
-            </n-form-item>
-            <n-form-item label="时间范围（小时）">
-              <n-input-number v-model:value="config.session.time_range_hours" :min="1" :max="168" />
-            </n-form-item>
-            <n-form-item label="每 Session 最大消息">
-              <n-input-number v-model:value="config.session.max_messages_per_session" :min="5" :max="100" />
-            </n-form-item>
-            <n-form-item label="过滤 Tool 消息">
-              <n-switch v-model:value="config.session.filter_tool_messages" />
-            </n-form-item>
-
-            <!-- 决策阈值 -->
-            <n-divider>决策阈值</n-divider>
-            <n-form-item label="立即发送阈值">
-              <n-input-number v-model:value="config.decision.send_threshold" :min="0" :max="1" :step="0.1" />
-            </n-form-item>
-            <n-form-item label="延迟发送阈值">
-              <n-input-number v-model:value="config.decision.delay_threshold" :min="0" :max="1" :step="0.1" />
-            </n-form-item>
-            <n-form-item label="存为记忆阈值">
-              <n-input-number v-model:value="config.decision.memory_threshold" :min="0" :max="1" :step="0.1" />
-            </n-form-item>
-            <n-form-item label="每小时最大消息">
-              <n-input-number v-model:value="config.decision.max_per_hour" :min="1" :max="10" />
-            </n-form-item>
-            <n-form-item label="每日最大消息">
-              <n-input-number v-model:value="config.decision.max_per_day" :min="1" :max="50" />
-            </n-form-item>
-
             <!-- 通知目标 -->
             <n-divider>通知目标</n-divider>
             <n-form-item label="目标平台">
@@ -109,6 +76,42 @@
                 placeholder="选择目标 Session"
                 filterable
               />
+            </n-form-item>
+
+            <!-- Session 来源配置 -->
+            <n-divider>Session 来源</n-divider>
+            <n-form-item label="来源平台">
+              <n-select v-model:value="config.session.sources" multiple :options="platformOptions" />
+            </n-form-item>
+            <n-form-item label="时间范围（小时）">
+              <n-input-number v-model:value="config.session.time_range_hours" :min="1" :max="168" />
+            </n-form-item>
+            <n-form-item label="每 Session 最大消息">
+              <n-input-number v-model:value="config.session.max_messages_per_session" :min="5" :max="100" />
+            </n-form-item>
+            <n-form-item label="过滤 Tool 消息">
+              <n-switch v-model:value="config.session.filter_tool_messages" />
+            </n-form-item>
+            <n-form-item label="获取测试">
+              <n-button @click="testSessionContext" :loading="testingSessionContext">获取 Session 上下文</n-button>
+            </n-form-item>
+
+            <!-- 决策阈值 -->
+            <n-divider>决策阈值</n-divider>
+            <n-form-item label="立即发送阈值">
+              <n-input-number v-model:value="config.decision.send_threshold" :min="0" :max="1" :step="0.1" />
+            </n-form-item>
+            <n-form-item label="延迟发送阈值">
+              <n-input-number v-model:value="config.decision.delay_threshold" :min="0" :max="1" :step="0.1" />
+            </n-form-item>
+            <n-form-item label="存为记忆阈值">
+              <n-input-number v-model:value="config.decision.memory_threshold" :min="0" :max="1" :step="0.1" />
+            </n-form-item>
+            <n-form-item label="每小时最大消息">
+              <n-input-number v-model:value="config.decision.max_per_hour" :min="1" :max="10" />
+            </n-form-item>
+            <n-form-item label="每日最大消息">
+              <n-input-number v-model:value="config.decision.max_per_day" :min="1" :max="50" />
             </n-form-item>
           </template>
 
@@ -187,6 +190,7 @@
       <!-- Tab 4: 测试 -->
       <n-tab-pane name="test" tab="测试">
         <n-space vertical>
+          <n-button @click="testLLMConnect" :loading="testing.llm">LLM 连通性测试</n-button>
           <n-button @click="testThought" :loading="testing.thought">想法生成测试</n-button>
         </n-space>
 
@@ -195,12 +199,128 @@
         </n-modal>
       </n-tab-pane>
     </n-tabs>
+
+    <!-- Session 上下文测试结果弹窗 -->
+    <n-modal v-model:show="showSessionContextModal" preset="card" title="Session 上下文测试结果" style="width: 90vw; max-width: 900px">
+      <template v-if="sessionContextResult">
+        <n-descriptions :column="2" label-placement="left" bordered size="small" style="margin-bottom: 12px">
+          <n-descriptions-item label="有内容">
+            <n-tag :type="sessionContextResult.data?.has_content ? 'success' : 'warning'" size="small">
+              {{ sessionContextResult.data?.has_content ? '是' : '否' }}
+            </n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="来源平台">
+            {{ sessionContextResult.data?.session_config?.sources?.join(', ') || '未配置' }}
+          </n-descriptions-item>
+          <n-descriptions-item label="时间范围">
+            {{ sessionContextResult.data?.session_config?.time_range_hours || 24 }} 小时
+          </n-descriptions-item>
+          <n-descriptions-item label="最大消息数">
+            {{ sessionContextResult.data?.session_config?.max_messages_per_session || 15 }}
+          </n-descriptions-item>
+        </n-descriptions>
+
+        <n-card title="获取到的上下文内容" size="small">
+          <n-code
+            :code="sessionContextResult.data?.context || '（空）'"
+            language="text"
+            word-wrap
+          />
+        </n-card>
+      </template>
+      <template v-else>
+        <n-empty description="暂无数据" />
+      </template>
+    </n-modal>
+
+    <!-- 心跳日志详情弹窗 -->
+    <n-modal v-model:show="showDetailsModal" preset="card" :title="detailsTitle" style="width: 90vw; max-width: 900px">
+      <template v-if="detailsData">
+        <!-- 决策信息 -->
+        <n-card title="决策" size="small" style="margin-bottom: 12px" v-if="detailsData.decision">
+          <n-descriptions :column="2" label-placement="left" bordered size="small">
+            <n-descriptions-item label="类型">
+              <n-tag :type="detailsData.decision.type === 'skip' ? 'warning' : 'success'" size="small">
+                {{ detailsData.decision.type }}
+              </n-tag>
+            </n-descriptions-item>
+            <n-descriptions-item label="原因">{{ detailsData.decision.reason }}</n-descriptions-item>
+          </n-descriptions>
+        </n-card>
+
+        <!-- 情绪评估 LLM 调用 -->
+        <n-card title="情绪评估 LLM 调用" size="small" style="margin-bottom: 12px" v-if="detailsData.emotional_evaluation">
+          <n-descriptions :column="2" label-placement="left" bordered size="small">
+            <n-descriptions-item label="模型">{{ detailsData.emotional_evaluation.model }}</n-descriptions-item>
+            <n-descriptions-item label="模式">{{ detailsData.emotional_evaluation.mode }}</n-descriptions-item>
+            <n-descriptions-item label="温度">{{ detailsData.emotional_evaluation.temperature }}</n-descriptions-item>
+            <n-descriptions-item label="最大Token">{{ detailsData.emotional_evaluation.max_tokens }}</n-descriptions-item>
+            <n-descriptions-item label="耗时">{{ detailsData.emotional_evaluation.duration_ms }}ms</n-descriptions-item>
+            <n-descriptions-item label="返回值">{{ detailsData.emotional_evaluation.response }}</n-descriptions-item>
+            <n-descriptions-item label="错误" :span="2" v-if="detailsData.emotional_evaluation.error">
+              <n-text type="error">{{ detailsData.emotional_evaluation.error }}</n-text>
+            </n-descriptions-item>
+          </n-descriptions>
+          <n-collapse style="margin-top: 8px">
+            <n-collapse-item title="Prompt 预览" name="prompt">
+              <n-code :code="detailsData.emotional_evaluation.prompt_preview" language="text" />
+            </n-collapse-item>
+          </n-collapse>
+        </n-card>
+
+        <!-- 想法生成 LLM 调用 -->
+        <n-card title="想法生成 LLM 调用" size="small" style="margin-bottom: 12px" v-if="detailsData.thought_generation">
+          <n-descriptions :column="2" label-placement="left" bordered size="small">
+            <n-descriptions-item label="模型">{{ detailsData.thought_generation.model }}</n-descriptions-item>
+            <n-descriptions-item label="模式">{{ detailsData.thought_generation.mode }}</n-descriptions-item>
+            <n-descriptions-item label="温度">{{ detailsData.thought_generation.temperature }}</n-descriptions-item>
+            <n-descriptions-item label="最大Token">{{ detailsData.thought_generation.max_tokens }}</n-descriptions-item>
+            <n-descriptions-item label="耗时">{{ detailsData.thought_generation.duration_ms }}ms</n-descriptions-item>
+            <n-descriptions-item label="错误" :span="2" v-if="detailsData.thought_generation.error">
+              <n-text type="error">{{ detailsData.thought_generation.error }}</n-text>
+            </n-descriptions-item>
+          </n-descriptions>
+          <n-collapse style="margin-top: 8px">
+            <n-collapse-item title="Prompt 预览" name="prompt">
+              <n-code :code="detailsData.thought_generation.prompt_preview" language="text" />
+            </n-collapse-item>
+            <n-collapse-item title="LLM 响应" name="response" v-if="detailsData.thought_generation.response">
+              <n-code :code="detailsData.thought_generation.response" language="text" />
+            </n-collapse-item>
+          </n-collapse>
+        </n-card>
+
+        <!-- 消息发送 -->
+        <n-card title="消息发送" size="small" style="margin-bottom: 12px" v-if="detailsData.message_sending">
+          <n-descriptions :column="1" label-placement="left" bordered size="small">
+            <n-descriptions-item label="发送成功">
+              <n-tag :type="detailsData.message_sending.success ? 'success' : 'error'" size="small">
+                {{ detailsData.message_sending.success ? '是' : '否' }}
+              </n-tag>
+            </n-descriptions-item>
+            <n-descriptions-item label="发送内容" v-if="detailsData.message_sending.thought">
+              {{ detailsData.message_sending.thought }}
+            </n-descriptions-item>
+          </n-descriptions>
+        </n-card>
+
+        <!-- 原始JSON -->
+        <n-collapse>
+          <n-collapse-item title="原始 JSON 数据" name="raw">
+            <n-code :code="JSON.stringify(detailsData, null, 2)" language="json" />
+          </n-collapse-item>
+        </n-collapse>
+      </template>
+      <template v-else>
+        <n-empty description="暂无详情数据" />
+      </template>
+    </n-modal>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useMessage } from 'naive-ui'
+import { ref, onMounted, computed, h } from 'vue'
+import { useMessage, NButton } from 'naive-ui'
 import api from '../api/active_consciousness'
 import mainApi from '../api'
 
@@ -236,7 +356,7 @@ const thoughts = ref({ total: 0, items: [] })
 const heartbeats = ref({ total: 0, items: [] })
 
 // 测试
-const testing = ref({ thought: false })
+const testing = ref({ thought: false, llm: false })
 const showTestResult = ref(false)
 const testResult = ref(null)
 
@@ -313,6 +433,17 @@ const intensityColor = computed(() => {
   return '#d03050'
 })
 
+// 日志详情弹窗
+const showDetailsModal = ref(false)
+const detailsData = ref(null)
+const detailsTitle = ref('')
+
+function showHeartbeatDetails(row) {
+  detailsTitle.value = `心跳日志 #${row.id} 详情`
+  detailsData.value = row.details_parsed || null
+  showDetailsModal.value = true
+}
+
 // 表格列定义
 const thoughtColumns = [
   { title: '时间', key: 'created_at', width: 160 },
@@ -327,7 +458,19 @@ const heartbeatColumns = [
   { title: '耗时(ms)', key: 'duration_ms', width: 100 },
   { title: '召回数量', key: 'recall_count', width: 80 },
   { title: '生成想法', key: 'thoughts_generated', width: 80 },
-  { title: '发送消息', key: 'message_sent', width: 80 }
+  { title: '发送消息', key: 'message_sent', width: 80 },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 80,
+    render(row) {
+      return h(
+        NButton,
+        { size: 'small', type: 'info', onClick: () => showHeartbeatDetails(row) },
+        { default: () => '详情' }
+      )
+    }
+  }
 ]
 
 // 分页
@@ -364,6 +507,19 @@ const loadThoughts = async (page = 1) => {
 const loadHeartbeats = async (page = 1) => {
   try {
     const data = await api.getHeartbeats(page)
+    // 解析details JSON
+    data.items = (data.items || []).map(item => {
+      if (item.details && typeof item.details === 'string') {
+        try {
+          item.details_parsed = JSON.parse(item.details)
+        } catch (e) {
+          item.details_parsed = null
+        }
+      } else {
+        item.details_parsed = item.details || null
+      }
+      return item
+    })
     heartbeats.value = data
     heartbeatPagination.value.page = page
     heartbeatPagination.value.pageCount = Math.ceil(data.total / 20)
@@ -387,6 +543,19 @@ const saveConfig = async () => {
 }
 
 // 测试功能
+const testLLMConnect = async () => {
+  testing.value.llm = true
+  try {
+    const result = await api.testLLMConnect()
+    testResult.value = result
+    showTestResult.value = true
+  } catch (e) {
+    message.error('LLM 测试失败')
+  } finally {
+    testing.value.llm = false
+  }
+}
+
 const testThought = async () => {
   testing.value.thought = true
   try {
@@ -397,6 +566,23 @@ const testThought = async () => {
     message.error('测试失败')
   } finally {
     testing.value.thought = false
+  }
+}
+
+const testingSessionContext = ref(false)
+const showSessionContextModal = ref(false)
+const sessionContextResult = ref(null)
+
+const testSessionContext = async () => {
+  testingSessionContext.value = true
+  try {
+    const result = await api.testSessionContext()
+    sessionContextResult.value = result
+    showSessionContextModal.value = true
+  } catch (e) {
+    message.error('获取 Session 上下文失败')
+  } finally {
+    testingSessionContext.value = false
   }
 }
 

@@ -37,9 +37,14 @@ const routes = [
         component: () => import('../views/Config.vue')
       },
       {
-        path: 'consciousness',
-        name: 'Consciousness',
-        component: () => import('../views/Consciousness.vue')
+        path: 'passive-consciousness',
+        name: 'PassiveConsciousness',
+        component: () => import('../views/PassiveConsciousness.vue')
+      },
+      {
+        path: 'active-consciousness',
+        name: 'ActiveConsciousness',
+        component: () => import('../views/ActiveConsciousness.vue')
       },
       {
         path: 'cron-jobs',

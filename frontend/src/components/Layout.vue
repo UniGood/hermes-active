@@ -74,7 +74,8 @@ import {
   LogOutOutline,
   TerminalOutline,
   MenuOutline,
-  SparklesOutline
+  BulbOutline,
+  HeartOutline
 } from '@vicons/ionicons5'
 
 const router = useRouter()
@@ -129,12 +130,12 @@ const menuItems = [
   { path: '/', label: '监控面板', icon: markRaw(HomeOutline) },
   { path: '/sessions', label: '会话管理', icon: markRaw(PersonOutline) },
   { path: '/messages', label: '消息管理', icon: markRaw(ChatbubblesOutline) },
-  { path: '/consciousness', label: '自主意识', icon: markRaw(SparklesOutline) },
+  { path: '/passive-consciousness', label: '被动意识', icon: markRaw(BulbOutline) },
+  { path: '/active-consciousness', label: '主动意识', icon: markRaw(HeartOutline) },
   { path: '/config', label: '配置管理', icon: markRaw(SettingsOutline) },
   { path: '/cron-jobs', label: '定时任务', icon: markRaw(TimeOutline) },
   { path: '/task-logs', label: '任务日志', icon: markRaw(DocumentTextOutline) },
-  { path: '/system-logs', label: '系统日志', icon: markRaw(TerminalOutline,
-  MenuOutline) },
+  { path: '/system-logs', label: '系统日志', icon: markRaw(TerminalOutline) },
   { path: '/test', label: '测试工具', icon: markRaw(FlaskOutline) }
 ]
 

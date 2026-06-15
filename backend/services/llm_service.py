@@ -43,11 +43,19 @@ class LLMService:
         return AsyncOpenAI(api_key=api_key, base_url=base_url)
 
     @staticmethod
+    async def _close_client(client: AsyncOpenAI) -> None:
+        """安全关闭 AsyncOpenAI 客户端，释放底层 httpx/aiohttp 连接"""
+        try:
+            await client.close()
+        except Exception:
+            pass  # 忽略关闭异常
+
+    @staticmethod
     async def test_connection(llm_config: Dict[str, Any]) -> Dict[str, Any]:
         """测试 LLM 连通性"""
         start_time = time.time()
+        client = LLMService._get_client(llm_config)
         try:
-            client = LLMService._get_client(llm_config)
             model = llm_config.get("model", "gpt-3.5-turbo")
 
             response = await client.chat.completions.create(
@@ -72,6 +80,8 @@ class LLMService:
                 "message": f"LLM 连通性测试失败: {str(e)}",
                 "duration": duration
             }
+        finally:
+            await LLMService._close_client(client)
 
     @staticmethod
     async def generate_message(
@@ -83,8 +93,8 @@ class LLMService:
     ) -> Dict[str, Any]:
         """调用 LLM 生成消息"""
         start_time = time.time()
+        client = LLMService._get_client(llm_config)
         try:
-            client = LLMService._get_client(llm_config)
             model = llm_config.get("model", "gpt-3.5-turbo")
 
             messages = []
@@ -118,6 +128,8 @@ class LLMService:
                 "message": f"LLM 调用失败: {str(e)}",
                 "duration": duration
             }
+        finally:
+            await LLMService._close_client(client)
 
     @staticmethod
     def get_providers() -> list:

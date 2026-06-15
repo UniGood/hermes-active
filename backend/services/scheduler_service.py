@@ -16,7 +16,7 @@ from services.llm_service import LLMService
 
 logger = logging.getLogger("hermes.scheduler")
 
-HINDSIGHT_BASE_URL = "http://localhost:8888/v1/default/banks/hermes"
+# Hindsight 配置已移至 configs 表
 
 
 async def call_hindsight_recall(query: str, limit: int = 10) -> list:

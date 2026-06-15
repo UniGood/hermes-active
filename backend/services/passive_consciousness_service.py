@@ -1,67 +1,52 @@
 """
-自主意识服务 — 配置读写 + 状态查询 + 日志查询
+被动意识服务 — 配置读写 + 状态查询 + 聊天记录查询
 """
 import json
 import logging
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 from sqlalchemy import text
 
-from models.database import ActiveSession, state_engine, get_state_metadata
-from models.consciousness import (
-    ConsciousnessConfig, ConsciousnessStatus, LongingState, ChatHeat,
-    EmotionalIntensity, ThoughtLog, HeartbeatLog, ChatRecord
+from models.database import ActiveSession, state_engine
+from models.passive_consciousness import (
+    PassiveConsciousnessConfig, PassiveConsciousnessStatus,
+    LongingState, ChatHeat, EmotionalIntensity, ChatRecord
 )
 
-logger = logging.getLogger("hermes.consciousness")
+logger = logging.getLogger("hermes.passive_consciousness")
 
 # 配置 key 前缀
-PREFIX = "consciousness."
+PREFIX = "passive_consciousness."
 
 # 默认配置（扁平 key → 默认值）
 _DEFAULTS = {
-    "consciousness.enabled": "false",
-    "consciousness.llm.mode": "hermes",
-    "consciousness.llm.provider": "openai",
-    "consciousness.llm.model": "deepseek-chat",
-    "consciousness.llm.api_key": "",
-    "consciousness.llm.base_url": "",
-    "consciousness.passive.enabled": "true",
-    "consciousness.passive.inject_emotion": "true",
-    "consciousness.passive.inject_heat": "true",
-    "consciousness.passive.inject_memory": "true",
-    "consciousness.passive.inject_thought": "true",
-    "consciousness.passive.thought_max_chars": "200",
-    "consciousness.passive.vibe_max_chars": "50",
-    "consciousness.passive.inject_tag": "[CONSCIOUSNESS_CONTEXT]",
-    "consciousness.passive.time_format": "%H:%M",
-    "consciousness.active.enabled": "true",
-    "consciousness.active.heartbeat_interval": "600",
-    "consciousness.active.send_tag": "[凯莉主动发送]",
-    "consciousness.active.time_format": "%H:%M",
-    "consciousness.active.no_send_after_user_msg_minutes": "10",
-    "consciousness.active.no_send_while_heat_above": "0.5",
-    "consciousness.active.no_send_while_vibe_below": "0.3",
-    "consciousness.session.sources": '["weixin"]',
-    "consciousness.session.time_range_hours": "24",
-    "consciousness.session.max_messages_per_session": "15",
-    "consciousness.session.filter_tool_messages": "true",
-    "consciousness.decision.send_threshold": "0.6",
-    "consciousness.decision.delay_threshold": "0.3",
-    "consciousness.decision.memory_threshold": "0.1",
-    "consciousness.decision.max_per_hour": "2",
-    "consciousness.decision.max_per_day": "5",
-    "consciousness.hindsight.enabled": "true",
-    "consciousness.hindsight.recall_limit": "5",
-    "consciousness.hindsight.reflect_enabled": "true",
-    "consciousness.weather.enabled": "false",
-    "consciousness.weather.adcode": "370100",
-    "consciousness.weather.amap_key": "",
-    "consciousness.weather.cache_ttl": "600",
-    "consciousness.notify.platform": "weixin",
-    "consciousness.notify.chat_id": "",
+    "passive_consciousness.enabled": "false",
+    "passive_consciousness.llm.mode": "hermes",
+    "passive_consciousness.llm.provider": "openai",
+    "passive_consciousness.llm.model": "deepseek-chat",
+    "passive_consciousness.llm.api_key": "",
+    "passive_consciousness.llm.base_url": "",
+    "passive_consciousness.passive.enabled": "true",
+    "passive_consciousness.passive.inject_emotion": "true",
+    "passive_consciousness.passive.inject_heat": "true",
+    "passive_consciousness.passive.inject_memory": "true",
+    "passive_consciousness.passive.inject_thought": "true",
+    "passive_consciousness.passive.thought_max_chars": "200",
+    "passive_consciousness.passive.vibe_max_chars": "50",
+    "passive_consciousness.passive.inject_tag": "[CONSCIOUSNESS_CONTEXT]",
+    "passive_consciousness.passive.time_format": "%H:%M",
+    "passive_consciousness.session.sources": '["weixin"]',
+    "passive_consciousness.session.time_range_hours": "24",
+    "passive_consciousness.session.max_messages_per_session": "15",
+    "passive_consciousness.session.filter_tool_messages": "true",
+    "passive_consciousness.hindsight.enabled": "true",
+    "passive_consciousness.hindsight.recall_limit": "5",
+    "passive_consciousness.hindsight.reflect_enabled": "true",
+    "passive_consciousness.weather.enabled": "false",
+    "passive_consciousness.weather.adcode": "370100",
+    "passive_consciousness.weather.amap_key": "",
+    "passive_consciousness.weather.cache_ttl": "600",
 }
 
 # 想念等级
@@ -82,30 +67,30 @@ HEAT_LEVELS = [
 ]
 
 
-class ConsciousnessService:
-    """自主意识服务"""
+class PassiveConsciousnessService:
+    """被动意识服务"""
 
     # ============ 配置 ============
 
     @staticmethod
     def get_config() -> Dict[str, Any]:
-        """获取自主意识配置"""
+        """获取被动意识配置"""
         db = ActiveSession()
         try:
             result = {}
             for key, default in _DEFAULTS.items():
                 value = ConfigService.get_config(db, key)
                 result[key] = value if value is not None else default
-            return ConsciousnessService._flat_to_nested(result)
+            return PassiveConsciousnessService._flat_to_nested(result)
         finally:
             db.close()
 
     @staticmethod
     def update_config(config: Dict[str, Any]):
-        """更新自主意识配置"""
+        """更新被动意识配置"""
         db = ActiveSession()
         try:
-            flat = ConsciousnessService._nested_to_flat(config)
+            flat = PassiveConsciousnessService._nested_to_flat(config)
             for key, value in flat.items():
                 if key.startswith(PREFIX):
                     ConfigService.set_config(db, key, str(value))
@@ -151,7 +136,7 @@ class ConsciousnessService:
         for key, value in nested.items():
             full_key = f"{prefix}{key}"
             if isinstance(value, dict):
-                result.update(ConsciousnessService._nested_to_flat(value, full_key + "."))
+                result.update(PassiveConsciousnessService._nested_to_flat(value, full_key + "."))
             elif isinstance(value, list):
                 result[full_key] = json.dumps(value, ensure_ascii=False)
             elif isinstance(value, bool):
@@ -164,10 +149,10 @@ class ConsciousnessService:
 
     @staticmethod
     def get_status() -> Dict[str, Any]:
-        """获取自主意识状态"""
+        """获取被动意识状态"""
         db = ActiveSession()
         try:
-            config = ConsciousnessService.get_config()
+            config = PassiveConsciousnessService.get_config()
             now = datetime.now()
 
             # 查询想念分数
@@ -243,53 +228,14 @@ class ConsciousnessService:
             # 情绪值（从 configs 读取，由 LLM 更新）
             emotional_intensity = 0.0
             try:
-                val = ConfigService.get_config(db, "consciousness.current.emotional_intensity")
+                val = ConfigService.get_config(db, "passive_consciousness.current.emotional_intensity")
                 if val:
                     emotional_intensity = float(val)
             except Exception:
                 pass
 
-            # 今日发送数
-            today_sent_count = 0
-            hour_sent_count = 0
-            try:
-                with state_engine.connect() as conn:
-                    row = conn.execute(text(
-                        "SELECT COUNT(*) FROM messages "
-                        "WHERE role='assistant' AND content LIKE '[凯莉%' "
-                        "AND timestamp > datetime('now', 'start of day') "
-                        "AND session_id IN (SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
-                    )).fetchone()
-                    if row:
-                        today_sent_count = row[0] or 0
-
-                    row = conn.execute(text(
-                        "SELECT COUNT(*) FROM messages "
-                        "WHERE role='assistant' AND content LIKE '[凯莉%' "
-                        "AND timestamp > datetime('now', '-1 hour') "
-                        "AND session_id IN (SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
-                    )).fetchone()
-                    if row:
-                        hour_sent_count = row[0] or 0
-            except Exception as e:
-                logger.warning("查询发送数失败: %s", e)
-
-            # 活跃 session 数
-            active_sessions = 0
-            try:
-                with state_engine.connect() as conn:
-                    row = conn.execute(text(
-                        "SELECT COUNT(*) FROM sessions WHERE ended_at IS NULL"
-                    )).fetchone()
-                    if row:
-                        active_sessions = row[0] or 0
-            except Exception:
-                pass
-
             return {
                 "enabled": config.get("enabled", False),
-                "heartbeat_count": 0,
-                "last_heartbeat_at": None,
                 "longing": {
                     "score": round(longing_score, 3),
                     "level": longing_level,
@@ -306,18 +252,15 @@ class ConsciousnessService:
                 },
                 "emotional_intensity": {
                     "intensity": round(emotional_intensity, 3),
-                    "label": ConsciousnessService._intensity_label(emotional_intensity),
+                    "label": PassiveConsciousnessService._intensity_label(emotional_intensity),
                 },
-                "active_sessions": active_sessions,
-                "today_sent_count": today_sent_count,
-                "hour_sent_count": hour_sent_count,
-                "last_sent_at": last_self_msg_at,
             }
         finally:
             db.close()
 
     @staticmethod
     def _intensity_label(value: float) -> str:
+        """情绪强度标签"""
         if value < 0.3:
             return "工作"
         elif value < 0.5:
@@ -330,67 +273,6 @@ class ConsciousnessService:
             return "深度情感"
 
     # ============ 日志 ============
-
-    @staticmethod
-    def get_thoughts(page: int = 1, page_size: int = 20) -> Dict[str, Any]:
-        """获取念头日志"""
-        db = ActiveSession()
-        try:
-            # 检查表是否存在
-            with state_engine.connect() as conn:
-                tables = conn.execute(text(
-                    "SELECT name FROM sqlite_master WHERE type='table' AND name='thought_logs'"
-                )).fetchall()
-                if not tables:
-                    return {"total": 0, "items": []}
-
-                total = conn.execute(text("SELECT COUNT(*) FROM thought_logs")).scalar() or 0
-                offset = (page - 1) * page_size
-                rows = conn.execute(text(
-                    "SELECT * FROM thought_logs ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
-                ), {"limit": page_size, "offset": offset}).fetchall()
-
-                items = []
-                for row in rows:
-                    d = dict(row._mapping) if hasattr(row, '_mapping') else dict(row)
-                    items.append(d)
-
-                return {"total": total, "items": items}
-        except Exception as e:
-            logger.error("查询念头日志失败: %s", e)
-            return {"total": 0, "items": [], "error": str(e)}
-        finally:
-            db.close()
-
-    @staticmethod
-    def get_heartbeats(page: int = 1, page_size: int = 20) -> Dict[str, Any]:
-        """获取心跳日志"""
-        db = ActiveSession()
-        try:
-            with state_engine.connect() as conn:
-                tables = conn.execute(text(
-                    "SELECT name FROM sqlite_master WHERE type='table' AND name='heartbeat_logs'"
-                )).fetchall()
-                if not tables:
-                    return {"total": 0, "items": []}
-
-                total = conn.execute(text("SELECT COUNT(*) FROM heartbeat_logs")).scalar() or 0
-                offset = (page - 1) * page_size
-                rows = conn.execute(text(
-                    "SELECT * FROM heartbeat_logs ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
-                ), {"limit": page_size, "offset": offset}).fetchall()
-
-                items = []
-                for row in rows:
-                    d = dict(row._mapping) if hasattr(row, '_mapping') else dict(row)
-                    items.append(d)
-
-                return {"total": total, "items": items}
-        except Exception as e:
-            logger.error("查询心跳日志失败: %s", e)
-            return {"total": 0, "items": [], "error": str(e)}
-        finally:
-            db.close()
 
     @staticmethod
     def get_chats(limit: int = 50) -> Dict[str, Any]:
@@ -416,42 +298,6 @@ class ConsciousnessService:
         except Exception as e:
             logger.error("查询聊天记录失败: %s", e)
             return {"total": 0, "items": [], "error": str(e)}
-        finally:
-            db.close()
-
-    @staticmethod
-    def delete_thought(thought_id: int) -> bool:
-        """删除念头"""
-        db = ActiveSession()
-        try:
-            with state_engine.connect() as conn:
-                conn.execute(text("DELETE FROM thought_logs WHERE id = :id"), {"id": thought_id})
-                conn.commit()
-            return True
-        except Exception as e:
-            logger.error("删除念头失败: %s", e)
-            return False
-        finally:
-            db.close()
-
-    @staticmethod
-    def retry_thought(thought_id: int) -> Dict[str, Any]:
-        """重试发送念头"""
-        # TODO: 实现重试逻辑
-        return {"success": False, "error": "重试功能待实现"}
-
-    @staticmethod
-    def delete_heartbeat(heartbeat_id: int) -> bool:
-        """删除心跳日志"""
-        db = ActiveSession()
-        try:
-            with state_engine.connect() as conn:
-                conn.execute(text("DELETE FROM heartbeat_logs WHERE id = :id"), {"id": heartbeat_id})
-                conn.commit()
-            return True
-        except Exception as e:
-            logger.error("删除心跳日志失败: %s", e)
-            return False
         finally:
             db.close()
 
