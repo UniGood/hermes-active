@@ -276,6 +276,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useMessage } from 'naive-ui'
 import api from '../api/consciousness'
+import mainApi from '../api'
 
 const message = useMessage()
 const activeTab = ref('config')
@@ -336,7 +337,7 @@ const loadingNotifySessions = ref(false)
 async function loadNotifySessions(platform) {
   loadingNotifySessions.value = true
   try {
-    const data = await api.get("/sessions", {
+    const data = await mainApi.get("/sessions", {
       params: { platform, page: 1, page_size: 50, active_only: true }
     })
     notifySessionOptions.value = (data.items || []).map(s => ({
