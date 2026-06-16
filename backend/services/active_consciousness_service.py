@@ -1128,6 +1128,8 @@ async def evaluate_emotion_with_llm(
 
     default_state = EmotionState()
 
+    logger.info("LLM 情绪评估开始")
+
     try:
         start_time = time.time()
 
@@ -1170,7 +1172,7 @@ async def evaluate_emotion_with_llm(
             )
 
     except Exception as e:
-        logger.warning("LLM 情绪评估失败: %s", e)
+        logger.warning("LLM 情绪评估失败，使用默认值: %s", e)
 
     return default_state
 
@@ -1412,6 +1414,8 @@ async def run_heartbeat():
     all_details = {}
 
     try:
+        logger.info("=== 心跳开始 ===")
+
         # 1. 检查配置是否启用
         config = ActiveConsciousnessService.get_config()
         if not config.get("enabled"):
@@ -1561,6 +1565,8 @@ async def run_heartbeat():
 
         # 15. 更新心跳日志（含 details）
         duration_ms = round((time.time() - start_time) * 1000)
+        logger.info("=== 心跳完成 === duration=%dms, decision=%s", duration_ms, decision_type)
+        duration_ms = round((time.time() - start_time) * 1000)
         if heartbeat_id:
             db = ActiveSession()
             try:
@@ -1665,6 +1671,9 @@ def evolve_emotion(last_state: EmotionState, minutes_since_update: float) -> Emo
     2. social_need 自然上升（越久越想聊天）
     3. valence 轻微回归中性（0.5）
     """
+    logger.info("情绪演化开始: input=(valence=%.3f, arousal=%.3f, social_need=%.3f), minutes=%.1f",
+                last_state.valence, last_state.arousal, last_state.social_need, minutes_since_update)
+
     # 边界处理
     minutes_since_update = max(0, min(minutes_since_update, 1440))
     hours = minutes_since_update / 60
@@ -1689,6 +1698,9 @@ def evolve_emotion(last_state: EmotionState, minutes_since_update: float) -> Emo
 
     # 4. 计算主导情绪
     new_dominant = calculate_dominant(new_valence, new_arousal, new_social_need)
+
+    logger.info("情绪演化完成: output=(valence=%.3f, arousal=%.3f, dominant=%s, social_need=%.3f)",
+                new_valence, new_arousal, new_dominant, new_social_need)
 
     return EmotionState(
         valence=round(new_valence, 3),
@@ -1720,6 +1732,12 @@ def merge_emotion(evolved: EmotionState, llm_assessed: EmotionState) -> EmotionS
         merged_dominant = llm_assessed.dominant
     else:
         merged_dominant = evolved.dominant
+
+    logger.info("情绪合并: evolved=(%.3f,%.3f,%s) + llm=(%.3f,%.3f,%s) → merged=(%.3f,%.3f,%s), weights=(%.1f,%.1f)",
+                evolved.valence, evolved.arousal, evolved.dominant,
+                llm_assessed.valence, llm_assessed.arousal, llm_assessed.dominant,
+                merged_valence, merged_arousal, merged_dominant,
+                weight_evolved, weight_llm)
 
     return EmotionState(
         valence=round(merged_valence, 3),
@@ -1848,6 +1866,9 @@ def make_decision_v2(
     # 计算总分
     score = intensity * time_fitness * silence_factor * frequency_limit
 
+    logger.info("决策计算: intensity=%.3f, time_fitness=%.3f(%s), silence_factor=%.3f, frequency_limit=%.3f",
+                intensity, time_fitness, time_label, silence_factor, frequency_limit)
+
     # 决策阈值
     send_threshold = decision_config.get("send_threshold", 0.6)
     delay_threshold = decision_config.get("delay_threshold", 0.3)
@@ -1861,6 +1882,10 @@ def make_decision_v2(
         f"frequency_limit={frequency_limit:.3f}",
     ]
     reason = ", ".join(reason_parts)
+
+    logger.info("决策结果: score=%.3f, decision=%s, threshold(send=%.3f, delay=%.3f, memory=%.3f)",
+                score, "auto_send" if score > send_threshold else "delay_send" if score > delay_threshold else "memory" if score > memory_threshold else "skip",
+                send_threshold, delay_threshold, memory_threshold)
 
     if score > send_threshold:
         return "auto_send", f"score={score:.3f} > {send_threshold} ({reason})", score
@@ -1930,7 +1955,11 @@ async def retain_thought_to_hindsight(
         score > retain_threshold
     )
 
+    logger.info("Hindsight 存储检查: intensity=%.3f, threshold=%.3f, should_retain=%s",
+                intensity, retain_threshold, should_retain)
+
     if not should_retain:
+        logger.info("Hindsight 存储跳过: 未达到存储条件")
         return False
 
     try:
@@ -1966,8 +1995,7 @@ async def retain_thought_to_hindsight(
             tags=tags
         )
 
-        logger.info("念头已存入 Hindsight: type=%s, tags=%s, content=%s",
-                    thought_type, tags, thought[:50])
+        logger.info("Hindsight 存储成功: tags=%s, content=%s", tags, content[:50])
         return True
 
     except Exception as e:
@@ -2032,6 +2060,10 @@ def add_to_delay_queue(
         emotion_snapshot=emotion_state.to_dict()
     )
     thoughts.append(new_thought)
+
+    logger.info("延迟队列入队: id=%d, type=%s, score=%.3f, content=%s",
+                new_thought.id, thought_type, score, content[:50])
+
     return save_delayed_thoughts(thoughts)
 
 
@@ -2051,6 +2083,8 @@ async def reevaluate_delayed_thoughts(
     delayed_thoughts = get_delayed_thoughts()
     if not delayed_thoughts:
         return {"sent": 0, "discarded": 0, "kept": 0}
+
+    logger.info("延迟队列重评估开始: 队列长度=%d", len(delayed_thoughts))
 
     stats = {"sent": 0, "discarded": 0, "kept": 0}
     remaining_thoughts = []
@@ -2093,6 +2127,8 @@ async def reevaluate_delayed_thoughts(
 
         if new_score > send_threshold:
             # 升级为发送
+            logger.info("延迟队列重评估: id=%d, old_score=%.3f, new_score=%.3f, decision=send",
+                        thought.id, thought.score, new_score)
             success = await send_message_to_target(config, thought.content)
             if success:
                 stats["sent"] += 1
@@ -2108,8 +2144,12 @@ async def reevaluate_delayed_thoughts(
                 remaining_thoughts.append(thought)
                 stats["kept"] += 1
         elif new_score < 0.1:
+            logger.info("延迟队列重评估: id=%d, old_score=%.3f, new_score=%.3f, decision=discard",
+                        thought.id, thought.score, new_score)
             stats["discarded"] += 1
         else:
+            logger.info("延迟队列重评估: id=%d, old_score=%.3f, new_score=%.3f, decision=keep",
+                        thought.id, thought.score, new_score)
             thought.score = new_score
             thought.retry_count += 1
             thought.next_retry_at = (
@@ -2117,6 +2157,8 @@ async def reevaluate_delayed_thoughts(
             ).isoformat()
             remaining_thoughts.append(thought)
             stats["kept"] += 1
+
+    logger.info("延迟队列重评估完成: stats=%s", stats)
 
     save_delayed_thoughts(remaining_thoughts)
     return stats
