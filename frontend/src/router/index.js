@@ -65,6 +65,11 @@ const routes = [
         path: 'test',
         name: 'Test',
         component: () => import('../views/Test.vue')
+      },
+      {
+        path: 'key-test',
+        name: 'ApiKeyTest',
+        component: () => import('../views/ApiKeyTest.vue')
       }
     ]
   }
