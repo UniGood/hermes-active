@@ -126,9 +126,9 @@
         <n-grid :cols="2" :x-gap="12" :y-gap="12">
           <n-grid-item>
             <n-card title="心跳状态">
-              <n-statistic label="心跳次数" :value="status.heartbeat_count" />
+              <n-statistic label="今日心跳次数" :value="status.heartbeat_count" />
               <div style="margin-top: 8px; font-size: 12px; color: #666;">
-                上次心跳：{{ status.last_heartbeat_at || '无' }}
+                上次心跳：{{ formatTime(status.last_heartbeat_at) || '无' }}
               </div>
             </n-card>
           </n-grid-item>
@@ -179,10 +179,12 @@
       <n-tab-pane name="logs" tab="日志">
         <n-tabs type="line" animated>
           <n-tab-pane name="thoughts" tab="念头日志">
-            <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" />
+            <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="700" />
           </n-tab-pane>
           <n-tab-pane name="heartbeats" tab="心跳日志">
-            <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" />
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
+              <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="800" />
+            </div>
           </n-tab-pane>
         </n-tabs>
       </n-tab-pane>
@@ -446,23 +448,32 @@ function showHeartbeatDetails(row) {
 
 // 表格列定义
 const thoughtColumns = [
-  { title: '时间', key: 'created_at', width: 160 },
+  { title: '时间', key: 'created_at', width: 100, render: (row) => formatTime(row.created_at) },
   { title: '类型', key: 'type', width: 80 },
   { title: '内容', key: 'content', ellipsis: { tooltip: true } },
   { title: '强度', key: 'intensity', width: 80 },
   { title: '决策', key: 'decision', width: 80 },
   { title: '来源', key: 'recall_source', width: 100 }
 ]
+const formatTime = (isoStr) => {
+  if (!isoStr) return ''
+  const d = new Date(isoStr)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+  return `${hh}:${mm}:${ss}`
+}
+
 const heartbeatColumns = [
-  { title: '时间', key: 'created_at', width: 160 },
-  { title: '耗时(ms)', key: 'duration_ms', width: 100 },
-  { title: '召回数量', key: 'recall_count', width: 80 },
-  { title: '生成想法', key: 'thoughts_generated', width: 80 },
-  { title: '发送消息', key: 'message_sent', width: 80 },
+  { title: '时间', key: 'created_at', width: 100, render: (row) => formatTime(row.created_at) },
+  { title: '耗时(ms)', key: 'duration_ms', width: 80 },
+  { title: '召回数量', key: 'recall_count', width: 70 },
+  { title: '生成想法', key: 'thoughts_generated', width: 70 },
+  { title: '发送消息', key: 'message_sent', width: 70 },
   {
     title: '操作',
     key: 'actions',
-    width: 80,
+    width: 70,
     render(row) {
       return h(
         NButton,
@@ -608,5 +619,12 @@ onMounted(async () => {
 <style scoped>
 .active-consciousness-page {
   padding: 0;
+}
+</style>
+
+<style>
+/* 分页居中 */
+.n-data-table__pagination {
+  justify-content: center !important;
 }
 </style>

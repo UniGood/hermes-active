@@ -1,7 +1,9 @@
 """
 主动意识数据模型 - 心跳触发，主动发送消息
 """
+from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from typing import Optional, List, Dict, Any
 from enum import Enum
 from pydantic import BaseModel
@@ -224,3 +226,123 @@ class SuccessResponse(BaseModel):
     """成功响应"""
     success: bool = True
     message: str = "操作成功"
+
+
+# ============ Phase 1: 情绪连续性 ============
+
+class DominantEmotion(str, Enum):
+    """主导情绪枚举"""
+    CALM = "calm"
+    CONTENT = "content"
+    HAPPY = "happy"
+    LONGING = "longing"
+    MISSING = "missing"
+    YEARNING = "yearning"
+    ANXIOUS = "anxious"
+    BORED = "bored"
+    CONCERNED = "concerned"
+
+
+@dataclass
+class EmotionState:
+    """
+    情绪状态 - VA 模型
+
+    Valence (效价): 情感的正负性，0=消极，1=积极
+    Arousal (唤醒度): 情感的激活程度，0=平静，1=激动
+    Dominant (主导情绪): 当前最显著的情绪标签
+    Social Need (社交需求): 想要社交/聊天的程度，0=不需要，1=非常想
+    """
+    valence: float = 0.5
+    arousal: float = 0.3
+    dominant: str = "calm"
+    social_need: float = 0.3
+    updated_at: str = ""
+
+    def __post_init__(self):
+        self.valence = max(0.0, min(1.0, self.valence))
+        self.arousal = max(0.0, min(1.0, self.arousal))
+        self.social_need = max(0.0, min(1.0, self.social_need))
+        if not self.updated_at:
+            self.updated_at = datetime.now().isoformat()
+
+    def to_dict(self) -> dict:
+        return {
+            "valence": round(self.valence, 3),
+            "arousal": round(self.arousal, 3),
+            "dominant": self.dominant,
+            "social_need": round(self.social_need, 3),
+            "updated_at": self.updated_at
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'EmotionState':
+        return cls(
+            valence=float(data.get("valence", 0.5)),
+            arousal=float(data.get("arousal", 0.3)),
+            dominant=data.get("dominant", "calm"),
+            social_need=float(data.get("social_need", 0.3)),
+            updated_at=data.get("updated_at", "")
+        )
+
+    def intensity(self) -> float:
+        """计算综合情绪强度"""
+        return (self.valence + self.arousal + self.social_need) / 3
+
+    def is_stale(self, minutes: float = 60) -> bool:
+        """检查情绪状态是否过期"""
+        if not self.updated_at:
+            return True
+        try:
+            updated = datetime.fromisoformat(self.updated_at)
+            return (datetime.now() - updated).total_seconds() / 60 > minutes
+        except Exception:
+            return True
+
+
+class ThoughtType(str, Enum):
+    """念头类型枚举"""
+    TIME = "time"           # 时间念头："23:30了，该睡了"
+    SILENCE = "silence"     # 空白念头："好久没说话了"
+    ASSOCIATION = "assoc"   # 关联念头："今天周五，一般加班"
+    MEMORY = "memory"       # 回忆念头："想起你说过..."
+    EMOTION = "emotion"     # 情绪念头："现在有点兴奋"
+    ENVIRONMENT = "env"     # 环境念头："外面下雨了"
+
+
+@dataclass
+class DelayedThought:
+    """延迟发送的念头"""
+    id: int
+    content: str
+    thought_type: str
+    score: float
+    created_at: str
+    retry_count: int = 0
+    next_retry_at: str = ""
+    emotion_snapshot: dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "content": self.content,
+            "thought_type": self.thought_type,
+            "score": round(self.score, 3),
+            "created_at": self.created_at,
+            "retry_count": self.retry_count,
+            "next_retry_at": self.next_retry_at,
+            "emotion_snapshot": self.emotion_snapshot
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'DelayedThought':
+        return cls(
+            id=data.get("id", 0),
+            content=data.get("content", ""),
+            thought_type=data.get("thought_type", "unknown"),
+            score=float(data.get("score", 0.5)),
+            created_at=data.get("created_at", ""),
+            retry_count=int(data.get("retry_count", 0)),
+            next_retry_at=data.get("next_retry_at", ""),
+            emotion_snapshot=data.get("emotion_snapshot", {})
+        )
