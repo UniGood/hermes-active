@@ -1339,6 +1339,9 @@ async def generate_and_send_thought_with_emotion(
 请用第一人称产生一个自然的想法（1-2句话）。"""
 
     thought = None
+    llm_start_time = time.time()
+    llm_duration_ms = 0
+    llm_model = llm_config.get("model", "unknown")
     try:
         if llm_config.get("mode") == "hermes":
             import sys
@@ -1364,17 +1367,45 @@ async def generate_and_send_thought_with_emotion(
             if result.get("success"):
                 thought = result["content"].strip()
 
+        llm_duration_ms = round((time.time() - llm_start_time) * 1000)
         details["thought_generation"] = {"success": thought is not None, "thought": thought}
 
     except Exception as e:
+        llm_duration_ms = round((time.time() - llm_start_time) * 1000)
         logger.error("想法生成失败: %s", e)
         details["thought_generation"] = {"success": False, "error": str(e)}
 
     if not thought:
         return False, details
 
-    # 3. 记录想法日志
+    # 3. 记录想法日志（含详细信息）
     thought_type = determine_thought_type(status, emotion_state, hindsight_results, None)
+    hindsight_tags = [
+        "active_consciousness", "thought", thought_type, emotion_state.dominant,
+    ]
+    if "曹凡" in thought:
+        hindsight_tags.append("user_related")
+    if emotion_state.intensity() > 0.7:
+        hindsight_tags.append("high_emotion")
+
+    thought_details = {
+        "thought_type": thought_type,
+        "emotion_state": {
+            "valence": emotion_state.valence,
+            "arousal": emotion_state.arousal,
+            "dominant": emotion_state.dominant,
+            "social_need": emotion_state.social_need,
+        },
+        "decision": decision_type,
+        "score": round(emotion_state.intensity(), 3),
+        "hindsight_tags": hindsight_tags,
+        "hindsight_stored": False,  # 将在 run_heartbeat 中更新
+        "llm_call": {
+            "duration_ms": llm_duration_ms,
+            "model": llm_model,
+        }
+    }
+
     thought_log_id = ActiveConsciousnessService.write_thought_log(
         heartbeat_id=heartbeat_id,
         thought_type=thought_type,
@@ -1386,7 +1417,8 @@ async def generate_and_send_thought_with_emotion(
         recall_count=len(hindsight_results),
         recall_source="hindsight",
         chat_heat=status.get("chat_heat", {}).get("heat", 0),
-        emotional_intensity=emotion_state.intensity()
+        emotional_intensity=emotion_state.intensity(),
+        details=json.dumps(thought_details, ensure_ascii=False)
     )
 
     # 4. 发送消息
@@ -1529,7 +1561,19 @@ async def run_heartbeat():
             # 存为记忆（不发送）
             thought = await generate_memory_thought(hindsight_results, merged_state)
             if thought:
-                await retain_thought_to_hindsight(thought, merged_state, "memory", score)
+                thought_type = "memory"
+                hindsight_tags = [
+                    "active_consciousness", "thought", thought_type, merged_state.dominant,
+                ]
+                intensity = merged_state.intensity()
+                if "曹凡" in thought:
+                    hindsight_tags.append("user_related")
+                if intensity > 0.7:
+                    hindsight_tags.append("high_emotion")
+                stored = await retain_thought_to_hindsight(thought, merged_state, thought_type, score)
+                all_details["thought_type"] = thought_type
+                all_details["hindsight_tags"] = hindsight_tags
+                all_details["hindsight_stored"] = stored
                 logger.info("念头存为记忆: %s", thought[:50])
 
         elif decision_type == "delay_send":
@@ -1538,6 +1582,8 @@ async def run_heartbeat():
             if thought:
                 thought_type = determine_thought_type(status, merged_state, hindsight_results, None)
                 add_to_delay_queue(thought, thought_type, score, merged_state)
+                all_details["thought_type"] = thought_type
+                all_details["hindsight_stored"] = False
                 logger.info("念头入延迟队列: %s", thought[:50])
 
         elif decision_type in ("auto_send", "gap_send", "idle_send", "long_idle_send"):
@@ -1552,7 +1598,18 @@ async def run_heartbeat():
                 thought = gen_details.get("message_sending", {}).get("thought", "")
                 if thought:
                     thought_type = determine_thought_type(status, merged_state, hindsight_results, None)
-                    await retain_thought_to_hindsight(thought, merged_state, thought_type, score)
+                    hindsight_tags = [
+                        "active_consciousness", "thought", thought_type, merged_state.dominant,
+                    ]
+                    intensity = merged_state.intensity()
+                    if "曹凡" in thought:
+                        hindsight_tags.append("user_related")
+                    if intensity > 0.7:
+                        hindsight_tags.append("high_emotion")
+                    stored = await retain_thought_to_hindsight(thought, merged_state, thought_type, score)
+                    all_details["thought_type"] = thought_type
+                    all_details["hindsight_tags"] = hindsight_tags
+                    all_details["hindsight_stored"] = stored
 
         # 13. 重评估延迟队列
         delay_stats = await reevaluate_delayed_thoughts(config, status, merged_state)

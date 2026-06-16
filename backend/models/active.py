@@ -103,9 +103,16 @@ class ThoughtLog(Base):
     recall_source = Column(String(100), nullable=True)
     chat_heat = Column(Float, nullable=True)
     emotional_intensity = Column(Float, nullable=True)
+    details = Column(Text, nullable=True)  # JSON格式的详细日志
     created_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")), index=True)
 
     def to_dict(self):
+        details = self.details
+        if details:
+            try:
+                details = json.loads(details)
+            except (json.JSONDecodeError, TypeError):
+                pass
         return {
             "id": self.id,
             "heartbeat_id": self.heartbeat_id,
@@ -119,6 +126,7 @@ class ThoughtLog(Base):
             "recall_source": self.recall_source,
             "chat_heat": self.chat_heat,
             "emotional_intensity": self.emotional_intensity,
+            "details": details,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
