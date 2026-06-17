@@ -147,6 +147,33 @@ async def get_session_messages(
     return {"total": total, "items": items}
 
 
+@router.delete("/{session_id}")
+async def delete_session(
+    session_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """删除 session 及其所有消息（级联删除）"""
+    with state_engine.connect() as conn:
+        # 检查 session 是否存在
+        session = conn.execute(
+            text("SELECT id FROM sessions WHERE id = :sid"), {"sid": session_id}
+        ).first()
+        if not session:
+            raise HTTPException(status_code=404, detail="Session 不存在")
+
+        # 级联删除消息
+        msg_result = conn.execute(
+            text("DELETE FROM messages WHERE session_id = :sid"), {"sid": session_id}
+        )
+        # 删除 session
+        conn.execute(
+            text("DELETE FROM sessions WHERE id = :sid"), {"sid": session_id}
+        )
+        conn.commit()
+
+    return {"message": f"Session {session_id} 及其 {msg_result.rowcount} 条消息已删除"}
+
+
 @router.get("/{session_id}/context", response_model=List[MessageInfo])
 async def get_session_context(
     session_id: str,
