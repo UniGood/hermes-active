@@ -313,7 +313,9 @@ class SessionService:
         return latest_entry['origin']['user_id'] if latest_entry else None
 
     @staticmethod
-    def get_or_create_active_session(platform: str, user_id: str) -> Optional[Dict[str, Any]]:
+    def get_or_create_active_session(
+        platform: str, user_id: str, force_new: bool = False
+    ) -> Optional[Dict[str, Any]]:
         """获取或创建活跃 session（调用 gateway 的 get_or_create_session）
 
         自动处理 session 过期：
@@ -323,6 +325,7 @@ class SessionService:
         Args:
             platform: 平台名称，如 "weixin"
             user_id: 用户 ID，微信私聊时 = chat_id
+            force_new: 强制创建新 session（跳过 Gateway 的过期检查）
 
         Returns:
             dict with keys: id, source, user_id, created_at, was_auto_reset, auto_reset_reason
@@ -353,7 +356,7 @@ class SessionService:
         )
 
         # 调用 gateway 的方法（自动处理过期 + 创建）
-        entry = store.get_or_create_session(source)
+        entry = store.get_or_create_session(source, force_new=force_new)
 
         return {
             "id": entry.session_id,
