@@ -73,6 +73,12 @@
             </div>
           </n-tab-pane>
           <n-tab-pane name="thoughts" tab="念头日志" style="overflow: visible;">
+            <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+              <n-date-picker v-model:value="thoughtDate" type="date" clearable
+                @update:value="onThoughtDateChange" style="width: 160px" />
+              <n-button size="small" @click="thoughtDate = Date.now(); loadThoughts(1)">今天</n-button>
+              <n-button size="small" quaternary @click="thoughtDate = null; loadThoughts(1)">全部</n-button>
+            </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
               <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="860" />
             </div>
@@ -562,6 +568,7 @@ const status = ref({
 const thoughts = ref({ total: 0, items: [] })
 const heartbeats = ref({ total: 0, items: [] })
 const heartbeatDate = ref(Date.now())
+const thoughtDate = ref(Date.now())
 const showRecallModal = ref(false)
 const recallItems = ref([])
 const showThoughtContentModal = ref(false)
@@ -688,6 +695,10 @@ function onHeartbeatDateChange(val) {
   heartbeatDate.value = val
   loadHeartbeats(1, val)
 }
+function onThoughtDateChange(val) {
+  thoughtDate.value = val
+  loadThoughts(1, val)
+}
 
 // 解析决策原因中的参数
 function parseDecisionReason(reason) {
@@ -778,7 +789,7 @@ const thoughtColumns = [
   {
     title: '操作',
     key: 'actions',
-    width: 70,
+    width: 100,
     render(row) {
       return h(
         NButton,
@@ -841,9 +852,14 @@ const loadStatus = async () => {
     message.error('加载状态失败')
   }
 }
-const loadThoughts = async (page = 1) => {
+const loadThoughts = async (page = 1, dateVal) => {
   try {
-    const data = await api.getThoughts(page)
+    let dateParam = null
+    if (dateVal || thoughtDate.value) {
+      const d = new Date(dateVal || thoughtDate.value)
+      dateParam = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+    }
+    const data = await api.getThoughts(page, dateParam)
     // 解析details JSON
     data.items = (data.items || []).map(item => {
       if (item.details && typeof item.details === 'string') {

@@ -60,9 +60,9 @@ async def get_status():
 # ============ 日志 ============
 
 @router.get("/thoughts")
-async def get_thoughts(page: int = 1, page_size: int = 20):
-    """获取念头日志"""
-    return ActiveConsciousnessService.get_thoughts(page, page_size)
+async def get_thoughts(page: int = 1, page_size: int = 20, date: str = None):
+    """获取念头日志，支持 date=YYYY-MM-DD 过滤"""
+    return ActiveConsciousnessService.get_thoughts(page, page_size, date)
 
 
 @router.delete("/thoughts/{thought_id}", response_model=SuccessResponse)

@@ -415,8 +415,8 @@ class ActiveConsciousnessService:
     # ============ 日志 ============
 
     @staticmethod
-    def get_thoughts(page: int = 1, page_size: int = 20) -> Dict[str, Any]:
-        """获取念头日志"""
+    def get_thoughts(page: int = 1, page_size: int = 20, date: Optional[str] = None) -> Dict[str, Any]:
+        """获取念头日志，支持日期过滤（格式 YYYY-MM-DD）"""
         db = ActiveSession()
         try:
             # 检查表是否存在
@@ -427,11 +427,16 @@ class ActiveConsciousnessService:
                 if not tables:
                     return {"total": 0, "items": []}
 
-                total = conn.execute(text("SELECT COUNT(*) FROM active_thought_logs")).scalar() or 0
-                offset = (page - 1) * page_size
+                where_clause = ""
+                params = {"limit": page_size, "offset": (page - 1) * page_size}
+                if date:
+                    where_clause = "WHERE date(created_at) = :date"
+                    params["date"] = date
+
+                total = conn.execute(text(f"SELECT COUNT(*) FROM active_thought_logs {where_clause}"), params).scalar() or 0
                 rows = conn.execute(text(
-                    "SELECT * FROM active_thought_logs ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
-                ), {"limit": page_size, "offset": offset}).fetchall()
+                    f"SELECT * FROM active_thought_logs {where_clause} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+                ), params).fetchall()
 
                 items = []
                 for row in rows:

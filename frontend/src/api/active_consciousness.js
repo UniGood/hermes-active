@@ -15,8 +15,10 @@ export default {
   },
 
   // 念头日志
-  getThoughts(page = 1) {
-    return http.get('/active-consciousness/thoughts', { params: { page, page_size: 10 } })
+  getThoughts(page = 1, date = null) {
+    const params = { page, page_size: 10 }
+    if (date) params.date = date
+    return http.get('/active-consciousness/thoughts', { params })
   },
   deleteThought(id) {
     return http.delete(`/active-consciousness/thoughts/${id}`)
