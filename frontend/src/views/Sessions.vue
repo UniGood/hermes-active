@@ -42,7 +42,12 @@
             <n-tag :type="getPlatformType(session.source)" size="small">
               {{ session.source || '未知' }}
             </n-tag>
-            <span class="session-time">{{ formatTime(session.started_at) }}</span>
+            <div class="session-actions">
+              <span class="session-time">{{ formatTime(session.started_at) }}</span>
+              <n-button size="tiny" type="error" quaternary @click.stop="handleDelete(session)">
+                删除
+              </n-button>
+            </div>
           </div>
           <div class="session-title">{{ session.title || '无标题' }}</div>
           <div class="session-id">{{ session.id }}</div>
@@ -72,9 +77,12 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { SearchOutline } from '@vicons/ionicons5'
+import { useMessage, useDialog } from 'naive-ui'
 import api from '../api'
 
 const router = useRouter()
+const message = useMessage()
+const dialog = useDialog()
 const loading = ref(false)
 const sessions = ref([])
 const searchText = ref('')
@@ -110,6 +118,24 @@ function getPlatformType(source) {
 
 function goToDetail(sessionId) {
   router.push(`/sessions/${sessionId}`)
+}
+
+function handleDelete(session) {
+  dialog.warning({
+    title: '确认删除',
+    content: `确定删除会话 "${session.title || session.id}" 及其所有消息？此操作不可恢复。`,
+    positiveText: '删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await api.delete(`/sessions/${session.id}`)
+        message.success('会话已删除')
+        loadSessions()
+      } catch (e) {
+        message.error('删除失败: ' + (e.response?.data?.detail || e.message))
+      }
+    }
+  })
 }
 
 async function loadSessions() {
@@ -178,6 +204,12 @@ onMounted(loadSessions)
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+}
+
+.session-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .session-time {
