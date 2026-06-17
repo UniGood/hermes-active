@@ -59,21 +59,21 @@
       </n-tab-pane>
 
       <!-- Tab 2: 日志 -->
-      <n-tab-pane name="logs" tab="日志">
-        <n-tabs type="line" animated>
-          <n-tab-pane name="heartbeats" tab="心跳日志">
+      <n-tab-pane name="logs" tab="日志" style="overflow: visible;">
+        <n-tabs type="line" animated style="overflow: visible;">
+          <n-tab-pane name="heartbeats" tab="心跳日志" style="overflow: visible;">
             <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
               <n-date-picker v-model:value="heartbeatDate" type="date" clearable
                 @update:value="onHeartbeatDateChange" style="width: 160px" />
               <n-button size="small" @click="heartbeatDate = Date.now(); loadHeartbeats(1)">今天</n-button>
               <n-button size="small" quaternary @click="heartbeatDate = null; loadHeartbeats(1)">全部</n-button>
             </div>
-            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
               <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="960" />
             </div>
           </n-tab-pane>
-          <n-tab-pane name="thoughts" tab="念头日志">
-            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <n-tab-pane name="thoughts" tab="念头日志" style="overflow: visible;">
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
               <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="860" />
             </div>
           </n-tab-pane>
