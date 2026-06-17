@@ -106,7 +106,7 @@ _DEFAULTS = {
     "active_consciousness.delay.max_queue_size": "10",
 
     # 念头存储
-    "active_consciousness.thought.retain_enabled": "true",
+    "active_consciousness.thought.retain_enabled": "false",
     "active_consciousness.thought.retain_threshold": "0.5",
 }
 
@@ -126,6 +126,39 @@ HEAT_LEVELS = [
     (1.0, "hot"),
     (3.0, "fire"),
 ]
+
+def _parse_timestamp(ts_str):
+    """解析时间戳：支持 Unix 时间戳（float）和 ISO 格式"""
+    if not ts_str:
+        return None
+    try:
+        s = str(ts_str)
+        if s.replace('.', '').replace('-', '').isdigit() or (s.count('.') == 1 and s.split('.')[0].isdigit()):
+            return datetime.fromtimestamp(float(s))
+        return datetime.fromisoformat(s)
+    except Exception:
+        return None
+
+
+# 英文标签 → 中文
+LABEL_CN = {
+    # 想念等级
+    "calm": "平静",
+    "longing": "想念",
+    "missing": "思念",
+    "yearning": "渴望",
+    "anxious": "焦虑",
+    # 聊天热度
+    "cold": "冷清",
+    "warm": "温暖",
+    "hot": "火热",
+    "fire": "沸腾",
+    # 情绪 dominant
+    "happy": "开心",
+    "content": "满足",
+    "bored": "无聊",
+    "concerned": "担忧",
+}
 
 
 class ActiveConsciousnessService:
@@ -222,6 +255,7 @@ class ActiveConsciousnessService:
             longing_label = "calm"
             last_user_msg_at = None
             last_self_msg_at = None
+            silence_minutes = 0.0
 
             try:
                 with state_engine.connect() as conn:
@@ -232,17 +266,15 @@ class ActiveConsciousnessService:
                     )).fetchone()
                     if row and row[0]:
                         last_user_msg_at = str(row[0])
-                        try:
-                            last_user_dt = datetime.fromisoformat(str(row[0]))
-                        except Exception:
-                            last_user_dt = now
+                        last_user_dt = _parse_timestamp(row[0]) or now
                         gap_minutes = (now - last_user_dt).total_seconds() / 60
                         longing_score = min(gap_minutes / 300, 1.0)  # 5小时=1.0
+                        silence_minutes = gap_minutes
 
                     # 最近主动消息
                     row = conn.execute(text(
                         "SELECT MAX(timestamp) FROM messages WHERE role='assistant' "
-                        "AND content LIKE '[凯莉%' AND session_id IN "
+                        "AND content LIKE '凯莉%' AND session_id IN "
                         "(SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
                     )).fetchone()
                     if row and row[0]:
@@ -268,7 +300,7 @@ class ActiveConsciousnessService:
                 with state_engine.connect() as conn:
                     row = conn.execute(text(
                         "SELECT COUNT(*), MAX(timestamp) FROM messages "
-                        "WHERE role='user' AND timestamp > datetime('now', '-1 hour') "
+                        "WHERE role='user' AND CAST(timestamp AS REAL) > CAST(strftime('%s', 'now', '-1 hour') AS REAL) "
                         "AND session_id IN (SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
                     )).fetchone()
                     if row:
@@ -302,8 +334,8 @@ class ActiveConsciousnessService:
                 with state_engine.connect() as conn:
                     row = conn.execute(text(
                         "SELECT COUNT(*) FROM messages "
-                        "WHERE role='assistant' AND content LIKE '[凯莉%' "
-                        "AND timestamp > datetime('now', 'start of day') "
+                        "WHERE role='assistant' AND content LIKE '凯莉%' "
+                        "AND CAST(timestamp AS REAL) > CAST(strftime('%s', 'now', 'start of day') AS REAL) "
                         "AND session_id IN (SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
                     )).fetchone()
                     if row:
@@ -311,8 +343,8 @@ class ActiveConsciousnessService:
 
                     row = conn.execute(text(
                         "SELECT COUNT(*) FROM messages "
-                        "WHERE role='assistant' AND content LIKE '[凯莉%' "
-                        "AND timestamp > datetime('now', '-1 hour') "
+                        "WHERE role='assistant' AND content LIKE '凯莉%' "
+                        "AND CAST(timestamp AS REAL) > CAST(strftime('%s', 'now', '-1 hour') AS REAL) "
                         "AND session_id IN (SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
                     )).fetchone()
                     if row:
@@ -320,13 +352,14 @@ class ActiveConsciousnessService:
             except Exception as e:
                 logger.warning("查询发送数失败: %s", e)
 
-            # 查询心跳统计
+            # 查询今日心跳统计
             heartbeat_count = 0
             last_heartbeat_at = None
             try:
                 with active_engine.connect() as conn:
                     row = conn.execute(text(
-                        "SELECT COUNT(*), MAX(created_at) FROM active_heartbeat_logs"
+                        "SELECT COUNT(*), MAX(created_at) FROM active_heartbeat_logs "
+                        "WHERE created_at > datetime('now', 'start of day')"
                     )).fetchone()
                     if row:
                         heartbeat_count = row[0] or 0
@@ -342,13 +375,14 @@ class ActiveConsciousnessService:
                 "longing": {
                     "score": round(longing_score, 3),
                     "level": longing_level,
-                    "label": longing_label,
+                    "label": LABEL_CN.get(longing_label, longing_label),
                     "last_user_msg_at": last_user_msg_at,
                     "last_self_msg_at": last_self_msg_at,
+                    "silence_minutes": round(silence_minutes, 1),
                 },
                 "chat_heat": {
                     "heat": round(chat_heat, 2),
-                    "label": chat_label,
+                    "label": LABEL_CN.get(chat_label, chat_label),
                     "recent_count": recent_count,
                     "recent_hours": recent_hours,
                     "recent_user_msg_at": recent_user_msg_at,
@@ -412,8 +446,8 @@ class ActiveConsciousnessService:
             db.close()
 
     @staticmethod
-    def get_heartbeats(page: int = 1, page_size: int = 20) -> Dict[str, Any]:
-        """获取心跳日志"""
+    def get_heartbeats(page: int = 1, page_size: int = 20, date: Optional[str] = None) -> Dict[str, Any]:
+        """获取心跳日志，支持日期过滤（格式 YYYY-MM-DD）"""
         db = ActiveSession()
         try:
             with active_engine.connect() as conn:
@@ -423,11 +457,16 @@ class ActiveConsciousnessService:
                 if not tables:
                     return {"total": 0, "items": []}
 
-                total = conn.execute(text("SELECT COUNT(*) FROM active_heartbeat_logs")).scalar() or 0
-                offset = (page - 1) * page_size
+                where_clause = ""
+                params = {"limit": page_size, "offset": (page - 1) * page_size}
+                if date:
+                    where_clause = "WHERE date(created_at) = :date"
+                    params["date"] = date
+
+                total = conn.execute(text(f"SELECT COUNT(*) FROM active_heartbeat_logs {where_clause}"), params).scalar() or 0
                 rows = conn.execute(text(
-                    "SELECT * FROM active_heartbeat_logs ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
-                ), {"limit": page_size, "offset": offset}).fetchall()
+                    f"SELECT * FROM active_heartbeat_logs {where_clause} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+                ), params).fetchall()
 
                 items = []
                 for row in rows:
@@ -494,7 +533,7 @@ class ActiveConsciousnessService:
         emotional_intensity: Optional[float] = None,
         details: Optional[str] = None
     ) -> int:
-        """记录想法日志"""
+        """记录念头日志"""
         db = ActiveSession()
         try:
             with active_engine.connect() as conn:
@@ -522,7 +561,7 @@ class ActiveConsciousnessService:
                 conn.commit()
                 return result.lastrowid
         except Exception as e:
-            logger.error("记录想法日志失败: %s", e)
+            logger.error("记录念头日志失败: %s", e)
             return 0
         finally:
             db.close()
@@ -614,7 +653,7 @@ async def extract_session_context(session_config: Dict[str, Any]) -> str:
 
             if messages:
                 msg_text = "\n".join(
-                    f"{m.get('role', 'unknown')}: {m.get('content', '')[:200]}"
+                    f"{m.get('role', 'unknown')}: {(m.get('content') or '')[:200]}"
                     for m in messages[-10:]  # 最近10条
                 )
                 context_parts.append(f"[{platform}] 最近对话:\n{msg_text}")
@@ -659,7 +698,7 @@ async def call_hindsight_reflect(
 
 
 async def generate_thought(config: Dict[str, Any], status: Dict[str, Any]) -> Dict[str, Any]:
-    """生成想法（三步流程）"""
+    """生成念头（三步流程）"""
     llm_config = config.get("llm", {})
     session_config = config.get("session", {})
     hindsight_config = config.get("hindsight", {})
@@ -700,9 +739,9 @@ async def generate_thought(config: Dict[str, Any], status: Dict[str, Any]) -> Di
                 reflect_count = 1
                 hindsight_context += "\n\n综合分析:\n" + reflect_result
 
-    # Step 3: 想法生成（LLM）
+    # Step 3: 念头生成（LLM）
     now = datetime.now()
-    prompt = f"""你是凯莉，请基于当前状态产生一个自然的想法。
+    prompt = f"""你是凯莉，请基于当前状态产生一个自然的念头。
 
 当前状态：
 - 时间：{now.strftime('%Y-%m-%d %H:%M %A')}
@@ -714,7 +753,7 @@ async def generate_thought(config: Dict[str, Any], status: Dict[str, Any]) -> Di
 
 {hindsight_context}
 
-请用第一人称产生一个自然的想法（1-2句话）。"""
+请用第一人称产生一个自然的念头（1-2句话）。"""
 
     thought = None
     llm_duration = 0
@@ -938,10 +977,11 @@ def make_decision(config: Dict[str, Any], status: Dict[str, Any]) -> tuple:
     last_sent_at = status.get("last_sent_at")
     if last_sent_at:
         try:
-            last_sent_dt = datetime.fromisoformat(last_sent_at)
-            cooldown_minutes = config.get("active", {}).get("cooldown_minutes", 30)
-            if (datetime.now() - last_sent_dt).total_seconds() / 60 < cooldown_minutes:
-                return "skip", f"冷却期未过（{cooldown_minutes}分钟）"
+            last_sent_dt = _parse_timestamp(last_sent_at)
+            if last_sent_dt:
+                cooldown_minutes = config.get("active", {}).get("cooldown_minutes", 30)
+                if (datetime.now() - last_sent_dt).total_seconds() / 60 < cooldown_minutes:
+                    return "skip", f"冷却期未过（{cooldown_minutes}分钟）"
         except Exception:
             pass
 
@@ -950,11 +990,12 @@ def make_decision(config: Dict[str, Any], status: Dict[str, Any]) -> tuple:
     user_idle_minutes = 0
     if recent_user_msg_at:
         try:
-            recent_msg_dt = datetime.fromisoformat(recent_user_msg_at)
-            no_send_minutes = config.get("active", {}).get("no_send_after_user_msg_minutes", 10)
-            user_idle_minutes = (datetime.now() - recent_msg_dt).total_seconds() / 60
-            if user_idle_minutes < no_send_minutes:
-                return "skip", f"用户最近 {no_send_minutes} 分钟内有消息"
+            recent_msg_dt = _parse_timestamp(recent_user_msg_at)
+            if recent_msg_dt:
+                no_send_minutes = config.get("active", {}).get("no_send_after_user_msg_minutes", 10)
+                user_idle_minutes = (datetime.now() - recent_msg_dt).total_seconds() / 60
+                if user_idle_minutes < no_send_minutes:
+                    return "skip", f"用户最近 {no_send_minutes} 分钟内有消息"
         except Exception:
             pass
 
@@ -1017,7 +1058,7 @@ async def send_message_to_target(config: Dict[str, Any], thought: str) -> bool:
 
 
 async def generate_and_send_thought(config: Dict[str, Any], status: Dict[str, Any], decision_type: str, heartbeat_id: Optional[int] = None):
-    """生成想法并发送消息，返回 (sent, details_dict)"""
+    """生成念头并发送消息，返回 (sent, details_dict)"""
     # 收集所有 LLM 调用详情
     details = {
         "thought_generation": None,
@@ -1025,13 +1066,13 @@ async def generate_and_send_thought(config: Dict[str, Any], status: Dict[str, An
         "message_sending": None,
     }
 
-    # 1. 生成想法
+    # 1. 生成念头
     thought_result = await generate_thought(config, status)
     thought = thought_result.get("thought")
     details["thought_generation"] = thought_result.get("llm_details")
 
     if not thought:
-        logger.warning("想法生成失败")
+        logger.warning("念头生成失败")
         return False, details
 
     # 2. 构建念头日志的完整详情
@@ -1043,7 +1084,7 @@ async def generate_and_send_thought(config: Dict[str, Any], status: Dict[str, An
         "reflect_count": thought_result.get("reflect_count"),
     }
 
-    # 3. 记录想法日志（含LLM详情）
+    # 3. 记录念头日志（含LLM详情）
     thought_log_id = ActiveConsciousnessService.write_thought_log(
         heartbeat_id=heartbeat_id,
         thought_type=decision_type,
@@ -1081,7 +1122,7 @@ async def generate_and_send_thought(config: Dict[str, Any], status: Dict[str, An
         "thought": thought,
     }
 
-    # 5. 更新想法日志的决策结果
+    # 5. 更新念头日志的决策结果
     if sent:
         logger.info("消息发送成功: %s", thought[:50])
     else:
@@ -1189,7 +1230,7 @@ async def generate_thought_for_delay(
     session_context = await extract_session_context(session_config)
 
     now = datetime.now()
-    prompt = f"""你是凯莉，请基于当前状态产生一个自然的想法。
+    prompt = f"""你是凯莉，请基于当前状态产生一个自然的念头。
 
 当前状态：
 - 时间：{now.strftime('%Y-%m-%d %H:%M %A')}
@@ -1198,7 +1239,7 @@ async def generate_thought_for_delay(
 
 {session_context}
 
-请用第一人称产生一个自然的想法（1-2句话）。"""
+请用第一人称产生一个自然的念头（1-2句话）。"""
 
     try:
         if llm_config.get("mode") == "hermes":
@@ -1240,7 +1281,7 @@ async def generate_memory_thought(
     memories = "\n".join(f"- {r.get('text', '')}" for r in hindsight_results[:3])
     now = datetime.now()
 
-    prompt = f"""你是凯莉，请基于以下记忆产生一个自然的想法。
+    prompt = f"""你是凯莉，请基于以下记忆产生一个自然的念头。
 
 当前状态：
 - 时间：{now.strftime('%Y-%m-%d %H:%M %A')}
@@ -1249,7 +1290,7 @@ async def generate_memory_thought(
 相关记忆：
 {memories}
 
-请用第一人称产生一个简短的想法（1-2句话），自然地融入这些记忆。"""
+请用第一人称产生一个简短的念头（1-2句话），自然地融入这些记忆。"""
 
     try:
         config = ActiveConsciousnessService.get_config()
@@ -1290,7 +1331,7 @@ async def generate_and_send_thought_with_emotion(
     decision_type: str,
     heartbeat_id: Optional[int] = None
 ) -> tuple[bool, Dict[str, Any]]:
-    """生成想法并发送消息（使用 VA 情绪模型）"""
+    """生成念头并发送消息（使用 VA 情绪模型）"""
     details = {
         "thought_generation": None,
         "message_sending": None,
@@ -1321,9 +1362,9 @@ async def generate_and_send_thought_with_emotion(
                 f"- {r.get('text', '')}" for r in hindsight_results
             )
 
-    # 2. 生成想法（带情绪上下文）
+    # 2. 生成念头（带情绪上下文）
     now = datetime.now()
-    prompt = f"""你是凯莉，请基于当前状态产生一个自然的想法。
+    prompt = f"""你是凯莉，请基于当前状态产生一个自然的念头。
 
 当前状态：
 - 时间：{now.strftime('%Y-%m-%d %H:%M %A')}
@@ -1336,7 +1377,7 @@ async def generate_and_send_thought_with_emotion(
 
 {hindsight_context}
 
-请用第一人称产生一个自然的想法（1-2句话）。"""
+请用第一人称产生一个自然的念头（1-2句话）。"""
 
     thought = None
     llm_start_time = time.time()
@@ -1372,13 +1413,13 @@ async def generate_and_send_thought_with_emotion(
 
     except Exception as e:
         llm_duration_ms = round((time.time() - llm_start_time) * 1000)
-        logger.error("想法生成失败: %s", e)
+        logger.error("念头生成失败: %s", e)
         details["thought_generation"] = {"success": False, "error": str(e)}
 
     if not thought:
         return False, details
 
-    # 3. 记录想法日志（含详细信息）
+    # 3. 记录念头日志（含详细信息）
     thought_type = determine_thought_type(status, emotion_state, hindsight_results, None)
     hindsight_tags = [
         "active_consciousness", "thought", thought_type, emotion_state.dominant,
@@ -1514,11 +1555,20 @@ async def run_heartbeat():
                     f"- {r.get('text', '')}" for r in hindsight_results
                 )
 
+        # 存储召回数据到 details（供前端展示）
+        all_details["session_context"] = session_context[:500] if session_context else ""
+        all_details["hindsight_context"] = hindsight_context[:500] if hindsight_context else ""
+        all_details["recall_results"] = [{"text": r.get("text", ""), "type": r.get("type", "memory")} for r in hindsight_results[:5]]
+
         # 7. LLM 评估当前情绪（输出 VA 值）
         llm_config = config.get("llm", {})
         llm_assessed = await evaluate_emotion_with_llm(
             session_context, hindsight_context, status, llm_config
         )
+        # 如果 LLM 返回全0（模型未正常响应），使用演化值作为 fallback
+        if llm_assessed.valence == 0.0 and llm_assessed.arousal == 0.0 and llm_assessed.social_need == 0.0:
+            logger.warning("LLM 情绪评估返回全0，使用演化值作为 fallback")
+            llm_assessed = evolved_state
         all_details["emotion_llm"] = llm_assessed.to_dict()
 
         # 8. 合并情绪（演化值 + LLM 评估值）
@@ -1561,6 +1611,7 @@ async def run_heartbeat():
             # 存为记忆（不发送）
             thought = await generate_memory_thought(hindsight_results, merged_state)
             if thought:
+                all_details["thought_generation"] = {"success": True, "thought": thought}
                 thought_type = "memory"
                 hindsight_tags = [
                     "active_consciousness", "thought", thought_type, merged_state.dominant,
@@ -1574,12 +1625,30 @@ async def run_heartbeat():
                 all_details["thought_type"] = thought_type
                 all_details["hindsight_tags"] = hindsight_tags
                 all_details["hindsight_stored"] = stored
+                # 写入念头日志
+                ActiveConsciousnessService.write_thought_log(
+                    heartbeat_id=heartbeat_id,
+                    thought_type=thought_type,
+                    content=thought,
+                    intensity=intensity,
+                    decision=decision_type,
+                    reason=f"score={score:.3f}",
+                    score=score,
+                    recall_count=recall_count,
+                    recall_source="hindsight",
+                    chat_heat=status.get("chat_heat", {}).get("heat", 0),
+                    emotional_intensity=intensity,
+                    details=json.dumps({"emotion_state": merged_state.to_dict(), "hindsight_tags": hindsight_tags}, ensure_ascii=False)
+                )
                 logger.info("念头存为记忆: %s", thought[:50])
+            else:
+                all_details["thought_generation"] = {"success": False, "error": "念头生成返回空"}
 
         elif decision_type == "delay_send":
             # 入延迟队列
             thought = await generate_thought_for_delay(config, status, merged_state)
             if thought:
+                all_details["thought_generation"] = {"success": True, "thought": thought}
                 thought_type = determine_thought_type(status, merged_state, hindsight_results, None)
                 add_to_delay_queue(thought, thought_type, score, merged_state)
                 all_details["thought_type"] = thought_type

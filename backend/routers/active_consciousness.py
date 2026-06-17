@@ -80,9 +80,9 @@ async def retry_thought(thought_id: int):
 
 
 @router.get("/heartbeats")
-async def get_heartbeats(page: int = 1, page_size: int = 20):
-    """获取心跳日志"""
-    return ActiveConsciousnessService.get_heartbeats(page, page_size)
+async def get_heartbeats(page: int = 1, page_size: int = 20, date: str = None):
+    """获取心跳日志，支持 date=YYYY-MM-DD 过滤"""
+    return ActiveConsciousnessService.get_heartbeats(page, page_size, date)
 
 
 @router.delete("/heartbeats/{heartbeat_id}", response_model=SuccessResponse)
@@ -163,7 +163,7 @@ async def test_llm_connect():
 
 @router.post("/test/thought-generation")
 async def test_thought_generation():
-    """测试想法生成"""
+    """测试念头生成"""
     try:
         config = ActiveConsciousnessService.get_config()
         if not config.get("enabled"):
@@ -178,7 +178,7 @@ async def test_thought_generation():
         emotional = status.get("emotional_intensity", {})
 
         # 构建提示词
-        prompt = f"""你是凯莉，请基于当前状态产生一个自然的想法。
+        prompt = f"""你是凯莉，请基于当前状态产生一个自然的念头。
 
 当前状态：
 - 时间：{__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M %A')}
@@ -186,7 +186,7 @@ async def test_thought_generation():
 - 聊天热度：{chat_heat.get('heat', 0)}（标签：{chat_heat.get('label', 'cold')}）
 - 情绪值：{emotional.get('intensity', 0)}（{emotional.get('label', '工作')}）
 
-请用第一人称产生一个自然的想法（1-2句话）。"""
+请用第一人称产生一个自然的念头（1-2句话）。"""
 
         thought = None
 

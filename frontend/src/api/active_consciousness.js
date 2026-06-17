@@ -16,7 +16,7 @@ export default {
 
   // 念头日志
   getThoughts(page = 1) {
-    return http.get('/active-consciousness/thoughts', { params: { page } })
+    return http.get('/active-consciousness/thoughts', { params: { page, page_size: 10 } })
   },
   deleteThought(id) {
     return http.delete(`/active-consciousness/thoughts/${id}`)
@@ -26,8 +26,10 @@ export default {
   },
 
   // 心跳日志
-  getHeartbeats(page = 1) {
-    return http.get('/active-consciousness/heartbeats', { params: { page } })
+  getHeartbeats(page = 1, date = null) {
+    const params = { page }
+    if (date) params.date = date
+    return http.get('/active-consciousness/heartbeats', { params })
   },
   deleteHeartbeat(id) {
     return http.delete(`/active-consciousness/heartbeats/${id}`)

@@ -1,7 +1,86 @@
 <template>
   <div class="active-consciousness-page">
     <n-tabs v-model:value="activeTab" type="line" animated>
-      <!-- Tab 1: 配置 -->
+      <!-- Tab 1: 状态 -->
+      <n-tab-pane name="status" tab="状态">
+        <n-grid :cols="2" :x-gap="12" :y-gap="12">
+          <n-grid-item>
+            <n-card title="心跳状态">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span :class="['breathing-dot', heartbeatHealthy ? 'dot-green' : 'dot-red']"></span>
+                <n-statistic label="今日心跳次数" :value="status.heartbeat_count" />
+              </div>
+              <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                上次心跳：{{ formatTime(status.last_heartbeat_at) || '无' }}
+              </div>
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card title="想念分数">
+              <n-statistic :value="status.longing.score" :precision="3">
+                <template #suffix>
+                  <n-tag :type="longingTagType" size="small">{{ status.longing.label }}</n-tag>
+                </template>
+              </n-statistic>
+              <n-progress :percentage="Number((status.longing.score * 100).toFixed(1))" :color="longingColor" style="margin-top: 8px" />
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card title="聊天热度">
+              <n-statistic :value="status.chat_heat.heat" :precision="2">
+                <template #suffix>
+                  <n-tag :type="heatTagType" size="small">{{ status.chat_heat.label }}</n-tag>
+                </template>
+              </n-statistic>
+              <n-progress :percentage="Math.min(status.chat_heat.heat * 20, 100)" :color="heatColor" style="margin-top: 8px" />
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card title="情绪值">
+              <n-statistic :value="status.emotional_intensity.intensity" :precision="3">
+                <template #suffix>
+                  <n-tag size="small">{{ status.emotional_intensity.label }}</n-tag>
+                </template>
+              </n-statistic>
+              <n-progress :percentage="status.emotional_intensity.intensity * 100" :color="intensityColor" style="margin-top: 8px" />
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card title="今日发送">
+              <n-statistic :value="status.today_sent_count" />
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card title="本小时发送">
+              <n-statistic :value="status.hour_sent_count" />
+            </n-card>
+          </n-grid-item>
+        </n-grid>
+      </n-tab-pane>
+
+      <!-- Tab 2: 日志 -->
+      <n-tab-pane name="logs" tab="日志">
+        <n-tabs type="line" animated>
+          <n-tab-pane name="heartbeats" tab="心跳日志">
+            <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+              <n-date-picker v-model:value="heartbeatDate" type="date" clearable
+                @update:value="onHeartbeatDateChange" style="width: 160px" />
+              <n-button size="small" @click="heartbeatDate = Date.now(); loadHeartbeats(1)">今天</n-button>
+              <n-button size="small" quaternary @click="heartbeatDate = null; loadHeartbeats(1)">全部</n-button>
+            </div>
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+              <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="960" />
+            </div>
+          </n-tab-pane>
+          <n-tab-pane name="thoughts" tab="念头日志">
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="860" />
+            </div>
+          </n-tab-pane>
+        </n-tabs>
+      </n-tab-pane>
+
+      <!-- Tab 3: 配置 -->
       <n-tab-pane name="config" tab="配置">
         <n-card title="💓 主动意识配置" style="margin-bottom: 16px">
           <!-- 总开关 -->
@@ -115,78 +194,16 @@
             </n-form-item>
           </template>
 
+          <n-divider>念头存储</n-divider>
+          <n-form-item label="存入 Hindsight">
+            <n-switch v-model:value="config.thought.retain_enabled" />
+            <span style="margin-left: 8px; font-size: 12px; color: #999;">开启后念头会写入长期记忆库（当前质量低建议关闭）</span>
+          </n-form-item>
+
           <n-button type="primary" @click="saveConfig" :loading="saving" style="margin-top: 16px">
             保存配置
           </n-button>
         </n-card>
-      </n-tab-pane>
-
-      <!-- Tab 2: 状态 -->
-      <n-tab-pane name="status" tab="状态">
-        <n-grid :cols="2" :x-gap="12" :y-gap="12">
-          <n-grid-item>
-            <n-card title="心跳状态">
-              <n-statistic label="今日心跳次数" :value="status.heartbeat_count" />
-              <div style="margin-top: 8px; font-size: 12px; color: #666;">
-                上次心跳：{{ formatTime(status.last_heartbeat_at) || '无' }}
-              </div>
-            </n-card>
-          </n-grid-item>
-          <n-grid-item>
-            <n-card title="想念分数">
-              <n-statistic :value="status.longing.score" :precision="3">
-                <template #suffix>
-                  <n-tag :type="longingTagType" size="small">{{ status.longing.label }}</n-tag>
-                </template>
-              </n-statistic>
-              <n-progress :percentage="status.longing.score * 100" :color="longingColor" style="margin-top: 8px" />
-            </n-card>
-          </n-grid-item>
-          <n-grid-item>
-            <n-card title="聊天热度">
-              <n-statistic :value="status.chat_heat.heat" :precision="2">
-                <template #suffix>
-                  <n-tag :type="heatTagType" size="small">{{ status.chat_heat.label }}</n-tag>
-                </template>
-              </n-statistic>
-              <n-progress :percentage="Math.min(status.chat_heat.heat * 20, 100)" :color="heatColor" style="margin-top: 8px" />
-            </n-card>
-          </n-grid-item>
-          <n-grid-item>
-            <n-card title="情绪值">
-              <n-statistic :value="status.emotional_intensity.intensity" :precision="3">
-                <template #suffix>
-                  <n-tag size="small">{{ status.emotional_intensity.label }}</n-tag>
-                </template>
-              </n-statistic>
-              <n-progress :percentage="status.emotional_intensity.intensity * 100" :color="intensityColor" style="margin-top: 8px" />
-            </n-card>
-          </n-grid-item>
-          <n-grid-item>
-            <n-card title="今日发送">
-              <n-statistic :value="status.today_sent_count" />
-            </n-card>
-          </n-grid-item>
-          <n-grid-item>
-            <n-card title="本小时发送">
-              <n-statistic :value="status.hour_sent_count" />
-            </n-card>
-          </n-grid-item>
-        </n-grid>
-      </n-tab-pane>
-
-      <!-- Tab 3: 日志 -->
-      <n-tab-pane name="logs" tab="日志">
-        <n-tabs type="line" animated>
-          <n-tab-pane name="thoughts" tab="念头日志">
-            <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="700" />
-          </n-tab-pane>
-          <n-tab-pane name="heartbeats" tab="心跳日志">
-            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
-              <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="800" />
-            </div>
-          </n-tab-pane>
-        </n-tabs>
       </n-tab-pane>
 
       <!-- Tab 4: 测试 -->
@@ -235,65 +252,81 @@
       </template>
     </n-modal>
 
+    <!-- 召回内容弹窗 -->
+    <n-modal v-model:show="showRecallModal" preset="card" title="召回内容" style="width: 90vw; max-width: 900px">
+      <n-list bordered v-if="recallItems.length">
+        <n-list-item v-for="(item, idx) in recallItems" :key="idx">
+          <div style="font-size: 13px; white-space: pre-wrap;">{{ item.content || item.text || JSON.stringify(item) }}</div>
+        </n-list-item>
+      </n-list>
+      <n-empty v-else description="无召回内容" />
+    </n-modal>
+
+    <!-- 念头内容弹窗 -->
+    <n-modal v-model:show="showThoughtContentModal" preset="card" title="念头内容" style="width: 90vw; max-width: 900px">
+      <template v-if="thoughtContentData">
+        <n-descriptions :column="1" label-placement="left" bordered size="small">
+          <n-descriptions-item label="心跳ID">{{ thoughtContentData.heartbeat_id }}</n-descriptions-item>
+          <n-descriptions-item label="生成数量">{{ thoughtContentData.thoughts_generated }}</n-descriptions-item>
+          <n-descriptions-item label="念头内容" v-if="thoughtContentData.details_parsed?.thought_generation?.thought">
+            {{ thoughtContentData.details_parsed.thought_generation.thought }}
+          </n-descriptions-item>
+          <n-descriptions-item label="念头类型" v-if="thoughtContentData.details_parsed?.thought_type">
+            {{ thoughtContentData.details_parsed.thought_type }}
+          </n-descriptions-item>
+        </n-descriptions>
+      </template>
+      <n-empty v-else description="无念头内容" />
+    </n-modal>
+
     <!-- 心跳日志详情弹窗 -->
-    <n-modal v-model:show="showDetailsModal" preset="card" :title="detailsTitle" style="width: 95vw; max-width: 1200px">
+    <n-modal v-model:show="showDetailsModal" style="width: 95vw; max-width: 1200px;">
+      <n-card :title="detailsTitle" closable @close="showDetailsModal = false">
+        <div class="modal-scroll-body">
       <template v-if="detailsData">
         <!-- 情绪演化流程 -->
-        <n-card title="情绪演化流程" size="small" style="margin-bottom: 12px" v-if="isHeartbeatDetails">
-          <n-descriptions :column="4" label-placement="left" bordered size="small">
-            <n-descriptions-item label="初始情绪">
-              <div v-if="detailsData.emotion_before">
-                <div>valence: {{ detailsData.emotion_before.valence?.toFixed(3) }}</div>
-                <div>arousal: {{ detailsData.emotion_before.arousal?.toFixed(3) }}</div>
-                <div>social: {{ detailsData.emotion_before.social_need?.toFixed(3) }}</div>
-                <div>dominant: <n-tag :type="getEmotionTagType(detailsData.emotion_before.dominant)" size="small">{{ detailsData.emotion_before.dominant }}</n-tag></div>
-              </div>
-            </n-descriptions-item>
-            <n-descriptions-item label="演化后">
-              <div v-if="detailsData.emotion_evolved">
-                <div>valence: {{ detailsData.emotion_evolved.valence?.toFixed(3) }}</div>
-                <div>arousal: {{ detailsData.emotion_evolved.arousal?.toFixed(3) }}</div>
-                <div>social: {{ detailsData.emotion_evolved.social_need?.toFixed(3) }}</div>
-                <div>dominant: <n-tag :type="getEmotionTagType(detailsData.emotion_evolved.dominant)" size="small">{{ detailsData.emotion_evolved.dominant }}</n-tag></div>
-              </div>
-            </n-descriptions-item>
-            <n-descriptions-item label="LLM 评估">
-              <div v-if="detailsData.emotion_llm">
-                <div>valence: {{ detailsData.emotion_llm.valence?.toFixed(3) }}</div>
-                <div>arousal: {{ detailsData.emotion_llm.arousal?.toFixed(3) }}</div>
-                <div>social: {{ detailsData.emotion_llm.social_need?.toFixed(3) }}</div>
-                <div>dominant: <n-tag :type="getEmotionTagType(detailsData.emotion_llm.dominant)" size="small">{{ detailsData.emotion_llm.dominant }}</n-tag></div>
-              </div>
-            </n-descriptions-item>
-            <n-descriptions-item label="合并后">
-              <div v-if="detailsData.emotion_merged">
-                <div>valence: {{ detailsData.emotion_merged.valence?.toFixed(3) }}</div>
-                <div>arousal: {{ detailsData.emotion_merged.arousal?.toFixed(3) }}</div>
-                <div>social: {{ detailsData.emotion_merged.social_need?.toFixed(3) }}</div>
-                <div>dominant: <n-tag :type="getEmotionTagType(detailsData.emotion_merged.dominant)" size="small">{{ detailsData.emotion_merged.dominant }}</n-tag></div>
-              </div>
-            </n-descriptions-item>
-          </n-descriptions>
-          <n-descriptions :column="2" label-placement="left" bordered size="small" style="margin-top: 8px">
-            <n-descriptions-item label="距上次更新">{{ detailsData.minutes_since_update?.toFixed(1) }} 分钟</n-descriptions-item>
-            <n-descriptions-item label="权重">演化 0.4 + LLM 0.6</n-descriptions-item>
-          </n-descriptions>
+        <n-card title="情绪演化" size="small" style="margin-bottom: 8px" v-if="isHeartbeatDetails">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+            <n-tag v-for="item in [
+              {label: '初始', d: detailsData.emotion_before},
+              {label: '演化', d: detailsData.emotion_evolved},
+              {label: 'LLM', d: detailsData.emotion_llm},
+              {label: '合并', d: detailsData.emotion_merged}
+            ].filter(i => i.d)" :key="item.label" size="small" :type="getEmotionTagType(item.d.dominant)">
+              {{ item.label }}: {{ emotionLabelCn(item.d.dominant) }} ({{ item.d.valence?.toFixed(2) }}, {{ item.d.arousal?.toFixed(2) }}, {{ item.d.social_need?.toFixed(2) }})
+            </n-tag>
+          </div>
+          <div style="font-size: 12px; color: #666;">
+            距上次 {{ detailsData.minutes_since_update?.toFixed(0) }}分钟 | 合并权重：演化40% + LLM60%
+          </div>
         </n-card>
 
         <!-- 决策计算 -->
-        <n-card title="决策计算" size="small" style="margin-bottom: 12px" v-if="detailsData.decision">
-          <n-descriptions :column="2" label-placement="left" bordered size="small">
+        <n-card title="决策计算" size="small" style="margin-bottom: 8px" v-if="detailsData.decision">
+          <n-descriptions :column="1" label-placement="left" bordered size="small">
             <n-descriptions-item label="公式">score = intensity × time_fitness × silence × freq</n-descriptions-item>
-            <n-descriptions-item label="决策类型">
+            <n-descriptions-item label="决策类型" :span="2">
               <n-tag :type="getDecisionTagType(detailsData.decision.type)" size="small">
-                {{ detailsData.decision.type }}
+                {{ getDecisionLabelCn(detailsData.decision.type) }}
               </n-tag>
             </n-descriptions-item>
-            <n-descriptions-item label="intensity">{{ parseDecisionReason(detailsData.decision.reason).intensity }}</n-descriptions-item>
-            <n-descriptions-item label="time_fitness">{{ parseDecisionReason(detailsData.decision.reason).time_fitness }}</n-descriptions-item>
-            <n-descriptions-item label="silence_factor">{{ parseDecisionReason(detailsData.decision.reason).silence_factor }}</n-descriptions-item>
-            <n-descriptions-item label="frequency">{{ parseDecisionReason(detailsData.decision.reason).frequency }}</n-descriptions-item>
-            <n-descriptions-item label="最终分数">{{ detailsData.decision.score?.toFixed(3) }}</n-descriptions-item>
+            <n-descriptions-item label="情绪强度">
+              {{ parseDecisionReason(detailsData.decision.reason).intensity }}
+              <n-tag size="tiny" type="info" style="margin-left: 4px">阈值: 情绪越强分越高</n-tag>
+            </n-descriptions-item>
+            <n-descriptions-item label="时间适宜性">
+              {{ parseDecisionReason(detailsData.decision.reason).time_fitness }}
+              <n-tag size="tiny" type="warning" style="margin-left: 4px">工作时间降权</n-tag>
+            </n-descriptions-item>
+            <n-descriptions-item label="沉默因子">
+              {{ parseDecisionReason(detailsData.decision.reason).silence_factor }}
+              <n-tag size="tiny" type="default" style="margin-left: 4px">越久没聊天分数越高</n-tag>
+            </n-descriptions-item>
+            <n-descriptions-item label="频率限制">
+              {{ parseDecisionReason(detailsData.decision.reason).frequency }}
+              <n-tag size="tiny" type="error" style="margin-left: 4px">超频时分数归零</n-tag>
+            </n-descriptions-item>
+            <n-descriptions-item label="最终分数">{{ detailsData.decision.score?.toFixed(3) }} → {{ getDecisionLabelCn(detailsData.decision.type) }}</n-descriptions-item>
             <n-descriptions-item label="决策原因">{{ detailsData.decision.reason }}</n-descriptions-item>
           </n-descriptions>
           <n-descriptions :column="1" label-placement="left" bordered size="small" style="margin-top: 8px" v-if="detailsData.time_fitness">
@@ -304,29 +337,16 @@
         </n-card>
 
         <!-- 召回详情 -->
-        <n-card title="Hindsight 召回" size="small" style="margin-bottom: 12px" v-if="detailsData.hindsight_stored !== undefined || detailsData.hindsight_tags">
-          <n-descriptions :column="2" label-placement="left" bordered size="small">
-            <n-descriptions-item label="存储状态">
-              <n-tag :type="detailsData.hindsight_stored ? 'success' : 'warning'" size="small">
-                {{ detailsData.hindsight_stored ? '已存储' : '未存储' }}
-              </n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item label="召回数量">
-              {{ detailsData.recall_count || detailsData.hindsight_tags?.length || 0 }}
-            </n-descriptions-item>
-          </n-descriptions>
-          <div style="margin-top: 8px" v-if="detailsData.hindsight_tags?.length">
-            <div style="margin-bottom: 4px; font-weight: 500;">存储标签:</div>
-            <n-space>
-              <n-tag v-for="tag in detailsData.hindsight_tags" :key="tag" :type="getHindsightTagType(tag)" size="small">
-                {{ tag }}
-              </n-tag>
-            </n-space>
-          </div>
+        <n-card title="Hindsight 召回" size="small" style="margin-bottom: 8px" v-if="detailsData.recall_results?.length">
+          <n-list bordered size="small">
+            <n-list-item v-for="(item, idx) in detailsData.recall_results" :key="idx">
+              <div style="font-size: 13px;">{{ item.content || item.text || JSON.stringify(item) }}</div>
+            </n-list-item>
+          </n-list>
         </n-card>
 
         <!-- 念头生成 -->
-        <n-card title="念头生成" size="small" style="margin-bottom: 12px" v-if="detailsData.thought_generation || detailsData.thought_type">
+        <n-card title="念头生成" size="small" style="margin-bottom: 8px" v-if="detailsData.thought_generation || detailsData.thought_type">
           <n-descriptions :column="2" label-placement="left" bordered size="small">
             <n-descriptions-item label="念头类型">
               <n-tag :type="getThoughtTypeTagType(detailsData.thought_type)" size="small">
@@ -341,6 +361,11 @@
             <n-descriptions-item label="生成内容" :span="2" v-if="detailsData.thought_generation?.thought">
               {{ detailsData.thought_generation.thought }}
             </n-descriptions-item>
+            <n-descriptions-item label="Hindsight 存储" v-if="detailsData.thought_generation?.hindsight_stored !== undefined">
+              <n-tag :type="detailsData.thought_generation.hindsight_stored ? 'success' : 'default'" size="small">
+                {{ detailsData.thought_generation.hindsight_stored ? '已存储' : '未存储' }}
+              </n-tag>
+            </n-descriptions-item>
             <n-descriptions-item label="LLM 模型" v-if="detailsData.thought_generation?.model">
               {{ detailsData.thought_generation.model }}
             </n-descriptions-item>
@@ -354,7 +379,7 @@
         </n-card>
 
         <!-- 消息发送 -->
-        <n-card title="消息发送" size="small" style="margin-bottom: 12px" v-if="detailsData.message_sending">
+        <n-card title="消息发送" size="small" style="margin-bottom: 8px" v-if="detailsData.message_sending">
           <n-descriptions :column="1" label-placement="left" bordered size="small">
             <n-descriptions-item label="发送状态">
               <n-tag :type="detailsData.message_sending.success ? 'success' : 'error'" size="small">
@@ -373,7 +398,7 @@
         </n-card>
 
         <!-- 延迟队列重评估 -->
-        <n-card title="延迟队列重评估" size="small" style="margin-bottom: 12px" v-if="detailsData.delay_reeval">
+        <n-card title="延迟队列重评估" size="small" style="margin-bottom: 8px" v-if="detailsData.delay_reeval">
           <n-descriptions :column="3" label-placement="left" bordered size="small">
             <n-descriptions-item label="发送">{{ detailsData.delay_reeval.sent }}</n-descriptions-item>
             <n-descriptions-item label="丢弃">{{ detailsData.delay_reeval.discarded }}</n-descriptions-item>
@@ -382,7 +407,7 @@
         </n-card>
 
         <!-- 情绪评估 LLM 调用 -->
-        <n-card title="情绪评估 LLM 调用" size="small" style="margin-bottom: 12px" v-if="detailsData.emotional_evaluation">
+        <n-card title="情绪评估 LLM 调用" size="small" style="margin-bottom: 8px" v-if="detailsData.emotional_evaluation">
           <n-descriptions :column="2" label-placement="left" bordered size="small">
             <n-descriptions-item label="模型">{{ detailsData.emotional_evaluation.model }}</n-descriptions-item>
             <n-descriptions-item label="模式">{{ detailsData.emotional_evaluation.mode }}</n-descriptions-item>
@@ -417,13 +442,15 @@
       <template v-else>
         <n-empty description="暂无详情数据" />
       </template>
+        </div>
+      </n-card>
     </n-modal>
 
     <!-- 念头日志详情弹窗 -->
     <n-modal v-model:show="showThoughtDetailsModal" preset="card" :title="thoughtDetailsTitle" style="width: 95vw; max-width: 1200px">
       <template v-if="thoughtDetailsData">
         <!-- 念头信息 -->
-        <n-card title="念头信息" size="small" style="margin-bottom: 12px">
+        <n-card title="念头信息" size="small" style="margin-bottom: 8px">
           <n-descriptions :column="2" label-placement="left" bordered size="small">
             <n-descriptions-item label="念头类型">
               <n-tag :type="getThoughtTypeTagType(thoughtDetailsData.thought_type)" size="small">
@@ -443,7 +470,7 @@
         </n-card>
 
         <!-- 情绪状态 -->
-        <n-card title="情绪状态" size="small" style="margin-bottom: 12px" v-if="thoughtDetailsData.emotion_state">
+        <n-card title="情绪状态" size="small" style="margin-bottom: 8px" v-if="thoughtDetailsData.emotion_state">
           <n-descriptions :column="2" label-placement="left" bordered size="small">
             <n-descriptions-item label="valence">{{ thoughtDetailsData.emotion_state.valence?.toFixed(3) }}</n-descriptions-item>
             <n-descriptions-item label="arousal">{{ thoughtDetailsData.emotion_state.arousal?.toFixed(3) }}</n-descriptions-item>
@@ -457,7 +484,7 @@
         </n-card>
 
         <!-- Hindsight 信息 -->
-        <n-card title="Hindsight" size="small" style="margin-bottom: 12px" v-if="thoughtDetailsData.hindsight_stored !== undefined || thoughtDetailsData.hindsight_tags">
+        <n-card title="Hindsight" size="small" style="margin-bottom: 8px" v-if="thoughtDetailsData.hindsight_stored !== undefined || thoughtDetailsData.hindsight_tags">
           <n-descriptions :column="1" label-placement="left" bordered size="small">
             <n-descriptions-item label="存储状态">
               <n-tag :type="thoughtDetailsData.hindsight_stored ? 'success' : 'warning'" size="small">
@@ -476,7 +503,7 @@
         </n-card>
 
         <!-- LLM 调用 -->
-        <n-card title="LLM 调用" size="small" style="margin-bottom: 12px" v-if="thoughtDetailsData.llm_call">
+        <n-card title="LLM 调用" size="small" style="margin-bottom: 8px" v-if="thoughtDetailsData.llm_call">
           <n-descriptions :column="2" label-placement="left" bordered size="small">
             <n-descriptions-item label="模型">{{ thoughtDetailsData.llm_call.model }}</n-descriptions-item>
             <n-descriptions-item label="耗时">{{ thoughtDetailsData.llm_call.duration_ms }}ms</n-descriptions-item>
@@ -504,7 +531,7 @@ import api from '../api/active_consciousness'
 import mainApi from '../api'
 
 const message = useMessage()
-const activeTab = ref('config')
+const activeTab = ref('status')
 
 // 配置
 const config = ref({
@@ -513,6 +540,7 @@ const config = ref({
   active: { enabled: true, heartbeat_interval: 600, send_tag: '[凯莉主动发送]', time_format: '%H:%M', no_send_after_user_msg_minutes: 10, no_send_while_heat_above: 0.5, no_send_while_vibe_below: 0.3 },
   session: { sources: ['weixin'], time_range_hours: 24, max_messages_per_session: 15, filter_tool_messages: true },
   decision: { send_threshold: 0.6, delay_threshold: 0.3, memory_threshold: 0.1, max_per_hour: 2, max_per_day: 5 },
+  thought: { retain_enabled: false, retain_threshold: 0.5 },
   hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', recall_limit: 5, reflect_enabled: true, timeout: 30 },
   notify: { platform: 'weixin', chat_id: '' }
 })
@@ -533,6 +561,11 @@ const status = ref({
 // 日志
 const thoughts = ref({ total: 0, items: [] })
 const heartbeats = ref({ total: 0, items: [] })
+const heartbeatDate = ref(Date.now())
+const showRecallModal = ref(false)
+const recallItems = ref([])
+const showThoughtContentModal = ref(false)
+const thoughtContentData = ref(null)
 
 // 测试
 const testing = ref({ thought: false, llm: false })
@@ -612,6 +645,13 @@ const intensityColor = computed(() => {
   return '#d03050'
 })
 
+// 心跳健康状态：上次心跳在5分钟内=绿，否则红
+const heartbeatHealthy = computed(() => {
+  if (!status.value.last_heartbeat_at) return false
+  const last = new Date(status.value.last_heartbeat_at)
+  return (Date.now() - last.getTime()) < 5 * 60 * 1000
+})
+
 // 日志详情弹窗
 const showDetailsModal = ref(false)
 const detailsData = ref(null)
@@ -636,6 +676,19 @@ function showThoughtDetails(row) {
   showThoughtDetailsModal.value = true
 }
 
+function showRecallDetail(row) {
+  recallItems.value = row.details_parsed?.recall_results || []
+  showRecallModal.value = true
+}
+function showThoughtContent(row) {
+  thoughtContentData.value = row
+  showThoughtContentModal.value = true
+}
+function onHeartbeatDateChange(val) {
+  heartbeatDate.value = val
+  loadHeartbeats(1, val)
+}
+
 // 解析决策原因中的参数
 function parseDecisionReason(reason) {
   if (!reason) return { intensity: '-', time_fitness: '-', silence_factor: '-', frequency: '-' }
@@ -651,6 +704,20 @@ function parseDecisionReason(reason) {
   }
 }
 
+const EMOTION_LABEL_CN = {
+  happy: '开心', content: '满足', joy: '喜悦', calm: '平静', bored: '无聊',
+  longing: '想念', missing: '思念', yearning: '渴望', anxious: '焦虑', concerned: '担忧', worry: '忧虑',
+  excited: '兴奋', energetic: '有活力', sad: '悲伤', angry: '生气', neutral: '平静'
+}
+function emotionLabelCn(dominant) {
+  if (!dominant) return '-'
+  return EMOTION_LABEL_CN[dominant.toLowerCase()] || dominant
+}
+function getDecisionLabelCn(type) {
+  if (!type) return '-'
+  const map = { auto_send: '立即发送', delay_send: '延迟发送', skip: '跳过', memory: '存为记忆' }
+  return map[type] || type
+}
 // 情绪标签颜色
 function getEmotionTagType(dominant) {
   if (!dominant) return 'default'
@@ -702,10 +769,10 @@ function getHindsightTagType(tag) {
 
 // 表格列定义
 const thoughtColumns = [
-  { title: '时间', key: 'created_at', width: 100, render: (row) => formatTime(row.created_at) },
+  { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
   { title: '类型', key: 'type', width: 80 },
   { title: '内容', key: 'content', ellipsis: { tooltip: true } },
-  { title: '强度', key: 'intensity', width: 80 },
+  { title: '强度', key: 'intensity', width: 80, render: (row) => row.intensity != null ? Number(row.intensity).toFixed(2) : '' },
   { title: '决策', key: 'decision', width: 80 },
   { title: '来源', key: 'recall_source', width: 100 },
   {
@@ -724,18 +791,21 @@ const thoughtColumns = [
 const formatTime = (isoStr) => {
   if (!isoStr) return ''
   const d = new Date(isoStr)
+  const yyyy = d.getFullYear()
+  const MM = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
   const ss = String(d.getSeconds()).padStart(2, '0')
-  return `${hh}:${mm}:${ss}`
+  return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`
 }
 
 const heartbeatColumns = [
-  { title: '时间', key: 'created_at', width: 100, render: (row) => formatTime(row.created_at) },
+  { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
   { title: '耗时(ms)', key: 'duration_ms', width: 80 },
-  { title: '召回数量', key: 'recall_count', width: 70 },
-  { title: '生成想法', key: 'thoughts_generated', width: 70 },
-  { title: '发送消息', key: 'message_sent', width: 70 },
+  { title: '召回数量', key: 'recall_count', width: 80, render(row) { const v = row.recall_count || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'info', onClick: () => showRecallDetail(row) }, { default: () => v }) : '0' } },
+  { title: '生成念头', key: 'thoughts_generated', width: 80, render(row) { const v = row.thoughts_generated || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'success', onClick: () => showThoughtContent(row) }, { default: () => v }) : '0' } },
+  { title: '发送消息', key: 'message_sent', width: 80, render(row) { const v = row.message_sent; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'warning', onClick: () => showThoughtContent(row) }, { default: () => '是' }) : '否' } },
   {
     title: '操作',
     key: 'actions',
@@ -751,7 +821,7 @@ const heartbeatColumns = [
 ]
 
 // 分页
-const thoughtPagination = ref({ page: 1, pageSize: 20, pageCount: 1 })
+const thoughtPagination = ref({ page: 1, pageSize: 10, pageCount: 1 })
 const heartbeatPagination = ref({ page: 1, pageSize: 20, pageCount: 1 })
 
 // 加载数据
@@ -789,14 +859,19 @@ const loadThoughts = async (page = 1) => {
     })
     thoughts.value = data
     thoughtPagination.value.page = page
-    thoughtPagination.value.pageCount = Math.ceil(data.total / 20)
+    thoughtPagination.value.pageCount = Math.ceil(data.total / 10)
   } catch (e) {
     message.error('加载念头日志失败')
   }
 }
-const loadHeartbeats = async (page = 1) => {
+const loadHeartbeats = async (page = 1, dateVal) => {
   try {
-    const data = await api.getHeartbeats(page)
+    let dateParam = null
+    if (dateVal || heartbeatDate.value) {
+      const d = new Date(dateVal || heartbeatDate.value)
+      dateParam = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+    }
+    const data = await api.getHeartbeats(page, dateParam)
     // 解析details JSON
     data.items = (data.items || []).map(item => {
       if (item.details && typeof item.details === 'string') {
@@ -898,6 +973,37 @@ onMounted(async () => {
 <style scoped>
 .active-consciousness-page {
   padding: 0;
+}
+.modal-scroll-body {
+  max-height: 80vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px;
+}
+.breathing-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-green {
+  background: #18a058;
+  box-shadow: 0 0 6px #18a058;
+  animation: breathe-green 2s ease-in-out infinite;
+}
+.dot-red {
+  background: #d03050;
+  box-shadow: 0 0 6px #d03050;
+  animation: breathe-red 1.5s ease-in-out infinite;
+}
+@keyframes breathe-green {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px #18a058; }
+  50% { opacity: 0.5; box-shadow: 0 0 12px #18a058; }
+}
+@keyframes breathe-red {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px #d03050; }
+  50% { opacity: 0.4; box-shadow: 0 0 14px #d03050; }
 }
 </style>
 
