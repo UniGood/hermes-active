@@ -1543,6 +1543,8 @@ async def run_heartbeat():
         hindsight_context = ""
         recall_count = 0
         hindsight_results = []
+
+        # 优先从 Hindsight 获取记忆
         if hindsight_config.get("enabled", True):
             base_url = hindsight_config.get("base_url", "http://localhost:8888")
             bank_id = hindsight_config.get("bank_id", "hermes")
@@ -1554,6 +1556,13 @@ async def run_heartbeat():
                 base_url=base_url,
                 timeout=hs_timeout,
             )
+
+        # 如果 Hindsight 没有结果（关闭或召回为空），从本地念头库获取
+        if not hindsight_results:
+            hindsight_results = get_recent_thoughts_from_db(limit=5)
+            if hindsight_results:
+                logger.info("从本地念头库召回 %d 条", len(hindsight_results))
+
             if hindsight_results:
                 recall_count = len(hindsight_results)
                 hindsight_context = "相关记忆:\n" + "\n".join(
@@ -2293,3 +2302,19 @@ async def reevaluate_delayed_thoughts(
 
     save_delayed_thoughts(remaining_thoughts)
     return stats
+def get_recent_thoughts_from_db(limit: int = 5) -> List[Dict]:
+    """从本地 active_thought_logs 表获取最近的念头"""
+    try:
+        with active_engine.connect() as conn:
+            rows = conn.execute(text(
+                "SELECT type, content, intensity, decision, created_at "
+                "FROM active_thought_logs "
+                "WHERE decision IN ('send', 'memory') "
+                "ORDER BY created_at DESC LIMIT :limit"
+            ), {"limit": limit}).fetchall()
+            return [{"text": f"[{r[0]}] {r[1]}", "type": "thought", "intensity": r[2]} for r in rows]
+    except Exception as e:
+        logger.warning("查询本地念头失败: %s", e)
+        return []
+
+
