@@ -19,9 +19,20 @@ logger = logging.getLogger("hermes.scheduler")
 # Hindsight 配置已移至 configs 表
 
 
+def _get_hindsight_base_url() -> str:
+    """从数据库读取 Hindsight base_url"""
+    db = ActiveSession()
+    try:
+        url = ConfigService.get_config(db, "active_consciousness.hindsight.base_url")
+        return url or "http://localhost:8888"
+    finally:
+        db.close()
+
+
 async def call_hindsight_recall(query: str, limit: int = 10) -> list:
     """调用 Hindsight Recall API 获取相关记忆"""
-    url = f"{HINDSIGHT_BASE_URL}/memories/recall"
+    base_url = _get_hindsight_base_url()
+    url = f"{base_url}/memories/recall"
     payload = {"query": query, "limit": limit}
     try:
         async with aiohttp.ClientSession() as session:
@@ -42,7 +53,8 @@ async def call_hindsight_recall(query: str, limit: int = 10) -> list:
 
 async def call_hindsight_reflect(query: str) -> str:
     """调用 Hindsight Reflect API 获取综合分析"""
-    url = f"{HINDSIGHT_BASE_URL}/reflect"
+    base_url = _get_hindsight_base_url()
+    url = f"{base_url}/reflect"
     payload = {"query": query}
     try:
         async with aiohttp.ClientSession() as session:
