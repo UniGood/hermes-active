@@ -38,7 +38,7 @@ from config import SERVER_HOST, SERVER_PORT
 from models.database import init_active_db, ActiveSession
 from services.auth_service import AuthService
 from services.scheduler_service import start_scheduler, stop_scheduler
-from services.active_consciousness_service import start_heartbeat_scheduler, stop_heartbeat_scheduler, close_hindsight_client
+from services.active_consciousness_service import start_heartbeat_scheduler, stop_heartbeat_scheduler, close_hindsight_client, schedule_log_cleanup
 from routers import (
     auth_router,
     sessions_router,
@@ -76,6 +76,10 @@ async def lifespan(app: FastAPI):
     # 启动主动意识心跳调度器
     print("正在启动主动意识心跳调度器...")
     start_heartbeat_scheduler()
+
+    # 启动日志清理调度器（每天凌晨 3 点清理 30 天前的日志）
+    print("正在启动日志清理调度器...")
+    schedule_log_cleanup()
 
     print("后端服务启动完成")
     yield

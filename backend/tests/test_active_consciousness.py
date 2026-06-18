@@ -1,4 +1,4 @@
-"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试 + 动态权重合并测试 + 念头类型判断测试 + 延迟队列硬限制测试"""
+"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试 + 动态权重合并测试 + 念头类型判断测试 + 延迟队列硬限制测试 + 日志清理测试"""
 import pytest
 import asyncio
 import unittest.mock
@@ -8,6 +8,7 @@ from services.active_consciousness_service import is_thought_expired, call_llm_w
 from services.active_consciousness_service import merge_emotion_dynamic, calculate_llm_confidence
 from services.active_consciousness_service import determine_thought_type_v2
 from services.active_consciousness_service import add_to_delay_queue_v2
+from services.active_consciousness_service import cleanup_old_logs
 from models.active_consciousness import EmotionState, ThoughtType
 
 
@@ -353,3 +354,32 @@ def test_add_to_delay_queue_v2_when_not_full():
                 result = add_to_delay_queue_v2("测试念头", "time", 0.5, None)
                 assert result == True
                 assert mock_save.called
+
+
+# ============ 日志清理测试 ============
+
+def test_cleanup_old_logs_exists():
+    """测试 cleanup_old_logs 函数存在且可调用"""
+    assert callable(cleanup_old_logs)
+
+
+def test_cleanup_old_logs_with_mock():
+    """测试 cleanup_old_logs 使用 mock 数据库验证删除逻辑"""
+    mock_conn = unittest.mock.MagicMock()
+    mock_result = unittest.mock.MagicMock()
+    mock_result.rowcount = 5
+    mock_conn.execute.return_value = mock_result
+
+    with unittest.mock.patch('services.active_consciousness_service.active_engine') as mock_engine:
+        mock_engine.connect.return_value.__enter__ = unittest.mock.MagicMock(return_value=mock_conn)
+        mock_engine.connect.return_value.__exit__ = unittest.mock.MagicMock(return_value=False)
+
+        # 不应抛异常
+        cleanup_old_logs(days_to_keep=30)
+
+        # 验证执行了 DELETE 语句
+        mock_conn.execute.assert_called_once()
+        call_args = mock_conn.execute.call_args
+        sql = str(call_args[0][0])
+        assert "DELETE FROM active_heartbeat_logs" in sql
+        assert "created_at" in sql

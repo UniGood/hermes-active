@@ -1920,6 +1920,58 @@ def stop_heartbeat_scheduler():
         logger.info("主动意识心跳调度器已停止")
 
 
+# ============ 日志清理 ============
+
+def cleanup_old_logs(days_to_keep: int = 30):
+    """
+    清理旧的心跳日志
+
+    Args:
+        days_to_keep: 保留天数
+    """
+    cutoff_date = (datetime.now() - timedelta(days=days_to_keep)).isoformat()
+
+    try:
+        with active_engine.connect() as conn:
+            # 删除旧的心跳日志
+            result = conn.execute(text("""
+                DELETE FROM active_heartbeat_logs
+                WHERE created_at < :cutoff
+            """), {"cutoff": cutoff_date})
+            deleted_count = result.rowcount
+            conn.commit()
+
+            logger.info("已清理 %d 条旧心跳日志 (保留 %d 天)", deleted_count, days_to_keep)
+    except Exception as e:
+        logger.error("清理旧日志失败: %s", e)
+
+
+# 全局日志清理调度器实例
+log_cleanup_scheduler = AsyncIOScheduler(timezone="Asia/Shanghai")
+
+
+def schedule_log_cleanup():
+    """调度日志清理任务"""
+    global log_cleanup_scheduler
+
+    if log_cleanup_scheduler.running:
+        logger.info("日志清理调度器已在运行")
+        return
+
+    # 每天凌晨 3 点执行清理
+    from apscheduler.triggers.cron import CronTrigger
+    log_cleanup_scheduler.add_job(
+        cleanup_old_logs,
+        CronTrigger(hour=3, minute=0),
+        id="log_cleanup_job",
+        name="日志清理",
+        replace_existing=True
+    )
+
+    log_cleanup_scheduler.start()
+    logger.info("日志清理调度器已启动")
+
+
 def restart_heartbeat_scheduler(new_interval: int = None):
     """
     重启心跳调度器
