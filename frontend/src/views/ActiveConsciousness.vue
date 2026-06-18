@@ -1047,11 +1047,12 @@ onMounted(async () => {
   display: flex !important;
   flex-direction: column;
 }
-.detail-modal-card .n-card-content {
+.n-card.detail-modal-card .n-card-content {
   display: flex !important;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 .modal-scroll-body {
   flex: 1;
