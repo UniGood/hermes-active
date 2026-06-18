@@ -1734,6 +1734,80 @@ async def generate_and_send_thought_with_emotion(
     return sent, details
 
 
+async def get_chat_history_from_messages(
+    days: int,
+    platforms: List[str],
+    limit: int = 50
+) -> List[Dict]:
+    """从 message 表读取聊天记录"""
+    try:
+        with active_engine.connect() as conn:
+            cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
+
+            result = conn.execute(text("""
+                SELECT m.role, m.content, m.created_at, s.platform
+                FROM messages m
+                JOIN sessions s ON m.session_id = s.id
+                WHERE m.created_at > :cutoff
+                AND s.platform IN :platforms
+                AND m.role != 'tool'
+                ORDER BY m.created_at DESC
+                LIMIT :limit
+            """), {
+                "cutoff": cutoff_date,
+                "platforms": tuple(platforms),
+                "limit": limit
+            })
+
+            messages = []
+            for row in result:
+                messages.append({
+                    "role": row[0],
+                    "content": row[1],
+                    "created_at": row[2],
+                    "platform": row[3]
+                })
+
+            return messages
+    except Exception as e:
+        logger.error("读取聊天记录失败: %s", e)
+        return []
+
+
+async def recall_from_hindsight(
+    query: str,
+    limit: int = 10,
+    bank_id: str = "hermes-active",
+    base_url: str = "http://localhost:8888",
+    timeout: float = 30.0
+) -> List[Dict]:
+    """从 Hindsight 召回旧念头"""
+    return await call_hindsight_with_retry(
+        query=query,
+        limit=limit,
+        bank_id=bank_id,
+        base_url=base_url,
+        timeout=timeout,
+        max_retries=3
+    )
+
+
+def should_retain_to_hindsight(thought: Dict, config: Dict) -> bool:
+    """检查念头是否应存入 Hindsight"""
+    retain_threshold = float(config.get("retain_threshold", 0.5))
+    score = thought.get("score", 0)
+    content = thought.get("content", "")
+
+    # 满足任一条件即存入
+    if score >= retain_threshold:
+        return True
+    if "曹凡" in content:
+        return True
+    if config.get("retain_on_weather", True) and thought.get("type") == "weather":
+        return True
+    return False
+
+
 async def run_heartbeat():
     """执行心跳 - v0.2.1 版本（情绪连续性 + 时间窗口 + 延迟队列）"""
     start_time = time.time()
@@ -1848,7 +1922,127 @@ async def run_heartbeat():
         # 9. 保存情绪状态
         update_emotion_state(merged_state)
 
-        # 10. 使用新决策公式
+        # 10. 增强念头生成（如果启用）
+        thought_enhanced_config = config.get("thought_enhanced", {})
+        enhanced_thoughts = []
+
+        if thought_enhanced_config.get("enabled", False):
+            try:
+                from services.weather_service import WeatherService
+                from services.thought_generator import ThoughtGenerator
+
+                weather_service = WeatherService()
+                thought_generator = ThoughtGenerator()
+
+                # 获取天气
+                weather_info = await weather_service.get_weather(
+                    cache_ttl=int(thought_enhanced_config.get("weather_cache_ttl", 3600)),
+                    temp_threshold=float(thought_enhanced_config.get("weather_temp_change_threshold", 5.0))
+                )
+
+                # 根据 arousal 选择时间范围
+                time_range = thought_generator._select_time_range(
+                    merged_state.arousal,
+                    thought_enhanced_config
+                )
+
+                # 读取聊天记录
+                chat_history = await get_chat_history_from_messages(
+                    days=time_range,
+                    platforms=session_config.get("sources", ["weixin"]),
+                    limit=int(session_config.get("max_messages_per_session", 15))
+                )
+
+                # 召回旧念头
+                store_config = hindsight_config.get("store", {})
+                old_thoughts = await recall_from_hindsight(
+                    query="最近的想法",
+                    limit=int(thought_enhanced_config.get("recall_old_thoughts_limit", 10)),
+                    bank_id=store_config.get("bank_id", "hermes-active"),
+                    base_url=store_config.get("base_url", "http://localhost:8888"),
+                    timeout=float(store_config.get("timeout", 30))
+                )
+
+                # 生成念头
+                async def llm_call_func(prompt):
+                    try:
+                        if llm_config.get("mode") == "hermes":
+                            import sys
+                            from pathlib import Path
+                            sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
+                            from agent.auxiliary_client import call_llm
+
+                            response = call_llm(
+                                task='title_generation',
+                                messages=[{"role": "user", "content": prompt}],
+                                temperature=float(thought_enhanced_config.get("temperature", 0.9)),
+                                max_tokens=int(thought_enhanced_config.get("max_tokens", 500)),
+                            )
+                            return response.choices[0].message.content
+                        else:
+                            from services.llm_service import LLMService
+                            result = await LLMService.generate_message(
+                                llm_config=llm_config,
+                                prompt=prompt,
+                                temperature=float(thought_enhanced_config.get("temperature", 0.9)),
+                                max_tokens=int(thought_enhanced_config.get("max_tokens", 500))
+                            )
+                            return result.get("content", "") if result.get("success") else None
+                    except Exception as e:
+                        logger.error("增强念头 LLM 调用失败: %s", e)
+                        return None
+
+                enhanced_thoughts = await thought_generator.generate(
+                    config=thought_enhanced_config,
+                    emotion_state=merged_state.to_dict(),
+                    weather_info=weather_info,
+                    chat_history=chat_history,
+                    old_thoughts=old_thoughts,
+                    llm_call_func=llm_call_func
+                )
+
+                all_details["enhanced_thoughts"] = {
+                    "count": len(enhanced_thoughts),
+                    "weather": weather_info.get("current", {}),
+                    "time_range": time_range,
+                    "chat_history_count": len(chat_history),
+                    "old_thoughts_count": len(old_thoughts),
+                }
+                logger.info("增强念头生成完成: %d 个", len(enhanced_thoughts))
+
+                # 存储念头
+                for thought in enhanced_thoughts:
+                    # 存入 active.db
+                    ActiveConsciousnessService.write_thought_log(
+                        heartbeat_id=heartbeat_id,
+                        thought_type=thought.get("type", "association"),
+                        content=thought.get("content", ""),
+                        intensity=thought.get("score", 0.5),
+                        decision="enhanced",
+                        reason="增强念头生成",
+                        score=thought.get("score", 0.5),
+                        details=json.dumps({
+                            "weather": weather_info.get("current", {}),
+                            "emotion_state": merged_state.to_dict(),
+                        }, ensure_ascii=False)
+                    )
+
+                    # 检查是否存入 Hindsight
+                    if should_retain_to_hindsight(thought, thought_enhanced_config):
+                        stored = await retain_thought_to_hindsight(
+                            thought.get("content", ""),
+                            merged_state,
+                            thought.get("type", "association"),
+                            thought.get("score", 0.5)
+                        )
+                        if stored:
+                            logger.info("增强念头已存入 Hindsight: %s", thought.get("content", "")[:50])
+
+            except Exception as e:
+                logger.error("增强念头生成失败: %s", e)
+                all_details["enhanced_thoughts_error"] = str(e)
+
+        # 11. 使用新决策公式
         decision_type, reason, score = make_decision_v2(config, status, merged_state)
         all_details["decision"] = {
             "type": decision_type,
@@ -1857,7 +2051,7 @@ async def run_heartbeat():
         }
         logger.info("决策结果: type=%s, score=%.3f, reason=%s", decision_type, score, reason)
 
-        # 11. 记录心跳日志（初始）
+        # 12. 记录心跳日志（初始）
         duration_ms = round((time.time() - start_time) * 1000)
         heartbeat_id = ActiveConsciousnessService.write_heartbeat_log(
             started_at=started_at,
@@ -1871,7 +2065,7 @@ async def run_heartbeat():
             details=json.dumps(all_details, ensure_ascii=False) if all_details else None
         )
 
-        # 12. 处理决策结果
+        # 13. 处理决策结果
         if decision_type == "skip":
             logger.info("心跳跳过: %s", reason)
 
@@ -1951,16 +2145,16 @@ async def run_heartbeat():
                     all_details["hindsight_tags"] = hindsight_tags
                     all_details["hindsight_stored"] = stored
 
-        # 13. 重评估延迟队列
+        # 14. 重评估延迟队列
         delay_stats = await reevaluate_delayed_thoughts(config, status, merged_state)
         all_details["delay_reeval"] = delay_stats
         if any(v > 0 for v in delay_stats.values()):
             logger.info("延迟队列重评估: %s", delay_stats)
 
-        # 14. 读取更新后的情绪值
+        # 15. 读取更新后的情绪值
         all_details["emotion_after"] = get_emotion_state().to_dict()
 
-        # 15. 更新心跳日志（含 details）
+        # 16. 更新心跳日志（含 details）
         duration_ms = round((time.time() - start_time) * 1000)
         logger.info("=== 心跳完成 === duration=%dms, decision=%s", duration_ms, decision_type)
         duration_ms = round((time.time() - start_time) * 1000)
