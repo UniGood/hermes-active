@@ -288,7 +288,7 @@
     <!-- 心跳日志详情弹窗 -->
     <n-modal v-model:show="showDetailsModal" style="width: 95vw; max-width: 1200px;" :mask-closable="false">
       <n-card :title="detailsTitle" closable @close="showDetailsModal = false" style="max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
-        <div class="modal-scroll-body" @touchmove.stop>
+        <div class="modal-scroll-body" >
       <template v-if="detailsData">
         <!-- 情绪演化流程 -->
         <n-card title="情绪演化" size="small" style="margin-bottom: 8px" v-if="isHeartbeatDetails">
@@ -490,7 +490,7 @@
     <!-- 念头日志详情弹窗 -->
     <n-modal v-model:show="showThoughtDetailsModal" :title="thoughtDetailsTitle" style="width: 95vw; max-width: 1200px;" :mask-closable="false">
       <n-card :title="thoughtDetailsTitle" closable @close="showThoughtDetailsModal = false" style="max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
-        <div class="modal-scroll-body" @touchmove.stop>
+        <div class="modal-scroll-body" >
       <template v-if="thoughtDetailsData">
         <!-- 念头信息 -->
         <n-card title="念头信息" size="small" style="margin-bottom: 8px">
