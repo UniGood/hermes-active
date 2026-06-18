@@ -105,6 +105,15 @@ class ActiveConsciousnessThoughtEnhancedConfig(BaseModel):
     retain_on_weather: bool = True
 
 
+class ActiveConsciousnessWeatherConfig(BaseModel):
+    """天气配置（共享）"""
+    enabled: bool = False
+    amap_key: str = ""              # 高德开放平台 Key
+    adcode: str = "370100"          # 城市编码（默认济南）
+    cache_ttl: int = 3600           # 缓存时长（秒）
+    temp_change_threshold: float = 5.0  # 温度变化阈值
+
+
 class ActiveConsciousnessNotifyConfig(BaseModel):
     """通知目标配置"""
     platform: str = "weixin"
@@ -119,6 +128,7 @@ class ActiveConsciousnessConfig(BaseModel):
     session: ActiveConsciousnessSessionConfig = ActiveConsciousnessSessionConfig()
     decision: ActiveConsciousnessDecisionConfig = ActiveConsciousnessDecisionConfig()
     notify: ActiveConsciousnessNotifyConfig = ActiveConsciousnessNotifyConfig()
+    weather: ActiveConsciousnessWeatherConfig = ActiveConsciousnessWeatherConfig()
     # v0.2.1 新增
     emotion: ActiveConsciousnessEmotionConfig = ActiveConsciousnessEmotionConfig()
     time_window: ActiveConsciousnessTimeConfig = ActiveConsciousnessTimeConfig()

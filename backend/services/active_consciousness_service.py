@@ -171,6 +171,13 @@ _DEFAULTS = {
     "active_consciousness.notify.platform": "weixin",
     "active_consciousness.notify.chat_id": "",
 
+    # 天气配置（共享）
+    "active_consciousness.weather.enabled": "false",
+    "active_consciousness.weather.amap_key": "",
+    "active_consciousness.weather.adcode": "370100",
+    "active_consciousness.weather.cache_ttl": "3600",
+    "active_consciousness.weather.temp_change_threshold": "5.0",
+
     # 情绪演化
     "active_consciousness.emotion.decay_rate": "0.02",
     "active_consciousness.emotion.social_need_growth": "0.01",
@@ -1934,11 +1941,20 @@ async def run_heartbeat():
                 weather_service = WeatherService()
                 thought_generator = ThoughtGenerator()
 
-                # 获取天气
-                weather_info = await weather_service.get_weather(
-                    cache_ttl=int(thought_enhanced_config.get("weather_cache_ttl", 3600)),
-                    temp_threshold=float(thought_enhanced_config.get("weather_temp_change_threshold", 5.0))
-                )
+                # 获取共享天气配置
+                weather_config = config.get("weather", {})
+
+                if weather_config.get("enabled", False):
+                    # 使用共享天气配置
+                    weather_info = await weather_service.get_weather(
+                        amap_key=weather_config.get("amap_key", ""),
+                        adcode=weather_config.get("adcode", "370100"),
+                        cache_ttl=int(weather_config.get("cache_ttl", 3600)),
+                        temp_threshold=float(weather_config.get("temp_change_threshold", 5.0))
+                    )
+                else:
+                    # 天气功能未启用
+                    weather_info = {"success": False, "error": "天气功能未启用"}
 
                 # 根据 arousal 选择时间范围
                 time_range = thought_generator._select_time_range(
