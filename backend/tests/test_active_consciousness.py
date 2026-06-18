@@ -1,9 +1,11 @@
-"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试"""
+"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试 + 动态权重合并测试"""
 import pytest
 import asyncio
 from datetime import datetime, timedelta
 
 from services.active_consciousness_service import is_thought_expired, call_llm_with_fallback, validate_active_consciousness_config
+from services.active_consciousness_service import merge_emotion_dynamic, calculate_llm_confidence
+from models.active_consciousness import EmotionState
 
 
 def test_is_thought_expired_with_old_thought():
@@ -207,3 +209,42 @@ def test_restart_heartbeat_scheduler_exists():
     """测试 restart_heartbeat_scheduler 函数存在且可调用"""
     from services.active_consciousness_service import restart_heartbeat_scheduler
     assert callable(restart_heartbeat_scheduler)
+
+
+# ============ 动态权重合并测试 ============
+
+def test_merge_emotion_dynamic_with_low_confidence():
+    """测试低置信度时的动态权重"""
+    evolved = EmotionState(valence=0.5, arousal=0.3, social_need=0.2)
+    llm_assessed = EmotionState(valence=0.8, arousal=0.7, social_need=0.5)
+
+    # 低置信度，更信任演化
+    merged = merge_emotion_dynamic(evolved, llm_assessed, llm_confidence=0.2)
+
+    # 权重应该是 0.7 演化 + 0.3 LLM
+    expected_valence = 0.5 * 0.7 + 0.8 * 0.3
+    assert abs(merged.valence - expected_valence) < 0.01
+
+
+def test_merge_emotion_dynamic_with_high_confidence():
+    """测试高置信度时的动态权重"""
+    evolved = EmotionState(valence=0.5, arousal=0.3, social_need=0.2)
+    llm_assessed = EmotionState(valence=0.8, arousal=0.7, social_need=0.5)
+
+    # 高置信度，更信任 LLM
+    merged = merge_emotion_dynamic(evolved, llm_assessed, llm_confidence=0.9)
+
+    # 权重应该是 0.3 演化 + 0.7 LLM
+    expected_valence = 0.5 * 0.3 + 0.8 * 0.7
+    assert abs(merged.valence - expected_valence) < 0.01
+
+
+def test_calculate_llm_confidence():
+    """测试 LLM 置信度计算"""
+    evolved = EmotionState(valence=0.5, arousal=0.3, social_need=0.2)
+    llm_assessed = EmotionState(valence=0.6, arousal=0.4, social_need=0.3)
+
+    confidence = calculate_llm_confidence(llm_assessed, evolved)
+
+    # 值在合理范围内，差异不大，置信度应该较高
+    assert 0.5 <= confidence <= 1.0

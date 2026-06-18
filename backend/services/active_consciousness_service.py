@@ -1728,11 +1728,13 @@ async def run_heartbeat():
             llm_assessed = evolved_state
         all_details["emotion_llm"] = llm_assessed.to_dict()
 
-        # 8. 合并情绪（演化值 + LLM 评估值）
-        merged_state = merge_emotion(evolved_state, llm_assessed)
+        # 8. 合并情绪（演化值 + LLM 评估值）- 使用动态权重
+        llm_confidence = calculate_llm_confidence(llm_assessed, evolved_state)
+        merged_state = merge_emotion_dynamic(evolved_state, llm_assessed, llm_confidence)
         all_details["emotion_merged"] = merged_state.to_dict()
-        logger.info("情绪合并: valence=%.3f, arousal=%.3f, dominant=%s",
-                    merged_state.valence, merged_state.arousal, merged_state.dominant)
+        all_details["llm_confidence"] = llm_confidence
+        logger.info("情绪合并: valence=%.3f, arousal=%.3f, dominant=%s, confidence=%.2f",
+                    merged_state.valence, merged_state.arousal, merged_state.dominant, llm_confidence)
 
         # 9. 保存情绪状态
         update_emotion_state(merged_state)
@@ -2063,6 +2065,71 @@ def merge_emotion(evolved: EmotionState, llm_assessed: EmotionState) -> EmotionS
         social_need=round(merged_social_need, 3),
         updated_at=datetime.now().isoformat()
     )
+
+
+def merge_emotion_dynamic(
+    evolved: EmotionState,
+    llm_assessed: EmotionState,
+    llm_confidence: float
+) -> EmotionState:
+    """
+    动态权重合并情绪
+
+    Args:
+        evolved: 演化后的情绪
+        llm_assessed: LLM 评估的情绪
+        llm_confidence: LLM 评估的置信度 (0-1)
+
+    Returns:
+        合并后的情绪
+    """
+    # 根据置信度调整权重
+    if llm_confidence < 0.3:
+        # LLM 不可信，更信任演化
+        weight_evolved, weight_llm = 0.7, 0.3
+    elif llm_confidence > 0.8:
+        # LLM 很可信，更信任 LLM
+        weight_evolved, weight_llm = 0.3, 0.7
+    else:
+        # 默认权重
+        weight_evolved, weight_llm = 0.4, 0.6
+
+    logger.info("动态权重合并: confidence=%.2f, evolved_weight=%.2f, llm_weight=%.2f",
+                llm_confidence, weight_evolved, weight_llm)
+
+    return EmotionState(
+        valence=evolved.valence * weight_evolved + llm_assessed.valence * weight_llm,
+        arousal=evolved.arousal * weight_evolved + llm_assessed.arousal * weight_llm,
+        social_need=evolved.social_need * weight_evolved + llm_assessed.social_need * weight_llm,
+        dominant=llm_assessed.dominant if llm_confidence > 0.5 else evolved.dominant,
+        updated_at=datetime.now().isoformat()
+    )
+
+
+def calculate_llm_confidence(llm_assessed: EmotionState, evolved: EmotionState) -> float:
+    """
+    计算 LLM 评估的置信度
+
+    置信度基于：
+    1. LLM 返回值是否在合理范围内
+    2. LLM 返回值与演化值的差异
+    """
+    confidence = 0.5  # 基础置信度
+
+    # 检查值是否在合理范围内
+    if 0 <= llm_assessed.valence <= 1 and 0 <= llm_assessed.arousal <= 1:
+        confidence += 0.2
+
+    # 检查与演化值的差异（差异太大可能表示 LLM 不准确）
+    valence_diff = abs(llm_assessed.valence - evolved.valence)
+    arousal_diff = abs(llm_assessed.arousal - evolved.arousal)
+
+    if valence_diff < 0.3 and arousal_diff < 0.3:
+        confidence += 0.3
+    elif valence_diff > 0.5 or arousal_diff > 0.5:
+        confidence -= 0.2
+
+    return max(0.0, min(1.0, confidence))
 
 
 def get_emotion_state() -> EmotionState:
