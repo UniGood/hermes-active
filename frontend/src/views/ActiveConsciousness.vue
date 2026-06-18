@@ -1062,7 +1062,7 @@ onMounted(async () => {
   background: #efeff5;
   border: 1px solid #efeff5;
   border-radius: 3px;
-  overflow: hidden;
+  touch-action: pan-y;
 }
 .detail-label {
   background: #f7f7fa;
