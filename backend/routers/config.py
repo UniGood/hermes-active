@@ -218,20 +218,28 @@ async def get_weather_config(
 ):
     """获取天气配置"""
     import json
+    import logging
+    logger = logging.getLogger("hermes.config")
+
     config_str = ConfigService.get_config(db, "active_consciousness.weather")
     if config_str:
         try:
             return json.loads(config_str) if isinstance(config_str, str) else config_str
         except json.JSONDecodeError:
             pass
+
     # 从扁平 key 构建
+    enabled_value = ConfigService.get_config(db, "active_consciousness.weather.enabled")
+    logger.info("读取天气配置: enabled=%s", enabled_value)
+
     result = {
-        "enabled": ConfigService.get_config(db, "active_consciousness.weather.enabled") == "true",
+        "enabled": enabled_value == "true",
         "amap_key": ConfigService.get_config(db, "active_consciousness.weather.amap_key") or "",
         "adcode": ConfigService.get_config(db, "active_consciousness.weather.adcode") or "370100",
         "cache_ttl": int(ConfigService.get_config(db, "active_consciousness.weather.cache_ttl") or "3600"),
         "temp_change_threshold": float(ConfigService.get_config(db, "active_consciousness.weather.temp_change_threshold") or "5.0")
     }
+    logger.info("返回天气配置: %s", result)
     return result
 
 
@@ -242,6 +250,10 @@ async def update_weather_config(
     db: Session = Depends(get_active_db)
 ):
     """更新天气配置"""
+    import logging
+    logger = logging.getLogger("hermes.config")
+    logger.info("收到天气配置更新请求: %s", weather_config)
+
     # 验证配置
     if weather_config.get("enabled") and not weather_config.get("amap_key"):
         raise HTTPException(status_code=400, detail="启用天气功能时必须配置高德 API Key")
@@ -256,7 +268,14 @@ async def update_weather_config(
     }
     for field, config_key in flat_keys.items():
         if field in weather_config:
-            ConfigService.set_config(db, config_key, str(weather_config[field]))
+            value = weather_config[field]
+            # 布尔值转换为小写字符串
+            if isinstance(value, bool):
+                value = str(value).lower()
+            else:
+                value = str(value)
+            logger.info("保存配置: %s = %s", config_key, value)
+            ConfigService.set_config(db, config_key, value)
 
     return SuccessResponse(message="天气配置已保存")
 
@@ -272,10 +291,6 @@ async def test_weather(
     # 从扁平 key 读取配置
     amap_key = ConfigService.get_config(db, "active_consciousness.weather.amap_key") or ""
     adcode = ConfigService.get_config(db, "active_consciousness.weather.adcode") or "370100"
-    enabled = ConfigService.get_config(db, "active_consciousness.weather.enabled") == "true"
-
-    if not enabled:
-        return {"success": False, "error": "天气功能未启用"}
 
     if not amap_key:
         return {"success": False, "error": "未配置高德 API Key"}

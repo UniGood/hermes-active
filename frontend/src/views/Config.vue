@@ -187,7 +187,7 @@
               <div class="form-actions">
                 <n-space>
                   <n-button type="primary" @click="saveWeatherConfig" :loading="savingWeather">保存</n-button>
-                  <n-button @click="testWeather" :loading="testingWeather" v-if="weatherConfig.enabled && weatherConfig.amap_key">测试天气</n-button>
+                  <n-button @click="testWeather" :loading="testingWeather" v-if="weatherConfig.amap_key">测试天气</n-button>
                 </n-space>
               </div>
             </n-form-item>
@@ -467,6 +467,9 @@ async function saveWeatherConfig() {
 async function testWeather() {
   testingWeather.value = true
   try {
+    // 先保存配置
+    await api.put('/config/weather', weatherConfig.value)
+    // 再测试
     const result = await api.get('/config/weather/test')
     if (result.success) {
       message.success(`天气测试成功: ${result.data.city} ${result.data.weather} ${result.data.temperature}°C`)
