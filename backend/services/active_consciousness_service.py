@@ -80,6 +80,59 @@ async def close_hindsight_client() -> None:
             pass
         _hindsight_client = None
 
+
+async def reset_hindsight_client():
+    """重置 Hindsight 客户端（用于重连）"""
+    global _hindsight_client
+    if _hindsight_client is not None:
+        try:
+            await _hindsight_client.aclose()
+        except Exception:
+            pass
+        _hindsight_client = None
+    logger.info("Hindsight 客户端已重置")
+
+
+async def call_hindsight_with_retry(
+    query: str,
+    limit: int = 5,
+    bank_id: str = "hermes",
+    base_url: str = "http://localhost:8888",
+    timeout: float = 30.0,
+    max_retries: int = 3
+) -> List[Dict]:
+    """
+    带重试的 Hindsight 调用
+
+    Args:
+        query: 查询内容
+        limit: 返回数量
+        bank_id: 银行 ID
+        base_url: 基础 URL
+        timeout: 超时时间
+        max_retries: 最大重试次数
+
+    Returns:
+        召回结果列表
+    """
+    for attempt in range(max_retries):
+        try:
+            client = get_hindsight_client(base_url, timeout)
+            response = await client.arecall(bank_id=bank_id, query=query, max_tokens=4096)
+            return [{"text": r.text, "type": r.type, "id": r.id} for r in response.results[:limit]]
+        except ConnectionError as e:
+            logger.warning("Hindsight 连接失败，尝试重连 (%d/%d): %s",
+                          attempt + 1, max_retries, e)
+            await reset_hindsight_client()
+            if attempt == max_retries - 1:
+                logger.error("Hindsight 重连失败，已用尽重试次数")
+                return []
+        except Exception as e:
+            logger.error("Hindsight 调用失败: %s", e)
+            return []
+    return []
+
+
 # 配置 key 前缀
 PREFIX = "active_consciousness."
 
@@ -859,12 +912,13 @@ async def generate_thought(config: Dict[str, Any], status: Dict[str, Any]) -> Di
         bank_id = hindsight_config.get("bank_id", "hermes")
         hs_timeout = float(hindsight_config.get("timeout", 30))
 
-        recall_results = await call_hindsight_recall(
+        recall_results = await call_hindsight_with_retry(
             "最近的对话和情绪",
             limit=hindsight_config.get("recall_limit", 5),
             bank_id=bank_id,
             base_url=base_url,
             timeout=hs_timeout,
+            max_retries=3,
         )
         if recall_results:
             recall_count = len(recall_results)
@@ -1503,12 +1557,13 @@ async def generate_and_send_thought_with_emotion(
         base_url = hindsight_config.get("base_url", "http://localhost:8888")
         bank_id = hindsight_config.get("bank_id", "hermes")
         hs_timeout = float(hindsight_config.get("timeout", 30))
-        hindsight_results = await call_hindsight_recall(
+        hindsight_results = await call_hindsight_with_retry(
             "最近的对话和情绪",
             limit=hindsight_config.get("recall_limit", 5),
             bank_id=bank_id,
             base_url=base_url,
             timeout=hs_timeout,
+            max_retries=3,
         )
         if hindsight_results:
             hindsight_context = "相关记忆:\n" + "\n".join(
@@ -1697,12 +1752,13 @@ async def run_heartbeat():
             base_url = hindsight_config.get("base_url", "http://localhost:8888")
             bank_id = hindsight_config.get("bank_id", "hermes")
             hs_timeout = float(hindsight_config.get("timeout", 30))
-            hindsight_results = await call_hindsight_recall(
+            hindsight_results = await call_hindsight_with_retry(
                 "最近的对话和情绪",
                 limit=hindsight_config.get("recall_limit", 5),
                 bank_id=bank_id,
                 base_url=base_url,
                 timeout=hs_timeout,
+                max_retries=3,
             )
 
         # 如果 Hindsight 没有结果（关闭或召回为空），从本地念头库获取

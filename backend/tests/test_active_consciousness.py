@@ -1,4 +1,4 @@
-"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试 + 动态权重合并测试 + 念头类型判断测试 + 延迟队列硬限制测试 + 日志清理测试"""
+"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试 + 动态权重合并测试 + 念头类型判断测试 + 延迟队列硬限制测试 + 日志清理测试 + Hindsight 重连测试"""
 import pytest
 import asyncio
 import unittest.mock
@@ -9,6 +9,7 @@ from services.active_consciousness_service import merge_emotion_dynamic, calcula
 from services.active_consciousness_service import determine_thought_type_v2
 from services.active_consciousness_service import add_to_delay_queue_v2
 from services.active_consciousness_service import cleanup_old_logs
+from services.active_consciousness_service import reset_hindsight_client
 from models.active_consciousness import EmotionState, ThoughtType
 
 
@@ -407,3 +408,77 @@ def test_cleanup_old_logs_with_mock():
         sql = str(call_args[0][0])
         assert "DELETE FROM active_heartbeat_logs" in sql
         assert "created_at" in sql
+
+
+# ============ Hindsight 重连测试 ============
+
+def test_reset_hindsight_client():
+    """测试重置 Hindsight 客户端"""
+    assert callable(reset_hindsight_client)
+
+
+@pytest.mark.asyncio
+async def test_call_hindsight_with_retry_exists():
+    """测试 call_hindsight_with_retry 函数存在且可调用"""
+    from services.active_consciousness_service import call_hindsight_with_retry
+    assert callable(call_hindsight_with_retry)
+
+
+@pytest.mark.asyncio
+async def test_call_hindsight_with_retry_success():
+    """测试 Hindsight 重试机制 - 正常成功"""
+    from services.active_consciousness_service import call_hindsight_with_retry
+
+    mock_result = unittest.mock.MagicMock()
+    mock_result.results = []
+    mock_client = unittest.mock.AsyncMock()
+    mock_client.arecall.return_value = mock_result
+
+    with unittest.mock.patch('services.active_consciousness_service.get_hindsight_client', return_value=mock_client):
+        result = await call_hindsight_with_retry("test query", max_retries=3)
+        assert result == []
+        mock_client.arecall.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_call_hindsight_with_retry_connection_error():
+    """测试 Hindsight 重试机制 - 连接失败后重试"""
+    from services.active_consciousness_service import call_hindsight_with_retry
+
+    mock_client = unittest.mock.AsyncMock()
+    mock_client.arecall.side_effect = ConnectionError("Connection refused")
+
+    with unittest.mock.patch('services.active_consciousness_service.get_hindsight_client', return_value=mock_client):
+        with unittest.mock.patch('services.active_consciousness_service.reset_hindsight_client') as mock_reset:
+            result = await call_hindsight_with_retry("test query", max_retries=3)
+            assert result == []
+            assert mock_reset.call_count == 3  # 每次失败都重置
+
+
+@pytest.mark.asyncio
+async def test_call_hindsight_with_retry_recovers_after_reset():
+    """测试 Hindsight 重试机制 - 重置后成功"""
+    from services.active_consciousness_service import call_hindsight_with_retry
+
+    mock_result = unittest.mock.MagicMock()
+    mock_result.results = [unittest.mock.MagicMock(text="memory", type="episodic", id=1)]
+
+    mock_client_fail = unittest.mock.AsyncMock()
+    mock_client_fail.arecall.side_effect = ConnectionError("Connection refused")
+
+    mock_client_ok = unittest.mock.AsyncMock()
+    mock_client_ok.arecall.return_value = mock_result
+
+    call_count = 0
+    def get_client_side_effect(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count <= 2:
+            return mock_client_fail
+        return mock_client_ok
+
+    with unittest.mock.patch('services.active_consciousness_service.get_hindsight_client', side_effect=get_client_side_effect):
+        with unittest.mock.patch('services.active_consciousness_service.reset_hindsight_client'):
+            result = await call_hindsight_with_retry("test query", max_retries=3)
+            assert len(result) == 1
+            assert result[0]["text"] == "memory"
