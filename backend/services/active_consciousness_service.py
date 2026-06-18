@@ -194,6 +194,25 @@ _DEFAULTS = {
     # 念头存储
     "active_consciousness.thought.retain_enabled": "false",
     "active_consciousness.thought.retain_threshold": "0.5",
+
+    # 增强念头生成配置
+    "active_consciousness.thought_enhanced.enabled": "true",
+    "active_consciousness.thought_enhanced.arousal_low_threshold": "0.3",
+    "active_consciousness.thought_enhanced.arousal_high_threshold": "0.7",
+    "active_consciousness.thought_enhanced.count_15d": "3",
+    "active_consciousness.thought_enhanced.count_7d": "2",
+    "active_consciousness.thought_enhanced.count_3d": "2",
+    "active_consciousness.thought_enhanced.count_1d": "1",
+    "active_consciousness.thought_enhanced.temperature": "0.9",
+    "active_consciousness.thought_enhanced.max_tokens": "500",
+    "active_consciousness.thought_enhanced.weather_enabled": "true",
+    "active_consciousness.thought_enhanced.weather_cache_ttl": "3600",
+    "active_consciousness.thought_enhanced.weather_trigger_enabled": "true",
+    "active_consciousness.thought_enhanced.weather_type_change_trigger": "true",
+    "active_consciousness.thought_enhanced.weather_temp_change_threshold": "5.0",
+    "active_consciousness.thought_enhanced.recall_old_thoughts_limit": "10",
+    "active_consciousness.thought_enhanced.retain_threshold": "0.5",
+    "active_consciousness.thought_enhanced.retain_on_weather": "true",
 }
 
 # 想念等级
@@ -344,6 +363,35 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
             errors.append("延迟队列最大存活时间必须在 1-24 小时之间")
     except (ValueError, TypeError):
         errors.append("延迟队列最大存活时间必须是数字")
+
+    # 增强念头生成配置验证
+    thought_enhanced = config.get("thought_enhanced", {})
+
+    # arousal 阈值
+    try:
+        low_threshold = float(thought_enhanced.get("arousal_low_threshold", 0.3))
+        high_threshold = float(thought_enhanced.get("arousal_high_threshold", 0.7))
+        if low_threshold >= high_threshold:
+            errors.append("低唤醒度阈值必须小于高唤醒度阈值")
+    except (ValueError, TypeError):
+        errors.append("唤醒度阈值必须是数字")
+
+    # 念头数量
+    for key in ["count_15d", "count_7d", "count_3d", "count_1d"]:
+        try:
+            count = int(thought_enhanced.get(key, 1))
+            if count < 1 or count > 5:
+                errors.append(f"{key} 必须在 1-5 之间")
+        except (ValueError, TypeError):
+            errors.append(f"{key} 必须是整数")
+
+    # temperature
+    try:
+        temp = float(thought_enhanced.get("temperature", 0.9))
+        if temp < 0 or temp > 2:
+            errors.append("temperature 必须在 0-2 之间")
+    except (ValueError, TypeError):
+        errors.append("temperature 必须是数字")
 
     return errors
 

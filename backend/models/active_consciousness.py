@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict, Any
-from enum import Enum
 from pydantic import BaseModel
 
 
@@ -75,6 +74,37 @@ class ActiveConsciousnessThoughtConfig(BaseModel):
     retain_threshold: float = 0.5       # 存储阈值
 
 
+class ActiveConsciousnessThoughtEnhancedConfig(BaseModel):
+    """增强念头生成配置"""
+    enabled: bool = True
+
+    # 时间范围配置
+    arousal_low_threshold: float = 0.3
+    arousal_high_threshold: float = 0.7
+    count_15d: int = 3
+    count_7d: int = 2
+    count_3d: int = 2
+    count_1d: int = 1
+
+    # LLM 配置
+    temperature: float = 0.9
+    max_tokens: int = 500
+
+    # 天气配置
+    weather_enabled: bool = True
+    weather_cache_ttl: int = 3600
+    weather_trigger_enabled: bool = True
+    weather_type_change_trigger: bool = True
+    weather_temp_change_threshold: float = 5.0
+
+    # 旧念头召回配置
+    recall_old_thoughts_limit: int = 10
+
+    # 存储配置
+    retain_threshold: float = 0.5
+    retain_on_weather: bool = True
+
+
 class ActiveConsciousnessNotifyConfig(BaseModel):
     """通知目标配置"""
     platform: str = "weixin"
@@ -94,6 +124,7 @@ class ActiveConsciousnessConfig(BaseModel):
     time_window: ActiveConsciousnessTimeConfig = ActiveConsciousnessTimeConfig()
     delay: ActiveConsciousnessDelayConfig = ActiveConsciousnessDelayConfig()
     thought: ActiveConsciousnessThoughtConfig = ActiveConsciousnessThoughtConfig()
+    thought_enhanced: ActiveConsciousnessThoughtEnhancedConfig = ActiveConsciousnessThoughtEnhancedConfig()
 
 
 # ============ 状态相关 ============
@@ -132,26 +163,6 @@ class EmotionalIntensity(BaseModel):
     label: str = "工作"
 
 
-class EmotionState(BaseModel):
-    """VA 三维情绪状态"""
-    valence: float = 0.5       # 情感效价 0-1（0=消极, 1=积极）
-    arousal: float = 0.5       # 唤醒度 0-1（0=平静, 1=激动）
-    dominant: str = "calm"     # 主导情绪标签
-    social_need: float = 0.3   # 社交需求 0-1
-    updated_at: Optional[str] = None  # 上次更新时间 ISO 格式
-
-
-class DelayedThought(BaseModel):
-    """延迟发送念头"""
-    id: Optional[int] = None
-    content: str = ""
-    thought_type: str = "time"
-    score: float = 0.0
-    created_at: Optional[str] = None
-    retry_count: int = 0
-    next_retry_at: Optional[str] = None
-
-
 class ActiveConsciousnessStatus(BaseModel):
     """主动意识状态"""
     enabled: bool = False
@@ -161,7 +172,6 @@ class ActiveConsciousnessStatus(BaseModel):
     chat_heat: ChatHeat = ChatHeat()
     emotional_intensity: EmotionalIntensity = EmotionalIntensity()
     # v0.2.1 新增
-    emotion_state: Optional[EmotionState] = None
     time_fitness: Optional[Dict[str, Any]] = None
     delayed_count: int = 0
     today_sent_count: int = 0
@@ -298,16 +308,6 @@ class EmotionState:
             return (datetime.now() - updated).total_seconds() / 60 > minutes
         except Exception:
             return True
-
-
-class ThoughtType(str, Enum):
-    """念头类型枚举"""
-    TIME = "time"           # 时间念头："23:30了，该睡了"
-    SILENCE = "silence"     # 空白念头："好久没说话了"
-    ASSOCIATION = "assoc"   # 关联念头："今天周五，一般加班"
-    MEMORY = "memory"       # 回忆念头："想起你说过..."
-    EMOTION = "emotion"     # 情绪念头："现在有点兴奋"
-    ENVIRONMENT = "env"     # 环境念头："外面下雨了"
 
 
 @dataclass
