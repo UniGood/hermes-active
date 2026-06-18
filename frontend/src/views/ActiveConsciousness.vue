@@ -286,9 +286,9 @@
     </n-modal>
 
     <!-- 心跳日志详情弹窗 -->
-    <n-modal v-model:show="showDetailsModal" style="width: 95vw; max-width: 1200px;">
-      <n-card :title="detailsTitle" closable @close="showDetailsModal = false">
-        <div class="modal-scroll-body">
+    <n-modal v-model:show="showDetailsModal" style="width: 95vw; max-width: 1200px;" :mask-closable="false">
+      <n-card :title="detailsTitle" closable @close="showDetailsModal = false" style="max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+        <div class="modal-scroll-body" @touchmove.stop>
       <template v-if="detailsData">
         <!-- 情绪演化流程 -->
         <n-card title="情绪演化" size="small" style="margin-bottom: 8px" v-if="isHeartbeatDetails">
@@ -453,7 +453,9 @@
     </n-modal>
 
     <!-- 念头日志详情弹窗 -->
-    <n-modal v-model:show="showThoughtDetailsModal" preset="card" :title="thoughtDetailsTitle" style="width: 95vw; max-width: 1200px">
+    <n-modal v-model:show="showThoughtDetailsModal" :title="thoughtDetailsTitle" style="width: 95vw; max-width: 1200px;" :mask-closable="false">
+      <n-card :title="thoughtDetailsTitle" closable @close="showThoughtDetailsModal = false" style="max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+        <div class="modal-scroll-body" @touchmove.stop>
       <template v-if="thoughtDetailsData">
         <!-- 念头信息 -->
         <n-card title="念头信息" size="small" style="margin-bottom: 8px">
@@ -526,6 +528,8 @@
       <template v-else>
         <n-empty description="暂无详情数据" />
       </template>
+        </div>
+      </n-card>
     </n-modal>
   </div>
 </template>
@@ -991,10 +995,13 @@ onMounted(async () => {
   padding: 0;
 }
 .modal-scroll-body {
-  max-height: 80vh;
+  flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   padding: 4px;
+  overscroll-behavior: contain;
 }
 .breathing-dot {
   display: inline-block;
