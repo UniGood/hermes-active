@@ -88,20 +88,7 @@
               <n-switch v-model:value="config.hindsight.reflect_enabled" />
             </n-form-item>
 
-            <!-- 天气感知 -->
-            <n-divider>天气感知（高德 API）</n-divider>
-            <n-form-item label="启用天气感知">
-              <n-switch v-model:value="config.weather.enabled" />
-            </n-form-item>
-            <n-form-item label="城市编码">
-              <n-input v-model:value="config.weather.adcode" placeholder="370100" />
-            </n-form-item>
-            <n-form-item label="高德 API Key">
-              <n-input v-model:value="config.weather.amap_key" type="password" show-password-on="mousedown" placeholder="输入高德 API Key" />
-            </n-form-item>
-            <n-form-item label="缓存时长（秒）">
-              <n-input-number v-model:value="config.weather.cache_ttl" :min="60" :max="3600" />
-            </n-form-item>
+            <!-- 天气感知（配置已移至「配置管理」页面） -->
           </template>
 
           <n-button type="primary" @click="saveConfig" :loading="saving" style="margin-top: 16px">

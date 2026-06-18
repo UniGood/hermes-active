@@ -1,133 +1,200 @@
 <template>
   <div class="config-page">
-    <!-- 个性化设置 -->
-    <n-card title="个性化设置" style="margin-bottom: 16px">
-      <n-form label-placement="left" label-width="100">
-        <n-form-item label="用户名称">
-          <n-input v-model:value="userConfig.user_name" placeholder="曹凡" />
-        </n-form-item>
-        <n-form-item label="助手名称">
-          <n-input v-model:value="userConfig.assistant_name" placeholder="凯莉" />
-        </n-form-item>
-        <n-form-item>
-          <div class="form-actions">
-            <n-button type="primary" @click="saveUserConfig" :loading="savingUserConfig">保存</n-button>
+    <n-tabs v-model:value="activeTab" type="line" animated>
+      <!-- Tab 1: 基础配置 -->
+      <n-tab-pane name="basic" tab="基础配置">
+        <!-- 个性化设置 -->
+        <n-card title="个性化设置" style="margin-bottom: 16px">
+          <n-form label-placement="left" label-width="100">
+            <n-form-item label="用户名称">
+              <n-input v-model:value="userConfig.user_name" placeholder="曹凡" />
+            </n-form-item>
+            <n-form-item label="助手名称">
+              <n-input v-model:value="userConfig.assistant_name" placeholder="凯莉" />
+            </n-form-item>
+            <n-form-item>
+              <div class="form-actions">
+                <n-button type="primary" @click="saveUserConfig" :loading="savingUserConfig">保存</n-button>
+              </div>
+            </n-form-item>
+          </n-form>
+        </n-card>
+
+        <!-- 主题配置 -->
+        <n-card title="主题配置" style="margin-bottom: 16px">
+          <div class="theme-list">
+            <div
+              v-for="t in themes" :key="t.id"
+              class="theme-item"
+              :class="{ active: currentTheme === t.id }"
+              @click="selectTheme(t.id)"
+            >
+              <div class="theme-preview">
+                <div class="theme-color" :style="{ background: t.color1 }"></div>
+                <div class="theme-color" :style="{ background: t.color2 }"></div>
+              </div>
+              <div class="theme-info">
+                <div class="theme-name">{{ t.name }}</div>
+                <div class="theme-desc">{{ t.desc }}</div>
+              </div>
+              <n-tag v-if="currentTheme === t.id" type="success" size="small">当前</n-tag>
+            </div>
           </div>
-        </n-form-item>
-      </n-form>
-    </n-card>
+        </n-card>
 
-    <!-- 主题配置 -->
-    <n-card title="主题配置" style="margin-bottom: 16px">
-      <div class="theme-list">
-        <div
-          v-for="t in themes" :key="t.id"
-          class="theme-item"
-          :class="{ active: currentTheme === t.id }"
-          @click="selectTheme(t.id)"
-        >
-          <div class="theme-preview">
-            <div class="theme-color" :style="{ background: t.color1 }"></div>
-            <div class="theme-color" :style="{ background: t.color2 }"></div>
-          </div>
-          <div class="theme-info">
-            <div class="theme-name">{{ t.name }}</div>
-            <div class="theme-desc">{{ t.desc }}</div>
-          </div>
-          <n-tag v-if="currentTheme === t.id" type="success" size="small">当前</n-tag>
-        </div>
-      </div>
-    </n-card>
+        <!-- 修改密码 -->
+        <n-card title="修改密码" style="margin-bottom: 16px">
+          <n-form label-placement="left" label-width="80">
+            <n-form-item label="旧密码">
+              <n-input v-model:value="passwordForm.old_password" type="password" show-password-on="click" />
+            </n-form-item>
+            <n-form-item label="新密码">
+              <n-input v-model:value="passwordForm.new_password" type="password" show-password-on="click" />
+            </n-form-item>
+            <n-form-item>
+              <div class="form-actions">
+                <n-button type="warning" @click="changePassword" :loading="changingPassword">修改密码</n-button>
+              </div>
+            </n-form-item>
+          </n-form>
+        </n-card>
+      </n-tab-pane>
 
-    <!-- LLM 配置 -->
-    <n-card title="LLM 配置" style="margin-bottom: 16px">
-      <n-form label-placement="left" label-width="80">
-        <n-form-item label="模式">
-          <n-radio-group v-model:value="llmConfig.mode">
-            <n-radio value="hermes">使用 Hermes LLM</n-radio>
-            <n-radio value="custom">自定义配置</n-radio>
-          </n-radio-group>
-        </n-form-item>
+      <!-- Tab 2: LLM 配置 -->
+      <n-tab-pane name="llm" tab="LLM 配置">
+        <n-card title="LLM 配置" style="margin-bottom: 16px">
+          <n-form label-placement="left" label-width="80">
+            <n-form-item label="模式">
+              <n-radio-group v-model:value="llmConfig.mode">
+                <n-radio value="hermes">使用 Hermes LLM</n-radio>
+                <n-radio value="custom">自定义配置</n-radio>
+              </n-radio-group>
+            </n-form-item>
 
-        <template v-if="llmConfig.mode === 'custom'">
-          <n-form-item label="Provider">
-            <n-input v-model:value="llmConfig.provider" placeholder="openai" />
-          </n-form-item>
-          <n-form-item label="Model">
-            <n-input v-model:value="llmConfig.model" placeholder="gpt-4" />
-          </n-form-item>
-          <n-form-item label="API Key">
-            <n-input v-model:value="llmConfig.api_key" type="password" show-password-on="click" />
-          </n-form-item>
-          <n-form-item label="Base URL">
-            <n-input v-model:value="llmConfig.base_url" placeholder="https://api.openai.com/v1" />
-          </n-form-item>
-        </template>
+            <template v-if="llmConfig.mode === 'custom'">
+              <n-form-item label="Provider">
+                <n-input v-model:value="llmConfig.provider" placeholder="openai" />
+              </n-form-item>
+              <n-form-item label="Model">
+                <n-input v-model:value="llmConfig.model" placeholder="gpt-4" />
+              </n-form-item>
+              <n-form-item label="API Key">
+                <n-input v-model:value="llmConfig.api_key" type="password" show-password-on="click" />
+              </n-form-item>
+              <n-form-item label="Base URL">
+                <n-input v-model:value="llmConfig.base_url" placeholder="https://api.openai.com/v1" />
+              </n-form-item>
+            </template>
 
-        <n-form-item>
-          <div class="form-actions">
-            <n-space>
-              <n-button type="primary" @click="saveLLMConfig" :loading="saving">保存</n-button>
-              <n-button @click="testLLM" :loading="testing" v-if="llmConfig.mode === 'custom'">测试连通性</n-button>
-            </n-space>
-          </div>
-        </n-form-item>
-      </n-form>
-    </n-card>
+            <n-form-item>
+              <div class="form-actions">
+                <n-space>
+                  <n-button type="primary" @click="saveLLMConfig" :loading="saving">保存</n-button>
+                  <n-button @click="testLLM" :loading="testing" v-if="llmConfig.mode === 'custom'">测试连通性</n-button>
+                </n-space>
+              </div>
+            </n-form-item>
+          </n-form>
+        </n-card>
+      </n-tab-pane>
 
-    <!-- Hindsight 记忆配置 -->
-    <n-card title="Hindsight 记忆配置" style="margin-bottom: 16px">
-      <n-form label-placement="left" label-width="100">
-        <n-form-item label="启用 Hindsight">
-          <n-switch v-model:value="hindsightConfig.enabled" />
-        </n-form-item>
+      <!-- Tab 3: Hindsight 配置 -->
+      <n-tab-pane name="hindsight" tab="Hindsight 配置">
+        <n-card title="Hindsight 记忆配置" style="margin-bottom: 16px">
+          <n-form label-placement="left" label-width="100">
+            <n-form-item label="启用 Hindsight">
+              <n-switch v-model:value="hindsightConfig.enabled" />
+            </n-form-item>
 
-        <template v-if="hindsightConfig.enabled">
-          <n-form-item label="Base URL">
-            <n-input v-model:value="hindsightConfig.base_url" placeholder="http://localhost:8888" />
-          </n-form-item>
-          <n-form-item label="Bank ID">
-            <n-input v-model:value="hindsightConfig.bank_id" placeholder="hermes" />
-          </n-form-item>
-          <n-form-item label="Recall 结果数">
-            <n-input-number v-model:value="hindsightConfig.recall_limit" :min="1" :max="20" />
-          </n-form-item>
-          <n-form-item label="启用 Reflect">
-            <n-switch v-model:value="hindsightConfig.reflect_enabled" />
-          </n-form-item>
-          <n-form-item label="超时时间（秒）">
-            <n-input-number v-model:value="hindsightConfig.timeout" :min="5" :max="300" />
-          </n-form-item>
-        </template>
+            <template v-if="hindsightConfig.enabled">
+              <n-form-item label="Base URL">
+                <n-input v-model:value="hindsightConfig.base_url" placeholder="http://localhost:8888" />
+              </n-form-item>
+              <n-form-item label="Bank ID">
+                <n-input v-model:value="hindsightConfig.bank_id" placeholder="hermes" />
+              </n-form-item>
+              <n-form-item label="Recall 结果数">
+                <n-input-number v-model:value="hindsightConfig.recall_limit" :min="1" :max="20" />
+              </n-form-item>
+              <n-form-item label="启用 Reflect">
+                <n-switch v-model:value="hindsightConfig.reflect_enabled" />
+              </n-form-item>
+              <n-form-item label="超时时间（秒）">
+                <n-input-number v-model:value="hindsightConfig.timeout" :min="5" :max="300" />
+              </n-form-item>
+            </template>
 
-        <n-form-item>
-          <div class="form-actions">
-            <n-space>
-              <n-button type="primary" @click="saveHindsightConfig" :loading="savingHindsight">保存</n-button>
-              <n-button @click="testHindsightRecall" :loading="testingRecall">测试 Recall</n-button>
-              <n-button @click="testHindsightReflect" :loading="testingReflect" v-if="hindsightConfig.reflect_enabled">测试 Reflect</n-button>
-            </n-space>
-          </div>
-        </n-form-item>
-      </n-form>
-    </n-card>
+            <n-form-item>
+              <div class="form-actions">
+                <n-space>
+                  <n-button type="primary" @click="saveHindsightConfig" :loading="savingHindsight">保存</n-button>
+                  <n-button @click="testHindsightRecall" :loading="testingRecall">测试 Recall</n-button>
+                  <n-button @click="testHindsightReflect" :loading="testingReflect" v-if="hindsightConfig.reflect_enabled">测试 Reflect</n-button>
+                </n-space>
+              </div>
+            </n-form-item>
+          </n-form>
+        </n-card>
+      </n-tab-pane>
 
-    <!-- 修改密码 -->
-    <n-card title="修改密码" style="margin-top: 16px">
-      <n-form label-placement="left" label-width="80">
-        <n-form-item label="旧密码">
-          <n-input v-model:value="passwordForm.old_password" type="password" show-password-on="click" />
-        </n-form-item>
-        <n-form-item label="新密码">
-          <n-input v-model:value="passwordForm.new_password" type="password" show-password-on="click" />
-        </n-form-item>
-        <n-form-item>
-          <div class="form-actions">
-            <n-button type="warning" @click="changePassword" :loading="changingPassword">修改密码</n-button>
-          </div>
-        </n-form-item>
-      </n-form>
-    </n-card>
+      <!-- Tab 4: 天气配置 -->
+      <n-tab-pane name="weather" tab="天气配置">
+        <n-card title="高德地图天气配置" style="margin-bottom: 16px">
+          <n-form label-placement="left" label-width="100">
+            <n-form-item label="启用天气">
+              <n-switch v-model:value="weatherConfig.enabled" />
+            </n-form-item>
+
+            <template v-if="weatherConfig.enabled">
+              <n-form-item label="高德 API Key">
+                <n-input
+                  v-model:value="weatherConfig.amap_key"
+                  placeholder="输入高德开放平台 Key"
+                  type="password"
+                  show-password-on="mousedown"
+                />
+              </n-form-item>
+
+              <n-form-item label="城市编码">
+                <n-input
+                  v-model:value="weatherConfig.adcode"
+                  placeholder="如：370100（济南）"
+                />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  高德城市编码，可在高德开放平台查询
+                </span>
+              </n-form-item>
+
+              <n-form-item label="缓存时长（秒）">
+                <n-input-number
+                  v-model:value="weatherConfig.cache_ttl"
+                  :min="60" :max="86400" :step="60"
+                />
+              </n-form-item>
+
+              <n-form-item label="温度变化阈值（°C）">
+                <n-input-number
+                  v-model:value="weatherConfig.temp_change_threshold"
+                  :min="1" :max="20" :step="1"
+                />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  温度变化超过此值时触发天气变化检测
+                </span>
+              </n-form-item>
+            </template>
+
+            <n-form-item>
+              <div class="form-actions">
+                <n-space>
+                  <n-button type="primary" @click="saveWeatherConfig" :loading="savingWeather">保存</n-button>
+                  <n-button @click="testWeather" :loading="testingWeather" v-if="weatherConfig.enabled && weatherConfig.amap_key">测试天气</n-button>
+                </n-space>
+              </div>
+            </n-form-item>
+          </n-form>
+        </n-card>
+      </n-tab-pane>
+    </n-tabs>
   </div>
 </template>
 
@@ -138,10 +205,16 @@ import api from '../api'
 import { useConfig } from '../composables/useConfig'
 
 const message = useMessage()
+const activeTab = ref('basic')
 const saving = ref(false)
 const testing = ref(false)
 const changingPassword = ref(false)
 const savingUserConfig = ref(false)
+const savingHindsight = ref(false)
+const testingRecall = ref(false)
+const testingReflect = ref(false)
+const savingWeather = ref(false)
+const testingWeather = ref(false)
 const { config: globalConfig, loadConfig: loadGlobalConfig } = useConfig()
 
 const userConfig = ref({
@@ -165,9 +238,14 @@ const hindsightConfig = ref({
   reflect_enabled: true,
   timeout: 120
 })
-const savingHindsight = ref(false)
-const testingRecall = ref(false)
-const testingReflect = ref(false)
+
+const weatherConfig = ref({
+  enabled: false,
+  amap_key: '',
+  adcode: '370100',
+  cache_ttl: 3600,
+  temp_change_threshold: 5.0
+})
 
 const passwordForm = ref({
   old_password: '',
@@ -362,10 +440,52 @@ function applyTheme(themeId) {
   }
 }
 
+// 天气配置
+async function loadWeatherConfig() {
+  try {
+    const data = await api.get('/config/weather')
+    if (data && typeof data === 'object') {
+      weatherConfig.value = { ...weatherConfig.value, ...data }
+    }
+  } catch (e) {
+    // 使用默认值
+  }
+}
+
+async function saveWeatherConfig() {
+  savingWeather.value = true
+  try {
+    await api.put('/config/weather', weatherConfig.value)
+    message.success('天气配置已保存')
+  } catch (e) {
+    message.error('保存失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    savingWeather.value = false
+  }
+}
+
+async function testWeather() {
+  testingWeather.value = true
+  try {
+    const result = await api.get('/config/weather/test')
+    if (result.success) {
+      message.success(`天气测试成功: ${result.data.city} ${result.data.weather} ${result.data.temperature}°C`)
+    } else {
+      message.error('测试失败: ' + (result.error || '未知错误'))
+    }
+  } catch (e) {
+    message.error('测试失败: ' + (e?.detail || '未知错误'))
+  } finally {
+    testingWeather.value = false
+  }
+}
+
 onMounted(() => {
   loadConfig()
   loadUserConfig()
   loadTheme()
+  loadHindsightConfig()
+  loadWeatherConfig()
 })
 </script>
 

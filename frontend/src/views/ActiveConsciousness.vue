@@ -296,54 +296,15 @@
             </n-form-item>
           </template>
 
-          <!-- 天气配置（共享） -->
-          <n-divider>🌤️ 天气配置（共享）</n-divider>
+          <!-- 天气触发念头 -->
+          <n-divider>🌤️ 天气触发</n-divider>
 
-          <n-form-item label="启用天气">
-            <n-switch v-model:value="config.weather.enabled" />
+          <n-form-item label="天气触发念头">
+            <n-switch v-model:value="config.thought_enhanced.weather_trigger_enabled" />
+            <span style="margin-left: 8px; font-size: 12px; color: #999;">
+              天气变化时自动生成相关念头（天气配置请在「配置管理」页面设置）
+            </span>
           </n-form-item>
-
-          <template v-if="config.weather.enabled">
-            <n-form-item label="高德 API Key">
-              <n-input
-                v-model:value="config.weather.amap_key"
-                placeholder="输入高德开放平台 Key"
-                type="password"
-                show-password-on="mousedown"
-              />
-            </n-form-item>
-
-            <n-form-item label="城市编码">
-              <n-input
-                v-model:value="config.weather.adcode"
-                placeholder="如：370100（济南）"
-              />
-              <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                高德城市编码，可在高德开放平台查询
-              </span>
-            </n-form-item>
-
-            <n-form-item label="缓存时长（秒）">
-              <n-input-number
-                v-model:value="config.weather.cache_ttl"
-                :min="60" :max="86400" :step="60"
-              />
-            </n-form-item>
-
-            <n-form-item label="温度变化阈值（°C）">
-              <n-input-number
-                v-model:value="config.weather.temp_change_threshold"
-                :min="1" :max="20" :step="1"
-              />
-            </n-form-item>
-
-            <n-form-item label="天气触发念头">
-              <n-switch v-model:value="config.thought_enhanced.weather_trigger_enabled" />
-              <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                天气变化时自动生成相关念头
-              </span>
-            </n-form-item>
-          </template>
 
           <n-divider>念头存储</n-divider>
           <n-form-item label="存入 Hindsight">
