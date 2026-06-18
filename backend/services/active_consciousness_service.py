@@ -104,6 +104,7 @@ _DEFAULTS = {
     "active_consciousness.delay.max_retry": "3",
     "active_consciousness.delay.retry_interval_minutes": "30",
     "active_consciousness.delay.max_queue_size": "10",
+    "active_consciousness.delay.max_age_hours": "4",
 
     # 念头存储
     "active_consciousness.thought.retain_enabled": "false",
@@ -2207,6 +2208,29 @@ def add_to_delay_queue(
     return save_delayed_thoughts(thoughts)
 
 
+def is_thought_expired(thought: dict, max_age_hours: float = 4.0) -> bool:
+    """
+    检查念头是否过期
+
+    Args:
+        thought: 念头数据（dict 或 dataclass）
+        max_age_hours: 最大存活时间（小时）
+
+    Returns:
+        True 如果念头已过期
+    """
+    created_at = thought.get("created_at") if isinstance(thought, dict) else getattr(thought, "created_at", None)
+    if not created_at:
+        return True
+
+    try:
+        created = datetime.fromisoformat(created_at)
+        age_hours = (datetime.now() - created).total_seconds() / 3600
+        return age_hours > max_age_hours
+    except Exception:
+        return True
+
+
 async def reevaluate_delayed_thoughts(
     config: Dict[str, Any],
     status: Dict[str, Any],
@@ -2216,6 +2240,7 @@ async def reevaluate_delayed_thoughts(
     delay_config = config.get("delay", {})
     max_retry = int(delay_config.get("max_retry", 3))
     retry_interval = int(delay_config.get("retry_interval_minutes", 30))
+    max_age_hours = float(delay_config.get("max_age_hours", 4))
 
     decision_config = config.get("decision", {})
     send_threshold = decision_config.get("send_threshold", 0.6)
@@ -2230,6 +2255,12 @@ async def reevaluate_delayed_thoughts(
     remaining_thoughts = []
 
     for thought in delayed_thoughts:
+        # 检查是否过期
+        if is_thought_expired(thought, max_age_hours):
+            logger.info("延迟队列重评估: id=%d, 过期丢弃 (age>%.1fh)", thought.id, max_age_hours)
+            stats["discarded"] += 1
+            continue
+
         # 超过最大重试次数
         if thought.retry_count >= max_retry:
             stats["discarded"] += 1
