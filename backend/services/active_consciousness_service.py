@@ -164,6 +164,7 @@ _DEFAULTS = {
     "active_consciousness.hindsight.enabled": "true",
     "active_consciousness.hindsight.base_url": "http://localhost:8888",
     "active_consciousness.hindsight.bank_id": "hermes",
+    "active_consciousness.hindsight.store.bank_id": "hermes-active",
     "active_consciousness.hindsight.recall_limit": "5",
     "active_consciousness.hindsight.reflect_enabled": "true",
     "active_consciousness.hindsight.timeout": "30",
@@ -2768,7 +2769,9 @@ async def retain_thought_to_hindsight(
     try:
         hindsight_config = config.get("hindsight", {})
         base_url = hindsight_config.get("base_url", "http://localhost:8888")
-        bank_id = hindsight_config.get("bank_id", "hermes")
+        # 使用 store.bank_id 用于存储，而不是 recall 的 bank_id
+        store_config = hindsight_config.get("store", {})
+        bank_id = store_config.get("bank_id", "hermes-active")
         timeout = float(hindsight_config.get("timeout", 30))
 
         client = get_hindsight_client(base_url=base_url, timeout=timeout)

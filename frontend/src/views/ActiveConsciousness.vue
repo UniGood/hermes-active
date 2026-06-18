@@ -179,51 +179,102 @@
               <n-switch v-model:value="config.thought.retain_enabled" />
               <span style="margin-left: 8px; font-size: 12px; color: #999;">开启后念头会写入长期记忆库</span>
             </n-form-item>
+            <n-form-item label="Bank ID">
+              <n-input v-model:value="config.hindsight.store.bank_id" placeholder="hermes-active" />
+              <span style="margin-left: 8px; font-size: 12px; color: #999;">Hindsight 存储 Bank ID，用于区分不同来源的记忆</span>
+            </n-form-item>
 
             <!-- 增强念头生成 -->
             <n-divider>🧠 增强念头生成</n-divider>
             <n-form-item label="启用增强念头生成">
               <n-switch v-model:value="config.thought_enhanced.enabled" />
+              <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                基于聊天记录、情绪状态、天气信息生成深度念头
+              </span>
             </n-form-item>
             <template v-if="config.thought_enhanced.enabled">
-              <n-form-item label="低唤醒度阈值（使用 15 天）">
+              <!-- 时间范围配置 -->
+              <n-form-item label="低唤醒度阈值">
                 <n-input-number v-model:value="config.thought_enhanced.arousal_low_threshold" :min="0" :max="1" :step="0.1" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  唤醒度低于此值时，查看 15 天聊天记录进行深度思考
+                </span>
               </n-form-item>
-              <n-form-item label="高唤醒度阈值（使用 1 天）">
+              <n-form-item label="高唤醒度阈值">
                 <n-input-number v-model:value="config.thought_enhanced.arousal_high_threshold" :min="0" :max="1" :step="0.1" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  唤醒度高于此值时，只查看 1 天聊天记录进行即时反应
+                </span>
               </n-form-item>
+
+              <!-- 念头数量配置 -->
               <n-form-item label="15 天生成念头数">
                 <n-input-number v-model:value="config.thought_enhanced.count_15d" :min="1" :max="5" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  平静状态下，从 15 天聊天记录中生成的念头数量
+                </span>
               </n-form-item>
               <n-form-item label="7 天生成念头数">
                 <n-input-number v-model:value="config.thought_enhanced.count_7d" :min="1" :max="5" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  中等状态下，从 7 天聊天记录中生成的念头数量
+                </span>
               </n-form-item>
               <n-form-item label="3 天生成念头数">
                 <n-input-number v-model:value="config.thought_enhanced.count_3d" :min="1" :max="5" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  活跃状态下，从 3 天聊天记录中生成的念头数量
+                </span>
               </n-form-item>
               <n-form-item label="1 天生成念头数">
                 <n-input-number v-model:value="config.thought_enhanced.count_1d" :min="1" :max="5" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  激动状态下，从 1 天聊天记录中生成的念头数量
+                </span>
               </n-form-item>
-              <n-form-item label="Temperature（随机性）">
+
+              <!-- LLM 配置 -->
+              <n-form-item label="Temperature">
                 <n-input-number v-model:value="config.thought_enhanced.temperature" :min="0" :max="2" :step="0.1" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  控制念头生成的随机性，越高越随机（推荐 0.7-1.0）
+                </span>
               </n-form-item>
               <n-form-item label="最大 Token 数">
                 <n-input-number v-model:value="config.thought_enhanced.max_tokens" :min="100" :max="2000" :step="100" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  LLM 生成念头的最大长度，越大越详细但越慢
+                </span>
               </n-form-item>
+
+              <!-- 天气配置 -->
               <n-form-item label="天气触发念头">
                 <n-switch v-model:value="config.thought_enhanced.weather_trigger_enabled" />
                 <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  天气变化时自动生成相关念头（天气配置请在「配置管理」页面设置）
+                  天气变化时自动生成相关念头（需在「配置管理」页面启用天气功能）
                 </span>
               </n-form-item>
+
+              <!-- 旧念头配置 -->
               <n-form-item label="旧念头召回数量">
                 <n-input-number v-model:value="config.thought_enhanced.recall_old_thoughts_limit" :min="1" :max="50" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  生成新念头时，召回多少条旧念头用于避免重复
+                </span>
               </n-form-item>
+
+              <!-- 存储配置 -->
               <n-form-item label="存入 Hindsight 阈值">
                 <n-input-number v-model:value="config.thought_enhanced.retain_threshold" :min="0" :max="1" :step="0.1" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  念头情绪强度超过此值时，自动存入 Hindsight 长期记忆
+                </span>
               </n-form-item>
               <n-form-item label="天气念头存入 Hindsight">
                 <n-switch v-model:value="config.thought_enhanced.retain_on_weather" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  天气相关的念头是否自动存入 Hindsight
+                </span>
               </n-form-item>
             </template>
 
@@ -602,7 +653,7 @@ const config = ref({
     retain_threshold: 0.5,
     retain_on_weather: true
   },
-  hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', recall_limit: 5, reflect_enabled: true, timeout: 30 },
+  hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', store: { bank_id: 'hermes-active' }, recall_limit: 5, reflect_enabled: true, timeout: 30 },
   notify: { platform: 'weixin', chat_id: '' }
 })
 
