@@ -287,7 +287,7 @@
 
     <!-- 心跳日志详情弹窗 -->
     <n-modal v-model:show="showDetailsModal" style="width: 95vw; max-width: 1200px;" :mask-closable="false">
-      <n-card :title="detailsTitle" closable @close="showDetailsModal = false" style="max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+      <n-card :title="detailsTitle" closable @close="showDetailsModal = false" class="detail-modal-card">
         <div class="modal-scroll-body" >
       <template v-if="detailsData">
         <!-- 情绪演化流程 -->
@@ -489,7 +489,7 @@
 
     <!-- 念头日志详情弹窗 -->
     <n-modal v-model:show="showThoughtDetailsModal" :title="thoughtDetailsTitle" style="width: 95vw; max-width: 1200px;" :mask-closable="false">
-      <n-card :title="thoughtDetailsTitle" closable @close="showThoughtDetailsModal = false" style="max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+      <n-card :title="thoughtDetailsTitle" closable @close="showThoughtDetailsModal = false" class="detail-modal-card">
         <div class="modal-scroll-body" >
       <template v-if="thoughtDetailsData">
         <!-- 念头信息 -->
@@ -1040,6 +1040,19 @@ onMounted(async () => {
 .active-consciousness-page {
   padding: 0;
 }
+/* 详情弹窗卡片 */
+.detail-modal-card {
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex !important;
+  flex-direction: column;
+}
+.detail-modal-card .n-card-content {
+  display: flex !important;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
 .modal-scroll-body {
   flex: 1;
   min-height: 0;
@@ -1049,9 +1062,6 @@ onMounted(async () => {
   touch-action: pan-y;
   padding: 4px;
   overscroll-behavior: contain;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 /* 移动端详情布局 - 替代 n-descriptions */
