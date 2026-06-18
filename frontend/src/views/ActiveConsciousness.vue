@@ -95,8 +95,8 @@
           </n-form-item>
 
           <template v-if="config.enabled">
-            <!-- LLM 配置 -->
-            <n-divider>LLM 配置</n-divider>
+            <!-- 基础设置 -->
+            <n-divider>基础设置</n-divider>
             <n-form-item label="LLM 模式">
               <n-radio-group v-model:value="config.llm.mode">
                 <n-radio value="hermes">使用 Hermes LLM</n-radio>
@@ -115,9 +115,6 @@
             <n-form-item label="Base URL" v-if="config.llm.mode === 'custom'">
               <n-input v-model:value="config.llm.base_url" placeholder="https://api.openai.com/v1" />
             </n-form-item>
-
-            <!-- 主动意识配置 -->
-            <n-divider>心跳配置</n-divider>
             <n-form-item label="启用心跳">
               <n-switch v-model:value="config.active.enabled" />
             </n-form-item>
@@ -130,46 +127,11 @@
             <n-form-item label="时间格式">
               <n-input v-model:value="config.active.time_format" placeholder="%H:%M" />
             </n-form-item>
-            <n-form-item label="禁止窗口（用户消息后分钟）">
-              <n-input-number v-model:value="config.active.no_send_after_user_msg_minutes" :min="1" :max="60" />
-            </n-form-item>
-            <n-form-item label="热度阈值（高于此不发送）">
-              <n-input-number v-model:value="config.active.no_send_while_heat_above" :min="0" :max="10" :step="0.1" />
-            </n-form-item>
-            <n-form-item label="情绪阈值（低于此不发送）">
-              <n-input-number v-model:value="config.active.no_send_while_vibe_below" :min="0" :max="1" :step="0.1" />
-            </n-form-item>
 
-            <!-- 通知目标 -->
-            <n-divider>通知目标</n-divider>
-            <n-form-item label="目标平台">
-              <n-select v-model:value="config.notify.platform" :options="platformOptions" @update:value="onNotifyPlatformChange" />
-            </n-form-item>
-            <n-form-item label="Session 来源">
-              <n-radio-group v-model:value="notifySessionMode">
-                <n-space vertical>
-                  <n-radio value="latest">每次获取最新活跃 Session</n-radio>
-                  <n-radio value="fixed">指定 Session</n-radio>
-                </n-space>
-              </n-radio-group>
-            </n-form-item>
-            <n-form-item label="指定 Session" v-if="notifySessionMode === 'fixed'">
-              <n-select
-                v-model:value="config.notify.chat_id"
-                :options="notifySessionOptions"
-                :loading="loadingNotifySessions"
-                placeholder="选择目标 Session"
-                filterable
-              />
-            </n-form-item>
-
-            <!-- Session 来源配置 -->
+            <!-- Session 来源 -->
             <n-divider>Session 来源</n-divider>
             <n-form-item label="来源平台">
               <n-select v-model:value="config.session.sources" multiple :options="platformOptions" />
-            </n-form-item>
-            <n-form-item label="时间范围（小时）">
-              <n-input-number v-model:value="config.session.time_range_hours" :min="1" :max="168" />
             </n-form-item>
             <n-form-item label="每 Session 最大消息">
               <n-input-number v-model:value="config.session.max_messages_per_session" :min="5" :max="100" />
@@ -198,119 +160,96 @@
             <n-form-item label="每日最大消息">
               <n-input-number v-model:value="config.decision.max_per_day" :min="1" :max="50" />
             </n-form-item>
-          </template>
 
-          <!-- 增强念头生成配置 -->
-          <n-divider>🧠 增强念头生成</n-divider>
-
-          <!-- 总开关 -->
-          <n-form-item label="启用增强念头生成">
-            <n-switch v-model:value="config.thought_enhanced.enabled" />
-          </n-form-item>
-
-          <template v-if="config.thought_enhanced.enabled">
-            <!-- 时间范围配置 -->
-            <n-divider>时间范围配置</n-divider>
-
-            <n-form-item label="低唤醒度阈值（使用 15 天）">
-              <n-input-number
-                v-model:value="config.thought_enhanced.arousal_low_threshold"
-                :min="0" :max="1" :step="0.1"
-              />
+            <!-- 发送保护 -->
+            <n-divider>发送保护</n-divider>
+            <n-form-item label="禁止窗口（用户消息后分钟）">
+              <n-input-number v-model:value="config.active.no_send_after_user_msg_minutes" :min="1" :max="60" />
+            </n-form-item>
+            <n-form-item label="热度阈值（高于此不发送）">
+              <n-input-number v-model:value="config.active.no_send_while_heat_above" :min="0" :max="10" :step="0.1" />
+            </n-form-item>
+            <n-form-item label="情绪阈值（低于此不发送）">
+              <n-input-number v-model:value="config.active.no_send_while_vibe_below" :min="0" :max="1" :step="0.1" />
             </n-form-item>
 
-            <n-form-item label="高唤醒度阈值（使用 1 天）">
-              <n-input-number
-                v-model:value="config.thought_enhanced.arousal_high_threshold"
-                :min="0" :max="1" :step="0.1"
-              />
+            <!-- 念头存储 -->
+            <n-divider>念头存储</n-divider>
+            <n-form-item label="存入 Hindsight">
+              <n-switch v-model:value="config.thought.retain_enabled" />
+              <span style="margin-left: 8px; font-size: 12px; color: #999;">开启后念头会写入长期记忆库</span>
             </n-form-item>
 
-            <n-form-item label="15 天生成念头数">
-              <n-input-number
-                v-model:value="config.thought_enhanced.count_15d"
-                :min="1" :max="5"
-              />
+            <!-- 增强念头生成 -->
+            <n-divider>🧠 增强念头生成</n-divider>
+            <n-form-item label="启用增强念头生成">
+              <n-switch v-model:value="config.thought_enhanced.enabled" />
             </n-form-item>
+            <template v-if="config.thought_enhanced.enabled">
+              <n-form-item label="低唤醒度阈值（使用 15 天）">
+                <n-input-number v-model:value="config.thought_enhanced.arousal_low_threshold" :min="0" :max="1" :step="0.1" />
+              </n-form-item>
+              <n-form-item label="高唤醒度阈值（使用 1 天）">
+                <n-input-number v-model:value="config.thought_enhanced.arousal_high_threshold" :min="0" :max="1" :step="0.1" />
+              </n-form-item>
+              <n-form-item label="15 天生成念头数">
+                <n-input-number v-model:value="config.thought_enhanced.count_15d" :min="1" :max="5" />
+              </n-form-item>
+              <n-form-item label="7 天生成念头数">
+                <n-input-number v-model:value="config.thought_enhanced.count_7d" :min="1" :max="5" />
+              </n-form-item>
+              <n-form-item label="3 天生成念头数">
+                <n-input-number v-model:value="config.thought_enhanced.count_3d" :min="1" :max="5" />
+              </n-form-item>
+              <n-form-item label="1 天生成念头数">
+                <n-input-number v-model:value="config.thought_enhanced.count_1d" :min="1" :max="5" />
+              </n-form-item>
+              <n-form-item label="Temperature（随机性）">
+                <n-input-number v-model:value="config.thought_enhanced.temperature" :min="0" :max="2" :step="0.1" />
+              </n-form-item>
+              <n-form-item label="最大 Token 数">
+                <n-input-number v-model:value="config.thought_enhanced.max_tokens" :min="100" :max="2000" :step="100" />
+              </n-form-item>
+              <n-form-item label="天气触发念头">
+                <n-switch v-model:value="config.thought_enhanced.weather_trigger_enabled" />
+                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  天气变化时自动生成相关念头（天气配置请在「配置管理」页面设置）
+                </span>
+              </n-form-item>
+              <n-form-item label="旧念头召回数量">
+                <n-input-number v-model:value="config.thought_enhanced.recall_old_thoughts_limit" :min="1" :max="50" />
+              </n-form-item>
+              <n-form-item label="存入 Hindsight 阈值">
+                <n-input-number v-model:value="config.thought_enhanced.retain_threshold" :min="0" :max="1" :step="0.1" />
+              </n-form-item>
+              <n-form-item label="天气念头存入 Hindsight">
+                <n-switch v-model:value="config.thought_enhanced.retain_on_weather" />
+              </n-form-item>
+            </template>
 
-            <n-form-item label="7 天生成念头数">
-              <n-input-number
-                v-model:value="config.thought_enhanced.count_7d"
-                :min="1" :max="5"
-              />
+            <!-- 通知目标 -->
+            <n-divider>通知目标</n-divider>
+            <n-form-item label="目标平台">
+              <n-select v-model:value="config.notify.platform" :options="platformOptions" @update:value="onNotifyPlatformChange" />
             </n-form-item>
-
-            <n-form-item label="3 天生成念头数">
-              <n-input-number
-                v-model:value="config.thought_enhanced.count_3d"
-                :min="1" :max="5"
-              />
+            <n-form-item label="Session 来源">
+              <n-radio-group v-model:value="notifySessionMode">
+                <n-space vertical>
+                  <n-radio value="latest">每次获取最新活跃 Session</n-radio>
+                  <n-radio value="fixed">指定 Session</n-radio>
+                </n-space>
+              </n-radio-group>
             </n-form-item>
-
-            <n-form-item label="1 天生成念头数">
-              <n-input-number
-                v-model:value="config.thought_enhanced.count_1d"
-                :min="1" :max="5"
+            <n-form-item label="指定 Session" v-if="notifySessionMode === 'fixed'">
+              <n-select
+                v-model:value="config.notify.chat_id"
+                :options="notifySessionOptions"
+                :loading="loadingNotifySessions"
+                placeholder="选择目标 Session"
+                filterable
               />
-            </n-form-item>
-
-            <!-- LLM 配置 -->
-            <n-divider>LLM 思考配置</n-divider>
-
-            <n-form-item label="Temperature（随机性）">
-              <n-input-number
-                v-model:value="config.thought_enhanced.temperature"
-                :min="0" :max="2" :step="0.1"
-              />
-            </n-form-item>
-
-            <n-form-item label="最大 Token 数">
-              <n-input-number
-                v-model:value="config.thought_enhanced.max_tokens"
-                :min="100" :max="2000" :step="100"
-              />
-            </n-form-item>
-
-            <!-- 旧念头召回配置 -->
-            <n-divider>旧念头召回配置</n-divider>
-
-            <n-form-item label="召回旧念头数量">
-              <n-input-number
-                v-model:value="config.thought_enhanced.recall_old_thoughts_limit"
-                :min="1" :max="50" :step="1"
-              />
-            </n-form-item>
-
-            <!-- 存储配置 -->
-            <n-divider>存储配置</n-divider>
-
-            <n-form-item label="存入 Hindsight 阈值">
-              <n-input-number
-                v-model:value="config.thought_enhanced.retain_threshold"
-                :min="0" :max="1" :step="0.1"
-              />
-            </n-form-item>
-
-            <n-form-item label="天气念头存入 Hindsight">
-              <n-switch v-model:value="config.thought_enhanced.retain_on_weather" />
             </n-form-item>
           </template>
-
-          <!-- 天气触发念头 -->
-          <n-divider>🌤️ 天气触发</n-divider>
-
-          <n-form-item label="天气触发念头">
-            <n-switch v-model:value="config.thought_enhanced.weather_trigger_enabled" />
-            <span style="margin-left: 8px; font-size: 12px; color: #999;">
-              天气变化时自动生成相关念头（天气配置请在「配置管理」页面设置）
-            </span>
-          </n-form-item>
-
-          <n-divider>念头存储</n-divider>
-          <n-form-item label="存入 Hindsight">
-            <n-switch v-model:value="config.thought.retain_enabled" />
-            <span style="margin-left: 8px; font-size: 12px; color: #999;">开启后念头会写入长期记忆库（当前质量低建议关闭）</span>
-          </n-form-item>
 
           <n-button type="primary" @click="saveConfig" :loading="saving" style="margin-top: 16px">
             保存配置
@@ -342,9 +281,6 @@
           </n-descriptions-item>
           <n-descriptions-item label="来源平台">
             {{ sessionContextResult.data?.session_config?.sources?.join(', ') || '未配置' }}
-          </n-descriptions-item>
-          <n-descriptions-item label="时间范围">
-            {{ sessionContextResult.data?.session_config?.time_range_hours || 24 }} 小时
           </n-descriptions-item>
           <n-descriptions-item label="最大消息数">
             {{ sessionContextResult.data?.session_config?.max_messages_per_session || 15 }}
@@ -648,7 +584,7 @@ const config = ref({
   enabled: false,
   llm: { mode: 'hermes', provider: 'openai', model: 'deepseek-chat', api_key: '', base_url: '' },
   active: { enabled: true, heartbeat_interval: 600, send_tag: '[凯莉主动发送]', time_format: '%H:%M', no_send_after_user_msg_minutes: 10, no_send_while_heat_above: 0.5, no_send_while_vibe_below: 0.3 },
-  session: { sources: ['weixin'], time_range_hours: 24, max_messages_per_session: 15, filter_tool_messages: true },
+  session: { sources: ['weixin'], max_messages_per_session: 15, filter_tool_messages: true },
   decision: { send_threshold: 0.6, delay_threshold: 0.3, memory_threshold: 0.1, max_per_hour: 2, max_per_day: 5 },
   thought: { retain_enabled: false, retain_threshold: 0.5 },
   thought_enhanced: {
