@@ -32,7 +32,6 @@ class ActiveConsciousnessActiveConfig(BaseModel):
 class ActiveConsciousnessSessionConfig(BaseModel):
     """Session 来源配置"""
     sources: List[str] = ["weixin"]
-    time_range_hours: int = 24
     max_messages_per_session: int = 15
     filter_tool_messages: bool = True
 

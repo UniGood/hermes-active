@@ -153,7 +153,6 @@ _DEFAULTS = {
     "active_consciousness.active.no_send_while_vibe_below": "0.3",
     "active_consciousness.active.cooldown_minutes": "30",
     "active_consciousness.session.sources": '["weixin"]',
-    "active_consciousness.session.time_range_hours": "24",
     "active_consciousness.session.max_messages_per_session": "15",
     "active_consciousness.session.filter_tool_messages": "true",
     "active_consciousness.decision.send_threshold": "0.6",
@@ -883,7 +882,6 @@ async def extract_session_context(session_config: Dict[str, Any]) -> str:
         from services.fallback_session_service import FallbackSessionService
 
         sources = session_config.get("sources", ["weixin"])
-        time_range_hours = session_config.get("time_range_hours", 24)
         max_messages = session_config.get("max_messages_per_session", 15)
         filter_tool = session_config.get("filter_tool_messages", True)
 
