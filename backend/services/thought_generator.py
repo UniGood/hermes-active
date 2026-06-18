@@ -1,0 +1,103 @@
+# backend/services/thought_generator.py
+
+import re
+import logging
+from typing import Dict, List
+
+logger = logging.getLogger("hermes.thought_generator")
+
+
+class ThoughtGenerator:
+    """念头生成器 - 增强版"""
+
+    def _select_time_range(self, arousal: float, config: Dict) -> int:
+        """根据 arousal 选择时间范围"""
+        low_threshold = config.get("arousal_low_threshold", 0.3)
+        high_threshold = config.get("arousal_high_threshold", 0.7)
+
+        if arousal < low_threshold:
+            return 15  # 15 天
+        elif arousal < high_threshold:
+            return 7   # 7 天
+        else:
+            return 1   # 1 天
+
+    def _get_thought_count(self, time_range: int, config: Dict) -> int:
+        """根据时间范围确定生成数量"""
+        count_map = {
+            15: config.get("count_15d", 3),
+            7: config.get("count_7d", 2),
+            3: config.get("count_3d", 2),
+            1: config.get("count_1d", 1)
+        }
+        return count_map.get(time_range, 1)
+
+    def _build_prompt(
+        self,
+        time_range: int,
+        count: int,
+        emotion_state: Dict,
+        weather_info: Dict,
+        chat_history: List[Dict],
+        old_thoughts: List[Dict],
+        config: Dict
+    ) -> str:
+        """构建 prompt"""
+
+        # 聊天记录格式化
+        chat_text = "\n".join([
+            f"{msg.get('role', 'unknown')}: {msg.get('content', '')}"
+            for msg in chat_history[:50]
+        ])
+
+        # 旧念头格式化
+        old_thoughts_text = "\n".join([
+            f"{i+1}. {t.get('content', '')}"
+            for i, t in enumerate(old_thoughts)
+        ])
+
+        # 天气信息
+        weather_text = ""
+        if config.get("weather_enabled") and weather_info.get("weather_changed"):
+            change_type = weather_info.get("change_type", "")
+            current = weather_info.get("current", {})
+            future = weather_info.get("future", {})
+
+            weather_text = f"""
+【天气变化提醒】
+天气刚刚发生了变化（{change_type}）：
+- 当前：{current.get('weather', '未知')}，{current.get('temp', '?')}°C
+- 未来：{future.get('weather', '未知')}，{future.get('temp', '?')}°C
+可以考虑生成天气相关的念头。
+"""
+
+        prompt = f"""你是凯莉，基于以下信息，生成 {count} 个念头：
+
+【最近 {time_range} 天的聊天记录】
+{chat_text}
+
+【你之前的念头（请避免重复）】
+{old_thoughts_text}
+
+【当前情绪状态】
+valence={emotion_state.get('valence', 0.5):.2f}, arousal={emotion_state.get('arousal', 0.5):.2f}, dominant={emotion_state.get('dominant', 'calm')}
+{weather_text}
+请生成 {count} 个念头，每个念头用 <thought> 标签包裹。
+注意：请避免与之前的念头重复。"""
+
+        return prompt
+
+    def _parse_thoughts(self, response: str) -> List[Dict]:
+        """解析 LLM 返回的念头"""
+        thoughts = []
+        pattern = r'<thought>(.*?)</thought>'
+        matches = re.findall(pattern, response, re.DOTALL)
+
+        for match in matches:
+            thoughts.append({
+                "content": match.strip(),
+                "type": "association",
+                "score": 0.5
+            })
+
+        return thoughts
