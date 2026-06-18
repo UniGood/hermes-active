@@ -502,6 +502,10 @@ class ActiveConsciousnessService:
             except Exception as e:
                 logger.warning("查询心跳统计失败: %s", e)
 
+            # 获取延迟队列数量
+            delayed_thoughts = get_delayed_thoughts()
+            delayed_count = len(delayed_thoughts)
+
             return {
                 "enabled": config.get("enabled", False),
                 "heartbeat_count": heartbeat_count,
@@ -528,6 +532,7 @@ class ActiveConsciousnessService:
                 "today_sent_count": today_sent_count,
                 "hour_sent_count": hour_sent_count,
                 "last_sent_at": last_self_msg_at,
+                "delayed_count": delayed_count,
             }
         finally:
             db.close()
@@ -1970,6 +1975,14 @@ def schedule_log_cleanup():
 
     log_cleanup_scheduler.start()
     logger.info("日志清理调度器已启动")
+
+
+def stop_log_cleanup_scheduler():
+    """停止日志清理调度器"""
+    global log_cleanup_scheduler
+    if log_cleanup_scheduler and log_cleanup_scheduler.running:
+        log_cleanup_scheduler.shutdown(wait=False)
+        logger.info("日志清理调度器已停止")
 
 
 def restart_heartbeat_scheduler(new_interval: int = None):

@@ -363,6 +363,30 @@ def test_cleanup_old_logs_exists():
     assert callable(cleanup_old_logs)
 
 
+def test_get_status_includes_delayed_count():
+    """测试状态查询包含延迟队列数量"""
+    mock_conn = unittest.mock.MagicMock()
+    mock_conn.execute.return_value.fetchone.return_value = (0, None)
+
+    with unittest.mock.patch('services.active_consciousness_service.ActiveConsciousnessService.get_config') as mock_config:
+        mock_config.return_value = {"enabled": False}
+
+        with unittest.mock.patch('services.active_consciousness_service.state_engine') as mock_state:
+            mock_state.connect.return_value.__enter__ = unittest.mock.MagicMock(return_value=mock_conn)
+            mock_state.connect.return_value.__exit__ = unittest.mock.MagicMock(return_value=False)
+
+            with unittest.mock.patch('services.active_consciousness_service.active_engine') as mock_active:
+                mock_active.connect.return_value.__enter__ = unittest.mock.MagicMock(return_value=mock_conn)
+                mock_active.connect.return_value.__exit__ = unittest.mock.MagicMock(return_value=False)
+
+                with unittest.mock.patch('services.active_consciousness_service.get_delayed_thoughts') as mock_delayed:
+                    mock_delayed.return_value = []
+
+                    from services.active_consciousness_service import ActiveConsciousnessService
+                    status = ActiveConsciousnessService.get_status()
+                    assert "delayed_count" in status
+
+
 def test_cleanup_old_logs_with_mock():
     """测试 cleanup_old_logs 使用 mock 数据库验证删除逻辑"""
     mock_conn = unittest.mock.MagicMock()
