@@ -1,11 +1,13 @@
-"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试 + 动态权重合并测试"""
+"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试 + 动态权重合并测试 + 念头类型判断测试"""
 import pytest
 import asyncio
+import unittest.mock
 from datetime import datetime, timedelta
 
 from services.active_consciousness_service import is_thought_expired, call_llm_with_fallback, validate_active_consciousness_config
 from services.active_consciousness_service import merge_emotion_dynamic, calculate_llm_confidence
-from models.active_consciousness import EmotionState
+from services.active_consciousness_service import determine_thought_type_v2
+from models.active_consciousness import EmotionState, ThoughtType
 
 
 def test_is_thought_expired_with_old_thought():
@@ -248,3 +250,77 @@ def test_calculate_llm_confidence():
 
     # 值在合理范围内，差异不大，置信度应该较高
     assert 0.5 <= confidence <= 1.0
+
+
+# ============ 念头类型判断 v2 测试 ============
+
+def test_determine_thought_type_v2_with_special_time():
+    """测试特殊时间判断 - 早上7点应返回时间类型"""
+    status = {"longing": {"silence_minutes": 0}}
+    emotion_state = EmotionState(valence=0.5, arousal=0.3, social_need=0.2)
+
+    # 模拟早上 7 点
+    mock_now = datetime(2026, 6, 18, 7, 30)
+    with unittest.mock.patch('services.active_consciousness_service.datetime') as mock_datetime:
+        mock_datetime.now.return_value = mock_now
+        result = determine_thought_type_v2(status, emotion_state, [], None)
+
+    assert result == ThoughtType.TIME.value
+
+
+def test_determine_thought_type_v2_with_long_silence():
+    """测试长时间沉默判断 - 3小时以上应返回沉默类型"""
+    status = {"longing": {"silence_minutes": 200}}  # 3小时以上
+    emotion_state = EmotionState(valence=0.5, arousal=0.3, social_need=0.2)
+
+    # 模拟非特殊时间（下午2点）
+    mock_now = datetime(2026, 6, 18, 14, 0)
+    with unittest.mock.patch('services.active_consciousness_service.datetime') as mock_datetime:
+        mock_datetime.now.return_value = mock_now
+        result = determine_thought_type_v2(status, emotion_state, [], None)
+
+    assert result == ThoughtType.SILENCE.value
+
+
+def test_determine_thought_type_v2_with_high_emotion():
+    """测试高情绪强度判断 - 强度>0.6应返回情绪类型"""
+    status = {"longing": {"silence_minutes": 0}}
+    emotion_state = EmotionState(valence=0.8, arousal=0.7, social_need=0.6)  # 强度 = 0.7
+
+    # 模拟非特殊时间（下午2点）
+    mock_now = datetime(2026, 6, 18, 14, 0)
+    with unittest.mock.patch('services.active_consciousness_service.datetime') as mock_datetime:
+        mock_datetime.now.return_value = mock_now
+        result = determine_thought_type_v2(status, emotion_state, [], None)
+
+    assert result == ThoughtType.EMOTION.value
+
+
+def test_determine_thought_type_v2_with_memory():
+    """测试有回忆时应返回回忆类型"""
+    status = {"longing": {"silence_minutes": 0}}
+    emotion_state = EmotionState(valence=0.3, arousal=0.2, social_need=0.2)  # 低强度
+
+    hindsight_results = [{"id": 1, "content": "一段回忆"}]
+
+    # 模拟非特殊时间（下午2点）
+    mock_now = datetime(2026, 6, 18, 14, 0)
+    with unittest.mock.patch('services.active_consciousness_service.datetime') as mock_datetime:
+        mock_datetime.now.return_value = mock_now
+        result = determine_thought_type_v2(status, emotion_state, hindsight_results, None)
+
+    assert result == ThoughtType.MEMORY.value
+
+
+def test_determine_thought_type_v2_default_association():
+    """测试默认情况应返回关联类型"""
+    status = {"longing": {"silence_minutes": 0}}
+    emotion_state = EmotionState(valence=0.3, arousal=0.2, social_need=0.2)  # 低强度
+
+    # 模拟非特殊时间（下午2点）
+    mock_now = datetime(2026, 6, 18, 14, 0)
+    with unittest.mock.patch('services.active_consciousness_service.datetime') as mock_datetime:
+        mock_datetime.now.return_value = mock_now
+        result = determine_thought_type_v2(status, emotion_state, [], None)
+
+    assert result == ThoughtType.ASSOCIATION.value

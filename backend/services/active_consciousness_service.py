@@ -1808,7 +1808,7 @@ async def run_heartbeat():
             thought = await generate_thought_for_delay(config, status, merged_state)
             if thought:
                 all_details["thought_generation"] = {"success": True, "thought": thought}
-                thought_type = determine_thought_type(status, merged_state, hindsight_results, None)
+                thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, None)
                 add_to_delay_queue(thought, thought_type, score, merged_state)
                 all_details["thought_type"] = thought_type
                 all_details["hindsight_stored"] = False
@@ -1825,7 +1825,7 @@ async def run_heartbeat():
                 # 发送成功后存入 Hindsight
                 thought = gen_details.get("message_sending", {}).get("thought", "")
                 if thought:
-                    thought_type = determine_thought_type(status, merged_state, hindsight_results, None)
+                    thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, None)
                     hindsight_tags = [
                         "active_consciousness", "thought", thought_type, merged_state.dominant,
                     ]
@@ -2301,6 +2301,45 @@ def determine_thought_type(
     now = datetime.now()
     if now.hour in [7, 8, 12, 13, 22, 23]:
         return ThoughtType.TIME.value
+    return ThoughtType.ASSOCIATION.value
+
+
+def determine_thought_type_v2(
+    status: Dict[str, Any],
+    emotion_state: EmotionState,
+    hindsight_results: List[Dict],
+    context: Optional[Dict]
+) -> str:
+    """
+    更智能的念头类型判断
+
+    优先级：
+    1. 特殊时间（早安 7-8, 晚安 22-23）
+    2. 长时间沉默（>180分钟）
+    3. 高情绪强度（>0.6）
+    4. 相关回忆
+    5. 默认关联
+    """
+    now = datetime.now()
+
+    # 1. 检查特殊时间（早安 7-8, 晚安 22-23）
+    if now.hour in [7, 8, 22, 23]:
+        return ThoughtType.TIME.value
+
+    # 2. 检查沉默时长
+    silence_minutes = status.get("longing", {}).get("silence_minutes", 0)
+    if silence_minutes > 180:  # 3小时没聊天
+        return ThoughtType.SILENCE.value
+
+    # 3. 检查情绪强度
+    if emotion_state.intensity() > 0.6:
+        return ThoughtType.EMOTION.value
+
+    # 4. 检查是否有相关回忆
+    if hindsight_results and len(hindsight_results) > 0:
+        return ThoughtType.MEMORY.value
+
+    # 5. 默认关联念头
     return ThoughtType.ASSOCIATION.value
 
 
