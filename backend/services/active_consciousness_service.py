@@ -23,6 +23,38 @@ from models.active_consciousness import (
 
 logger = logging.getLogger("hermes.active_consciousness")
 
+
+async def call_llm_with_fallback(
+    llm_func,
+    prompt: str,
+    fallback_value: Any,
+    timeout: float = 30.0
+) -> tuple[Any, bool]:
+    """
+    调用 LLM 并在失败时返回 fallback 值
+
+    Args:
+        llm_func: LLM 调用函数（接收 prompt 参数）
+        prompt: 提示词
+        fallback_value: 失败时的默认值
+        timeout: 超时时间（秒）
+
+    Returns:
+        (result, success): 结果和是否成功
+    """
+    try:
+        result = await asyncio.wait_for(llm_func(prompt), timeout=timeout)
+        if result is None:
+            logger.warning("LLM 返回 None，使用 fallback")
+            return fallback_value, False
+        return result, True
+    except TimeoutError:
+        logger.error("LLM 调用超时 (%.1f 秒)", timeout)
+        return fallback_value, False
+    except Exception as e:
+        logger.error("LLM 调用异常: %s", e)
+        return fallback_value, False
+
 # 全局心跳调度器实例
 heartbeat_scheduler = AsyncIOScheduler(timezone="Asia/Shanghai")
 
@@ -1173,13 +1205,12 @@ async def evaluate_emotion_with_llm(
 
 只返回 JSON，不要解释。"""
 
-    default_state = EmotionState()
-
+    fallback_state = EmotionState()
     logger.info("LLM 情绪评估开始")
 
-    try:
+    # 构建 LLM 调用函数
+    async def _call_llm(p: str) -> str:
         start_time = time.time()
-
         if llm_config.get("mode") == "hermes":
             import sys
             from pathlib import Path
@@ -1188,7 +1219,7 @@ async def evaluate_emotion_with_llm(
 
             response = call_llm(
                 task='title_generation',
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": p}],
                 temperature=0.7,
                 max_tokens=200,
             )
@@ -1197,7 +1228,7 @@ async def evaluate_emotion_with_llm(
             from services.llm_service import LLMService
             result = await LLMService.generate_message(
                 llm_config=llm_config,
-                prompt=prompt,
+                prompt=p,
                 temperature=0.7,
                 max_tokens=200
             )
@@ -1205,8 +1236,17 @@ async def evaluate_emotion_with_llm(
 
         duration_ms = round((time.time() - start_time) * 1000)
         logger.info("LLM 情绪评估完成: %dms, response=%s", duration_ms, raw[:200])
+        return raw if raw else None
 
-        # 解析 JSON
+    # 使用 fallback 机制调用 LLM
+    raw, success = await call_llm_with_fallback(_call_llm, prompt, None)
+
+    if not success or not raw:
+        logger.warning("LLM 情绪评估失败，使用默认值")
+        return fallback_state
+
+    # 解析 JSON
+    try:
         import re
         json_match = re.search(r'\{[^}]+\}', raw)
         if json_match:
@@ -1217,11 +1257,12 @@ async def evaluate_emotion_with_llm(
                 social_need=float(data.get("social_need", 0.3)),
                 dominant=data.get("dominant", "calm")
             )
-
-    except Exception as e:
-        logger.warning("LLM 情绪评估失败，使用默认值: %s", e)
-
-    return default_state
+        else:
+            logger.warning("LLM 情绪评估返回格式无效: %s", raw[:200])
+            return fallback_state
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        logger.error("解析 LLM 情绪返回失败: %s", e)
+        return fallback_state
 
 
 async def generate_thought_for_delay(
