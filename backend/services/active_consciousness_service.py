@@ -205,31 +205,92 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
         错误消息列表，空列表表示验证通过
     """
     errors = []
+    active = config.get("active", {})
+    decision = config.get("decision", {})
+    emotion = config.get("emotion", {})
+    delay = config.get("delay", {})
 
     # 验证心跳间隔
-    heartbeat_interval = config.get("active", {}).get("heartbeat_interval", 600)
+    try:
+        heartbeat_interval = int(active.get("heartbeat_interval", 600))
+    except (ValueError, TypeError):
+        errors.append("心跳间隔必须是数字")
+        heartbeat_interval = 600
     if heartbeat_interval < 60:
         errors.append("心跳间隔不能小于 60 秒")
 
-    # 验证阈值关系
-    send_threshold = config.get("decision", {}).get("send_threshold", 0.6)
-    delay_threshold = config.get("decision", {}).get("delay_threshold", 0.3)
-    memory_threshold = config.get("decision", {}).get("memory_threshold", 0.1)
+    # 验证 no_send_after_user_msg_minutes
+    try:
+        no_send_minutes = int(active.get("no_send_after_user_msg_minutes", 10))
+        if no_send_minutes < 0:
+            errors.append("用户消息后不发送时间不能为负数")
+    except (ValueError, TypeError):
+        errors.append("用户消息后不发送时间必须是数字")
 
+    # 验证阈值关系
+    try:
+        send_threshold = float(decision.get("send_threshold", 0.6))
+    except (ValueError, TypeError):
+        errors.append("发送阈值必须是数字")
+        send_threshold = 0.6
+
+    try:
+        delay_threshold = float(decision.get("delay_threshold", 0.3))
+    except (ValueError, TypeError):
+        errors.append("延迟阈值必须是数字")
+        delay_threshold = 0.3
+
+    try:
+        memory_threshold = float(decision.get("memory_threshold", 0.1))
+    except (ValueError, TypeError):
+        errors.append("记忆阈值必须是数字")
+        memory_threshold = 0.1
+
+    # 验证阈值范围 0-1
+    if not (0 <= send_threshold <= 1):
+        errors.append("发送阈值必须在 0-1 之间")
+    if not (0 <= delay_threshold <= 1):
+        errors.append("延迟阈值必须在 0-1 之间")
+    if not (0 <= memory_threshold <= 1):
+        errors.append("记忆阈值必须在 0-1 之间")
+
+    # 验证阈值大小关系
     if send_threshold <= delay_threshold:
         errors.append("发送阈值必须大于延迟阈值")
     if delay_threshold <= memory_threshold:
         errors.append("延迟阈值必须大于记忆阈值")
 
-    # 验证情绪演化参数
-    decay_rate = config.get("emotion", {}).get("decay_rate", 0.02)
-    if decay_rate < 0 or decay_rate > 0.1:
-        errors.append("情绪衰减率必须在 0-0.1 之间")
+    # 验证 max_per_hour
+    try:
+        max_per_hour = int(decision.get("max_per_hour", 2))
+        if max_per_hour < 1 or max_per_hour > 10:
+            errors.append("每小时最大消息数必须在 1-10 之间")
+    except (ValueError, TypeError):
+        errors.append("每小时最大消息数必须是正整数")
+
+    # 验证 max_per_day
+    try:
+        max_per_day = int(decision.get("max_per_day", 5))
+        if max_per_day < 1 or max_per_day > 50:
+            errors.append("每日最大消息数必须在 1-50 之间")
+    except (ValueError, TypeError):
+        errors.append("每日最大消息数必须是正整数")
+
+    # 验证情绪衰减率
+    try:
+        decay_rate = float(emotion.get("decay_rate", 0.02))
+        if decay_rate < 0 or decay_rate > 0.1:
+            errors.append("情绪衰减率必须在 0-0.1 之间")
+    except (ValueError, TypeError):
+        errors.append("情绪衰减率必须是数字")
 
     # 验证延迟队列参数
-    max_age_hours = config.get("delay", {}).get("max_age_hours", 4)
-    if max_age_hours < 1 or max_age_hours > 24:
-        errors.append("延迟队列最大存活时间必须在 1-24 小时之间")
+    try:
+        max_age_hours = float(delay.get("max_age_hours", 4))
+        if max_age_hours < 1 or max_age_hours > 24:
+            errors.append("延迟队列最大存活时间必须在 1-24 小时之间")
+    except (ValueError, TypeError):
+        errors.append("延迟队列最大存活时间必须是数字")
 
     return errors
 
@@ -1852,6 +1913,40 @@ def stop_heartbeat_scheduler():
     if heartbeat_scheduler.running:
         heartbeat_scheduler.shutdown(wait=False)
         logger.info("主动意识心跳调度器已停止")
+
+
+def restart_heartbeat_scheduler(new_interval: int = None):
+    """
+    重启心跳调度器
+
+    Args:
+        new_interval: 新的心跳间隔（秒），如果为 None 则使用配置中的值
+    """
+    global heartbeat_scheduler
+
+    # 停止现有调度器
+    if heartbeat_scheduler.running:
+        heartbeat_scheduler.shutdown(wait=False)
+        logger.info("心跳调度器已停止")
+
+    # 获取新的间隔
+    if new_interval is None:
+        config = ActiveConsciousnessService.get_config()
+        new_interval = int(config.get("active", {}).get("heartbeat_interval", 600))
+
+    # 创建新的调度器
+    heartbeat_scheduler = AsyncIOScheduler(timezone="Asia/Shanghai")
+    heartbeat_scheduler.add_job(
+        run_heartbeat,
+        IntervalTrigger(seconds=new_interval),
+        id="active_consciousness_heartbeat",
+        name="主动意识心跳",
+        replace_existing=True
+    )
+
+    # 启动调度器
+    heartbeat_scheduler.start()
+    logger.info("心跳调度器已重启，间隔: %d 秒", new_interval)
 
 
 def update_heartbeat_interval(interval_seconds: int):

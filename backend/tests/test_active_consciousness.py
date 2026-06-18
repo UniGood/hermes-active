@@ -199,3 +199,11 @@ def test_validate_config_with_empty_config():
     config = {}
     errors = validate_active_consciousness_config(config)
     assert len(errors) == 0
+
+
+# ============ 心跳调度器重启测试 ============
+
+def test_restart_heartbeat_scheduler_exists():
+    """测试 restart_heartbeat_scheduler 函数存在且可调用"""
+    from services.active_consciousness_service import restart_heartbeat_scheduler
+    assert callable(restart_heartbeat_scheduler)

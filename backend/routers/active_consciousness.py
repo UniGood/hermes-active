@@ -42,13 +42,18 @@ async def update_config(config: dict):
         )
 
     try:
+        # 获取旧配置（用于比较心跳间隔）
+        old_config = ActiveConsciousnessService.get_config()
+        old_interval = int(old_config.get("active", {}).get("heartbeat_interval", 600))
+
+        # 更新配置
         ActiveConsciousnessService.update_config(config)
 
-        # 如果更新了心跳间隔，更新调度器
-        if "active" in config and "heartbeat_interval" in config["active"]:
-            from services.active_consciousness_service import update_heartbeat_interval
-            interval = int(config["active"]["heartbeat_interval"])
-            update_heartbeat_interval(interval)
+        # 如果心跳间隔变化，重启调度器以确保新配置立即生效
+        new_interval = int(config.get("active", {}).get("heartbeat_interval", old_interval))
+        if new_interval != old_interval:
+            from services.active_consciousness_service import restart_heartbeat_scheduler
+            restart_heartbeat_scheduler(new_interval)
 
         return SuccessResponse(message="配置已保存")
     except Exception as e:
