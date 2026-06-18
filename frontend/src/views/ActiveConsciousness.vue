@@ -1028,4 +1028,30 @@ onMounted(async () => {
 .n-data-table__pagination {
   justify-content: center !important;
 }
+
+/* 心跳详情弹窗 - descriptions 标签列优化 */
+.modal-scroll-body .n-descriptions .n-descriptions-table-wrapper table {
+  table-layout: fixed;
+}
+.modal-scroll-body .n-descriptions .n-descriptions-table-wrapper th {
+  min-width: 90px;
+  white-space: nowrap;
+  vertical-align: middle;
+  padding: 8px 12px !important;
+}
+.modal-scroll-body .n-descriptions .n-descriptions-table-wrapper td {
+  vertical-align: middle;
+  padding: 8px 12px !important;
+}
+@media (max-width: 768px) {
+  .modal-scroll-body .n-descriptions .n-descriptions-table-wrapper th {
+    min-width: 70px;
+    font-size: 13px;
+    padding: 6px 8px !important;
+  }
+  .modal-scroll-body .n-descriptions .n-descriptions-table-wrapper td {
+    font-size: 13px;
+    padding: 6px 8px !important;
+  }
+}
 </style>
