@@ -271,39 +271,6 @@
               />
             </n-form-item>
 
-            <!-- 天气配置 -->
-            <n-divider>天气配置</n-divider>
-
-            <n-form-item label="启用天气">
-              <n-switch v-model:value="config.thought_enhanced.weather_enabled" />
-            </n-form-item>
-
-            <template v-if="config.thought_enhanced.weather_enabled">
-              <n-form-item label="天气缓存时间（秒）">
-                <n-input-number
-                  v-model:value="config.thought_enhanced.weather_cache_ttl"
-                  :min="60" :max="86400" :step="60"
-                />
-              </n-form-item>
-
-              <n-form-item label="启用天气触发念头">
-                <n-switch v-model:value="config.thought_enhanced.weather_trigger_enabled" />
-              </n-form-item>
-
-              <template v-if="config.thought_enhanced.weather_trigger_enabled">
-                <n-form-item label="天气类型变化触发">
-                  <n-switch v-model:value="config.thought_enhanced.weather_type_change_trigger" />
-                </n-form-item>
-
-                <n-form-item label="温度变化阈值（°C）">
-                  <n-input-number
-                    v-model:value="config.thought_enhanced.weather_temp_change_threshold"
-                    :min="1" :max="20" :step="1"
-                  />
-                </n-form-item>
-              </template>
-            </template>
-
             <!-- 旧念头召回配置 -->
             <n-divider>旧念头召回配置</n-divider>
 
@@ -326,6 +293,55 @@
 
             <n-form-item label="天气念头存入 Hindsight">
               <n-switch v-model:value="config.thought_enhanced.retain_on_weather" />
+            </n-form-item>
+          </template>
+
+          <!-- 天气配置（共享） -->
+          <n-divider>🌤️ 天气配置（共享）</n-divider>
+
+          <n-form-item label="启用天气">
+            <n-switch v-model:value="config.weather.enabled" />
+          </n-form-item>
+
+          <template v-if="config.weather.enabled">
+            <n-form-item label="高德 API Key">
+              <n-input
+                v-model:value="config.weather.amap_key"
+                placeholder="输入高德开放平台 Key"
+                type="password"
+                show-password-on="mousedown"
+              />
+            </n-form-item>
+
+            <n-form-item label="城市编码">
+              <n-input
+                v-model:value="config.weather.adcode"
+                placeholder="如：370100（济南）"
+              />
+              <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                高德城市编码，可在高德开放平台查询
+              </span>
+            </n-form-item>
+
+            <n-form-item label="缓存时长（秒）">
+              <n-input-number
+                v-model:value="config.weather.cache_ttl"
+                :min="60" :max="86400" :step="60"
+              />
+            </n-form-item>
+
+            <n-form-item label="温度变化阈值（°C）">
+              <n-input-number
+                v-model:value="config.weather.temp_change_threshold"
+                :min="1" :max="20" :step="1"
+              />
+            </n-form-item>
+
+            <n-form-item label="天气触发念头">
+              <n-switch v-model:value="config.thought_enhanced.weather_trigger_enabled" />
+              <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                天气变化时自动生成相关念头
+              </span>
             </n-form-item>
           </template>
 
@@ -684,14 +700,17 @@ const config = ref({
     count_1d: 1,
     temperature: 0.9,
     max_tokens: 500,
-    weather_enabled: true,
-    weather_cache_ttl: 3600,
     weather_trigger_enabled: true,
-    weather_type_change_trigger: true,
-    weather_temp_change_threshold: 5.0,
     recall_old_thoughts_limit: 10,
     retain_threshold: 0.5,
     retain_on_weather: true
+  },
+  weather: {
+    enabled: false,
+    amap_key: '',
+    adcode: '370100',
+    cache_ttl: 3600,
+    temp_change_threshold: 5.0
   },
   hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', recall_limit: 5, reflect_enabled: true, timeout: 30 },
   notify: { platform: 'weixin', chat_id: '' }
