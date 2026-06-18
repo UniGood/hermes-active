@@ -23,5 +23,10 @@ export const messagesApi = {
   // 搜索消息
   searchMessages(keyword, params = {}) {
     return api.get('/messages/search', { params: { keyword, ...params } })
+  },
+
+  // 删除消息
+  deleteMessage(messageId) {
+    return api.delete(`/messages/${messageId}`)
   }
 }

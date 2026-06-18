@@ -143,9 +143,11 @@ class MessageService:
         db: Session,
         session_id: str,
         page: int = 1,
-        page_size: int = 50
+        page_size: int = 50,
+        exclude_tool: bool = False
     ) -> Dict[str, Any]:
         """获取消息列表"""
+        from sqlalchemy import and_, or_
         metadata = get_state_metadata()
 
         if 'messages' not in metadata.tables:
@@ -153,15 +155,30 @@ class MessageService:
 
         messages_table = metadata.tables['messages']
 
+        base_condition = messages_table.c.session_id == session_id
+
+        if exclude_tool:
+            # DB 层过滤 tool 消息 + 空 assistant 消息
+            tool_filter = and_(
+                base_condition,
+                messages_table.c.role != 'tool',
+                or_(
+                    messages_table.c.role != 'assistant',
+                    and_(messages_table.c.content != None, messages_table.c.content != '')
+                )
+            )
+        else:
+            tool_filter = base_condition
+
         # 获取总数
-        count_query = text(f"SELECT COUNT(*) FROM messages WHERE session_id = :session_id")
+        count_query = text(f"SELECT COUNT(*) FROM messages WHERE session_id = :session_id" + (" AND role != 'tool'" if exclude_tool else ""))
         with state_engine.connect() as conn:
             total = conn.execute(count_query, {"session_id": session_id}).scalar()
 
         # 分页查询
         query = (
             messages_table.select()
-            .where(messages_table.c.session_id == session_id)
+            .where(tool_filter)
             .order_by(messages_table.c.timestamp.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
@@ -172,6 +189,23 @@ class MessageService:
             items = [dict(row._mapping) for row in result]
 
         return {"total": total, "items": items}
+
+    @staticmethod
+    def delete_message(message_id: int) -> bool:
+        """删除单条消息"""
+        metadata = get_state_metadata()
+        if 'messages' not in metadata.tables:
+            return False
+        messages_table = metadata.tables['messages']
+        try:
+            with state_engine.connect() as conn:
+                result = conn.execute(
+                    messages_table.delete().where(messages_table.c.id == message_id)
+                )
+                conn.commit()
+            return result.rowcount > 0
+        except Exception:
+            return False
 
     @staticmethod
     def get_recent_messages(limit: int = 50) -> Dict[str, Any]:

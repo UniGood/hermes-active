@@ -86,12 +86,26 @@ async def get_messages(
     session_id: str,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
+    exclude_tool: bool = Query(False),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
     """获取消息列表"""
-    result = MessageService.get_messages(db, session_id, page, page_size)
+    result = MessageService.get_messages(db, session_id, page, page_size, exclude_tool=exclude_tool)
     return result
+
+
+@router.delete("/{message_id}")
+async def delete_message(
+    message_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """删除单条消息"""
+    success = MessageService.delete_message(message_id)
+    if success:
+        return {"success": True, "message": "消息已删除"}
+    else:
+        raise HTTPException(status_code=404, detail="消息不存在或删除失败")
 
 
 @router.post("/generate")
