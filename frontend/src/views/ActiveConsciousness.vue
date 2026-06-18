@@ -1042,12 +1042,16 @@ onMounted(async () => {
 }
 .modal-scroll-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   padding: 4px;
   overscroll-behavior: contain;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* 移动端详情布局 - 替代 n-descriptions */
