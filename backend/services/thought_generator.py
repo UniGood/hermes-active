@@ -10,8 +10,63 @@ logger = logging.getLogger("hermes.thought_generator")
 class ThoughtGenerator:
     """念头生成器 - 增强版"""
 
+    async def generate(
+        self,
+        config: Dict,
+        emotion_state: Dict,
+        weather_info: Dict,
+        chat_history: List[Dict],
+        old_thoughts: List[Dict],
+        llm_call_func=None
+    ) -> List[Dict]:
+        """
+        生成念头（公开 API）
+
+        Args:
+            config: 增强念头生成配置
+            emotion_state: 当前情绪状态
+            weather_info: 天气信息
+            chat_history: 聊天记录
+            old_thoughts: 旧念头（用于去重）
+            llm_call_func: LLM 调用函数（可选）
+
+        Returns:
+            [{"content": "...", "type": "...", "score": 0.7}, ...]
+        """
+        # 1. 根据 arousal 选择时间范围
+        arousal = emotion_state.get("arousal", 0.5)
+        time_range = self._select_time_range(arousal, config)
+
+        # 2. 确定生成数量
+        count = self._get_thought_count(time_range, config)
+
+        # 3. 构建 prompt
+        prompt = self._build_prompt(
+            time_range=time_range,
+            count=count,
+            emotion_state=emotion_state,
+            weather_info=weather_info,
+            chat_history=chat_history,
+            old_thoughts=old_thoughts,
+            config=config
+        )
+
+        # 4. 调用 LLM
+        if llm_call_func:
+            response = await llm_call_func(prompt)
+        else:
+            response = ""
+
+        # 5. 解析念头
+        thoughts = self._parse_thoughts(response)
+
+        return thoughts
+
     def _select_time_range(self, arousal: float, config: Dict) -> int:
         """根据 arousal 选择时间范围"""
+        # 约束 arousal 到 [0, 1] 范围
+        arousal = max(0.0, min(1.0, arousal))
+
         low_threshold = config.get("arousal_low_threshold", 0.3)
         high_threshold = config.get("arousal_high_threshold", 0.7)
 
@@ -27,7 +82,6 @@ class ThoughtGenerator:
         count_map = {
             15: config.get("count_15d", 3),
             7: config.get("count_7d", 2),
-            3: config.get("count_3d", 2),
             1: config.get("count_1d", 1)
         }
         return count_map.get(time_range, 1)
@@ -43,6 +97,7 @@ class ThoughtGenerator:
         config: Dict
     ) -> str:
         """构建 prompt"""
+        logger.debug("构建 prompt: time_range=%d, count=%d", time_range, count)
 
         # 聊天记录格式化
         chat_text = "\n".join([
@@ -85,6 +140,7 @@ valence={emotion_state.get('valence', 0.5):.2f}, arousal={emotion_state.get('aro
 请生成 {count} 个念头，每个念头用 <thought> 标签包裹。
 注意：请避免与之前的念头重复。"""
 
+        logger.debug("prompt 长度: %d", len(prompt))
         return prompt
 
     def _parse_thoughts(self, response: str) -> List[Dict]:

@@ -13,7 +13,7 @@ class WeatherService:
 
     def __init__(self):
         self._cache: Dict[str, Dict] = {}
-        self._last_weather: Optional[Dict] = None
+        self._last_weather: Dict[str, Dict] = {}  # 按城市存储
 
     async def get_weather(
         self,
@@ -48,9 +48,9 @@ class WeatherService:
         weather["weather_changed"] = False
         weather["change_type"] = None
 
-        if self._last_weather:
+        if city in self._last_weather:
             change = self._detect_weather_change(
-                self._last_weather, weather, temp_threshold
+                self._last_weather[city], weather, temp_threshold
             )
             if change:
                 weather["weather_changed"] = True
@@ -61,7 +61,7 @@ class WeatherService:
             "data": weather,
             "timestamp": time.time()
         }
-        self._last_weather = weather
+        self._last_weather[city] = weather
 
         return weather
 
@@ -85,11 +85,15 @@ class WeatherService:
             new_weather.get("current", {}).get("weather")
         )
 
-        temp_diff = abs(
-            old_weather.get("current", {}).get("temp", 0) -
-            new_weather.get("current", {}).get("temp", 0)
-        )
-        temp_changed = temp_diff >= temp_threshold
+        old_temp = old_weather.get("current", {}).get("temp")
+        new_temp = new_weather.get("current", {}).get("temp")
+
+        # 如果任一温度缺失，跳过温度比较
+        if old_temp is None or new_temp is None:
+            temp_changed = False
+        else:
+            temp_diff = abs(old_temp - new_temp)
+            temp_changed = temp_diff >= temp_threshold
 
         if type_changed and temp_changed:
             return "both"
@@ -101,8 +105,8 @@ class WeatherService:
 
     async def _fetch_weather_from_amap(self, city: str) -> Dict:
         """从高德地图 API 获取天气"""
+        logger.warning("天气 API 尚未实现，返回模拟数据")
         # TODO: 实现高德地图 API 调用
-        # 临时返回模拟数据
         return {
             "current": {"weather": "晴", "temp": 25},
             "future": {"weather": "阴", "temp": 20},

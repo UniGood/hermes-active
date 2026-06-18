@@ -35,6 +35,8 @@
 
 | 文档 | 说明 |
 |------|------|
+| [v0.2.1/architecture-and-flow.md](./v0.2.1/architecture-and-flow.md) | 架构与执行流程（含 Hindsight 双 Bank 设计）✅ |
+| [v0.2.1/thought-enhanced-design.md](./v0.2.1/thought-enhanced-design.md) | 念头增强机制设计（循环增强、天气集成）✅ |
 | [v0.2.1/implementation-plan.md](./v0.2.1/implementation-plan.md) | v0.2.1 实施计划 |
 | [v0.2.1/implementation-status.md](./v0.2.1/implementation-status.md) | v0.2.1 实现状态 ✅ |
 | [v0.2.1/detailed-design.md](./v0.2.1/detailed-design.md) | v0.2.1 详细设计 |

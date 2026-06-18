@@ -38,7 +38,7 @@ from config import SERVER_HOST, SERVER_PORT
 from models.database import init_active_db, ActiveSession
 from services.auth_service import AuthService
 from services.scheduler_service import start_scheduler, stop_scheduler
-from services.active_consciousness_service import start_heartbeat_scheduler, stop_heartbeat_scheduler, close_hindsight_client, schedule_log_cleanup
+from services.active_consciousness_service import start_heartbeat_scheduler, stop_heartbeat_scheduler, close_hindsight_client, schedule_log_cleanup, stop_log_cleanup_scheduler
 from routers import (
     auth_router,
     sessions_router,
@@ -86,6 +86,9 @@ async def lifespan(app: FastAPI):
 
     # 关闭 Hindsight 客户端（释放 aiohttp 连接）
     await close_hindsight_client()
+
+    # 停止日志清理调度器
+    stop_log_cleanup_scheduler()
 
     # 停止主动意识心跳调度器
     stop_heartbeat_scheduler()
