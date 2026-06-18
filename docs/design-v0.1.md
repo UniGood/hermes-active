@@ -20,7 +20,7 @@ Hermes Active - 主动会话系统
                          │
                          ▼ (Axios API调用 + JWT Token)
 ┌─────────────────────────────────────────────────────────┐
-│                  FastAPI 后端 (端口8080)                 │
+│                  FastAPI 后端 (端口18720)                │
 │           SQLAlchemy 2.0 + APScheduler + JWT            │
 ├─────────────────────────────────────────────────────────┤
 │  认证中间件  │  Session管理  │  LLM调用  │  定时任务  │
@@ -678,7 +678,7 @@ CREATE TABLE configs (
 # 后端
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8080
+uvicorn main:app --reload --port 18720
 
 # 前端
 cd frontend
@@ -694,7 +694,7 @@ npm run build
 
 # 启动后端（集成静态文件）
 cd backend
-uvicorn main:app --host 0.0.0.0 --port 8080
+uvicorn main:app --host 0.0.0.0 --port 18720
 ```
 
 ---
