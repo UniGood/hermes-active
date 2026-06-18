@@ -200,6 +200,135 @@
             </n-form-item>
           </template>
 
+          <!-- 增强念头生成配置 -->
+          <n-divider>🧠 增强念头生成</n-divider>
+
+          <!-- 总开关 -->
+          <n-form-item label="启用增强念头生成">
+            <n-switch v-model:value="config.thought_enhanced.enabled" />
+          </n-form-item>
+
+          <template v-if="config.thought_enhanced.enabled">
+            <!-- 时间范围配置 -->
+            <n-divider>时间范围配置</n-divider>
+
+            <n-form-item label="低唤醒度阈值（使用 15 天）">
+              <n-input-number
+                v-model:value="config.thought_enhanced.arousal_low_threshold"
+                :min="0" :max="1" :step="0.1"
+              />
+            </n-form-item>
+
+            <n-form-item label="高唤醒度阈值（使用 1 天）">
+              <n-input-number
+                v-model:value="config.thought_enhanced.arousal_high_threshold"
+                :min="0" :max="1" :step="0.1"
+              />
+            </n-form-item>
+
+            <n-form-item label="15 天生成念头数">
+              <n-input-number
+                v-model:value="config.thought_enhanced.count_15d"
+                :min="1" :max="5"
+              />
+            </n-form-item>
+
+            <n-form-item label="7 天生成念头数">
+              <n-input-number
+                v-model:value="config.thought_enhanced.count_7d"
+                :min="1" :max="5"
+              />
+            </n-form-item>
+
+            <n-form-item label="3 天生成念头数">
+              <n-input-number
+                v-model:value="config.thought_enhanced.count_3d"
+                :min="1" :max="5"
+              />
+            </n-form-item>
+
+            <n-form-item label="1 天生成念头数">
+              <n-input-number
+                v-model:value="config.thought_enhanced.count_1d"
+                :min="1" :max="5"
+              />
+            </n-form-item>
+
+            <!-- LLM 配置 -->
+            <n-divider>LLM 思考配置</n-divider>
+
+            <n-form-item label="Temperature（随机性）">
+              <n-input-number
+                v-model:value="config.thought_enhanced.temperature"
+                :min="0" :max="2" :step="0.1"
+              />
+            </n-form-item>
+
+            <n-form-item label="最大 Token 数">
+              <n-input-number
+                v-model:value="config.thought_enhanced.max_tokens"
+                :min="100" :max="2000" :step="100"
+              />
+            </n-form-item>
+
+            <!-- 天气配置 -->
+            <n-divider>天气配置</n-divider>
+
+            <n-form-item label="启用天气">
+              <n-switch v-model:value="config.thought_enhanced.weather_enabled" />
+            </n-form-item>
+
+            <template v-if="config.thought_enhanced.weather_enabled">
+              <n-form-item label="天气缓存时间（秒）">
+                <n-input-number
+                  v-model:value="config.thought_enhanced.weather_cache_ttl"
+                  :min="60" :max="86400" :step="60"
+                />
+              </n-form-item>
+
+              <n-form-item label="启用天气触发念头">
+                <n-switch v-model:value="config.thought_enhanced.weather_trigger_enabled" />
+              </n-form-item>
+
+              <template v-if="config.thought_enhanced.weather_trigger_enabled">
+                <n-form-item label="天气类型变化触发">
+                  <n-switch v-model:value="config.thought_enhanced.weather_type_change_trigger" />
+                </n-form-item>
+
+                <n-form-item label="温度变化阈值（°C）">
+                  <n-input-number
+                    v-model:value="config.thought_enhanced.weather_temp_change_threshold"
+                    :min="1" :max="20" :step="1"
+                  />
+                </n-form-item>
+              </template>
+            </template>
+
+            <!-- 旧念头召回配置 -->
+            <n-divider>旧念头召回配置</n-divider>
+
+            <n-form-item label="召回旧念头数量">
+              <n-input-number
+                v-model:value="config.thought_enhanced.recall_old_thoughts_limit"
+                :min="1" :max="50" :step="1"
+              />
+            </n-form-item>
+
+            <!-- 存储配置 -->
+            <n-divider>存储配置</n-divider>
+
+            <n-form-item label="存入 Hindsight 阈值">
+              <n-input-number
+                v-model:value="config.thought_enhanced.retain_threshold"
+                :min="0" :max="1" :step="0.1"
+              />
+            </n-form-item>
+
+            <n-form-item label="天气念头存入 Hindsight">
+              <n-switch v-model:value="config.thought_enhanced.retain_on_weather" />
+            </n-form-item>
+          </template>
+
           <n-divider>念头存储</n-divider>
           <n-form-item label="存入 Hindsight">
             <n-switch v-model:value="config.thought.retain_enabled" />
@@ -545,6 +674,25 @@ const config = ref({
   session: { sources: ['weixin'], time_range_hours: 24, max_messages_per_session: 15, filter_tool_messages: true },
   decision: { send_threshold: 0.6, delay_threshold: 0.3, memory_threshold: 0.1, max_per_hour: 2, max_per_day: 5 },
   thought: { retain_enabled: false, retain_threshold: 0.5 },
+  thought_enhanced: {
+    enabled: true,
+    arousal_low_threshold: 0.3,
+    arousal_high_threshold: 0.7,
+    count_15d: 3,
+    count_7d: 2,
+    count_3d: 2,
+    count_1d: 1,
+    temperature: 0.9,
+    max_tokens: 500,
+    weather_enabled: true,
+    weather_cache_ttl: 3600,
+    weather_trigger_enabled: true,
+    weather_type_change_trigger: true,
+    weather_temp_change_threshold: 5.0,
+    recall_old_thoughts_limit: 10,
+    retain_threshold: 0.5,
+    retain_on_weather: true
+  },
   hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', recall_limit: 5, reflect_enabled: true, timeout: 30 },
   notify: { platform: 'weixin', chat_id: '' }
 })
