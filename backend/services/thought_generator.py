@@ -126,19 +126,31 @@ class ThoughtGenerator:
 可以考虑生成天气相关的念头。
 """
 
-        prompt = f"""你是凯莉，基于以下信息，生成 {count} 个念头：
+        # 获取主导情绪的中文展示
+        from services.active_consciousness_service import get_label_display
+        dominant = emotion_state.get('dominant', 'calm')
+        dominant_display = get_label_display(dominant)
 
-【最近 {time_range} 天的聊天记录】
-{chat_text}
+        # 从配置获取提示词模板
+        from services.active_consciousness_service import _DEFAULTS
+        from models.database import ActiveSession
+        from services.config_service import ConfigService
 
-【你之前的念头（请避免重复）】
-{old_thoughts_text}
+        prompt_template = ConfigService.get_config(
+            ActiveSession(), "active_consciousness.prompts.enhanced_thought"
+        ) or _DEFAULTS["active_consciousness.prompts.enhanced_thought"]
 
-【当前情绪状态】
-valence={emotion_state.get('valence', 0.5):.2f}, arousal={emotion_state.get('arousal', 0.5):.2f}, dominant={emotion_state.get('dominant', 'calm')}
-{weather_text}
-请生成 {count} 个念头，每个念头用 <thought> 标签包裹。
-注意：请避免与之前的念头重复。"""
+        prompt = prompt_template.format(
+            count=count,
+            time_range=time_range,
+            chat_text=chat_text,
+            old_thoughts_text=old_thoughts_text,
+            valence=emotion_state.get('valence', 0.5),
+            arousal=emotion_state.get('arousal', 0.5),
+            dominant=dominant,
+            dominant_display=dominant_display,
+            weather_text=weather_text,
+        )
 
         logger.debug("prompt 长度: %d", len(prompt))
         return prompt

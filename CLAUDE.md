@@ -87,3 +87,47 @@ frontend/src/
 ## 认证机制
 
 使用 JWT Token，前端通过 `localStorage` 存储，路由守卫在 `router/index.js` 中实现。API 请求通过 `api/http.js` 的 Axios 拦截器自动添加 Authorization header。
+
+## 版本历史
+
+| 版本 | 说明 | 状态 |
+|------|------|------|
+| v0.1 | 基础版本 — Web UI、定时任务、消息管理 | ✅ 完成 |
+| v0.2.1 | 主动意识 — 情绪演化、念头生成、决策矩阵 | 🚧 开发中 |
+| v0.2.2 | 被动意识 — 上下文注入、Hindsight 集成 | 🚧 开发中 |
+
+## 文档结构
+
+```
+docs/
+├── README.md                    # 文档索引
+├── deployment.md                # 部署指南
+├── design-v0.1.md               # v0.1 设计文档
+├── design-v0.2.md               # v0.2 设计愿景
+├── v0.2/                        # 意识系统设计
+│   ├── passive-consciousness-design.md  # 被动意识设计 (v0.2.2)
+│   └── ...
+├── v0.2.1/                      # 主动意识详细设计
+│   ├── architecture-and-flow.md
+│   ├── implementation-status.md
+│   └── ...
+└── archive/                     # 历史文档存档
+```
+
+## 核心概念
+
+### 主动意识 (v0.2.1)
+
+心跳调度器定期触发，生成"念头"并决定是否发送消息：
+- 情绪系统：VA 模型（Valence/Arousal/Social Need），支持演化、LLM 评估、动态合并
+- 决策矩阵：多维度评分（情绪强度 × 时间权重 × 沉默时长 × 频率限制）
+- 念头类型：time、silence、assoc、memory、emotion、env
+- 延迟队列：中分念头入队，后续心跳重评估
+
+### 被动意识 (v0.2.2)
+
+用户消息到达时，自动注入上下文信息到系统提示词：
+- 想念分数：基于用户最后消息时间计算
+- 聊天热度：消息密度（count ÷ hours）
+- Hindsight 集成：Recall（记忆召回）+ Reflect（综合分析）
+- 天气感知：高德地图 API

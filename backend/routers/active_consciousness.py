@@ -78,7 +78,13 @@ async def get_status():
 @router.get("/thoughts")
 async def get_thoughts(page: int = 1, page_size: int = 20, date: str = None):
     """获取念头日志，支持 date=YYYY-MM-DD 过滤"""
-    return ActiveConsciousnessService.get_thoughts(page, page_size, date)
+    result = ActiveConsciousnessService.get_thoughts(page, page_size, date)
+    # 添加展示用的中文标签
+    from services.active_consciousness_service import get_thought_type_display, get_decision_display
+    for item in result.get("items", []):
+        item["type_display"] = get_thought_type_display(item.get("type", ""))
+        item["decision_display"] = get_decision_display(item.get("decision", ""))
+    return result
 
 
 @router.delete("/thoughts/{thought_id}", response_model=SuccessResponse)
@@ -192,17 +198,31 @@ async def test_thought_generation():
         longing = status.get("longing", {})
         chat_heat = status.get("chat_heat", {})
         emotional = status.get("emotional_intensity", {})
+        emotion_state = status.get("emotion_state", {})
 
-        # 构建提示词
-        prompt = f"""你是凯莉，请基于当前状态产生一个自然的念头。
+        # 从配置获取提示词模板
+        from services.active_consciousness_service import _DEFAULTS, get_label_display
+        from services.config_service import ConfigService
+        from models.database import ActiveSession
 
-当前状态：
-- 时间：{__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M %A')}
-- 想念分数：{longing.get('score', 0)}（等级：{longing.get('label', 'calm')}）
-- 聊天热度：{chat_heat.get('heat', 0)}（标签：{chat_heat.get('label', 'cold')}）
-- 情绪值：{emotional.get('intensity', 0)}（{emotional.get('label', '工作')}）
+        prompt_template = ConfigService.get_config(
+            ActiveSession(), "active_consciousness.prompts.thought_generation"
+        ) or _DEFAULTS["active_consciousness.prompts.thought_generation"]
 
-请用第一人称产生一个自然的念头（1-2句话）。"""
+        now = __import__('datetime').datetime.now()
+        prompt = prompt_template.format(
+            time=now.strftime('%Y-%m-%d %H:%M %A'),
+            longing_score=longing.get('score', 0),
+            longing_label=longing.get('label', '平静'),
+            chat_heat=chat_heat.get('heat', 0),
+            chat_label=chat_heat.get('label', '冷清'),
+            emotional_intensity=emotional.get('intensity', 0),
+            emotional_label=emotional.get('label', '工作'),
+            dominant=emotion_state.get('dominant', 'calm'),
+            valence=emotion_state.get('valence', 0.5),
+            arousal=emotion_state.get('arousal', 0.3),
+            social_need=emotion_state.get('social_need', 0.3),
+        )
 
         thought = None
 

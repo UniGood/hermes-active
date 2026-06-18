@@ -6,6 +6,16 @@
         <n-grid :cols="2" :x-gap="12" :y-gap="12">
           <n-grid-item>
             <n-card title="心跳状态">
+              <n-tooltip trigger="hover" :width="240">
+                <template #trigger>
+                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
+                </template>
+                <div style="line-height: 1.6;">
+                  心跳调度器定期触发的状态。<br/>
+                  🟢 绿灯：最近 5 分钟内有心跳<br/>
+                  🔴 红灯：心跳超时
+                </div>
+              </n-tooltip>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span :class="['breathing-dot', heartbeatHealthy ? 'dot-green' : 'dot-red']"></span>
                 <n-statistic label="今日心跳次数" :value="status.heartbeat_count" />
@@ -17,26 +27,66 @@
           </n-grid-item>
           <n-grid-item>
             <n-card title="想念分数">
+              <n-tooltip trigger="hover" :width="260">
+                <template #trigger>
+                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
+                </template>
+                <div style="line-height: 1.6;">
+                  基于用户最后一条消息的时间间隔计算。<br/>
+                  <strong>公式：</strong>min(沉默分钟数 / 300, 1.0)<br/>
+                  <strong>等级：</strong><br/>
+                  平静(0) → 想念(0.1) → 思念(0.3) → 渴望(0.5) → 焦虑(0.7)
+                </div>
+              </n-tooltip>
               <n-statistic :value="status.longing.score" :precision="3">
                 <template #suffix>
                   <n-tag :type="longingTagType" size="small">{{ status.longing.label }}</n-tag>
                 </template>
               </n-statistic>
               <n-progress :percentage="Number((status.longing.score * 100).toFixed(1))" :color="longingColor" style="margin-top: 8px" />
+              <div style="margin-top: 4px; font-size: 11px; color: #999;">
+                沉默时长：{{ status.longing.silence_minutes ? Math.round(status.longing.silence_minutes) + ' 分钟' : '-' }}
+              </div>
             </n-card>
           </n-grid-item>
           <n-grid-item>
             <n-card title="聊天热度">
+              <n-tooltip trigger="hover" :width="260">
+                <template #trigger>
+                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
+                </template>
+                <div style="line-height: 1.6;">
+                  最近 1 小时内用户消息的密度。<br/>
+                  <strong>公式：</strong>消息数 / 小时数<br/>
+                  <strong>等级：</strong><br/>
+                  冷清(0) → 温暖(0.5) → 火热(1.0) → 沸腾(3.0)<br/>
+                  热度越高，越不适合主动发消息。
+                </div>
+              </n-tooltip>
               <n-statistic :value="status.chat_heat.heat" :precision="2">
                 <template #suffix>
                   <n-tag :type="heatTagType" size="small">{{ status.chat_heat.label }}</n-tag>
                 </template>
               </n-statistic>
               <n-progress :percentage="Math.min(status.chat_heat.heat * 20, 100)" :color="heatColor" style="margin-top: 8px" />
+              <div style="margin-top: 4px; font-size: 11px; color: #999;">
+                近1小时消息数：{{ status.chat_heat.recent_count || 0 }}
+              </div>
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card title="情绪值">
+            <n-card title="情绪值（强度）">
+              <n-tooltip trigger="hover" :width="260">
+                <template #trigger>
+                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
+                </template>
+                <div style="line-height: 1.6;">
+                  综合情绪强度，由 LLM 根据最近对话内容评估。<br/>
+                  <strong>范围：</strong>0-1，越高表示对话越深入/情感化<br/>
+                  <strong>标签：</strong><br/>
+                  工作(0-0.3) → 日常(0.3-0.5) → 八卦(0.5-0.7) → 情感(0.7-0.9) → 深度情感(0.9+)
+                </div>
+              </n-tooltip>
               <n-statistic :value="status.emotional_intensity.intensity" :precision="3">
                 <template #suffix>
                   <n-tag size="small">{{ status.emotional_intensity.label }}</n-tag>
@@ -46,13 +96,100 @@
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card title="今日发送">
-              <n-statistic :value="status.today_sent_count" />
+            <n-card title="情绪状态（VA 模型）">
+              <n-tooltip trigger="hover" :width="280">
+                <template #trigger>
+                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
+                </template>
+                <div style="line-height: 1.6;">
+                  <strong>VA 情绪模型：</strong><br/>
+                  Valence（效价）= 情感正负性<br/>
+                  0消极 → 1积极<br/><br/>
+                  Arousal（唤醒度）= 情感激活程度<br/>
+                  0平静 → 1激动<br/><br/>
+                  Social Need（社交需求）= 想聊天的程度<br/><br/>
+                  <strong>自然演化：</strong><br/>
+                  唤醒度衰减 · 社交需求增长 · 效价回归中性
+                </div>
+              </n-tooltip>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <n-tooltip trigger="hover" :width="200">
+                    <template #trigger>
+                      <span style="font-size: 13px; color: #666; cursor: help;">效价（Valence）</span>
+                    </template>
+                    <div style="line-height: 1.6;">
+                      情感的正负性。<br/>
+                      0 = 消极，1 = 积极<br/>
+                      会随时间回归中性(0.5)。
+                    </div>
+                  </n-tooltip>
+                  <span style="font-weight: 600;">{{ status.emotion_state?.valence ?? '-' }}</span>
+                </div>
+                <n-progress :percentage="(status.emotion_state?.valence ?? 0) * 100" :show-indicator="false" :height="6" />
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <n-tooltip trigger="hover" :width="200">
+                    <template #trigger>
+                      <span style="font-size: 13px; color: #666; cursor: help;">唤醒度（Arousal）</span>
+                    </template>
+                    <div style="line-height: 1.6;">
+                      情感的激活程度。<br/>
+                      0 = 平静，1 = 激动<br/>
+                      越久没聊天会越平静（自然衰减）。
+                    </div>
+                  </n-tooltip>
+                  <span style="font-weight: 600;">{{ status.emotion_state?.arousal ?? '-' }}</span>
+                </div>
+                <n-progress :percentage="(status.emotion_state?.arousal ?? 0) * 100" :show-indicator="false" :height="6" />
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <n-tooltip trigger="hover" :width="200">
+                    <template #trigger>
+                      <span style="font-size: 13px; color: #666; cursor: help;">社交需求（Social Need）</span>
+                    </template>
+                    <div style="line-height: 1.6;">
+                      想要社交/聊天的程度。<br/>
+                      0 = 不需要，1 = 非常想<br/>
+                      越久没聊天会越想聊天（自然增长）。
+                    </div>
+                  </n-tooltip>
+                  <span style="font-weight: 600;">{{ status.emotion_state?.social_need ?? '-' }}</span>
+                </div>
+                <n-progress :percentage="(status.emotion_state?.social_need ?? 0) * 100" :show-indicator="false" :height="6" />
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+                  <span style="font-size: 13px; color: #666;">主导情绪</span>
+                  <n-tag :type="getEmotionTagType(status.emotion_state?.dominant)" size="small">
+                    {{ emotionLabelCn(status.emotion_state?.dominant) }}
+                  </n-tag>
+                </div>
+              </div>
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card title="本小时发送">
-              <n-statistic :value="status.hour_sent_count" />
+            <n-card title="发送统计">
+              <n-tooltip trigger="hover" :width="240">
+                <template #trigger>
+                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
+                </template>
+                <div style="line-height: 1.6;">
+                  今日和本小时的主动消息发送数量。<br/>
+                  受配置中的频率限制控制：<br/>
+                  默认每小时最多 2 条，每天最多 5 条。
+                </div>
+              </n-tooltip>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 13px; color: #666;">今日发送</span>
+                  <n-statistic :value="status.today_sent_count" style="font-size: 20px;" />
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 13px; color: #666;">本小时发送</span>
+                  <n-statistic :value="status.hour_sent_count" style="font-size: 20px;" />
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 13px; color: #666;">延迟队列</span>
+                  <n-statistic :value="status.delayed_count ?? 0" style="font-size: 20px;" />
+                </div>
+              </div>
             </n-card>
           </n-grid-item>
         </n-grid>
@@ -69,7 +206,7 @@
               <n-button size="small" quaternary @click="heartbeatDate = null; loadHeartbeats(1)">全部</n-button>
             </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
-              <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="960" />
+              <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="960" remote />
             </div>
           </n-tab-pane>
           <n-tab-pane name="thoughts" tab="念头日志" style="overflow: visible;">
@@ -80,7 +217,7 @@
               <n-button size="small" quaternary @click="thoughtDate = null; loadThoughts(1)">全部</n-button>
             </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
-              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="860" />
+              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="860" remote />
             </div>
           </n-tab-pane>
         </n-tabs>
@@ -278,6 +415,53 @@
               </n-form-item>
             </template>
 
+            <!-- 想念分数配置 -->
+            <n-divider>想念分数配置</n-divider>
+            <n-form-item label="计算基准（分钟）">
+              <n-input-number v-model:value="config.longing.gap_minutes" :min="60" :max="1440" :step="30" />
+              <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                沉默分钟数 / 此值 = 想念分数（最大1.0）。默认300分钟（5小时）达到最大值
+              </span>
+            </n-form-item>
+
+            <!-- 等级配置 -->
+            <n-divider>等级配置</n-divider>
+            <n-form-item label="想念等级阈值">
+              <n-input v-model:value="config.levels.longing" type="textarea" :rows="3" placeholder='[0.0, 0, "calm"], [0.1, 1, "longing"], ...' />
+              <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                格式：[阈值, 等级, 标签]，逗号分隔
+              </span>
+            </n-form-item>
+            <n-form-item label="聊天热度等级">
+              <n-input v-model:value="config.levels.heat" type="textarea" :rows="2" placeholder='[0.0, "cold"], [0.5, "warm"], ...' />
+              <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                格式：[阈值, 标签]，逗号分隔
+              </span>
+            </n-form-item>
+
+            <!-- 提示词配置 -->
+            <n-divider>📝 提示词配置</n-divider>
+            <n-collapse>
+              <n-collapse-item title="念头生成提示词" name="thought_generation">
+                <n-input v-model:value="config.prompts.thought_generation" type="textarea" :rows="8" placeholder="输入念头生成提示词模板" />
+                <div style="margin-top: 4px; font-size: 11px; color: #999;">
+                  可用变量：{time} {longing_score} {longing_label} {chat_heat} {chat_label} {emotional_intensity} {emotional_label} {dominant} {valence} {arousal} {social_need}
+                </div>
+              </n-collapse-item>
+              <n-collapse-item title="情绪评估提示词" name="emotion_evaluation">
+                <n-input v-model:value="config.prompts.emotion_evaluation" type="textarea" :rows="10" placeholder="输入情绪评估提示词模板" />
+                <div style="margin-top: 4px; font-size: 11px; color: #999;">
+                  可用变量：{time} {longing_score} {longing_label} {chat_heat} {chat_label} {silence_minutes} {context}
+                </div>
+              </n-collapse-item>
+              <n-collapse-item title="增强念头生成提示词" name="enhanced_thought">
+                <n-input v-model:value="config.prompts.enhanced_thought" type="textarea" :rows="10" placeholder="输入增强念头生成提示词模板" />
+                <div style="margin-top: 4px; font-size: 11px; color: #999;">
+                  可用变量：{count} {time_range} {chat_text} {old_thoughts_text} {valence} {arousal} {dominant} {dominant_display} {weather_text}
+                </div>
+              </n-collapse-item>
+            </n-collapse>
+
             <!-- 通知目标 -->
             <n-divider>通知目标</n-divider>
             <n-form-item label="目标平台">
@@ -449,7 +633,7 @@
           <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
             <n-descriptions-item label="念头类型">
               <n-tag :type="getThoughtTypeTagType(detailsData.thought_type)" size="small">
-                {{ detailsData.thought_type || '未知' }}
+                {{ thoughtTypeLabelCn(detailsData.thought_type) }}
               </n-tag>
             </n-descriptions-item>
             <n-descriptions-item label="生成状态">
@@ -488,7 +672,7 @@
             </n-descriptions-item>
             <n-descriptions-item v-if="detailsData.message_sending.thought_type" label="念头类型">
               <n-tag :type="getThoughtTypeTagType(detailsData.message_sending.thought_type)" size="small">
-                {{ detailsData.message_sending.thought_type }}
+                {{ thoughtTypeLabelCn(detailsData.message_sending.thought_type) }}
               </n-tag>
             </n-descriptions-item>
             <n-descriptions-item v-if="detailsData.message_sending.thought" label="发送内容" :span="2">
@@ -552,12 +736,12 @@
         <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
           <n-descriptions-item label="念头类型">
             <n-tag :type="getThoughtTypeTagType(thoughtDetailsData.thought_type)" size="small">
-              {{ thoughtDetailsData.thought_type || '未知' }}
+              {{ thoughtTypeLabelCn(thoughtDetailsData.thought_type) }}
             </n-tag>
           </n-descriptions-item>
           <n-descriptions-item label="决策类型">
             <n-tag :type="getDecisionTagType(thoughtDetailsData.decision)" size="small">
-              {{ thoughtDetailsData.decision || '未知' }}
+              {{ getDecisionLabelCn(thoughtDetailsData.decision) }}
             </n-tag>
           </n-descriptions-item>
           <n-descriptions-item label="决策分数">{{ thoughtDetailsData.score?.toFixed(3) }}</n-descriptions-item>
@@ -568,14 +752,35 @@
 
         <!-- 情绪状态 -->
         <template v-if="thoughtDetailsData.emotion_state">
-          <n-divider title-placement="left">情绪状态</n-divider>
+          <n-divider title-placement="left">情绪状态（VA 模型）</n-divider>
           <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="valence">{{ thoughtDetailsData.emotion_state.valence?.toFixed(3) }}</n-descriptions-item>
-            <n-descriptions-item label="arousal">{{ thoughtDetailsData.emotion_state.arousal?.toFixed(3) }}</n-descriptions-item>
-            <n-descriptions-item label="social_need">{{ thoughtDetailsData.emotion_state.social_need?.toFixed(3) }}</n-descriptions-item>
-            <n-descriptions-item label="dominant">
+            <n-descriptions-item label="效价（Valence）">
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <span style="cursor: help;">{{ thoughtDetailsData.emotion_state.valence?.toFixed(3) }}</span>
+                </template>
+                情感的正负性。0=消极，1=积极。
+              </n-tooltip>
+            </n-descriptions-item>
+            <n-descriptions-item label="唤醒度（Arousal）">
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <span style="cursor: help;">{{ thoughtDetailsData.emotion_state.arousal?.toFixed(3) }}</span>
+                </template>
+                情感的激活程度。0=平静，1=激动。
+              </n-tooltip>
+            </n-descriptions-item>
+            <n-descriptions-item label="社交需求（Social Need）">
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <span style="cursor: help;">{{ thoughtDetailsData.emotion_state.social_need?.toFixed(3) }}</span>
+                </template>
+                想要社交/聊天的程度。0=不需要，1=非常想。
+              </n-tooltip>
+            </n-descriptions-item>
+            <n-descriptions-item label="主导情绪（Dominant）">
               <n-tag :type="getEmotionTagType(thoughtDetailsData.emotion_state.dominant)" size="small">
-                {{ thoughtDetailsData.emotion_state.dominant }}
+                {{ emotionLabelCn(thoughtDetailsData.emotion_state.dominant) }}
               </n-tag>
             </n-descriptions-item>
           </n-descriptions>
@@ -624,6 +829,7 @@
 <script setup>
 import { ref, onMounted, computed, h } from 'vue'
 import { useMessage, NButton } from 'naive-ui'
+import { HelpCircleOutline } from '@vicons/ionicons5'
 import api from '../api/active_consciousness'
 import mainApi from '../api'
 
@@ -654,7 +860,17 @@ const config = ref({
     retain_on_weather: true
   },
   hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', store: { bank_id: 'hermes-active' }, recall_limit: 5, reflect_enabled: true, timeout: 30 },
-  notify: { platform: 'weixin', chat_id: '' }
+  notify: { platform: 'weixin', chat_id: '' },
+  prompts: {
+    thought_generation: '你是凯莉，请基于当前状态产生一个自然的念头。\n\n当前状态：\n- 时间：{time}\n- 想念分数：{longing_score}（等级：{longing_label}）\n- 聊天热度：{chat_heat}（标签：{chat_label}）\n- 情绪值：{emotional_intensity}（{emotional_label}）\n- 主导情绪：{dominant}（效价={valence}，唤醒度={arousal}，社交需求={social_need}）\n\n请用第一人称产生一个自然的念头（1-2句话）。',
+    emotion_evaluation: '你是凯莉，请评估当前的情绪状态。\n\n当前状态：\n- 时间：{time}\n- 想念分数：{longing_score}（等级：{longing_label}）\n- 聊天热度：{chat_heat}（标签：{chat_label}）\n- 沉默时长：{silence_minutes} 分钟\n\n最近的对话：\n{context}\n\n请评估你当前的情绪状态，返回 JSON 格式：\n{{\n  "valence": 0.0-1.0（情感效价，0=消极，1=积极），\n  "arousal": 0.0-1.0（唤醒度，0=平静，1=激动），\n  "social_need": 0.0-1.0（社交需求，0=不需要，1=非常想），\n  "dominant": "calm/content/happy/longing/missing/yearning/anxious/bored/concerned"\n}}\n\n只返回 JSON，不要解释。',
+    enhanced_thought: '你是凯莉，基于以下信息，生成 {count} 个念头：\n\n【最近 {time_range} 天的聊天记录】\n{chat_text}\n\n【你之前的念头（请避免重复）】\n{old_thoughts_text}\n\n【当前情绪状态】\n效价（Valence）={valence:.2f}，唤醒度（Arousal）={arousal:.2f}，主导情绪（Dominant）={dominant_display}\n{weather_text}\n请生成 {count} 个念头，每个念头用 <thought> 标签包裹。\n注意：请避免与之前的念头重复。'
+  },
+  levels: {
+    longing: '[0.0, 0, "calm"], [0.1, 1, "longing"], [0.3, 2, "missing"], [0.5, 3, "yearning"], [0.7, 4, "anxious"]',
+    heat: '[0.0, "cold"], [0.5, "warm"], [1.0, "hot"], [3.0, "fire"]'
+  },
+  longing: { gap_minutes: 300 }
 })
 
 // 状态
@@ -662,12 +878,14 @@ const status = ref({
   enabled: false,
   heartbeat_count: 0,
   last_heartbeat_at: null,
-  longing: { score: 0, level: 0, label: 'calm', last_user_msg_at: null, last_self_msg_at: null },
-  chat_heat: { heat: 0, label: 'cold', recent_count: 0, recent_hours: 0, recent_user_msg_at: null },
+  longing: { score: 0, level: 0, label: '平静', label_display: '平静（calm）', last_user_msg_at: null, last_self_msg_at: null, silence_minutes: 0 },
+  chat_heat: { heat: 0, label: '冷清', label_display: '冷清（cold）', recent_count: 0, recent_hours: 0, recent_user_msg_at: null },
   emotional_intensity: { intensity: 0, label: '工作' },
+  emotion_state: { valence: 0.5, arousal: 0.3, social_need: 0.3, dominant: 'calm', dominant_display: '平静（calm）', intensity: 0.367, updated_at: '' },
   today_sent_count: 0,
   hour_sent_count: 0,
-  last_sent_at: null
+  last_sent_at: null,
+  delayed_count: 0
 })
 
 // 日志
@@ -821,19 +1039,35 @@ function parseDecisionReason(reason) {
   }
 }
 
+// 情绪标签 → "中文（英文）" 格式
 const EMOTION_LABEL_CN = {
-  happy: '开心', content: '满足', joy: '喜悦', calm: '平静', bored: '无聊',
-  longing: '想念', missing: '思念', yearning: '渴望', anxious: '焦虑', concerned: '担忧', worry: '忧虑',
-  excited: '兴奋', energetic: '有活力', sad: '悲伤', angry: '生气', neutral: '平静'
+  happy: '开心（happy）', content: '满足（content）', joy: '喜悦（joy）', calm: '平静（calm）', bored: '无聊（bored）',
+  longing: '想念（longing）', missing: '思念（missing）', yearning: '渴望（yearning）', anxious: '焦虑（anxious）', concerned: '担忧（concerned）', worry: '忧虑（worry）',
+  excited: '兴奋（excited）', energetic: '有活力（energetic）', sad: '悲伤（sad）', angry: '生气（angry）', neutral: '平静（neutral）'
 }
 function emotionLabelCn(dominant) {
   if (!dominant) return '-'
   return EMOTION_LABEL_CN[dominant.toLowerCase()] || dominant
 }
+
+// 念头类型 → "中文（英文）" 格式
+const THOUGHT_TYPE_CN = {
+  time: '时间（time）', silence: '沉默（silence）', assoc: '关联（assoc）',
+  memory: '回忆（memory）', emotion: '情绪（emotion）', env: '环境（env）'
+}
+function thoughtTypeLabelCn(type) {
+  if (!type) return '-'
+  return THOUGHT_TYPE_CN[type] || type
+}
+
+// 决策类型 → "中文（英文）" 格式
+const DECISION_TYPE_CN = {
+  auto_send: '立即发送（auto_send）', delay_send: '延迟发送（delay_send）',
+  skip: '跳过（skip）', memory: '存为记忆（memory）', pending: '待定（pending）'
+}
 function getDecisionLabelCn(type) {
   if (!type) return '-'
-  const map = { auto_send: '立即发送', delay_send: '延迟发送', skip: '跳过', memory: '存为记忆' }
-  return map[type] || type
+  return DECISION_TYPE_CN[type] || type
 }
 // 情绪标签颜色
 function getEmotionTagType(dominant) {
@@ -887,10 +1121,10 @@ function getHindsightTagType(tag) {
 // 表格列定义
 const thoughtColumns = [
   { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
-  { title: '类型', key: 'type', width: 80 },
+  { title: '类型', key: 'type', width: 120, render: (row) => thoughtTypeLabelCn(row.type) },
   { title: '内容', key: 'content', ellipsis: { tooltip: true } },
   { title: '强度', key: 'intensity', width: 80, render: (row) => row.intensity != null ? Number(row.intensity).toFixed(2) : '' },
-  { title: '决策', key: 'decision', width: 80 },
+  { title: '决策', key: 'decision', width: 130, render: (row) => getDecisionLabelCn(row.decision) },
   { title: '来源', key: 'recall_source', width: 100 },
   {
     title: '操作',
@@ -938,8 +1172,20 @@ const heartbeatColumns = [
 ]
 
 // 分页
-const thoughtPagination = ref({ page: 1, pageSize: 10, pageCount: 1 })
-const heartbeatPagination = ref({ page: 1, pageSize: 20, pageCount: 1 })
+const thoughtPagination = ref({
+  page: 1,
+  pageSize: 10,
+  pageCount: 1,
+  showSizePicker: false,
+  pageSlot: 7
+})
+const heartbeatPagination = ref({
+  page: 1,
+  pageSize: 20,
+  pageCount: 1,
+  showSizePicker: false,
+  pageSlot: 7
+})
 
 // 加载数据
 const loadConfig = async () => {
@@ -980,20 +1226,26 @@ const loadThoughts = async (page = 1, dateVal) => {
       return item
     })
     thoughts.value = data
-    thoughtPagination.value.page = page
-    thoughtPagination.value.pageCount = Math.ceil(data.total / 10)
+    // 更新分页配置
+    thoughtPagination.value = {
+      ...thoughtPagination.value,
+      page: page,
+      pageCount: Math.ceil((data.total || 0) / 10)
+    }
   } catch (e) {
     message.error('加载念头日志失败')
   }
 }
 const loadHeartbeats = async (page = 1, dateVal) => {
   try {
+    console.log('loadHeartbeats called with page:', page, 'dateVal:', dateVal)
     let dateParam = null
     if (dateVal || heartbeatDate.value) {
       const d = new Date(dateVal || heartbeatDate.value)
       dateParam = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
     }
     const data = await api.getHeartbeats(page, dateParam)
+    console.log('API response:', data)
     // 解析details JSON
     data.items = (data.items || []).map(item => {
       if (item.details && typeof item.details === 'string') {
@@ -1008,8 +1260,14 @@ const loadHeartbeats = async (page = 1, dateVal) => {
       return item
     })
     heartbeats.value = data
-    heartbeatPagination.value.page = page
-    heartbeatPagination.value.pageCount = Math.ceil(data.total / 20)
+    // 更新分页配置
+    const newPagination = {
+      ...heartbeatPagination.value,
+      page: page,
+      pageCount: Math.ceil((data.total || 0) / 20)
+    }
+    console.log('Updating heartbeatPagination:', newPagination)
+    heartbeatPagination.value = newPagination
   } catch (e) {
     message.error('加载心跳日志失败')
   }

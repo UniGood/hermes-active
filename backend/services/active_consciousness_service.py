@@ -220,6 +220,62 @@ _DEFAULTS = {
     "active_consciousness.thought_enhanced.recall_old_thoughts_limit": "10",
     "active_consciousness.thought_enhanced.retain_threshold": "0.5",
     "active_consciousness.thought_enhanced.retain_on_weather": "true",
+
+    # 念头生成提示词模板
+    "active_consciousness.prompts.thought_generation": """你是凯莉，请基于当前状态产生一个自然的念头。
+
+当前状态：
+- 时间：{time}
+- 想念分数：{longing_score}（等级：{longing_label}）
+- 聊天热度：{chat_heat}（标签：{chat_label}）
+- 情绪值：{emotional_intensity}（{emotional_label}）
+- 主导情绪：{dominant}（效价={valence}，唤醒度={arousal}，社交需求={social_need}）
+
+请用第一人称产生一个自然的念头（1-2句话）。""",
+
+    "active_consciousness.prompts.emotion_evaluation": """你是凯莉，请评估当前的情绪状态。
+
+当前状态：
+- 时间：{time}
+- 想念分数：{longing_score}（等级：{longing_label}）
+- 聊天热度：{chat_heat}（标签：{chat_label}）
+- 沉默时长：{silence_minutes} 分钟
+
+最近的对话：
+{context}
+
+请评估你当前的情绪状态，返回 JSON 格式：
+{{
+  "valence": 0.0-1.0（情感效价，0=消极，1=积极），
+  "arousal": 0.0-1.0（唤醒度，0=平静，1=激动），
+  "social_need": 0.0-1.0（社交需求，0=不需要，1=非常想），
+  "dominant": "calm/content/happy/longing/missing/yearning/anxious/bored/concerned"
+}}
+
+只返回 JSON，不要解释。""",
+
+    "active_consciousness.prompts.enhanced_thought": """你是凯莉，基于以下信息，生成 {count} 个念头：
+
+【最近 {time_range} 天的聊天记录】
+{chat_text}
+
+【你之前的念头（请避免重复）】
+{old_thoughts_text}
+
+【当前情绪状态】
+效价（Valence）={valence:.2f}，唤醒度（Arousal）={arousal:.2f}，主导情绪（Dominant）={dominant_display}
+{weather_text}
+请生成 {count} 个念头，每个念头用 <thought> 标签包裹。
+注意：请避免与之前的念头重复。""",
+
+    # 想念等级阈值配置（JSON 数组：[阈值, 等级, 标签]）
+    "active_consciousness.levels.longing": '[0.0, 0, "calm"], [0.1, 1, "longing"], [0.3, 2, "missing"], [0.5, 3, "yearning"], [0.7, 4, "anxious"]',
+
+    # 聊天热度等级阈值配置（JSON 数组：[阈值, 标签]）
+    "active_consciousness.levels.heat": '[0.0, "cold"], [0.5, "warm"], [1.0, "hot"], [3.0, "fire"]',
+
+    # 想念分数计算：沉默分钟数 / 此值 = 分数（最大1.0）
+    "active_consciousness.longing.gap_minutes": "300",
 }
 
 # 想念等级
@@ -271,6 +327,65 @@ LABEL_CN = {
     "bored": "无聊",
     "concerned": "担忧",
 }
+
+# 英文标签 → "中文（英文）" 格式（用于前端展示）
+LABEL_DISPLAY = {
+    # 想念等级
+    "calm": "平静（calm）",
+    "longing": "想念（longing）",
+    "missing": "思念（missing）",
+    "yearning": "渴望（yearning）",
+    "anxious": "焦虑（anxious）",
+    # 聊天热度
+    "cold": "冷清（cold）",
+    "warm": "温暖（warm）",
+    "hot": "火热（hot）",
+    "fire": "沸腾（fire）",
+    # 情绪 dominant
+    "calm": "平静（calm）",
+    "content": "满足（content）",
+    "happy": "开心（happy）",
+    "longing": "想念（longing）",
+    "missing": "思念（missing）",
+    "yearning": "渴望（yearning）",
+    "anxious": "焦虑（anxious）",
+    "bored": "无聊（bored）",
+    "concerned": "担忧（concerned）",
+}
+
+# 念头类型 → "中文（英文）" 格式
+THOUGHT_TYPE_DISPLAY = {
+    "time": "时间（time）",
+    "silence": "沉默（silence）",
+    "assoc": "关联（assoc）",
+    "memory": "回忆（memory）",
+    "emotion": "情绪（emotion）",
+    "env": "环境（env）",
+}
+
+# 决策类型 → "中文（英文）" 格式
+DECISION_TYPE_DISPLAY = {
+    "auto_send": "立即发送（auto_send）",
+    "delay_send": "延迟发送（delay_send）",
+    "memory": "存为记忆（memory）",
+    "skip": "跳过（skip）",
+    "pending": "待定（pending）",
+}
+
+
+def get_label_display(label: str) -> str:
+    """获取标签的"中文（英文）"展示格式"""
+    return LABEL_DISPLAY.get(label, label)
+
+
+def get_thought_type_display(thought_type: str) -> str:
+    """获取念头类型的"中文（英文）"展示格式"""
+    return THOUGHT_TYPE_DISPLAY.get(thought_type, thought_type)
+
+
+def get_decision_display(decision: str) -> str:
+    """获取决策类型的"中文（英文）"展示格式"""
+    return DECISION_TYPE_DISPLAY.get(decision, decision)
 
 
 def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
@@ -491,6 +606,9 @@ class ActiveConsciousnessService:
             config = ActiveConsciousnessService.get_config()
             now = datetime.now()
 
+            # 从配置获取想念分数计算参数
+            longing_gap_minutes = int(ConfigService.get_config(db, "active_consciousness.longing.gap_minutes") or "300")
+
             # 查询想念分数
             longing_score = 0.0
             longing_level = 0
@@ -510,7 +628,7 @@ class ActiveConsciousnessService:
                         last_user_msg_at = str(row[0])
                         last_user_dt = _parse_timestamp(row[0]) or now
                         gap_minutes = (now - last_user_dt).total_seconds() / 60
-                        longing_score = min(gap_minutes / 300, 1.0)  # 5小时=1.0
+                        longing_score = min(gap_minutes / longing_gap_minutes, 1.0)
                         silence_minutes = gap_minutes
 
                     # 最近主动消息
@@ -524,8 +642,18 @@ class ActiveConsciousnessService:
             except Exception as e:
                 logger.warning("查询想念分数失败: %s", e)
 
+            # 从配置获取想念等级
+            longing_levels_str = ConfigService.get_config(db, "active_consciousness.levels.longing") or ""
+            longing_levels = LONGING_LEVELS  # 默认值
+            if longing_levels_str:
+                try:
+                    longing_levels = json.loads(f"[{longing_levels_str}]")
+                except json.JSONDecodeError:
+                    pass
+
             # 计算想念等级
-            for threshold, level, label in reversed(LONGING_LEVELS):
+            for item in reversed(longing_levels):
+                threshold, level, label = item[0], item[1], item[2]
                 if longing_score >= threshold:
                     longing_level = level
                     longing_label = label
@@ -554,8 +682,18 @@ class ActiveConsciousnessService:
             except Exception as e:
                 logger.warning("查询聊天热度失败: %s", e)
 
+            # 从配置获取热度等级
+            heat_levels_str = ConfigService.get_config(db, "active_consciousness.levels.heat") or ""
+            heat_levels = HEAT_LEVELS  # 默认值
+            if heat_levels_str:
+                try:
+                    heat_levels = json.loads(f"[{heat_levels_str}]")
+                except json.JSONDecodeError:
+                    pass
+
             # 计算热度等级
-            for threshold, label in reversed(HEAT_LEVELS):
+            for item in reversed(heat_levels):
+                threshold, label = item[0], item[1]
                 if chat_heat >= threshold:
                     chat_label = label
                     break
@@ -614,6 +752,9 @@ class ActiveConsciousnessService:
             delayed_thoughts = get_delayed_thoughts()
             delayed_count = len(delayed_thoughts)
 
+            # 获取情绪状态
+            emotion_state = get_emotion_state()
+
             return {
                 "enabled": config.get("enabled", False),
                 "heartbeat_count": heartbeat_count,
@@ -622,6 +763,7 @@ class ActiveConsciousnessService:
                     "score": round(longing_score, 3),
                     "level": longing_level,
                     "label": LABEL_CN.get(longing_label, longing_label),
+                    "label_display": get_label_display(longing_label),
                     "last_user_msg_at": last_user_msg_at,
                     "last_self_msg_at": last_self_msg_at,
                     "silence_minutes": round(silence_minutes, 1),
@@ -629,6 +771,7 @@ class ActiveConsciousnessService:
                 "chat_heat": {
                     "heat": round(chat_heat, 2),
                     "label": LABEL_CN.get(chat_label, chat_label),
+                    "label_display": get_label_display(chat_label),
                     "recent_count": recent_count,
                     "recent_hours": recent_hours,
                     "recent_user_msg_at": recent_user_msg_at,
@@ -636,6 +779,15 @@ class ActiveConsciousnessService:
                 "emotional_intensity": {
                     "intensity": round(emotional_intensity, 3),
                     "label": ActiveConsciousnessService._intensity_label(emotional_intensity),
+                },
+                "emotion_state": {
+                    "valence": round(emotion_state.valence, 3),
+                    "arousal": round(emotion_state.arousal, 3),
+                    "social_need": round(emotion_state.social_need, 3),
+                    "dominant": emotion_state.dominant,
+                    "dominant_display": get_label_display(emotion_state.dominant),
+                    "intensity": round(emotion_state.intensity(), 3),
+                    "updated_at": emotion_state.updated_at,
                 },
                 "today_sent_count": today_sent_count,
                 "hour_sent_count": hour_sent_count,
@@ -993,19 +1145,30 @@ async def generate_thought(config: Dict[str, Any], status: Dict[str, Any]) -> Di
 
     # Step 3: 念头生成（LLM）
     now = datetime.now()
-    prompt = f"""你是凯莉，请基于当前状态产生一个自然的念头。
 
-当前状态：
-- 时间：{now.strftime('%Y-%m-%d %H:%M %A')}
-- 想念分数：{status['longing'].get('score', 0)}（等级：{status['longing'].get('label', 'calm')}）
-- 聊天热度：{status['chat_heat'].get('heat', 0)}（标签：{status['chat_heat'].get('label', 'cold')}）
-- 情绪值：{status['emotional_intensity'].get('intensity', 0)}（{status['emotional_intensity'].get('label', '工作')}）
+    # 获取情绪状态
+    emotion_state = get_emotion_state()
 
-{session_context}
+    # 从配置获取提示词模板
+    prompt_template = ConfigService.get_config(
+        ActiveSession(), "active_consciousness.prompts.thought_generation"
+    ) or _DEFAULTS["active_consciousness.prompts.thought_generation"]
 
-{hindsight_context}
+    prompt = prompt_template.format(
+        time=now.strftime('%Y-%m-%d %H:%M %A'),
+        longing_score=status['longing'].get('score', 0),
+        longing_label=status['longing'].get('label', '平静'),
+        chat_heat=status['chat_heat'].get('heat', 0),
+        chat_label=status['chat_heat'].get('label', '冷清'),
+        emotional_intensity=status['emotional_intensity'].get('intensity', 0),
+        emotional_label=status['emotional_intensity'].get('label', '工作'),
+        dominant=emotion_state.dominant,
+        valence=emotion_state.valence,
+        arousal=emotion_state.arousal,
+        social_need=emotion_state.social_need,
+    )
 
-请用第一人称产生一个自然的念头（1-2句话）。"""
+    prompt = f"{prompt}\n\n{session_context}\n\n{hindsight_context}"
 
     thought = None
     llm_duration = 0
@@ -1398,26 +1561,25 @@ async def evaluate_emotion_with_llm(
     longing = status.get("longing", {})
     chat_heat = status.get("chat_heat", {})
 
-    prompt = f"""你是凯莉，请评估当前的情绪状态。
+    # 从配置获取提示词模板
+    prompt_template = ConfigService.get_config(
+        ActiveSession(), "active_consciousness.prompts.emotion_evaluation"
+    ) or _DEFAULTS["active_consciousness.prompts.emotion_evaluation"]
 
-当前状态：
-- 时间：{now.strftime('%Y-%m-%d %H:%M %A')}
-- 想念分数：{longing.get('score', 0)}（等级：{longing.get('label', 'calm')}）
-- 聊天热度：{chat_heat.get('heat', 0)}（标签：{chat_heat.get('label', 'cold')}）
+    # 计算沉默时长
+    silence_minutes = longing.get('silence_minutes', 0)
 
-{session_context}
+    prompt = prompt_template.format(
+        time=now.strftime('%Y-%m-%d %H:%M %A'),
+        longing_score=longing.get('score', 0),
+        longing_label=longing.get('label', '平静'),
+        chat_heat=chat_heat.get('heat', 0),
+        chat_label=chat_heat.get('label', '冷清'),
+        silence_minutes=round(silence_minutes, 1) if silence_minutes else 0,
+        context=session_context or "无",
+    )
 
-{hindsight_context}
-
-请用 JSON 格式返回你的情绪状态：
-{{
-  "valence": 0.0-1.0,  // 情感效价：0=消极，1=积极
-  "arousal": 0.0-1.0,  // 唤醒度：0=平静，1=激动
-  "social_need": 0.0-1.0,  // 社交需求：0=不需要，1=非常想聊天
-  "dominant": "calm/content/happy/longing/missing/yearning/anxious/bored/concerned"
-}}
-
-只返回 JSON，不要解释。"""
+    prompt = f"{prompt}\n\n{hindsight_context}"
 
     fallback_state = EmotionState()
     logger.info("LLM 情绪评估开始")
@@ -2057,16 +2219,30 @@ async def run_heartbeat():
                 logger.error("增强念头生成失败: %s", e)
                 all_details["enhanced_thoughts_error"] = str(e)
 
-        # 11. 使用新决策公式
-        decision_type, reason, score = make_decision_v2(config, status, merged_state)
-        all_details["decision"] = {
-            "type": decision_type,
-            "reason": reason,
-            "score": round(score, 3)
-        }
-        logger.info("决策结果: type=%s, score=%.3f, reason=%s", decision_type, score, reason)
+        # 11. 发送保护检查
+        protection_result, protection_reason = check_send_protection(config, status, merged_state)
+        if protection_result == "skip":
+            decision_type = "skip"
+            reason = protection_reason
+            score = 0.0
+            all_details["decision"] = {
+                "type": decision_type,
+                "reason": reason,
+                "score": 0.0,
+                "blocked_by_protection": True
+            }
+            logger.info("发送保护拦截: %s", reason)
+        else:
+            # 12. 使用新决策公式
+            decision_type, reason, score = make_decision_v2(config, status, merged_state)
+            all_details["decision"] = {
+                "type": decision_type,
+                "reason": reason,
+                "score": round(score, 3)
+            }
+            logger.info("决策结果: type=%s, score=%.3f, reason=%s", decision_type, score, reason)
 
-        # 12. 记录心跳日志（初始）
+        # 13. 记录心跳日志（初始）
         duration_ms = round((time.time() - start_time) * 1000)
         heartbeat_id = ActiveConsciousnessService.write_heartbeat_log(
             started_at=started_at,
@@ -2080,7 +2256,7 @@ async def run_heartbeat():
             details=json.dumps(all_details, ensure_ascii=False) if all_details else None
         )
 
-        # 13. 处理决策结果
+        # 14. 处理决策结果
         if decision_type == "skip":
             logger.info("心跳跳过: %s", reason)
 
@@ -2160,16 +2336,16 @@ async def run_heartbeat():
                     all_details["hindsight_tags"] = hindsight_tags
                     all_details["hindsight_stored"] = stored
 
-        # 14. 重评估延迟队列
+        # 15. 重评估延迟队列
         delay_stats = await reevaluate_delayed_thoughts(config, status, merged_state)
         all_details["delay_reeval"] = delay_stats
         if any(v > 0 for v in delay_stats.values()):
             logger.info("延迟队列重评估: %s", delay_stats)
 
-        # 15. 读取更新后的情绪值
+        # 16. 读取更新后的情绪值
         all_details["emotion_after"] = get_emotion_state().to_dict()
 
-        # 16. 更新心跳日志（含 details）
+        # 17. 更新心跳日志（含 details）
         duration_ms = round((time.time() - start_time) * 1000)
         logger.info("=== 心跳完成 === duration=%dms, decision=%s", duration_ms, decision_type)
         duration_ms = round((time.time() - start_time) * 1000)
@@ -2594,6 +2770,45 @@ def get_time_fitness() -> tuple[float, str]:
     return 0.3, "深夜"
 
 
+def check_send_protection(
+    config: Dict[str, Any],
+    status: Dict[str, Any],
+    emotion_state: EmotionState
+) -> tuple[Optional[str], Optional[str]]:
+    """
+    发送保护检查
+
+    在决策之前检查是否应该跳过发送。
+
+    Returns:
+        (decision, reason): 如果应该跳过，返回 ("skip", reason)；否则返回 (None, None)
+    """
+    active_config = config.get("active", {})
+
+    # 1. 用户消息后不发送
+    no_send_minutes = int(active_config.get("no_send_after_user_msg_minutes", 10))
+    silence_minutes = status.get("longing", {}).get("silence_minutes", 0)
+    if silence_minutes < no_send_minutes:
+        logger.info("发送保护: 用户最近 %.0f 分钟内有消息（阈值 %d 分钟）", silence_minutes, no_send_minutes)
+        return "skip", f"用户最近 {no_send_minutes} 分钟内有消息（沉默 {silence_minutes:.0f} 分钟）"
+
+    # 2. 热度过高不发送
+    heat_threshold = float(active_config.get("no_send_while_heat_above", 0.5))
+    current_heat = status.get("chat_heat", {}).get("heat", 0)
+    if current_heat > heat_threshold:
+        logger.info("发送保护: 聊天热度 %.2f 超过阈值 %.2f", current_heat, heat_threshold)
+        return "skip", f"聊天热度 {current_heat:.2f} 超过阈值 {heat_threshold}"
+
+    # 3. 情绪过低不发送
+    vibe_threshold = float(active_config.get("no_send_while_vibe_below", 0.3))
+    current_intensity = emotion_state.intensity()
+    if current_intensity < vibe_threshold:
+        logger.info("发送保护: 情绪强度 %.3f 低于阈值 %.2f", current_intensity, vibe_threshold)
+        return "skip", f"情绪强度 {current_intensity:.3f} 低于阈值 {vibe_threshold}"
+
+    return None, None  # 通过所有检查
+
+
 def make_decision_v2(
     config: Dict[str, Any],
     status: Dict[str, Any],
@@ -2773,6 +2988,9 @@ async def retain_thought_to_hindsight(
         store_config = hindsight_config.get("store", {})
         bank_id = store_config.get("bank_id", "hermes-active")
         timeout = float(hindsight_config.get("timeout", 30))
+
+        logger.info("Hindsight 存储配置: base_url=%s, store.bank_id=%s, timeout=%s", base_url, bank_id, timeout)
+        logger.info("Hindsight 完整配置: %s", json.dumps(hindsight_config, ensure_ascii=False))
 
         client = get_hindsight_client(base_url=base_url, timeout=timeout)
 
@@ -2969,6 +3187,7 @@ async def reevaluate_delayed_thoughts(
 
         # 超过最大重试次数
         if thought.retry_count >= max_retry:
+            logger.info("延迟队列重评估: id=%d, 超过最大重试次数(%d), 丢弃", thought.id, max_retry)
             stats["discarded"] += 1
             continue
 
@@ -3006,9 +3225,40 @@ async def reevaluate_delayed_thoughts(
             # 升级为发送
             logger.info("延迟队列重评估: id=%d, old_score=%.3f, new_score=%.3f, decision=send",
                         thought.id, thought.score, new_score)
+
+            # 发送前检查保护机制
+            protection_result, protection_reason = check_send_protection(config, status, emotion_state)
+            if protection_result == "skip":
+                logger.info("延迟队列重评估: id=%d, 发送保护拦截: %s", thought.id, protection_reason)
+                thought.retry_count += 1
+                thought.next_retry_at = (
+                    datetime.now() + timedelta(minutes=retry_interval)
+                ).isoformat()
+                remaining_thoughts.append(thought)
+                stats["kept"] += 1
+                continue
+
             success = await send_message_to_target(config, thought.content)
             if success:
                 stats["sent"] += 1
+                # 写入念头日志
+                ActiveConsciousnessService.write_thought_log(
+                    heartbeat_id=None,
+                    thought_type=thought.thought_type,
+                    content=thought.content,
+                    intensity=intensity,
+                    decision="delay_send",
+                    reason=f"延迟队列升级: old_score={thought.score:.3f}, new_score={new_score:.3f}",
+                    score=new_score,
+                    chat_heat=status.get("chat_heat", {}).get("heat", 0),
+                    emotional_intensity=intensity,
+                    details=json.dumps({
+                        "source": "delay_queue",
+                        "original_score": thought.score,
+                        "new_score": new_score,
+                        "retry_count": thought.retry_count,
+                    }, ensure_ascii=False)
+                )
                 # 存入 Hindsight
                 await retain_thought_to_hindsight(
                     thought.content, emotion_state, thought.thought_type, new_score
