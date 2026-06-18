@@ -371,8 +371,7 @@ const config = ref({
   llm: { mode: 'hermes', provider: 'openai', model: 'deepseek-chat', api_key: '', base_url: '' },
   passive: { enabled: true, inject_emotion: true, inject_heat: true, inject_memory: true, inject_thought: true, thought_max_chars: 200, vibe_max_chars: 50, inject_tag: '[CONSCIOUSNESS_CONTEXT]', time_format: '%H:%M' },
   session: { sources: ['weixin'], time_range_hours: 24, max_messages_per_session: 15, filter_tool_messages: true },
-  hindsight: { enabled: true, recall_limit: 5, reflect_enabled: true },
-  weather: { enabled: false, adcode: '370100', amap_key: '', cache_ttl: 600 }
+  hindsight: { enabled: true, recall_limit: 5, reflect_enabled: true }
 })
 
 // 状态

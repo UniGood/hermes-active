@@ -602,13 +602,6 @@ const config = ref({
     retain_threshold: 0.5,
     retain_on_weather: true
   },
-  weather: {
-    enabled: false,
-    amap_key: '',
-    adcode: '370100',
-    cache_ttl: 3600,
-    temp_change_threshold: 5.0
-  },
   hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', recall_limit: 5, reflect_enabled: true, timeout: 30 },
   notify: { platform: 'weixin', chat_id: '' }
 })
