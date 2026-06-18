@@ -194,6 +194,46 @@ LABEL_CN = {
 }
 
 
+def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
+    """
+    验证主动意识配置
+
+    Args:
+        config: 配置字典
+
+    Returns:
+        错误消息列表，空列表表示验证通过
+    """
+    errors = []
+
+    # 验证心跳间隔
+    heartbeat_interval = config.get("active", {}).get("heartbeat_interval", 600)
+    if heartbeat_interval < 60:
+        errors.append("心跳间隔不能小于 60 秒")
+
+    # 验证阈值关系
+    send_threshold = config.get("decision", {}).get("send_threshold", 0.6)
+    delay_threshold = config.get("decision", {}).get("delay_threshold", 0.3)
+    memory_threshold = config.get("decision", {}).get("memory_threshold", 0.1)
+
+    if send_threshold <= delay_threshold:
+        errors.append("发送阈值必须大于延迟阈值")
+    if delay_threshold <= memory_threshold:
+        errors.append("延迟阈值必须大于记忆阈值")
+
+    # 验证情绪演化参数
+    decay_rate = config.get("emotion", {}).get("decay_rate", 0.02)
+    if decay_rate < 0 or decay_rate > 0.1:
+        errors.append("情绪衰减率必须在 0-0.1 之间")
+
+    # 验证延迟队列参数
+    max_age_hours = config.get("delay", {}).get("max_age_hours", 4)
+    if max_age_hours < 1 or max_age_hours > 24:
+        errors.append("延迟队列最大存活时间必须在 1-24 小时之间")
+
+    return errors
+
+
 class ActiveConsciousnessService:
     """主动意识服务"""
 

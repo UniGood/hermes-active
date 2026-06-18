@@ -1,9 +1,9 @@
-"""延迟队列过期机制测试 + LLM 降级调用测试"""
+"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试"""
 import pytest
 import asyncio
 from datetime import datetime, timedelta
 
-from services.active_consciousness_service import is_thought_expired, call_llm_with_fallback
+from services.active_consciousness_service import is_thought_expired, call_llm_with_fallback, validate_active_consciousness_config
 
 
 def test_is_thought_expired_with_old_thought():
@@ -86,3 +86,116 @@ async def test_call_llm_with_fallback_on_success():
 
     assert success == True
     assert result == expected_result
+
+
+# ============ 配置验证测试 ============
+
+def test_validate_config_with_invalid_heartbeat_interval():
+    """测试无效心跳间隔验证"""
+    config = {
+        "active": {
+            "heartbeat_interval": 30  # 小于 60
+        }
+    }
+    errors = validate_active_consciousness_config(config)
+    assert len(errors) > 0
+    assert "心跳间隔不能小于 60 秒" in errors[0]
+
+
+def test_validate_config_with_invalid_thresholds():
+    """测试无效阈值验证 - send_threshold 必须大于 delay_threshold"""
+    config = {
+        "decision": {
+            "send_threshold": 0.3,
+            "delay_threshold": 0.6  # 大于 send_threshold
+        }
+    }
+    errors = validate_active_consciousness_config(config)
+    assert len(errors) > 0
+    assert "发送阈值必须大于延迟阈值" in errors[0]
+
+
+def test_validate_config_with_delay_less_than_memory():
+    """测试无效阈值验证 - delay_threshold 必须大于 memory_threshold"""
+    config = {
+        "decision": {
+            "send_threshold": 0.8,
+            "delay_threshold": 0.1,
+            "memory_threshold": 0.3  # 大于 delay_threshold
+        }
+    }
+    errors = validate_active_consciousness_config(config)
+    assert len(errors) > 0
+    assert "延迟阈值必须大于记忆阈值" in errors[0]
+
+
+def test_validate_config_with_invalid_decay_rate():
+    """测试无效情绪衰减率验证"""
+    config = {
+        "emotion": {
+            "decay_rate": 0.5  # 超出 0-0.1 范围
+        }
+    }
+    errors = validate_active_consciousness_config(config)
+    assert len(errors) > 0
+    assert "情绪衰减率必须在 0-0.1 之间" in errors[0]
+
+
+def test_validate_config_with_invalid_max_age_hours():
+    """测试无效延迟队列最大存活时间验证"""
+    config = {
+        "delay": {
+            "max_age_hours": 48  # 超出 1-24 范围
+        }
+    }
+    errors = validate_active_consciousness_config(config)
+    assert len(errors) > 0
+    assert "延迟队列最大存活时间必须在 1-24 小时之间" in errors[0]
+
+
+def test_validate_config_with_valid_config():
+    """测试有效配置验证 - 应返回空错误列表"""
+    config = {
+        "active": {
+            "heartbeat_interval": 600
+        },
+        "decision": {
+            "send_threshold": 0.6,
+            "delay_threshold": 0.3,
+            "memory_threshold": 0.1
+        },
+        "emotion": {
+            "decay_rate": 0.02
+        },
+        "delay": {
+            "max_age_hours": 4
+        }
+    }
+    errors = validate_active_consciousness_config(config)
+    assert len(errors) == 0
+
+
+def test_validate_config_with_multiple_errors():
+    """测试多个错误同时存在的情况"""
+    config = {
+        "active": {
+            "heartbeat_interval": 10  # 太小
+        },
+        "decision": {
+            "send_threshold": 0.2,
+            "delay_threshold": 0.5,  # 大于 send_threshold
+            "memory_threshold": 0.8  # 大于 delay_threshold
+        }
+    }
+    errors = validate_active_consciousness_config(config)
+    assert len(errors) >= 3
+    assert "心跳间隔不能小于 60 秒" in errors
+    assert "发送阈值必须大于延迟阈值" in errors
+    assert "延迟阈值必须大于记忆阈值" in errors
+
+
+def test_validate_config_with_empty_config():
+    """测试空配置 - 应使用默认值，全部通过验证"""
+    config = {}
+    errors = validate_active_consciousness_config(config)
+    assert len(errors) == 0

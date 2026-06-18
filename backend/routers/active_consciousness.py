@@ -8,7 +8,10 @@ from models.active_consciousness import (
     ActiveConsciousnessConfig, ActiveConsciousnessStatus,
     SuccessResponse, ThoughtLog, HeartbeatLog, TestResult
 )
-from services.active_consciousness_service import ActiveConsciousnessService
+from services.active_consciousness_service import (
+    ActiveConsciousnessService,
+    validate_active_consciousness_config
+)
 
 logger = logging.getLogger("hermes.active_consciousness.router")
 
@@ -30,6 +33,14 @@ async def get_config():
 @router.put("/config", response_model=SuccessResponse)
 async def update_config(config: dict):
     """更新主动意识配置"""
+    # 验证配置
+    errors = validate_active_consciousness_config(config)
+    if errors:
+        raise HTTPException(
+            status_code=400,
+            detail={"message": "配置验证失败", "errors": errors}
+        )
+
     try:
         ActiveConsciousnessService.update_config(config)
 
