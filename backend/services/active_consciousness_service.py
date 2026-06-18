@@ -2962,6 +2962,9 @@ async def retain_thought_to_hindsight(
     config = ActiveConsciousnessService.get_config()
     thought_config = config.get("thought", {})
 
+    logger.info("retain_thought_to_hindsight 调用: thought=%s, thought_type=%s, score=%.3f", thought[:50], thought_type, score)
+    logger.info("retain_thought_to_hindsight 配置: thought_config=%s", json.dumps(thought_config, ensure_ascii=False))
+
     if not thought_config.get("retain_enabled", True):
         return False
 
@@ -2989,8 +2992,12 @@ async def retain_thought_to_hindsight(
         bank_id = store_config.get("bank_id", "hermes-active")
         timeout = float(hindsight_config.get("timeout", 30))
 
+        # 强制确保使用正确的 bank_id 用于存储
+        if not bank_id or bank_id == "hermes":
+            logger.warning("Hindsight 存储 bank_id 不正确: '%s'，强制使用 'hermes-active'", bank_id)
+            bank_id = "hermes-active"
+
         logger.info("Hindsight 存储配置: base_url=%s, store.bank_id=%s, timeout=%s", base_url, bank_id, timeout)
-        logger.info("Hindsight 完整配置: %s", json.dumps(hindsight_config, ensure_ascii=False))
 
         client = get_hindsight_client(base_url=base_url, timeout=timeout)
 
@@ -3013,6 +3020,7 @@ async def retain_thought_to_hindsight(
         if intensity > 0.7:
             tags.append("high_emotion")
 
+        logger.info("Hindsight 存储调用: bank_id=%s, content=%s, tags=%s", bank_id, content[:50], tags)
         await client.aretain(
             bank_id=bank_id,
             content=content,
