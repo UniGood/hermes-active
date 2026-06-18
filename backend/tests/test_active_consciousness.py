@@ -1,4 +1,4 @@
-"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试 + 动态权重合并测试 + 念头类型判断测试"""
+"""延迟队列过期机制测试 + LLM 降级调用测试 + 配置验证测试 + 动态权重合并测试 + 念头类型判断测试 + 延迟队列硬限制测试"""
 import pytest
 import asyncio
 import unittest.mock
@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from services.active_consciousness_service import is_thought_expired, call_llm_with_fallback, validate_active_consciousness_config
 from services.active_consciousness_service import merge_emotion_dynamic, calculate_llm_confidence
 from services.active_consciousness_service import determine_thought_type_v2
+from services.active_consciousness_service import add_to_delay_queue_v2
 from models.active_consciousness import EmotionState, ThoughtType
 
 
@@ -324,3 +325,31 @@ def test_determine_thought_type_v2_default_association():
         result = determine_thought_type_v2(status, emotion_state, [], None)
 
     assert result == ThoughtType.ASSOCIATION.value
+
+
+# ============ 延迟队列硬限制测试 ============
+
+def test_add_to_delay_queue_v2_when_full():
+    """测试队列满时拒绝新念头"""
+    with unittest.mock.patch('services.active_consciousness_service.get_delayed_thoughts') as mock_get:
+        mock_get.return_value = [unittest.mock.MagicMock(id=i) for i in range(10)]  # 10 个念头
+
+        with unittest.mock.patch('services.active_consciousness_service.ActiveConsciousnessService.get_config') as mock_config:
+            mock_config.return_value = {"delay": {"max_queue_size": 10}}
+
+            result = add_to_delay_queue_v2("测试念头", "time", 0.5, None)
+            assert result == False
+
+
+def test_add_to_delay_queue_v2_when_not_full():
+    """测试队列未满时添加新念头"""
+    with unittest.mock.patch('services.active_consciousness_service.get_delayed_thoughts') as mock_get:
+        mock_get.return_value = [unittest.mock.MagicMock(id=i) for i in range(5)]  # 5 个念头
+
+        with unittest.mock.patch('services.active_consciousness_service.ActiveConsciousnessService.get_config') as mock_config:
+            mock_config.return_value = {"delay": {"max_queue_size": 10}}
+
+            with unittest.mock.patch('services.active_consciousness_service.save_delayed_thoughts') as mock_save:
+                result = add_to_delay_queue_v2("测试念头", "time", 0.5, None)
+                assert result == True
+                assert mock_save.called

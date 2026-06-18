@@ -1809,10 +1809,13 @@ async def run_heartbeat():
             if thought:
                 all_details["thought_generation"] = {"success": True, "thought": thought}
                 thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, None)
-                add_to_delay_queue(thought, thought_type, score, merged_state)
+                added = add_to_delay_queue_v2(thought, thought_type, score, merged_state)
                 all_details["thought_type"] = thought_type
                 all_details["hindsight_stored"] = False
-                logger.info("念头入延迟队列: %s", thought[:50])
+                if added:
+                    logger.info("念头入延迟队列: %s", thought[:50])
+                else:
+                    logger.warning("念头入延迟队列失败（队列已满）: %s", thought[:50])
 
         elif decision_type in ("auto_send", "gap_send", "idle_send", "long_idle_send"):
             # 自动发送
@@ -2488,6 +2491,47 @@ def add_to_delay_queue(
                 new_thought.id, thought_type, score, content[:50])
 
     return save_delayed_thoughts(thoughts)
+
+
+def add_to_delay_queue_v2(
+    content: str,
+    thought_type: str,
+    score: float,
+    emotion_state: EmotionState
+) -> bool:
+    """
+    添加念头到延迟队列（硬限制版本）
+
+    Returns:
+        True 如果添加成功，False 如果队列已满
+    """
+    thoughts = get_delayed_thoughts()
+
+    # 硬限制：队列满时拒绝新念头
+    config = ActiveConsciousnessService.get_config()
+    max_queue_size = int(config.get("delay", {}).get("max_queue_size", 10))
+
+    if len(thoughts) >= max_queue_size:
+        logger.warning("延迟队列已满 (%d/%d)，拒绝新念头: %s",
+                      len(thoughts), max_queue_size, content[:50])
+        return False
+
+    # 添加新念头
+    new_thought = DelayedThought(
+        id=int(datetime.now().timestamp()),
+        content=content,
+        thought_type=thought_type,
+        score=score,
+        created_at=datetime.now().isoformat(),
+        emotion_snapshot=emotion_state.to_dict() if emotion_state else {}
+    )
+    thoughts.append(new_thought)
+
+    # 保存
+    save_delayed_thoughts(thoughts)
+    logger.info("念头已添加到延迟队列: id=%d, type=%s, score=%.3f",
+                new_thought.id, thought_type, score)
+    return True
 
 
 def is_thought_expired(thought: dict, max_age_hours: float = 4.0) -> bool:
