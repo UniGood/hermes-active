@@ -1040,20 +1040,7 @@ onMounted(async () => {
 .active-consciousness-page {
   padding: 0;
 }
-/* 详情弹窗卡片 */
-.detail-modal-card {
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex !important;
-  flex-direction: column;
-}
-.n-card.detail-modal-card .n-card-content {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
+/* 详情弹窗卡片 - 样式已移至非 scoped style */
 .modal-scroll-body {
   flex: 1;
   min-height: 0;
@@ -1137,5 +1124,14 @@ onMounted(async () => {
   justify-content: center !important;
 }
 
+/* 详情弹窗 - 覆盖 Naive UI 样式（非 scoped） */
+.n-card.detail-modal-card .n-card-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+</style>
 
 </style>
