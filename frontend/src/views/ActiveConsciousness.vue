@@ -646,164 +646,258 @@
 
     <!-- 心跳日志详情弹窗 -->
     <n-modal v-model:show="showDetailsModal" preset="card" :title="detailsTitle" fullscreen :mask-closable="false">
-      <div v-if="detailsData">
-        <!-- 情绪演化流程 -->
-        <template v-if="isHeartbeatDetails">
-          <n-divider title-placement="left">情绪演化</n-divider>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-            <n-tag v-for="item in [
-              {label: '初始', d: detailsData.emotion_before},
-              {label: '演化', d: detailsData.emotion_evolved},
-              {label: 'LLM', d: detailsData.emotion_llm},
-              {label: '合并', d: detailsData.emotion_merged}
-            ].filter(i => i.d)" :key="item.label" size="small" :type="getEmotionTagType(item.d.dominant)">
-              {{ item.label }}: {{ emotionLabelCn(item.d.dominant) }} ({{ item.d.valence?.toFixed(2) }}, {{ item.d.arousal?.toFixed(2) }}, {{ item.d.social_need?.toFixed(2) }})
-            </n-tag>
+      <div v-if="detailsData && isHeartbeatDetails">
+        
+        <!-- ===== 结果总览（最醒目） ===== -->
+        <n-card size="small" style="margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <!-- 结果图标 -->
+            <div style="font-size: 48px;">
+              {{ getHeartbeatResultIcon(detailsData) }}
+            </div>
+            <!-- 结果信息 -->
+            <div style="flex: 1; min-width: 200px;">
+              <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">
+                {{ getHeartbeatResultTitle(detailsData) }}
+              </div>
+              <div style="font-size: 14px; color: #666; margin-bottom: 4px;">
+                {{ getHeartbeatResultReason(detailsData) }}
+              </div>
+              <div style="font-size: 12px; color: #999;">
+                耗时 {{ detailsData.duration_ms || '-' }}ms
+              </div>
+            </div>
+            <!-- 关键指标 -->
+            <div style="display: flex; gap: 16px;">
+              <div style="text-align: center;">
+                <div style="font-size: 24px; font-weight: bold; color: #18a058;">
+                  {{ detailsData.decision?.score?.toFixed(2) || '0.00' }}
+                </div>
+                <div style="font-size: 11px; color: #999;">决策分数</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 24px; font-weight: bold; color: #2080f0;">
+                  {{ detailsData.chat_heat?.toFixed(1) || '0.0' }}
+                </div>
+                <div style="font-size: 11px; color: #999;">聊天热度</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 24px; font-weight: bold; color: #f0a020;">
+                  {{ detailsData.emotional_intensity?.toFixed(2) || '0.00' }}
+                </div>
+                <div style="font-size: 11px; color: #999;">情绪强度</div>
+              </div>
+            </div>
           </div>
-          <div style="font-size: 12px; color: #666; margin-bottom: 16px;">
-            距上次 {{ detailsData.minutes_since_update?.toFixed(0) }}分钟 | 合并权重：演化40% + LLM60%
-          </div>
-        </template>
+        </n-card>
 
-        <!-- 决策计算 -->
-        <template v-if="detailsData.decision">
-          <n-divider title-placement="left">决策计算</n-divider>
-          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="公式" :span="2">score = intensity × time_fitness × silence × freq</n-descriptions-item>
-            <n-descriptions-item label="决策类型">
-              <n-tag :type="getDecisionTagType(detailsData.decision.type)" size="small">
-                {{ getDecisionLabelCn(detailsData.decision.type) }}
-              </n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item label="最终分数">{{ detailsData.decision.score?.toFixed(3) }} → {{ getDecisionLabelCn(detailsData.decision.type) }}</n-descriptions-item>
-            <n-descriptions-item label="情绪强度">
-              {{ parseDecisionReason(detailsData.decision.reason).intensity }}
-              <n-tag size="tiny" type="info" style="margin-left: 4px">情绪越强分越高</n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item label="时间适宜性">
-              {{ parseDecisionReason(detailsData.decision.reason).time_fitness }}
-              <n-tag size="tiny" type="warning" style="margin-left: 4px">工作时间降权</n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item label="沉默因子">
-              {{ parseDecisionReason(detailsData.decision.reason).silence_factor }}
-              <n-tag size="tiny" type="default" style="margin-left: 4px">越久没聊天分越高</n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item label="频率限制">
-              {{ parseDecisionReason(detailsData.decision.reason).frequency }}
-              <n-tag size="tiny" type="error" style="margin-left: 4px">超频归零</n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item label="决策原因" :span="2">{{ detailsData.decision.reason }}</n-descriptions-item>
-          </n-descriptions>
-          <n-descriptions v-if="detailsData.time_fitness" bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="时间适宜性">{{ detailsData.time_fitness.score?.toFixed(3) }} ({{ detailsData.time_fitness.label }})</n-descriptions-item>
-          </n-descriptions>
-        </template>
+        <!-- ===== 执行流程时间线 ===== -->
+        <n-card title="⏱️ 执行流程" size="small" style="margin-bottom: 16px;">
+          <n-timeline>
+            <!-- 1. 心跳触发 -->
+            <n-timeline-item type="success" title="心跳触发">
+              <template #icon>
+                <n-icon size="16"><CheckmarkCircle /></n-icon>
+              </template>
+              <div style="font-size: 12px; color: #666;">
+                {{ detailsData.started_at || '-' }}
+              </div>
+            </n-timeline-item>
 
-        <!-- 召回详情 -->
-        <template v-if="detailsData.recall_results?.length">
-          <n-divider title-placement="left">Hindsight 召回</n-divider>
-          <n-list bordered size="small" style="margin-bottom: 16px">
-            <n-list-item v-for="(item, idx) in detailsData.recall_results" :key="idx">
-              <div style="font-size: 13px;">{{ item.content || item.text || formatJson(item) }}</div>
-            </n-list-item>
-          </n-list>
-        </template>
+            <!-- 2. 情绪演化 -->
+            <n-timeline-item v-if="detailsData.emotion_before" type="success" title="情绪演化">
+              <template #icon>
+                <n-icon size="16"><CheckmarkCircle /></n-icon>
+              </template>
+              <div style="font-size: 12px; color: #666;">
+                距上次 {{ detailsData.minutes_since_update?.toFixed(0) || '0' }} 分钟
+                <n-tag size="tiny" :type="getEmotionTagType(detailsData.emotion_merged?.dominant)">
+                  {{ emotionLabelCn(detailsData.emotion_merged?.dominant) }}
+                </n-tag>
+              </div>
+            </n-timeline-item>
 
-        <!-- 念头生成 -->
-        <template v-if="detailsData.thought_generation || detailsData.thought_type">
-          <n-divider title-placement="left">念头生成</n-divider>
-          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="念头类型">
-              <n-tag :type="getThoughtTypeTagType(detailsData.thought_type)" size="small">
-                {{ thoughtTypeLabelCn(detailsData.thought_type) }}
-              </n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item label="生成状态">
-              <n-tag :type="detailsData.thought_generation?.success ? 'success' : 'error'" size="small">
-                {{ detailsData.thought_generation?.success ? '成功' : '失败' }}
-              </n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item v-if="detailsData.thought_generation?.thought" label="生成内容" :span="2">
-              {{ detailsData.thought_generation.thought }}
-            </n-descriptions-item>
-            <n-descriptions-item v-if="detailsData.thought_generation?.hindsight_stored !== undefined" label="Hindsight">
-              <n-tag :type="detailsData.thought_generation.hindsight_stored ? 'success' : 'default'" size="small">
-                {{ detailsData.thought_generation.hindsight_stored ? '已存储' : '未存储' }}
-              </n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item v-if="detailsData.thought_generation?.model" label="LLM 模型">
-              {{ detailsData.thought_generation.model }}
-            </n-descriptions-item>
-            <n-descriptions-item v-if="detailsData.thought_generation?.duration_ms" label="LLM 耗时">
-              {{ detailsData.thought_generation.duration_ms }}ms
-            </n-descriptions-item>
-            <n-descriptions-item v-if="detailsData.thought_generation?.error" label="错误" :span="2">
-              <span style="color: #d03050;">{{ detailsData.thought_generation.error }}</span>
-            </n-descriptions-item>
-          </n-descriptions>
-        </template>
+            <!-- 3. 上下文收集 -->
+            <n-timeline-item v-if="detailsData.session_context !== undefined" type="success" title="上下文收集">
+              <template #icon>
+                <n-icon size="16"><CheckmarkCircle /></n-icon>
+              </template>
+              <div style="font-size: 12px; color: #666;">
+                对话 {{ detailsData.session_context ? '✓' : '✗' }}
+                | 记忆 {{ detailsData.recall_results?.length || 0 }} 条
+                | Hindsight {{ detailsData.hindsight_context ? '✓' : '✗' }}
+              </div>
+            </n-timeline-item>
 
-        <!-- 消息发送 -->
-        <template v-if="detailsData.message_sending">
-          <n-divider title-placement="left">消息发送</n-divider>
-          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="发送状态">
-              <n-tag :type="detailsData.message_sending.success ? 'success' : 'error'" size="small">
-                {{ detailsData.message_sending.success ? '成功' : '失败' }}
-              </n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item v-if="detailsData.message_sending.thought_type" label="念头类型">
-              <n-tag :type="getThoughtTypeTagType(detailsData.message_sending.thought_type)" size="small">
-                {{ thoughtTypeLabelCn(detailsData.message_sending.thought_type) }}
-              </n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item v-if="detailsData.message_sending.thought" label="发送内容" :span="2">
-              {{ detailsData.message_sending.thought }}
-            </n-descriptions-item>
-          </n-descriptions>
-        </template>
+            <!-- 4. 决策计算 -->
+            <n-timeline-item v-if="detailsData.decision" :type="getDecisionTimelineType(detailsData.decision)" title="决策计算">
+              <template #icon>
+                <n-icon size="16">{{ getDecisionTimelineIcon(detailsData.decision) }}</n-icon>
+              </template>
+              <div style="font-size: 12px; color: #666;">
+                分数 {{ detailsData.decision.score?.toFixed(3) || '0.000' }}
+                → <n-tag size="tiny" :type="getDecisionTagType(detailsData.decision.type)">
+                  {{ getDecisionLabelCn(detailsData.decision.type) }}
+                </n-tag>
+              </div>
+            </n-timeline-item>
 
-        <!-- 延迟队列重评估 -->
-        <template v-if="detailsData.delay_reeval">
-          <n-divider title-placement="left">延迟队列重评估</n-divider>
-          <n-descriptions bordered :column="3" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="发送">{{ detailsData.delay_reeval.sent }}</n-descriptions-item>
-            <n-descriptions-item label="丢弃">{{ detailsData.delay_reeval.discarded }}</n-descriptions-item>
-            <n-descriptions-item label="保持">{{ detailsData.delay_reeval.kept }}</n-descriptions-item>
-          </n-descriptions>
-        </template>
+            <!-- 5. 发送保护 -->
+            <n-timeline-item 
+              v-if="detailsData.decision?.blocked_by_protection" 
+              type="error" 
+              title="发送保护拦截"
+            >
+              <template #icon>
+                <n-icon size="16"><CloseCircle /></n-icon>
+              </template>
+              <div style="font-size: 12px; color: #d03050;">
+                {{ detailsData.decision.protection_reason || '保护机制拦截' }}
+              </div>
+            </n-timeline-item>
 
-        <!-- 情绪评估 LLM 调用 -->
-        <template v-if="detailsData.emotional_evaluation">
-          <n-divider title-placement="left">情绪评估 LLM 调用</n-divider>
-          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="模型">{{ detailsData.emotional_evaluation.model }}</n-descriptions-item>
-            <n-descriptions-item label="模式">{{ detailsData.emotional_evaluation.mode }}</n-descriptions-item>
-            <n-descriptions-item label="耗时">{{ detailsData.emotional_evaluation.duration_ms }}ms</n-descriptions-item>
-            <n-descriptions-item label="返回值">{{ detailsData.emotional_evaluation.response }}</n-descriptions-item>
-            <n-descriptions-item label="规则分数">{{ detailsData.emotional_evaluation.rule_score?.toFixed(3) }}</n-descriptions-item>
-            <n-descriptions-item label="LLM 分数">{{ detailsData.emotional_evaluation.llm_score?.toFixed(3) }}</n-descriptions-item>
-            <n-descriptions-item label="最终分数">{{ detailsData.emotional_evaluation.final_score?.toFixed(3) }}</n-descriptions-item>
-            <n-descriptions-item v-if="detailsData.emotional_evaluation.matched_keywords?.length" label="匹配关键词" :span="2">
-              <n-space>
-                <n-tag v-for="kw in detailsData.emotional_evaluation.matched_keywords" :key="kw" size="small">{{ kw }}</n-tag>
-              </n-space>
-            </n-descriptions-item>
-            <n-descriptions-item v-if="detailsData.emotional_evaluation.error" label="错误" :span="2">
-              <span style="color: #d03050;">{{ detailsData.emotional_evaluation.error }}</span>
-            </n-descriptions-item>
-          </n-descriptions>
-          <n-collapse style="margin-bottom: 16px">
-            <n-collapse-item title="Prompt 预览" name="prompt" v-if="detailsData.emotional_evaluation.prompt_preview">
-              <n-code :code="detailsData.emotional_evaluation.prompt_preview" language="text" />
-            </n-collapse-item>
-          </n-collapse>
-        </template>
+            <!-- 6. 念头生成 -->
+            <n-timeline-item 
+              v-if="detailsData.thought_generation" 
+              :type="detailsData.thought_generation.success ? 'success' : 'error'" 
+              title="念头生成"
+            >
+              <template #icon>
+                <n-icon size="16">{{ detailsData.thought_generation.success ? CheckmarkCircle : CloseCircle }}</n-icon>
+              </template>
+              <div style="font-size: 12px; color: #666;">
+                <template v-if="detailsData.thought_generation.success">
+                  {{ detailsData.thought_generation.thought?.substring(0, 50) }}...
+                </template>
+                <template v-else>
+                  {{ detailsData.thought_generation.error || '生成失败' }}
+                </template>
+              </div>
+            </n-timeline-item>
 
-        <!-- 原始JSON -->
+            <!-- 7. 消息发送 -->
+            <n-timeline-item 
+              v-if="detailsData.message_sending" 
+              :type="detailsData.message_sending.success ? 'success' : 'error'" 
+              title="消息发送"
+            >
+              <template #icon>
+                <n-icon size="16">{{ detailsData.message_sending.success ? CheckmarkCircle : CloseCircle }}</n-icon>
+              </template>
+              <div style="font-size: 12px; color: #666;">
+                {{ detailsData.message_sending.success ? '发送成功' : '发送失败' }}
+                <template v-if="detailsData.message_sending.thought">
+                  : {{ detailsData.message_sending.thought.substring(0, 30) }}...
+                </template>
+              </div>
+            </n-timeline-item>
+          </n-timeline>
+        </n-card>
+
+        <!-- ===== 详细信息（可折叠） ===== -->
         <n-collapse>
-          <n-collapse-item title="原始 JSON 数据" name="raw">
-            <n-code :code="formatJson(detailsData)" language="json" />
+          <!-- 决策计算详情 -->
+          <n-collapse-item title="📊 决策计算详情" name="decision">
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
+              <n-descriptions-item label="公式" :span="2">score = intensity × time_fitness × silence × freq</n-descriptions-item>
+              <n-descriptions-item label="决策类型">
+                <n-tag :type="getDecisionTagType(detailsData.decision?.type)" size="small">
+                  {{ getDecisionLabelCn(detailsData.decision?.type) }}
+                </n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item label="最终分数">{{ detailsData.decision?.score?.toFixed(3) }}</n-descriptions-item>
+              <n-descriptions-item label="情绪强度">
+                {{ parseDecisionReason(detailsData.decision?.reason).intensity }}
+                <n-tag size="tiny" type="info" style="margin-left: 4px">情绪越强分越高</n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item label="时间适宜性">
+                {{ parseDecisionReason(detailsData.decision?.reason).time_fitness }}
+                <n-tag size="tiny" type="warning" style="margin-left: 4px">工作时间降权</n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item label="沉默因子">
+                {{ parseDecisionReason(detailsData.decision?.reason).silence_factor }}
+                <n-tag size="tiny" type="default" style="margin-left: 4px">越久没聊天分越高</n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item label="频率限制">
+                {{ parseDecisionReason(detailsData.decision?.reason).frequency }}
+                <n-tag size="tiny" type="error" style="margin-left: 4px">超频归零</n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item label="决策原因" :span="2">{{ detailsData.decision?.reason }}</n-descriptions-item>
+            </n-descriptions>
+          </n-collapse-item>
+
+          <!-- 情绪演化详情 -->
+          <n-collapse-item v-if="detailsData.emotion_before" title="😊 情绪演化详情" name="emotion">
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+              <n-tag v-for="item in [
+                {label: '初始', d: detailsData.emotion_before},
+                {label: '演化', d: detailsData.emotion_evolved},
+                {label: 'LLM', d: detailsData.emotion_llm},
+                {label: '合并', d: detailsData.emotion_merged}
+              ].filter(i => i.d)" :key="item.label" size="small" :type="getEmotionTagType(item.d.dominant)">
+                {{ item.label }}: {{ emotionLabelCn(item.d.dominant) }} ({{ item.d.valence?.toFixed(2) }}, {{ item.d.arousal?.toFixed(2) }}, {{ item.d.social_need?.toFixed(2) }})
+              </n-tag>
+            </div>
+            <div style="font-size: 12px; color: #666;">
+              距上次 {{ detailsData.minutes_since_update?.toFixed(0) }}分钟 | 合并权重：演化40% + LLM60%
+            </div>
+          </n-collapse-item>
+
+          <!-- 上下文详情 -->
+          <n-collapse-item v-if="detailsData.session_context || detailsData.hindsight_context" title="📦 上下文详情" name="context">
+            <n-card v-if="detailsData.session_context" title="Session 对话" size="small" style="margin-bottom: 8px;">
+              <n-code :code="detailsData.session_context" language="text" word-wrap />
+            </n-card>
+            <n-card v-if="detailsData.hindsight_context" title="Hindsight 记忆" size="small" style="margin-bottom: 8px;">
+              <n-code :code="detailsData.hindsight_context" language="text" word-wrap />
+            </n-card>
+            <n-list v-if="detailsData.recall_results?.length" bordered size="small">
+              <n-list-item v-for="(item, idx) in detailsData.recall_results" :key="idx">
+                <div style="font-size: 13px;">{{ item.content || item.text || formatJson(item) }}</div>
+              </n-list-item>
+            </n-list>
+          </n-collapse-item>
+
+          <!-- 念头生成详情 -->
+          <n-collapse-item v-if="detailsData.thought_generation" title="💭 念头生成详情" name="thought">
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
+              <n-descriptions-item label="念头类型">
+                <n-tag :type="getThoughtTypeTagType(detailsData.thought_type)" size="small">
+                  {{ thoughtTypeLabelCn(detailsData.thought_type) }}
+                </n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item label="生成状态">
+                <n-tag :type="detailsData.thought_generation?.success ? 'success' : 'error'" size="small">
+                  {{ detailsData.thought_generation?.success ? '成功' : '失败' }}
+                </n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item v-if="detailsData.thought_generation?.thought" label="生成内容" :span="2">
+                {{ detailsData.thought_generation.thought }}
+              </n-descriptions-item>
+              <n-descriptions-item v-if="detailsData.thought_generation?.model" label="LLM 模型">
+                {{ detailsData.thought_generation.model }}
+              </n-descriptions-item>
+              <n-descriptions-item v-if="detailsData.thought_generation?.duration_ms" label="LLM 耗时">
+                {{ detailsData.thought_generation.duration_ms }}ms
+              </n-descriptions-item>
+              <n-descriptions-item v-if="detailsData.thought_generation?.error" label="错误" :span="2">
+                <span style="color: #d03050;">{{ detailsData.thought_generation.error }}</span>
+              </n-descriptions-item>
+            </n-descriptions>
+          </n-collapse-item>
+
+          <!-- 延迟队列详情 -->
+          <n-collapse-item v-if="detailsData.delay_reeval" title="⏰ 延迟队列重评估" name="delay">
+            <n-descriptions bordered :column="3" size="small" style="margin-bottom: 16px">
+              <n-descriptions-item label="发送">{{ detailsData.delay_reeval.sent }}</n-descriptions-item>
+              <n-descriptions-item label="丢弃">{{ detailsData.delay_reeval.discarded }}</n-descriptions-item>
+              <n-descriptions-item label="保持">{{ detailsData.delay_reeval.kept }}</n-descriptions-item>
+            </n-descriptions>
+          </n-collapse-item>
+
+          <!-- 原始 JSON -->
+          <n-collapse-item title="📄 原始 JSON 数据" name="raw">
+            <n-code :code="formatJson(detailsData)" language="json" word-wrap />
           </n-collapse-item>
         </n-collapse>
       </div>
@@ -993,7 +1087,7 @@
 <script setup>
 import { ref, onMounted, computed, h } from 'vue'
 import { useMessage, NButton } from 'naive-ui'
-import { HelpCircleOutline } from '@vicons/ionicons5'
+import { HelpCircleOutline, CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
 import api from '../api/active_consciousness'
 import mainApi from '../api'
 
@@ -1280,10 +1374,70 @@ function getDecisionTagType(type) {
   if (!type) return 'default'
   switch (type) {
     case 'auto_send': return 'success'
+    case 'gap_send': return 'success'
+    case 'idle_send': return 'success'
+    case 'long_idle_send': return 'success'
     case 'delay_send': return 'warning'
     case 'skip': return 'default'
     case 'memory': return 'info'
     default: return 'default'
+  }
+}
+
+// 心跳结果图标
+function getHeartbeatResultIcon(details) {
+  if (details.message_sending?.success) return '✅'
+  if (details.decision?.blocked_by_protection) return '🛡️'
+  if (details.decision?.type === 'skip') return '⏭️'
+  if (details.decision?.type === 'memory') return '💾'
+  if (details.decision?.type === 'delay_send') return '⏰'
+  return '❓'
+}
+
+// 心跳结果标题
+function getHeartbeatResultTitle(details) {
+  if (details.message_sending?.success) return '已发送消息'
+  if (details.decision?.blocked_by_protection) return '被保护机制拦截'
+  if (details.decision?.type === 'skip') return '跳过（分数不足）'
+  if (details.decision?.type === 'memory') return '存为记忆'
+  if (details.decision?.type === 'delay_send') return '加入延迟队列'
+  return '未知状态'
+}
+
+// 心跳结果原因
+function getHeartbeatResultReason(details) {
+  if (details.decision?.blocked_by_protection) {
+    return details.decision.protection_reason || '保护机制拦截'
+  }
+  if (details.decision?.reason) {
+    return details.decision.reason
+  }
+  return '-'
+}
+
+// 决策时间线类型
+function getDecisionTimelineType(decision) {
+  if (!decision) return 'default'
+  if (decision.blocked_by_protection) return 'warning'
+  switch (decision.type) {
+    case 'auto_send': return 'success'
+    case 'delay_send': return 'warning'
+    case 'memory': return 'info'
+    case 'skip': return 'default'
+    default: return 'default'
+  }
+}
+
+// 决策时间线图标
+function getDecisionTimelineIcon(decision) {
+  if (!decision) return h('span', '❓')
+  if (decision.blocked_by_protection) return h('span', '🛡️')
+  switch (decision.type) {
+    case 'auto_send': return h('span', '✅')
+    case 'delay_send': return h('span', '⏰')
+    case 'memory': return h('span', '💾')
+    case 'skip': return h('span', '⏭️')
+    default: return h('span', '❓')
   }
 }
 
