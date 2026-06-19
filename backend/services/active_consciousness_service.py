@@ -187,9 +187,6 @@ _DEFAULTS = {
 
     # 时间窗口
     "active_consciousness.time.enabled": "true",
-    "active_consciousness.time.deep_night_start": "23.5",
-    "active_consciousness.time.deep_night_end": "7",
-    "active_consciousness.time.deep_night_fitness": "0.3",
 
     # 延迟发送
     "active_consciousness.delay.enabled": "true",
@@ -1523,7 +1520,8 @@ async def send_message_to_target(config: Dict[str, Any], thought: str) -> bool:
 
     # 调用 MessageService 发送消息
     from services.message_service import MessageService
-    send_mark = config.get("active", {}).get("send_tag", "[凯莉主动发送]")
+    send_mark = config.get("active", {}).get("send_tag", "凯莉")
+    time_format = config.get("active", {}).get("time_format", "%H:%M")
 
     result = await MessageService.send_message(
         session_id=chat_id,
@@ -1531,7 +1529,8 @@ async def send_message_to_target(config: Dict[str, Any], thought: str) -> bool:
         platform=platform,
         write_to_db=True,
         with_mark=True,
-        send_mark=send_mark
+        send_mark=send_mark,
+        time_format=time_format
     )
 
     return result.get("success", False)

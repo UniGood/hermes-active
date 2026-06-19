@@ -259,10 +259,12 @@
               <n-input-number v-model:value="config.active.heartbeat_interval" :min="60" :max="3600" />
             </n-form-item>
             <n-form-item label="发送标记">
-              <n-input v-model:value="config.active.send_tag" placeholder="[凯莉主动发送]" />
+              <n-input v-model:value="config.active.send_tag" placeholder="凯莉" />
+              <span class="form-item-hint">最终格式：[凯莉 20:16 星期五]</span>
             </n-form-item>
             <n-form-item label="时间格式">
               <n-input v-model:value="config.active.time_format" placeholder="%H:%M" />
+              <span class="form-item-hint">strftime 格式，支持 {weekday} 占位符。例：%H:%M 星期{weekday}</span>
             </n-form-item>
 
             <!-- Session 来源 -->
@@ -1300,7 +1302,7 @@ const formatJsonValue = (val) => {
 const config = ref({
   enabled: false,
   llm: { mode: 'hermes', provider: 'openai', model: 'deepseek-chat', api_key: '', base_url: '' },
-  active: { enabled: true, heartbeat_interval: 600, send_tag: '[凯莉主动发送]', time_format: '%H:%M', no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 3.0, no_send_while_vibe_below: 0.15, cooldown_minutes: 30 },
+  active: { enabled: true, heartbeat_interval: 600, send_tag: '凯莉', time_format: '%H:%M', no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 3.0, no_send_while_vibe_below: 0.15, cooldown_minutes: 30 },
   session: { sources: ['weixin'], max_messages_per_session: 15, filter_tool_messages: true },
   decision: { send_threshold: 0.35, delay_threshold: 0.15, memory_threshold: 0.05, max_per_hour: 2, max_per_day: 5, longing_gap_threshold: 3 },
   thought: { retain_enabled: false, retain_threshold: 0.5 },
