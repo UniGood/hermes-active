@@ -1026,7 +1026,7 @@ const formatJsonValue = (val) => {
 const config = ref({
   enabled: false,
   llm: { mode: 'hermes', provider: 'openai', model: 'deepseek-chat', api_key: '', base_url: '' },
-  active: { enabled: true, heartbeat_interval: 600, send_tag: '[凯莉主动发送]', time_format: '%H:%M', no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 1.0, no_send_while_vibe_below: 0.15, cooldown_minutes: 30 },
+  active: { enabled: true, heartbeat_interval: 600, send_tag: '[凯莉主动发送]', time_format: '%H:%M', no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 3.0, no_send_while_vibe_below: 0.15, cooldown_minutes: 30 },
   session: { sources: ['weixin'], max_messages_per_session: 15, filter_tool_messages: true },
   decision: { send_threshold: 0.35, delay_threshold: 0.15, memory_threshold: 0.05, max_per_hour: 2, max_per_day: 5, longing_gap_threshold: 3 },
   thought: { retain_enabled: false, retain_threshold: 0.5 },

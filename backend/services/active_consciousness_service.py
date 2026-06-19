@@ -1796,7 +1796,8 @@ async def generate_and_send_thought_with_emotion(
     status: Dict[str, Any],
     emotion_state: EmotionState,
     decision_type: str,
-    heartbeat_id: Optional[int] = None
+    heartbeat_id: Optional[int] = None,
+    decision_score: float = 0.0
 ) -> tuple[bool, Dict[str, Any]]:
     """生成念头并发送消息（使用 ThoughtEngine）"""
     details = {
@@ -1834,7 +1835,7 @@ async def generate_and_send_thought_with_emotion(
         "thought_type": thought_type,
         "emotion_state": emotion_state.to_dict(),
         "decision": decision_type,
-        "score": round(emotion_state.intensity(), 3),
+        "score": round(decision_score, 3),
         "hindsight_tags": hindsight_tags,
         "hindsight_stored": False,
         "llm_call": result.get("llm_details", {}),
@@ -1849,7 +1850,7 @@ async def generate_and_send_thought_with_emotion(
         intensity=emotion_state.intensity(),
         decision=decision_type,
         reason=f"情绪: {emotion_state.dominant}, 决策: {decision_type}",
-        score=emotion_state.intensity(),
+        score=decision_score,
         recall_count=len(hindsight_results),
         recall_source="hindsight",
         chat_heat=status.get("chat_heat", {}).get("heat", 0),
@@ -2061,28 +2062,23 @@ async def run_heartbeat():
         # 9. 保存情绪状态
         update_emotion_state(merged_state)
 
-        # 10. 发送保护检查
+        # 10. 使用新决策公式（先计算决策分数）
+        decision_type, reason, score = make_decision_v2(config, status, merged_state)
+        all_details["decision"] = {
+            "type": decision_type,
+            "reason": reason,
+            "score": round(score, 3)
+        }
+        logger.info("决策结果: type=%s, score=%.3f, reason=%s", decision_type, score, reason)
+
+        # 11. 发送保护检查（在决策计算之后，只拦截实际发送）
         protection_result, protection_reason = check_send_protection(config, status, merged_state)
         if protection_result == "skip":
-            decision_type = "skip"
-            reason = protection_reason
-            score = 0.0
-            all_details["decision"] = {
-                "type": decision_type,
-                "reason": reason,
-                "score": 0.0,
-                "blocked_by_protection": True
-            }
-            logger.info("发送保护拦截: %s", reason)
-        else:
-            # 12. 使用新决策公式
-            decision_type, reason, score = make_decision_v2(config, status, merged_state)
-            all_details["decision"] = {
-                "type": decision_type,
-                "reason": reason,
-                "score": round(score, 3)
-            }
-            logger.info("决策结果: type=%s, score=%.3f, reason=%s", decision_type, score, reason)
+            # 保护机制拦截，但保留决策分数
+            all_details["decision"]["blocked_by_protection"] = True
+            all_details["decision"]["protection_reason"] = protection_reason
+            logger.info("发送保护拦截（保留决策分数 %.3f）: %s", score, protection_reason)
+            # 不改变 decision_type，让后续逻辑根据原始决策处理
 
         # 13. 记录心跳日志（初始）
         duration_ms = round((time.time() - start_time) * 1000)
@@ -2099,6 +2095,8 @@ async def run_heartbeat():
         )
 
         # 14. 处理决策结果
+        blocked_by_protection = all_details.get("decision", {}).get("blocked_by_protection", False)
+        
         if decision_type == "skip":
             logger.info("心跳跳过: %s", reason)
 
@@ -2154,29 +2152,35 @@ async def run_heartbeat():
                     logger.warning("念头入延迟队列失败（队列已满）: %s", thought[:50])
 
         elif decision_type in ("auto_send", "gap_send", "idle_send", "long_idle_send"):
-            # 自动发送
-            sent, gen_details = await generate_and_send_thought_with_emotion(
-                config, status, merged_state, decision_type, heartbeat_id
-            )
-            all_details.update(gen_details)
+            # 自动发送（检查保护机制）
+            if blocked_by_protection:
+                # 保护机制拦截，跳过实际发送，但记录念头
+                logger.info("保护机制拦截，跳过实际发送")
+                all_details["thought_generation"] = {"success": False, "error": "保护机制拦截"}
+            else:
+                # 正常发送
+                sent, gen_details = await generate_and_send_thought_with_emotion(
+                    config, status, merged_state, decision_type, heartbeat_id, score
+                )
+                all_details.update(gen_details)
 
-            if sent:
-                # 发送成功后存入 Hindsight
-                thought = gen_details.get("message_sending", {}).get("thought", "")
-                if thought:
-                    thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, None)
-                    hindsight_tags = [
-                        "active_consciousness", "thought", thought_type, merged_state.dominant,
-                    ]
-                    intensity = merged_state.intensity()
-                    if "曹凡" in thought:
-                        hindsight_tags.append("user_related")
-                    if intensity > 0.7:
-                        hindsight_tags.append("high_emotion")
-                    stored = await retain_thought_to_hindsight(thought, merged_state, thought_type, score)
-                    all_details["thought_type"] = thought_type
-                    all_details["hindsight_tags"] = hindsight_tags
-                    all_details["hindsight_stored"] = stored
+                if sent:
+                    # 发送成功后存入 Hindsight
+                    thought = gen_details.get("message_sending", {}).get("thought", "")
+                    if thought:
+                        thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, None)
+                        hindsight_tags = [
+                            "active_consciousness", "thought", thought_type, merged_state.dominant,
+                        ]
+                        intensity = merged_state.intensity()
+                        if "曹凡" in thought:
+                            hindsight_tags.append("user_related")
+                        if intensity > 0.7:
+                            hindsight_tags.append("high_emotion")
+                        stored = await retain_thought_to_hindsight(thought, merged_state, thought_type, score)
+                        all_details["thought_type"] = thought_type
+                        all_details["hindsight_tags"] = hindsight_tags
+                        all_details["hindsight_stored"] = stored
 
         # 15. 重评估延迟队列
         delay_stats = await reevaluate_delayed_thoughts(config, status, merged_state)
