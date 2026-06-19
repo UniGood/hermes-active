@@ -1842,7 +1842,8 @@ async def generate_and_send_thought_with_emotion(
 
     # 确定念头类型
     hindsight_results = result.get("context_bundle", {}).get("memories", [])
-    thought_type = determine_thought_type(status, emotion_state, hindsight_results, None)
+    weather_info = result.get("context_bundle", {}).get("weather")
+    thought_type = determine_thought_type(status, emotion_state, hindsight_results, weather_info)
     
     # 构建念头日志详情
     hindsight_tags = ["active_consciousness", "thought", thought_type, emotion_state.dominant]
@@ -2162,7 +2163,8 @@ async def run_heartbeat():
             thought = await generate_thought_for_delay(config, status, merged_state)
             if thought:
                 all_details["thought_generation"] = {"success": True, "thought": thought}
-                thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, None)
+                weather_info = all_details.get("context_bundle", {}).get("weather")
+                thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, weather_info)
                 added = add_to_delay_queue_v2(thought, thought_type, score, merged_state)
                 all_details["thought_type"] = thought_type
                 all_details["hindsight_stored"] = False
@@ -2188,7 +2190,8 @@ async def run_heartbeat():
                     # 发送成功后存入 Hindsight
                     thought = gen_details.get("message_sending", {}).get("thought", "")
                     if thought:
-                        thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, None)
+                        weather_info = all_details.get("context_bundle", {}).get("weather")
+                        thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, weather_info)
                         hindsight_tags = [
                             "active_consciousness", "thought", thought_type, merged_state.dominant,
                         ]
@@ -2795,15 +2798,19 @@ def determine_thought_type_v2(
     if silence_minutes > 180:  # 3小时没聊天
         return ThoughtType.SILENCE.value
 
-    # 3. 检查情绪强度
+    # 3. 检查天气变化（雨、雪、大风等特殊天气）
+    if context and context.get("weather") in ["雨", "雪", "大风", "雷阵雨"]:
+        return ThoughtType.ENVIRONMENT.value
+
+    # 4. 检查情绪强度
     if emotion_state.intensity() > 0.6:
         return ThoughtType.EMOTION.value
 
-    # 4. 检查是否有相关回忆
+    # 5. 检查是否有相关回忆
     if hindsight_results and len(hindsight_results) > 0:
         return ThoughtType.MEMORY.value
 
-    # 5. 默认关联念头
+    # 6. 默认关联念头
     return ThoughtType.ASSOCIATION.value
 
 

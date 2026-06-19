@@ -271,7 +271,7 @@
               <n-select v-model:value="config.session.sources" multiple :options="platformOptions" />
             </n-form-item>
             <n-form-item label="每 Session 最大消息">
-              <n-input-number v-model:value="config.session.max_messages_per_session" :min="5" :max="100" />
+              <n-input-number v-model:value="config.session.max_messages_per_session" :min="5" :max="1000" />
             </n-form-item>
             <n-form-item label="过滤 Tool 消息">
               <n-switch v-model:value="config.session.filter_tool_messages" />
@@ -341,8 +341,12 @@
             <!-- 上下文收集配置 -->
             <n-divider>📦 上下文收集</n-divider>
             <n-form-item label="对话消息数量">
-              <n-input-number v-model:value="config.context.conversation_limit" :min="10" :max="50" />
+              <n-input-number v-model:value="config.context.conversation_limit" :min="10" :max="100" />
               <span class="form-item-hint">从 Session 中获取最近多少条对话消息作为上下文</span>
+            </n-form-item>
+            <n-form-item label="对话消息最大字符数">
+              <n-input-number v-model:value="config.context.conversation_max_chars" :min="100" :max="2000" :step="100" />
+              <span class="form-item-hint">每条对话消息截取的最大字符数，越大上下文越完整</span>
             </n-form-item>
             <n-form-item label="记忆召回数量">
               <n-input-number v-model:value="config.context.memory_limit" :min="1" :max="10" />
@@ -1217,7 +1221,24 @@ function showHeartbeatDetails(row) {
 
 function showThoughtDetails(row) {
   thoughtDetailsTitle.value = `念头日志 #${row.id} 详情`
-  thoughtDetailsData.value = row.details_parsed || null
+  // 解析 details JSON 并合并顶层字段
+  let parsed = {}
+  if (row.details && typeof row.details === 'string') {
+    try { parsed = JSON.parse(row.details) } catch (e) { parsed = {} }
+  } else if (row.details && typeof row.details === 'object') {
+    parsed = row.details
+  }
+  thoughtDetailsData.value = {
+    ...parsed,
+    // 顶层字段覆盖，确保弹窗能正确读取
+    thought: parsed.thought || row.content || '',
+    thought_type: parsed.thought_type || row.type || '',
+    decision: parsed.decision || row.decision || '',
+    score: parsed.score || row.score || 0,
+    emotion_state: parsed.emotion_state || null,
+    hindsight_tags: parsed.hindsight_tags || [],
+    hindsight_stored: parsed.hindsight_stored ?? false,
+  }
   showThoughtDetailsModal.value = true
 }
 
@@ -1440,11 +1461,11 @@ const thoughtColumns = [
     }
   },
   { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
-  { title: '类型', key: 'type', width: 120, render: (row) => thoughtTypeLabelCn(row.type) },
+  { title: '类型', key: 'type', width: 160, render: (row) => thoughtTypeLabelCn(row.type) },
   { title: '内容', key: 'content', ellipsis: { tooltip: true } },
   { title: '强度', key: 'intensity', width: 80, render: (row) => row.intensity != null ? Number(row.intensity).toFixed(2) : '' },
-  { title: '决策', key: 'decision', width: 130, render: (row) => getDecisionLabelCn(row.decision) },
-  { title: '来源', key: 'recall_source', width: 100 },
+  { title: '决策', key: 'decision', width: 180, render: (row) => getDecisionLabelCn(row.decision) },
+  { title: '来源', key: 'recall_source', width: 120 },
 ]
 const formatTime = (isoStr) => {
   if (!isoStr) return ''

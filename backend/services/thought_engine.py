@@ -37,6 +37,7 @@ class ThoughtEngine:
 【现在】
 {time_display}
 {emotion_display}
+{weather_display}
 
 想到曹凡了吗？如果你想联系他，说你想说什么。
 如果没想到，回复 'SKIP'。
@@ -130,12 +131,19 @@ class ThoughtEngine:
         dominant = context.emotion.get("dominant", "calm")
         emotion_display = f"情绪：{dominant}"
         
+        # 格式化天气
+        weather_display = ""
+        if context.weather:
+            w = context.weather
+            weather_display = f"天气：{w.get('weather', '未知')} {w.get('temp', '?')}°C（{w.get('city', '')}）"
+        
         return self.PROMPT_TEMPLATE.format(
             persona=persona,
             conversations_json=conversations_json,
             memories=memories,
             time_display=time_display,
-            emotion_display=emotion_display
+            emotion_display=emotion_display,
+            weather_display=weather_display
         )
     
     async def _call_llm(self, prompt: str) -> Tuple[str, Dict[str, Any]]:
