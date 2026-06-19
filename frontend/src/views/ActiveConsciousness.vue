@@ -1430,14 +1430,14 @@ function getDecisionTimelineType(decision) {
 
 // 决策时间线图标
 function getDecisionTimelineIcon(decision) {
-  if (!decision) return h('span', '❓')
-  if (decision.blocked_by_protection) return h('span', '🛡️')
+  if (!decision) return '❓'
+  if (decision.blocked_by_protection) return '🛡️'
   switch (decision.type) {
-    case 'auto_send': return h('span', '✅')
-    case 'delay_send': return h('span', '⏰')
-    case 'memory': return h('span', '💾')
-    case 'skip': return h('span', '⏭️')
-    default: return h('span', '❓')
+    case 'auto_send': return '✅'
+    case 'delay_send': return '⏰'
+    case 'memory': return '💾'
+    case 'skip': return '⏭️'
+    default: return '❓'
   }
 }
 
