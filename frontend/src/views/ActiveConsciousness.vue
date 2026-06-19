@@ -854,9 +854,9 @@ const activeTab = ref('status')
 const config = ref({
   enabled: false,
   llm: { mode: 'hermes', provider: 'openai', model: 'deepseek-chat', api_key: '', base_url: '' },
-  active: { enabled: true, heartbeat_interval: 600, send_tag: '[凯莉主动发送]', time_format: '%H:%M', no_send_after_user_msg_minutes: 10, no_send_while_heat_above: 0.5, no_send_while_vibe_below: 0.3 },
+  active: { enabled: true, heartbeat_interval: 600, send_tag: '[凯莉主动发送]', time_format: '%H:%M', no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 1.0, no_send_while_vibe_below: 0.15, cooldown_minutes: 30 },
   session: { sources: ['weixin'], max_messages_per_session: 15, filter_tool_messages: true },
-  decision: { send_threshold: 0.6, delay_threshold: 0.3, memory_threshold: 0.1, max_per_hour: 2, max_per_day: 5 },
+  decision: { send_threshold: 0.35, delay_threshold: 0.15, memory_threshold: 0.05, max_per_hour: 2, max_per_day: 5, longing_gap_threshold: 3 },
   thought: { retain_enabled: false, retain_threshold: 0.5 },
   thought_engine: {
     enabled: true,
@@ -1462,6 +1462,21 @@ onMounted(async () => {
 /* 分页居中 */
 .n-data-table__pagination {
   justify-content: center !important;
+}
+
+/* 修复 Tab 切换后内容不显示的问题 */
+/* Naive UI animated tabs 的容器 overflow: hidden 会覆盖子元素的 overflow: visible */
+:deep(.n-tabs-tab-pane) {
+  overflow: visible !important;
+}
+:deep(.n-tab-pane) {
+  overflow: visible !important;
+}
+:deep(.n-tabs-pane-wrapper) {
+  overflow: visible !important;
+}
+:deep(.n-tabs-content-wrapper) {
+  overflow: visible !important;
 }
 </style>
 
