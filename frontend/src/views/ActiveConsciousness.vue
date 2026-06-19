@@ -383,7 +383,7 @@
               <n-collapse-item title="念头生成提示词" name="thought_generation">
                 <n-input v-model:value="config.prompts.thought_generation" type="textarea" :rows="8" placeholder="输入念头生成提示词模板" />
                 <div style="margin-top: 4px; font-size: 11px; color: #999;">
-                  可用变量：{time} {longing_score} {longing_label} {chat_heat} {chat_label} {emotional_intensity} {emotional_label} {dominant} {valence} {arousal} {social_need}
+                  可用变量：{persona} {session_context} {hindsight_context} {time} {emotion_display}
                 </div>
               </n-collapse-item>
               <n-collapse-item title="情绪评估提示词" name="emotion_evaluation">
@@ -871,7 +871,7 @@ const config = ref({
   hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', store: { bank_id: 'hermes-active' }, recall_limit: 5, reflect_enabled: true, timeout: 30 },
   notify: { platform: 'weixin', chat_id: '' },
   prompts: {
-    thought_generation: '你是凯莉，请基于当前状态产生一个自然的念头。\n\n当前状态：\n- 时间：{time}\n- 想念分数：{longing_score}（等级：{longing_label}）\n- 聊天热度：{chat_heat}（标签：{chat_label}）\n- 情绪值：{emotional_intensity}（{emotional_label}）\n- 主导情绪：{dominant}（效价={valence}，唤醒度={arousal}，社交需求={social_need}）\n\n请用第一人称产生一个自然的念头（1-2句话）。',
+    thought_generation: '你是凯莉，曹凡的 AI 朋友。你们认识很久了，你了解他的生活习惯、工作状态、兴趣爱好。\n\n{persona}\n\n【最近对话】\n{session_context}\n\n【你记得的事情】\n{hindsight_context}\n\n【现在】\n{time}\n{emotion_display}\n\n想到曹凡了吗？如果你想联系他，说你想说什么。\n如果没想到，回复 \'SKIP\'。\n直接说，不要解释。',
     emotion_evaluation: '你是凯莉，请评估当前的情绪状态。\n\n当前状态：\n- 时间：{time}\n- 想念分数：{longing_score}（等级：{longing_label}）\n- 聊天热度：{chat_heat}（标签：{chat_label}）\n- 沉默时长：{silence_minutes} 分钟\n\n最近的对话：\n{context}\n\n请评估你当前的情绪状态，返回 JSON 格式：\n{{\n  "valence": 0.0-1.0（情感效价，0=消极，1=积极），\n  "arousal": 0.0-1.0（唤醒度，0=平静，1=激动），\n  "social_need": 0.0-1.0（社交需求，0=不需要，1=非常想），\n  "dominant": "calm/content/happy/longing/missing/yearning/anxious/bored/concerned"\n}}\n\n只返回 JSON，不要解释。'
   },
   levels: {
