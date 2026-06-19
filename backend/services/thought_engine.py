@@ -109,7 +109,14 @@ class ThoughtEngine:
     
     def _build_prompt(self, context: ContextBundle) -> str:
         """构建提示词"""
-        from services.active_consciousness_service import load_hermes_persona
+        from services.active_consciousness_service import load_hermes_persona, _DEFAULTS
+        from services.config_service import ConfigService
+        from models.database import ActiveSession
+        
+        # 优先从配置读取提示词
+        prompt_template = ConfigService.get_config(
+            ActiveSession(), "active_consciousness.prompts.thought_generation"
+        ) or _DEFAULTS.get("active_consciousness.prompts.thought_generation") or self.PROMPT_TEMPLATE
         
         # 加载人设
         persona = load_hermes_persona()
@@ -137,11 +144,14 @@ class ThoughtEngine:
             w = context.weather
             weather_display = f"天气：{w.get('weather', '未知')} {w.get('temp', '?')}°C（{w.get('city', '')}）"
         
-        return self.PROMPT_TEMPLATE.format(
+        return prompt_template.format(
             persona=persona,
             conversations_json=conversations_json,
+            session_context=conversations_json,
             memories=memories,
+            hindsight_context=memories,
             time_display=time_display,
+            time=time_display,
             emotion_display=emotion_display,
             weather_display=weather_display
         )

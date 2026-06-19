@@ -125,7 +125,7 @@ class ContextCollector:
         """
         # 检查配置是否有自定义时间范围
         custom_days = self.context_config.get("time_range_days", None)
-        if custom_days:
+        if custom_days is not None and int(custom_days) > 0:
             return int(custom_days)
         
         arousal = emotion.get("arousal", 0.3)

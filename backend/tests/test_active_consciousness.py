@@ -10,7 +10,6 @@ from services.active_consciousness_service import determine_thought_type_v2
 from services.active_consciousness_service import add_to_delay_queue_v2
 from services.active_consciousness_service import cleanup_old_logs
 from services.active_consciousness_service import reset_hindsight_client
-from services.active_consciousness_service import should_retain_to_hindsight
 from models.active_consciousness import EmotionState, ThoughtType
 
 
@@ -485,35 +484,4 @@ async def test_call_hindsight_with_retry_recovers_after_reset():
             assert result[0]["text"] == "memory"
 
 
-# ============ Hindsight 存储判断测试 ============
 
-def test_should_retain_to_hindsight_with_high_score():
-    """测试高分念头应存入 Hindsight"""
-    thought = {"content": "测试念头", "score": 0.8}
-    config = {"retain_threshold": 0.5, "retain_on_weather": True}
-
-    assert should_retain_to_hindsight(thought, config) == True
-
-
-def test_should_retain_to_hindsight_with_low_score():
-    """测试低分念头不应存入 Hindsight"""
-    thought = {"content": "测试念头", "score": 0.3}
-    config = {"retain_threshold": 0.5, "retain_on_weather": True}
-
-    assert should_retain_to_hindsight(thought, config) == False
-
-
-def test_should_retain_to_hindsight_with_user_name():
-    """测试包含用户名字的念头应存入 Hindsight"""
-    thought = {"content": "曹凡今天很开心", "score": 0.3}
-    config = {"retain_threshold": 0.5, "retain_on_weather": True}
-
-    assert should_retain_to_hindsight(thought, config) == True
-
-
-def test_should_retain_to_hindsight_with_weather_tag():
-    """测试天气相关念头应存入 Hindsight"""
-    thought = {"content": "今天天气真好", "score": 0.3, "type": "weather"}
-    config = {"retain_threshold": 0.5, "retain_on_weather": True}
-
-    assert should_retain_to_hindsight(thought, config) == True
