@@ -426,14 +426,164 @@
 
       <!-- Tab 4: 测试 -->
       <n-tab-pane name="test" tab="测试">
-        <n-space vertical>
-          <n-button @click="testLLMConnect" :loading="testing.llm">LLM 连通性测试</n-button>
-          <n-button @click="testThought" :loading="testing.thought">想法生成测试</n-button>
-        </n-space>
+        <!-- 运行逻辑说明 -->
+        <n-card title="🧠 主动意识运行逻辑" size="small" style="margin-bottom: 16px">
+          <div style="font-size: 13px; line-height: 1.8;">
+            <n-steps :current="0" size="small" vertical>
+              <n-step title="心跳触发">
+                <div style="font-size: 12px; color: #666;">
+                  APScheduler 定时触发（默认300秒间隔），检查配置是否启用
+                </div>
+              </n-step>
+              <n-step title="情绪演化">
+                <div style="font-size: 12px; color: #666;">
+                  读取 EmotionState（VA模型），根据时间间隔演化情绪值
+                </div>
+              </n-step>
+              <n-step title="LLM 情绪评估">
+                <div style="font-size: 12px; color: #666;">
+                  调用 LLM 评估当前情绪状态，与演化值动态合并
+                </div>
+              </n-step>
+              <n-step title="ContextCollector 收集上下文">
+                <div style="font-size: 12px; color: #666;">
+                  收集：最近对话（结构化JSON）+ Hindsight记忆 + 情绪状态 + 时间感知 + 天气 + 用户习惯
+                </div>
+              </n-step>
+              <n-step title="ThoughtEngine 生成念头">
+                <div style="font-size: 12px; color: #666;">
+                  将上下文作为"养料"传给 LLM，由 LLM 自主决定是否联系用户。输出"SKIP"表示不想联系
+                </div>
+              </n-step>
+              <n-step title="决策矩阵评分">
+                <div style="font-size: 12px; color: #666;">
+                  score = intensity × time_fitness × silence_factor × frequency_limit
+                </div>
+              </n-step>
+              <n-step title="发送保护检查">
+                <div style="font-size: 12px; color: #666;">
+                  检查：用户消息后等待期、热度过高、情绪过低、冷却期、频率限制
+                </div>
+              </n-step>
+              <n-step title="执行动作">
+                <div style="font-size: 12px; color: #666;">
+                  auto_send（立即发送）/ delay_send（延迟队列）/ memory（存为记忆）/ skip（跳过）
+                </div>
+              </n-step>
+            </n-steps>
+          </div>
+        </n-card>
 
-        <n-modal v-model:show="showTestResult" preset="card" title="测试结果" style="width: 800px">
-          <pre>{{ JSON.stringify(testResult, null, 2) }}</pre>
-        </n-modal>
+        <!-- 测试按钮组 -->
+        <n-card title="🧪 节点测试" size="small" style="margin-bottom: 16px">
+          <n-space vertical>
+            <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
+              <n-grid-item>
+                <n-button block @click="testLLMConnect" :loading="testing.llm">
+                  ① LLM 连通性测试
+                </n-button>
+                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试 LLM 服务是否可连接</div>
+              </n-grid-item>
+              <n-grid-item>
+                <n-button block @click="testSessionContext" :loading="testing.sessionContext">
+                  ② Session 上下文测试
+                </n-button>
+                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试从 state.db 读取最近对话</div>
+              </n-grid-item>
+              <n-grid-item>
+                <n-button block @click="testContextCollector" :loading="testing.contextCollector">
+                  ③ ContextCollector 测试
+                </n-button>
+                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试完整上下文收集（对话+记忆+情绪+时间+天气）</div>
+              </n-grid-item>
+              <n-grid-item>
+                <n-button block type="primary" @click="testThoughtEngine" :loading="testing.thoughtEngine">
+                  ④ ThoughtEngine 完整测试
+                </n-button>
+                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试完整流程：上下文收集 → LLM 生成 → SKIP 判断</div>
+              </n-grid-item>
+            </n-grid>
+          </n-space>
+        </n-card>
+
+        <!-- 测试结果展示 -->
+        <n-card v-if="testResult" title="📋 测试结果" size="small">
+          <template #header-extra>
+            <n-button text @click="testResult = null">清空</n-button>
+          </template>
+          
+          <!-- 状态标签 -->
+          <n-space style="margin-bottom: 12px;">
+            <n-tag :type="testResult.success ? 'success' : 'error'" size="small">
+              {{ testResult.success ? '✅ 成功' : '❌ 失败' }}
+            </n-tag>
+            <n-tag v-if="testResult.data?.want_to_contact !== undefined" 
+                   :type="testResult.data.want_to_contact ? 'success' : 'warning'" size="small">
+              {{ testResult.data.want_to_contact ? '想联系用户' : 'SKIP（不想联系）' }}
+            </n-tag>
+          </n-space>
+
+          <!-- ThoughtEngine 结果 -->
+          <template v-if="testResult.data?.thought">
+            <n-divider title-placement="left">💭 生成的念头</n-divider>
+            <n-card size="small" style="margin-bottom: 12px;">
+              <div style="font-size: 14px; white-space: pre-wrap;">{{ testResult.data.thought }}</div>
+            </n-card>
+          </template>
+
+          <!-- 上下文信息 -->
+          <template v-if="testResult.data?.context_bundle || testResult.data?.conversations_count !== undefined">
+            <n-divider title-placement="left">📦 上下文信息</n-divider>
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
+              <n-descriptions-item label="对话条数">
+                {{ testResult.data.context_bundle?.conversations_count || testResult.data.conversations_count || 0 }}
+              </n-descriptions-item>
+              <n-descriptions-item label="记忆条数">
+                {{ testResult.data.context_bundle?.memories_count || testResult.data.memories_count || 0 }}
+              </n-descriptions-item>
+              <n-descriptions-item label="主导情绪">
+                {{ testResult.data.context_bundle?.emotion?.dominant || testResult.data.emotion?.dominant || '-' }}
+              </n-descriptions-item>
+              <n-descriptions-item label="时间感知">
+                {{ testResult.data.context_bundle?.time_context?.time_display || testResult.data.time_context?.time_display || '-' }}
+              </n-descriptions-item>
+            </n-descriptions>
+          </template>
+
+          <!-- LLM 调用详情 -->
+          <template v-if="testResult.data?.llm_details">
+            <n-divider title-placement="left">🤖 LLM 调用详情</n-divider>
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
+              <n-descriptions-item label="模型">{{ testResult.data.llm_details.model || '-' }}</n-descriptions-item>
+              <n-descriptions-item label="耗时">{{ testResult.data.llm_details.duration_ms || '-' }}ms</n-descriptions-item>
+              <n-descriptions-item label="Prompt Tokens">{{ testResult.data.llm_details.prompt_tokens ?? '-' }}</n-descriptions-item>
+              <n-descriptions-item label="Completion Tokens">{{ testResult.data.llm_details.completion_tokens ?? '-' }}</n-descriptions-item>
+              <n-descriptions-item v-if="testResult.data.llm_details.error" label="错误" :span="2">
+                <span style="color: #d03050;">{{ testResult.data.llm_details.error }}</span>
+              </n-descriptions-item>
+            </n-descriptions>
+          </template>
+
+          <!-- 错误信息 -->
+          <template v-if="testResult.error">
+            <n-divider title-placement="left">❌ 错误信息</n-divider>
+            <n-alert type="error" style="margin-bottom: 12px;">
+              {{ testResult.error }}
+            </n-alert>
+            <n-collapse v-if="testResult.traceback">
+              <n-collapse-item title="堆栈跟踪" name="traceback">
+                <n-code :code="testResult.traceback" language="text" word-wrap />
+              </n-collapse-item>
+            </n-collapse>
+          </template>
+
+          <!-- 完整 JSON -->
+          <n-collapse>
+            <n-collapse-item title="完整 JSON 数据" name="json">
+              <n-code :code="JSON.stringify(testResult, null, 2)" language="json" word-wrap />
+            </n-collapse-item>
+          </n-collapse>
+        </n-card>
       </n-tab-pane>
     </n-tabs>
 
@@ -907,7 +1057,7 @@ const showThoughtContentModal = ref(false)
 const thoughtContentData = ref(null)
 
 // 测试
-const testing = ref({ thought: false, llm: false })
+const testing = ref({ thought: false, llm: false, sessionContext: false, contextCollector: false, thoughtEngine: false })
 const showTestResult = ref(false)
 const testResult = ref(null)
 
@@ -1327,15 +1477,43 @@ const showSessionContextModal = ref(false)
 const sessionContextResult = ref(null)
 
 const testSessionContext = async () => {
-  testingSessionContext.value = true
+  testing.value.sessionContext = true
   try {
     const result = await api.testSessionContext()
-    sessionContextResult.value = result
-    showSessionContextModal.value = true
+    testResult.value = result
   } catch (e) {
     message.error('获取 Session 上下文失败')
+    testResult.value = { success: false, error: e.message }
   } finally {
-    testingSessionContext.value = false
+    testing.value.sessionContext = false
+  }
+}
+
+const testContextCollector = async () => {
+  testing.value.contextCollector = true
+  try {
+    const resp = await fetch('/api/active-consciousness/test/context-collector', { method: 'POST' })
+    const result = await resp.json()
+    testResult.value = result
+  } catch (e) {
+    message.error('ContextCollector 测试失败')
+    testResult.value = { success: false, error: e.message }
+  } finally {
+    testing.value.contextCollector = false
+  }
+}
+
+const testThoughtEngine = async () => {
+  testing.value.thoughtEngine = true
+  try {
+    const resp = await fetch('/api/active-consciousness/test/thought-engine', { method: 'POST' })
+    const result = await resp.json()
+    testResult.value = result
+  } catch (e) {
+    message.error('ThoughtEngine 测试失败')
+    testResult.value = { success: false, error: e.message }
+  } finally {
+    testing.value.thoughtEngine = false
   }
 }
 

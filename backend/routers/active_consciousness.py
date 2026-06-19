@@ -297,3 +297,73 @@ async def test_session_context():
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+@router.post("/test/context-collector")
+async def test_context_collector():
+    """测试 ContextCollector 上下文收集"""
+    try:
+        from services.context_collector import ContextCollector
+
+        config = ActiveConsciousnessService.get_config()
+        status = ActiveConsciousnessService.get_status()
+
+        collector = ContextCollector(config)
+        bundle = await collector.collect(status)
+
+        return {
+            "success": True,
+            "data": {
+                "conversations_count": len(bundle.conversations),
+                "conversations": bundle.conversations[:5],  # 只返回前5条
+                "memories_count": len(bundle.memories),
+                "memories": bundle.memories,
+                "emotion": bundle.emotion,
+                "time_context": bundle.time_context,
+                "weather": bundle.weather,
+                "user_habits_preview": bundle.user_habits[:200] if bundle.user_habits else "",
+                "bundle_json": bundle.to_json()
+            }
+        }
+    except Exception as e:
+        import traceback
+        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
+@router.post("/test/thought-engine")
+async def test_thought_engine():
+    """测试 ThoughtEngine 完整流程"""
+    try:
+        from services.thought_engine import ThoughtEngine
+
+        config = ActiveConsciousnessService.get_config()
+        status = ActiveConsciousnessService.get_status()
+
+        engine = ThoughtEngine(config)
+        result = await engine.generate(status)
+
+        return {
+            "success": True,
+            "data": {
+                "thought": result.get("thought"),
+                "want_to_contact": result.get("want_to_contact"),
+                "is_skip": not result.get("want_to_contact"),
+                "context_bundle": {
+                    "conversations_count": len(result.get("context_bundle", {}).get("conversations", [])),
+                    "memories_count": len(result.get("context_bundle", {}).get("memories", [])),
+                    "emotion": result.get("context_bundle", {}).get("emotion"),
+                    "time_context": result.get("context_bundle", {}).get("time_context"),
+                    "weather": result.get("context_bundle", {}).get("weather"),
+                },
+                "llm_details": {
+                    "model": result.get("llm_details", {}).get("model"),
+                    "duration_ms": result.get("llm_details", {}).get("duration_ms"),
+                    "prompt_tokens": result.get("llm_details", {}).get("prompt_tokens"),
+                    "completion_tokens": result.get("llm_details", {}).get("completion_tokens"),
+                    "error": result.get("llm_details", {}).get("error"),
+                }
+            }
+        }
+    except Exception as e:
+        import traceback
+        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
