@@ -430,6 +430,39 @@
 
       <!-- Tab 4: 测试 -->
       <n-tab-pane name="test" tab="测试">
+
+        <!-- 测试按钮组 -->
+        <n-card title="节点测试" size="small" style="margin-bottom: 16px">
+          <n-space vertical>
+            <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
+              <n-grid-item>
+                <n-button block @click="testLLMConnect" :loading="testing.llm">
+                  ① LLM 连通性测试
+                </n-button>
+                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试 LLM 服务是否可连接</div>
+              </n-grid-item>
+              <n-grid-item>
+                <n-button block @click="testSessionContext" :loading="testing.sessionContext">
+                  ② Session 上下文测试
+                </n-button>
+                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试从 state.db 读取最近对话</div>
+              </n-grid-item>
+              <n-grid-item>
+                <n-button block @click="testContextCollector" :loading="testing.contextCollector">
+                  ③ ContextCollector 测试
+                </n-button>
+                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试完整上下文收集（对话+记忆+情绪+时间+天气）</div>
+              </n-grid-item>
+              <n-grid-item>
+                <n-button block type="primary" @click="testThoughtEngine" :loading="testing.thoughtEngine">
+                  ④ ThoughtEngine 完整测试
+                </n-button>
+                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试完整流程：上下文收集 → LLM 生成 → SKIP 判断</div>
+              </n-grid-item>
+            </n-grid>
+          </n-space>
+        </n-card>
+
         <!-- 运行逻辑说明 -->
         <n-card title="主动意识运行逻辑" size="small" style="margin-bottom: 16px">
           <n-collapse default-expanded-names="">
@@ -713,40 +746,8 @@
           </n-collapse>
         </n-card>
 
-        <!-- 测试按钮组 -->
-        <n-card title="🧪 节点测试" size="small" style="margin-bottom: 16px">
-          <n-space vertical>
-            <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
-              <n-grid-item>
-                <n-button block @click="testLLMConnect" :loading="testing.llm">
-                  ① LLM 连通性测试
-                </n-button>
-                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试 LLM 服务是否可连接</div>
-              </n-grid-item>
-              <n-grid-item>
-                <n-button block @click="testSessionContext" :loading="testing.sessionContext">
-                  ② Session 上下文测试
-                </n-button>
-                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试从 state.db 读取最近对话</div>
-              </n-grid-item>
-              <n-grid-item>
-                <n-button block @click="testContextCollector" :loading="testing.contextCollector">
-                  ③ ContextCollector 测试
-                </n-button>
-                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试完整上下文收集（对话+记忆+情绪+时间+天气）</div>
-              </n-grid-item>
-              <n-grid-item>
-                <n-button block type="primary" @click="testThoughtEngine" :loading="testing.thoughtEngine">
-                  ④ ThoughtEngine 完整测试
-                </n-button>
-                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试完整流程：上下文收集 → LLM 生成 → SKIP 判断</div>
-              </n-grid-item>
-            </n-grid>
-          </n-space>
-        </n-card>
-
         <!-- 测试结果展示 -->
-        <n-card v-if="testResult" title="📋 测试结果" size="small">
+        <n-card v-if="testResult" title="测试结果" size="small">
           <template #header-extra>
             <n-button text @click="testResult = null">清空</n-button>
           </template>
@@ -754,7 +755,7 @@
           <!-- 状态标签 -->
           <n-space style="margin-bottom: 12px;">
             <n-tag :type="testResult.success ? 'success' : 'error'" size="small">
-              {{ testResult.success ? '✅ 成功' : '❌ 失败' }}
+              {{ testResult.success ? '成功' : '失败' }}
             </n-tag>
             <n-tag v-if="testResult.data?.want_to_contact !== undefined" 
                    :type="testResult.data.want_to_contact ? 'success' : 'warning'" size="small">
