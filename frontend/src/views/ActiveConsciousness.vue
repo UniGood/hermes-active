@@ -918,175 +918,110 @@
     <!-- 念头日志详情弹窗 -->
     <n-modal v-model:show="showThoughtDetailsModal" preset="card" :title="thoughtDetailsTitle" fullscreen :mask-closable="false">
       <div v-if="thoughtDetailsData">
-        <!-- 念头信息 -->
-        <n-divider title-placement="left">念头信息</n-divider>
-        <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-          <n-descriptions-item label="念头类型">
-            <n-tag :type="getThoughtTypeTagType(thoughtDetailsData.thought_type)" size="small">
-              {{ thoughtTypeLabelCn(thoughtDetailsData.thought_type) }}
-            </n-tag>
-          </n-descriptions-item>
-          <n-descriptions-item label="决策类型">
-            <n-tag :type="getDecisionTagType(thoughtDetailsData.decision)" size="small">
-              {{ getDecisionLabelCn(thoughtDetailsData.decision) }}
-            </n-tag>
-          </n-descriptions-item>
-          <n-descriptions-item label="决策分数">{{ thoughtDetailsData.score?.toFixed(3) }}</n-descriptions-item>
-          <n-descriptions-item v-if="thoughtDetailsData.thought" label="念头内容" :span="2">
-            {{ thoughtDetailsData.thought }}
-          </n-descriptions-item>
-        </n-descriptions>
+        
+        <!-- ===== 结果总览（最醒目） ===== -->
+        <n-card size="small" style="margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <!-- 结果图标 -->
+            <div style="font-size: 28px;">
+              {{ thoughtDetailsData.decision === "auto_send" ? "✅" : thoughtDetailsData.decision === "delay_send" ? "💤" : thoughtDetailsData.decision === "memory" ? "💾" : "⏭️" }}
+            </div>
+            <!-- 结果信息 -->
+            <div style="flex: 1; min-width: 200px;">
+              <div style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">
+                {{ getThoughtResultTitle(thoughtDetailsData) }}
+              </div>
+              <div style="font-size: 13px; color: #666; margin-bottom: 2px;">
+                {{ thoughtDetailsData.thought || "无念头内容" }}
+              </div>
+              <div style="font-size: 12px; color: #999;">
+                {{ thoughtTypeLabelCn(thoughtDetailsData.thought_type) }} · {{ emotionLabelCn(thoughtDetailsData.emotion_state?.dominant) }}
+              </div>
+            </div>
+            <!-- 关键指标 -->
+            <div style="display: flex; gap: 16px;">
+              <div style="text-align: center;">
+                <div style="font-size: 18px; font-weight: bold; color: #18a058;">
+                  {{ thoughtDetailsData.score?.toFixed(2) || "0.00" }}
+                </div>
+                <div style="font-size: 11px; color: #999;">决策分数</div>
+              </div>
+            </div>
+          </div>
+        </n-card>
 
-        <!-- 情绪状态 -->
-        <template v-if="thoughtDetailsData.emotion_state">
-          <n-divider title-placement="left">情绪状态（VA 模型）</n-divider>
-          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="效价（Valence）">
-              <n-tooltip trigger="hover">
-                <template #trigger>
-                  <span style="cursor: help;">{{ thoughtDetailsData.emotion_state.valence?.toFixed(3) }}</span>
-                </template>
-                情感的正负性。0=消极，1=积极。
-              </n-tooltip>
-            </n-descriptions-item>
-            <n-descriptions-item label="唤醒度（Arousal）">
-              <n-tooltip trigger="hover">
-                <template #trigger>
-                  <span style="cursor: help;">{{ thoughtDetailsData.emotion_state.arousal?.toFixed(3) }}</span>
-                </template>
-                情感的激活程度。0=平静，1=激动。
-              </n-tooltip>
-            </n-descriptions-item>
-            <n-descriptions-item label="社交需求（Social Need）">
-              <n-tooltip trigger="hover">
-                <template #trigger>
-                  <span style="cursor: help;">{{ thoughtDetailsData.emotion_state.social_need?.toFixed(3) }}</span>
-                </template>
-                想要社交/聊天的程度。0=不需要，1=非常想。
-              </n-tooltip>
-            </n-descriptions-item>
-            <n-descriptions-item label="主导情绪（Dominant）">
-              <n-tag :type="getEmotionTagType(thoughtDetailsData.emotion_state.dominant)" size="small">
-                {{ emotionLabelCn(thoughtDetailsData.emotion_state.dominant) }}
-              </n-tag>
-            </n-descriptions-item>
-          </n-descriptions>
-        </template>
-
-        <!-- Hindsight 信息 -->
-        <template v-if="thoughtDetailsData.hindsight_stored !== undefined || thoughtDetailsData.hindsight_tags">
-          <n-divider title-placement="left">Hindsight</n-divider>
-          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="存储状态">
-              <n-tag :type="thoughtDetailsData.hindsight_stored ? 'success' : 'warning'" size="small">
-                {{ thoughtDetailsData.hindsight_stored ? '已存储' : '未存储' }}
-              </n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item v-if="thoughtDetailsData.hindsight_tags?.length" label="存储标签">
-              <n-space>
-                <n-tag v-for="tag in thoughtDetailsData.hindsight_tags" :key="tag" :type="getHindsightTagType(tag)" size="small">
-                  {{ tag }}
+        <!-- ===== 详细信息（可折叠） ===== -->
+        <n-collapse default-expanded-names="">
+          <!-- 情绪状态 -->
+          <n-collapse-item v-if="thoughtDetailsData.emotion_state" title="😊 情绪状态" name="emotion">
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
+              <n-descriptions-item label="效价">{{ thoughtDetailsData.emotion_state.valence?.toFixed(3) }}</n-descriptions-item>
+              <n-descriptions-item label="唤醒度">{{ thoughtDetailsData.emotion_state.arousal?.toFixed(3) }}</n-descriptions-item>
+              <n-descriptions-item label="社交需求">{{ thoughtDetailsData.emotion_state.social_need?.toFixed(3) }}</n-descriptions-item>
+              <n-descriptions-item label="主导情绪">
+                <n-tag :type="getEmotionTagType(thoughtDetailsData.emotion_state.dominant)" size="small">
+                  {{ emotionLabelCn(thoughtDetailsData.emotion_state.dominant) }}
                 </n-tag>
-              </n-space>
-            </n-descriptions-item>
-          </n-descriptions>
-        </template>
+              </n-descriptions-item>
+            </n-descriptions>
+          </n-collapse-item>
 
-        <!-- ThoughtEngine: 联系意愿 -->
-        <template v-if="thoughtDetailsData.details_parsed?.thought_generation?.want_to_contact !== undefined">
-          <n-divider title-placement="left">🧠 ThoughtEngine 结果</n-divider>
-          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="想联系用户">
-              <n-tag :type="thoughtDetailsData.details_parsed.thought_generation.want_to_contact ? 'success' : 'default'" size="small">
-                {{ thoughtDetailsData.details_parsed.thought_generation.want_to_contact ? '是' : '否 (SKIP)' }}
-              </n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item label="LLM 是否 SKIP">
-              <n-tag :type="thoughtDetailsData.details_parsed.thought_generation.is_skip ? 'warning' : 'success'" size="small">
-                {{ thoughtDetailsData.details_parsed.thought_generation.is_skip ? 'SKIP' : '有念头' }}
-              </n-tag>
-            </n-descriptions-item>
-          </n-descriptions>
-        </template>
+          <!-- Hindsight 信息 -->
+          <n-collapse-item v-if="thoughtDetailsData.hindsight_stored !== undefined" title="🧠 Hindsight 存储" name="hindsight">
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
+              <n-descriptions-item label="存储状态">
+                <n-tag :type="thoughtDetailsData.hindsight_stored ? 'success' : 'warning'" size="small">
+                  {{ thoughtDetailsData.hindsight_stored ? "已存储" : "未存储" }}
+                </n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item v-if="thoughtDetailsData.hindsight_tags?.length" label="存储标签">
+                <n-space>
+                  <n-tag v-for="tag in thoughtDetailsData.hindsight_tags" :key="tag" :type="getHindsightTagType(tag)" size="small">
+                    {{ tag }}
+                  </n-tag>
+                </n-space>
+              </n-descriptions-item>
+            </n-descriptions>
+          </n-collapse-item>
 
-        <!-- ThoughtEngine: 上下文信息 -->
-        <template v-if="thoughtDetailsData.details_parsed?.context_bundle">
-          <n-divider title-placement="left">📦 上下文信息（Context Bundle）</n-divider>
-          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="对话条数">
-              {{ thoughtDetailsData.details_parsed.context_bundle.conversations?.length || 0 }}
-            </n-descriptions-item>
-            <n-descriptions-item label="记忆条数">
-              {{ thoughtDetailsData.details_parsed.context_bundle.memories?.length || 0 }}
-            </n-descriptions-item>
-            <n-descriptions-item label="主导情绪">
-              <n-tag :type="getEmotionTagType(thoughtDetailsData.details_parsed.context_bundle.emotion?.dominant)" size="small">
-                {{ emotionLabelCn(thoughtDetailsData.details_parsed.context_bundle.emotion?.dominant) }}
-              </n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item label="时间感知">
-              {{ thoughtDetailsData.details_parsed.context_bundle.time_context?.time_display || '-' }}
-            </n-descriptions-item>
-            <n-descriptions-item label="天气" v-if="thoughtDetailsData.details_parsed.context_bundle.weather">
-              {{ thoughtDetailsData.details_parsed.context_bundle.weather.weather || '-' }} {{ thoughtDetailsData.details_parsed.context_bundle.weather.temp || '' }}
-            </n-descriptions-item>
-          </n-descriptions>
-          <n-collapse style="margin-bottom: 16px">
-            <n-collapse-item title="对话详情" name="conversations" v-if="thoughtDetailsData.details_parsed.context_bundle.conversations?.length">
-              <n-list bordered size="small">
-                <n-list-item v-for="(msg, idx) in thoughtDetailsData.details_parsed.context_bundle.conversations" :key="idx">
-                  <div style="font-size: 13px;">
-                    <n-tag :type="msg.role === 'user' ? 'info' : 'success'" size="tiny">{{ msg.role }}</n-tag>
-                    <span style="margin-left: 4px; font-size: 11px; color: #999;">{{ msg.time }}</span>
-                    <div style="margin-top: 4px; white-space: pre-wrap;">{{ msg.content }}</div>
-                  </div>
-                </n-list-item>
-              </n-list>
-            </n-collapse-item>
-            <n-collapse-item title="记忆内容" name="memories" v-if="thoughtDetailsData.details_parsed.context_bundle.memories?.length">
-              <n-list bordered size="small">
-                <n-list-item v-for="(mem, idx) in thoughtDetailsData.details_parsed.context_bundle.memories" :key="idx">
-                  <div style="font-size: 13px; white-space: pre-wrap;">{{ mem }}</div>
-                </n-list-item>
-              </n-list>
-            </n-collapse-item>
-            <n-collapse-item title="用户习惯" name="user_habits" v-if="thoughtDetailsData.details_parsed.context_bundle.user_habits">
-              <div style="font-size: 13px; white-space: pre-wrap;">{{ thoughtDetailsData.details_parsed.context_bundle.user_habits }}</div>
-            </n-collapse-item>
-          </n-collapse>
-        </template>
+          <!-- ThoughtEngine 上下文 -->
+          <n-collapse-item v-if="thoughtDetailsData.details_parsed?.context_bundle" title="📦 上下文信息" name="context">
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
+              <n-descriptions-item label="对话条数">{{ thoughtDetailsData.details_parsed.context_bundle.conversations?.length || 0 }}</n-descriptions-item>
+              <n-descriptions-item label="记忆条数">{{ thoughtDetailsData.details_parsed.context_bundle.memories?.length || 0 }}</n-descriptions-item>
+              <n-descriptions-item label="主导情绪">
+                <n-tag :type="getEmotionTagType(thoughtDetailsData.details_parsed.context_bundle.emotion?.dominant)" size="small">
+                  {{ emotionLabelCn(thoughtDetailsData.details_parsed.context_bundle.emotion?.dominant) }}
+                </n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item label="时间感知">{{ thoughtDetailsData.details_parsed.context_bundle.time_context?.time_display || "-" }}</n-descriptions-item>
+            </n-descriptions>
+          </n-collapse-item>
 
-        <!-- ThoughtEngine: LLM 调用详情 -->
-        <template v-if="thoughtDetailsData.details_parsed?.thought_generation || thoughtDetailsData.details_parsed?.llm_call">
-          <n-divider title-placement="left">🤖 LLM 调用详情</n-divider>
-          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="模型">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.model || '-' }}</n-descriptions-item>
-            <n-descriptions-item label="Provider">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.provider || '-' }}</n-descriptions-item>
-            <n-descriptions-item label="模式">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.mode || '-' }}</n-descriptions-item>
-            <n-descriptions-item label="Temperature">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.temperature }}</n-descriptions-item>
-            <n-descriptions-item label="Max Tokens">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.max_tokens }}</n-descriptions-item>
-            <n-descriptions-item label="总耗时">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.duration_ms }}ms</n-descriptions-item>
-            <n-descriptions-item label="Prompt Tokens">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.prompt_tokens ?? '-' }}</n-descriptions-item>
-            <n-descriptions-item label="Completion Tokens">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.completion_tokens ?? '-' }}</n-descriptions-item>
-            <n-descriptions-item label="Total Tokens">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.total_tokens ?? '-' }}</n-descriptions-item>
-            <n-descriptions-item v-if="(thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.error" label="错误" :span="2">
-              <span style="color: #d03050;">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.error }}</span>
-            </n-descriptions-item>
-          </n-descriptions>
-          <n-collapse style="margin-bottom: 16px">
-            <n-collapse-item title="发送的提示词" name="prompt_sent" v-if="(thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.prompt_sent">
-              <n-code :code="(thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.prompt_sent" language="text" word-wrap />
-            </n-collapse-item>
-            <n-collapse-item title="LLM 返回内容" name="response_received" v-if="(thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.response_received">
-              <n-code :code="(thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.response_received" language="text" word-wrap />
-            </n-collapse-item>
-          </n-collapse>
-        </template>
+          <!-- LLM 调用详情 -->
+          <n-collapse-item v-if="thoughtDetailsData.details_parsed?.thought_generation" title="🤖 LLM 调用详情" name="llm">
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
+              <n-descriptions-item label="模型">{{ thoughtDetailsData.details_parsed.thought_generation.model || "-" }}</n-descriptions-item>
+              <n-descriptions-item label="耗时">{{ thoughtDetailsData.details_parsed.thought_generation.duration_ms || "-" }}ms</n-descriptions-item>
+              <n-descriptions-item label="想联系用户">
+                <n-tag :type="thoughtDetailsData.details_parsed.thought_generation.want_to_contact ? 'success' : 'default'" size="small">
+                  {{ thoughtDetailsData.details_parsed.thought_generation.want_to_contact ? "是" : "否 (SKIP)" }}
+                </n-tag>
+              </n-descriptions-item>
+            </n-descriptions>
+            <n-collapse style="margin-bottom: 16px;">
+              <n-collapse-item title="发送的提示词" name="prompt">
+                <n-code :code="thoughtDetailsData.details_parsed.thought_generation.prompt_sent || '无'" language="text" word-wrap />
+              </n-collapse-item>
+              <n-collapse-item title="LLM 返回内容" name="response">
+                <n-code :code="thoughtDetailsData.details_parsed.thought_generation.response_received || '无'" language="text" word-wrap />
+              </n-collapse-item>
+            </n-collapse>
+          </n-collapse-item>
 
-        <!-- 原始JSON -->
-        <n-collapse>
-          <n-collapse-item title="原始 JSON 数据" name="raw">
-            <n-code :code="formatJson(thoughtDetailsData)" language="json" />
+          <!-- 原始 JSON -->
+          <n-collapse-item title="📄 原始 JSON 数据" name="raw">
+            <n-code :code="formatJson(thoughtDetailsData)" language="json" word-wrap />
           </n-collapse-item>
         </n-collapse>
       </div>
@@ -1412,6 +1347,16 @@ function getHeartbeatResultTitle(details) {
   if (details.decision?.type === 'skip') return '跳过'
   if (details.decision?.type === 'memory') return '存为记忆'
   if (details.decision?.type === 'delay_send') return '等待发送'
+  return '未知状态'
+}
+
+
+// 念头结果标题
+function getThoughtResultTitle(details) {
+  if (details.decision === 'auto_send') return '已发送消息'
+  if (details.decision === 'delay_send') return '等待发送'
+  if (details.decision === 'memory') return '存为记忆'
+  if (details.decision === 'skip') return '跳过'
   return '未知状态'
 }
 
@@ -1772,6 +1717,14 @@ onMounted(async () => {
   margin-left: 8px;
   font-size: 12px;
   color: #999;
+}
+
+/* 修复多选框左边空隙 */
+:deep(.n-form-item .n-form-item-blank .n-select) {
+  width: 100%;
+}
+:deep(.n-select .n-input) {
+  padding-left: 0;
 }
 
 /* 移动端适配 */

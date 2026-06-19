@@ -575,24 +575,43 @@ class ActiveConsciousnessService:
             silence_minutes = 0.0
 
             try:
+                # 从配置获取 session 来源
+                session_sources = config.get("session", {}).get("sources", ["weixin"])
+                sources_placeholders = ", ".join(f"'{s}'" for s in session_sources)
+
                 with state_engine.connect() as conn:
-                    # 最近用户消息
+                    # 最近用户消息（查询所有配置的 session 来源）
                     row = conn.execute(text(
-                        "SELECT MAX(timestamp) FROM messages WHERE role='user' AND session_id IN "
-                        "(SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
+                        f"SELECT MAX(timestamp) FROM messages WHERE role='user' AND session_id IN "
+                        f"(SELECT id FROM sessions WHERE source IN ({sources_placeholders}) AND ended_at IS NULL)"
                     )).fetchone()
                     if row and row[0]:
                         last_user_msg_at = str(row[0])
                         last_user_dt = _parse_timestamp(row[0]) or now
                         gap_minutes = (now - last_user_dt).total_seconds() / 60
-                        longing_score = min(gap_minutes / longing_gap_minutes, 1.0)
                         silence_minutes = gap_minutes
+
+                    # 查询最近1小时用户消息数（用于衰减计算）
+                    reply_count_row = conn.execute(text(
+                        f"SELECT COUNT(*) FROM messages WHERE role='user' "
+                        f"AND CAST(timestamp AS REAL) > CAST(strftime('%s', 'now', '-1 hour') AS REAL) "
+                        f"AND session_id IN (SELECT id FROM sessions WHERE source IN ({sources_placeholders}) AND ended_at IS NULL)"
+                    )).fetchone()
+                    recent_reply_count = reply_count_row[0] if reply_count_row else 0
+
+                    # 想念分数计算：基础分 × 衰减因子
+                    # 基础分：基于累积沉默时间（上限1.0）
+                    base_score = min(silence_minutes / longing_gap_minutes, 1.0)
+                    # 衰减因子：用户每回复一条消息，衰减10%（最少保留10%）
+                    decay_factor = max(0.1, 1.0 - recent_reply_count * 0.1)
+                    # 最终分数
+                    longing_score = base_score * decay_factor
 
                     # 最近主动消息
                     row = conn.execute(text(
-                        "SELECT MAX(timestamp) FROM messages WHERE role='assistant' "
-                        "AND content LIKE '凯莉%' AND session_id IN "
-                        "(SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
+                        f"SELECT MAX(timestamp) FROM messages WHERE role='assistant' "
+                        f"AND session_id IN "
+                        f"(SELECT id FROM sessions WHERE source IN ({sources_placeholders}) AND ended_at IS NULL)"
                     )).fetchone()
                     if row and row[0]:
                         last_self_msg_at = str(row[0])
@@ -624,11 +643,14 @@ class ActiveConsciousnessService:
             recent_user_msg_at = None
 
             try:
+                session_sources = config.get("session", {}).get("sources", ["weixin"])
+                sources_placeholders = ", ".join(f"'{s}'" for s in session_sources)
+
                 with state_engine.connect() as conn:
                     row = conn.execute(text(
-                        "SELECT COUNT(*), MAX(timestamp) FROM messages "
-                        "WHERE role='user' AND CAST(timestamp AS REAL) > CAST(strftime('%s', 'now', '-1 hour') AS REAL) "
-                        "AND session_id IN (SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
+                        f"SELECT COUNT(*), MAX(timestamp) FROM messages "
+                        f"WHERE role='user' AND CAST(timestamp AS REAL) > CAST(strftime('%s', 'now', '-1 hour') AS REAL) "
+                        f"AND session_id IN (SELECT id FROM sessions WHERE source IN ({sources_placeholders}) AND ended_at IS NULL)"
                     )).fetchone()
                     if row:
                         recent_count = row[0] or 0
@@ -664,25 +686,23 @@ class ActiveConsciousnessService:
             except Exception:
                 pass
 
-            # 今日发送数
+            # 今日发送数（查心跳日志中的 message_sent=1）
             today_sent_count = 0
             hour_sent_count = 0
             try:
-                with state_engine.connect() as conn:
+                with active_engine.connect() as conn:
                     row = conn.execute(text(
-                        "SELECT COUNT(*) FROM messages "
-                        "WHERE role='assistant' AND content LIKE '凯莉%' "
-                        "AND CAST(timestamp AS REAL) > CAST(strftime('%s', 'now', 'start of day') AS REAL) "
-                        "AND session_id IN (SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
+                        "SELECT COUNT(*) FROM active_heartbeat_logs "
+                        "WHERE message_sent = 1 "
+                        "AND created_at > datetime('now', 'start of day')"
                     )).fetchone()
                     if row:
                         today_sent_count = row[0] or 0
 
                     row = conn.execute(text(
-                        "SELECT COUNT(*) FROM messages "
-                        "WHERE role='assistant' AND content LIKE '凯莉%' "
-                        "AND CAST(timestamp AS REAL) > CAST(strftime('%s', 'now', '-1 hour') AS REAL) "
-                        "AND session_id IN (SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
+                        "SELECT COUNT(*) FROM active_heartbeat_logs "
+                        "WHERE message_sent = 1 "
+                        "AND created_at > datetime('now', '-1 hour')"
                     )).fetchone()
                     if row:
                         hour_sent_count = row[0] or 0
