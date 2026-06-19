@@ -431,51 +431,193 @@
       <!-- Tab 4: 测试 -->
       <n-tab-pane name="test" tab="测试">
         <!-- 运行逻辑说明 -->
-        <n-card title="🧠 主动意识运行逻辑" size="small" style="margin-bottom: 16px">
-          <div style="font-size: 13px; line-height: 1.8;">
-            <n-steps :current="0" size="small" vertical>
-              <n-step title="心跳触发">
-                <div style="font-size: 12px; color: #666;">
-                  APScheduler 定时触发（默认300秒间隔），检查配置是否启用
-                </div>
-              </n-step>
-              <n-step title="情绪演化">
-                <div style="font-size: 12px; color: #666;">
-                  读取 EmotionState（VA模型），根据时间间隔演化情绪值
-                </div>
-              </n-step>
-              <n-step title="LLM 情绪评估">
-                <div style="font-size: 12px; color: #666;">
-                  调用 LLM 评估当前情绪状态，与演化值动态合并
-                </div>
-              </n-step>
-              <n-step title="ContextCollector 收集上下文">
-                <div style="font-size: 12px; color: #666;">
-                  收集：最近对话（结构化JSON）+ Hindsight记忆 + 情绪状态 + 时间感知 + 天气 + 用户习惯
-                </div>
-              </n-step>
-              <n-step title="ThoughtEngine 生成念头">
-                <div style="font-size: 12px; color: #666;">
-                  将上下文作为"养料"传给 LLM，由 LLM 自主决定是否联系用户。输出"SKIP"表示不想联系
-                </div>
-              </n-step>
-              <n-step title="决策矩阵评分">
-                <div style="font-size: 12px; color: #666;">
-                  score = intensity × time_fitness × silence_factor × frequency_limit
-                </div>
-              </n-step>
-              <n-step title="发送保护检查">
-                <div style="font-size: 12px; color: #666;">
-                  检查：用户消息后等待期、热度过高、情绪过低、冷却期、频率限制
-                </div>
-              </n-step>
-              <n-step title="执行动作">
-                <div style="font-size: 12px; color: #666;">
-                  auto_send（立即发送）/ delay_send（延迟队列）/ memory（存为记忆）/ skip（跳过）
-                </div>
-              </n-step>
-            </n-steps>
-          </div>
+        <n-card title="主动意识运行逻辑" size="small" style="margin-bottom: 16px">
+          <n-collapse default-expanded-names="">
+            <!-- 1. 心跳触发 -->
+            <n-collapse-item title="1. 心跳触发" name="heartbeat">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>触发方式</strong>：APScheduler 定时触发</p>
+                <p><strong>默认间隔</strong>：300秒（5分钟）</p>
+                <p><strong>检查条件</strong>：</p>
+                <ul>
+                  <li>主动意识是否启用（enabled=true）</li>
+                  <li>是否在活跃时间窗口内</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+
+            <!-- 2. 情绪演化 -->
+            <n-collapse-item title="2. 情绪演化" name="emotion">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>模型</strong>：VA 模型（Valence-Arousal-Social Need）</p>
+                <p><strong>参数</strong>：</p>
+                <ul>
+                  <li>Valence（效价）：0-1，0=消极，1=积极</li>
+                  <li>Arousal（唤醒度）：0-1，0=平静，1=激动</li>
+                  <li>Social Need（社交需求）：0-1，0=不需要，1=非常想</li>
+                </ul>
+                <p><strong>演化规则</strong>：</p>
+                <ul>
+                  <li>每分钟衰减：arousal -= 0.02</li>
+                  <li>社交需求增长：social_need += 0.01/分钟</li>
+                  <li>效价回归中性：valence -= 0.1 × (valence - 0.5)</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+
+            <!-- 3. LLM 情绪评估 -->
+            <n-collapse-item title="3. LLM 情绪评估" name="llm_emotion">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>模型</strong>：hunyuan-lite</p>
+                <p><strong>输入</strong>：最近对话 + 当前情绪状态</p>
+                <p><strong>输出</strong>：新的 VA 值 + 主导情绪</p>
+                <p><strong>合并规则</strong>：演化值 × 0.4 + LLM值 × 0.6</p>
+              </div>
+            </n-collapse-item>
+
+            <!-- 4. ContextCollector 收集上下文 -->
+            <n-collapse-item title="4. ContextCollector 收集上下文" name="context">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>收集内容</strong>：</p>
+                <ul>
+                  <li>Session 对话（结构化 JSON）</li>
+                  <li>Hindsight 记忆（Recall 结果）</li>
+                  <li>情绪状态（VA 模型）</li>
+                  <li>时间感知（工作日/饭点/深夜）</li>
+                  <li>天气信息（如果启用）</li>
+                  <li>用户习惯（从 USER.md）</li>
+                </ul>
+                <p><strong>动态时间范围</strong>（根据情绪状态自动选择）：</p>
+                <ul>
+                  <li>arousal < 0.3 → 15 天（低唤醒：广泛上下文）</li>
+                  <li>0.3 ≤ arousal < 0.7 → 7 天（中唤醒：一周）</li>
+                  <li>arousal ≥ 0.7 → 3 天（高唤醒：关注近期）</li>
+                  <li>沉默 > 6小时 → 1 天（关注近期互动）</li>
+                </ul>
+                <p><strong>配置参数</strong>：</p>
+                <ul>
+                  <li>time_range_days：查询最近 N 天（默认 7，0=自动）</li>
+                  <li>conversation_max_chars：每条消息最大字符（默认 2000）</li>
+                  <li>memory_limit：Hindsight 召回数量（默认 5）</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+
+            <!-- 5. ThoughtEngine 生成念头 -->
+            <n-collapse-item title="5. ThoughtEngine 生成念头" name="thought">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>核心理念</strong>：给 LLM 足够"养料"，让它自己思考</p>
+                <p><strong>输入</strong>：ContextBundle（对话+记忆+情绪+时间+天气+习惯）</p>
+                <p><strong>输出</strong>：</p>
+                <ul>
+                  <li>念头内容（1-2句话）</li>
+                  <li>want_to_contact（是否想联系用户）</li>
+                  <li>SKIP（LLM 不想联系时输出）</li>
+                </ul>
+                <p><strong>提示词模板</strong>：</p>
+                <ul>
+                  <li>角色定义：凯莉，曹凡的 AI 朋友</li>
+                  <li>人设信息：从 SOUL.md/MEMORY.md/USER.md 加载</li>
+                  <li>上下文：结构化 JSON 格式</li>
+                  <li>要求：自然地想到曹凡，说 1-2 句话</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+
+            <!-- 6. 决策矩阵评分 -->
+            <n-collapse-item title="6. 决策矩阵评分" name="decision">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>公式</strong>：score = intensity × time_fitness × silence_factor × frequency_limit</p>
+                <p><strong>参数说明</strong>：</p>
+                <ul>
+                  <li><strong>intensity</strong>：情绪强度（加权公式）
+                    <ul>
+                      <li>social_need × 0.5 + arousal × 0.3 + valence × 0.2</li>
+                      <li>最低值 0.2（避免永远为零）</li>
+                    </ul>
+                  </li>
+                  <li><strong>time_fitness</strong>：时间适宜性
+                    <ul>
+                      <li>下班时间：1.0</li>
+                      <li>工作时间：0.5-0.8</li>
+                      <li>深夜：0.3</li>
+                    </ul>
+                  </li>
+                  <li><strong>silence_factor</strong>：沉默因子（基于沉默时长）
+                    <ul>
+                      <li>< 30分钟：0.6</li>
+                      <li>30-60分钟：0.75</li>
+                      <li>1-3小时：0.85</li>
+                      <li>3-6小时：0.95</li>
+                      <li>> 6小时：1.0</li>
+                    </ul>
+                  </li>
+                  <li><strong>frequency_limit</strong>：频率限制
+                    <ul>
+                      <li>未超频：1.0</li>
+                      <li>超频：0.0</li>
+                    </ul>
+                  </li>
+                </ul>
+                <p><strong>决策阈值</strong>：</p>
+                <ul>
+                  <li>send_threshold：0.35（自动发送）</li>
+                  <li>delay_threshold：0.15（延迟发送）</li>
+                  <li>memory_threshold：0.05（存为记忆）</li>
+                  <li>低于 memory_threshold：skip（跳过）</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+
+            <!-- 7. 发送保护检查 -->
+            <n-collapse-item title="7. 发送保护检查" name="protection">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>检查项目</strong>（任一不通过则拦截）：</p>
+                <ul>
+                  <li><strong>用户消息后等待期</strong>：用户发消息后 5 分钟内不发送</li>
+                  <li><strong>聊天热度</strong>：热度 > 3.0 时不发送</li>
+                  <li><strong>情绪强度</strong>：强度 < 0.15 时不发送</li>
+                  <li><strong>冷却期</strong>：上次发送后 30 分钟内不发送</li>
+                  <li><strong>频率限制</strong>：每小时最多 2 条，每天最多 5 条</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+
+            <!-- 8. 执行动作 -->
+            <n-collapse-item title="8. 执行动作" name="action">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>动作类型</strong>：</p>
+                <ul>
+                  <li><strong>auto_send</strong>：立即发送消息给用户</li>
+                  <li><strong>delay_send</strong>：加入延迟队列，下次心跳重评估</li>
+                  <li><strong>memory</strong>：存为记忆，不发送</li>
+                  <li><strong>skip</strong>：跳过，不做任何操作</li>
+                </ul>
+                <p><strong>延迟队列</strong>：</p>
+                <ul>
+                  <li>最大存活时间：30 分钟</li>
+                  <li>每次心跳重新评估分数</li>
+                  <li>分数达到 send_threshold 时自动发送</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+
+            <!-- 9. 想念分数计算 -->
+            <n-collapse-item title="9. 想念分数计算" name="longing">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>公式</strong>：longing_score = base_score × decay_factor</p>
+                <p><strong>基础分</strong>：min(沉默分钟 / gap_minutes, 1.0)</p>
+                <p><strong>衰减因子</strong>：max(0.1, 1.0 - 回复数 × 0.1)</p>
+                <p><strong>示例</strong>：</p>
+                <ul>
+                  <li>沉默 3 小时，0 条回复：0.6 × 1.0 = 0.60</li>
+                  <li>沉默 1 小时，2 条回复：0.2 × 0.8 = 0.16</li>
+                  <li>沉默 30 分钟，5 条回复：0.1 × 0.5 = 0.05</li>
+                </ul>
+                <p><strong>配置</strong>：gap_minutes = 60（默认）</p>
+              </div>
+            </n-collapse-item>
+          </n-collapse>
         </n-card>
 
         <!-- 测试按钮组 -->
