@@ -340,12 +340,12 @@
 
             <!-- 上下文收集配置 -->
             <n-divider>📦 上下文收集</n-divider>
-            <n-form-item label="对话消息数量">
-              <n-input-number v-model:value="config.context.conversation_limit" :min="10" :max="100" />
-              <span class="form-item-hint">从 Session 中获取最近多少条对话消息作为上下文</span>
+            <n-form-item label="时间范围（天）">
+              <n-input-number v-model:value="config.context.time_range_days" :min="1" :max="30" />
+              <span class="form-item-hint">查询最近 N 天的消息作为上下文（0=根据情绪自动选择）</span>
             </n-form-item>
             <n-form-item label="对话消息最大字符数">
-              <n-input-number v-model:value="config.context.conversation_max_chars" :min="100" :max="2000" :step="100" />
+              <n-input-number v-model:value="config.context.conversation_max_chars" :min="100" :max="5000" :step="100" />
               <span class="form-item-hint">每条对话消息截取的最大字符数，越大上下文越完整</span>
             </n-form-item>
             <n-form-item label="记忆召回数量">
@@ -1074,7 +1074,9 @@ const config = ref({
     temperature: 0.9
   },
   context: {
-    conversation_limit: 30,
+    conversation_limit: 100,
+    conversation_max_chars: 2000,
+    time_range_days: 7,
     memory_limit: 5,
     weather_enabled: false
   },

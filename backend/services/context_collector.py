@@ -2,7 +2,7 @@
 ContextCollector - 收集 LLM 生成念头需要的全部上下文
 
 职责：
-1. 从 state.db 读取最近对话（结构化）
+1. 从 state.db 读取最近对话（结构化，支持动态时间范围）
 2. 从 Hindsight 召回相关记忆
 3. 获取情绪状态
 4. 获取时间感知
@@ -13,7 +13,7 @@ ContextCollector - 收集 LLM 生成念头需要的全部上下文
 import json
 import logging
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 
 logger = logging.getLogger("hermes.context_collector")
@@ -40,6 +40,9 @@ class ContextBundle:
     
     # 用户习惯（从 USER.md 提取）
     user_habits: str            # 通勤时间、午餐偏好、作息等
+    
+    # 动态时间范围（新增）
+    time_range_days: int        # 本次收集使用的时间范围（天）
     
     def to_dict(self) -> Dict:
         """转换为字典（用于日志记录）"""
@@ -75,14 +78,17 @@ class ContextCollector:
         Returns:
             ContextBundle 对象
         """
-        # 1. Session 对话（结构化）
-        conversations = await self._get_structured_conversations()
-        
-        # 2. Hindsight 记忆
-        memories = await self._recall_memories(conversations)
-        
-        # 3. 情绪状态
+        # 0. 获取情绪状态（用于动态时间范围）
         emotion = self._get_emotion_state()
+        
+        # 1. 根据情绪动态选择时间范围
+        time_range_days = self._get_dynamic_time_range_days(emotion, status)
+        
+        # 2. Session 对话（结构化，按时间范围查询）
+        conversations = await self._get_structured_conversations(time_range_days)
+        
+        # 3. Hindsight 记忆
+        memories = await self._recall_memories(conversations)
         
         # 4. 时间感知
         time_context = self._get_time_context()
@@ -93,28 +99,73 @@ class ContextCollector:
         # 6. 用户习惯
         user_habits = self._load_user_habits()
         
+        logger.info("上下文收集完成: 天数=%d, 对话=%d条, 记忆=%d条", 
+                    time_range_days, len(conversations), len(memories))
+        
         return ContextBundle(
             conversations=conversations,
             memories=memories,
             emotion=emotion,
             time_context=time_context,
             weather=weather,
-            user_habits=user_habits
+            user_habits=user_habits,
+            time_range_days=time_range_days
         )
     
-    async def _get_structured_conversations(self) -> List[Dict]:
-        """获取结构化的最近对话"""
+    def _get_dynamic_time_range_days(self, emotion: Dict, status: Dict) -> int:
+        """
+        根据情绪状态动态选择时间范围
+        
+        规则：
+        - 情绪强度低 (arousal < 0.3) → 读取 15 天消息（更广泛的上下文）
+        - 情绪强度中 (0.3-0.7) → 读取 7 天消息
+        - 情绪强度高 (arousal > 0.7) → 读取 3 天消息（关注近期）
+        - 沉默时间长 (> 6小时) → 读取 1 天消息（关注近期互动）
+        - 可通过配置覆盖默认值
+        """
+        # 检查配置是否有自定义时间范围
+        custom_days = self.context_config.get("time_range_days", None)
+        if custom_days:
+            return int(custom_days)
+        
+        arousal = emotion.get("arousal", 0.3)
+        silence_minutes = status.get("longing", {}).get("silence_minutes", 0)
+        
+        # 沉默时间长 → 关注近期
+        if silence_minutes > 360:  # 6小时
+            return 1
+        
+        # 根据 arousal 选择时间范围
+        if arousal < 0.3:
+            return 15  # 低唤醒：广泛上下文
+        elif arousal < 0.7:
+            return 7   # 中唤醒：一周
+        else:
+            return 3   # 高唤醒：近期
+    
+    async def _get_structured_conversations(self, time_range_days: int = 7) -> List[Dict]:
+        """
+        获取结构化的对话（按时间范围查询）
+        
+        Args:
+            time_range_days: 查询最近 N 天的消息
+        """
         try:
             from services.message_service import MessageService
             from services.session_service import SessionService
             from services.fallback_session_service import FallbackSessionService
+            from sqlalchemy import text
+            from models.database import state_engine
             
             sources = self.session_config.get("sources", ["weixin"])
-            limit = self.context_config.get("conversation_limit", 30)
-            max_chars = self.context_config.get("conversation_max_chars", 500)
+            max_chars = self.context_config.get("conversation_max_chars", 2000)
             filter_tool = self.session_config.get("filter_tool_messages", True)
             
             conversations = []
+            
+            # 计算时间范围
+            cutoff_time = datetime.now() - timedelta(days=time_range_days)
+            cutoff_timestamp = cutoff_time.timestamp()
             
             for platform in sources:
                 user_id = SessionService.get_weixin_user_id() if platform == "weixin" else None
@@ -126,13 +177,35 @@ class ContextCollector:
                     continue
                 
                 session_id = session["id"] if isinstance(session, dict) else session.id
-                messages = MessageService.get_session_context_raw(
-                    session_id, limit=limit, include_tool=not filter_tool
-                )
+                
+                # 按时间范围查询消息
+                try:
+                    with state_engine.connect() as conn:
+                        query = text("""
+                            SELECT role, content, timestamp 
+                            FROM messages 
+                            WHERE session_id = :session_id 
+                            AND CAST(timestamp AS REAL) > :cutoff
+                            AND role IN ('user', 'assistant')
+                            ORDER BY timestamp ASC
+                        """)
+                        result = conn.execute(query, {
+                            "session_id": session_id,
+                            "cutoff": cutoff_timestamp
+                        })
+                        messages = [dict(row._mapping) for row in result]
+                except Exception as e:
+                    logger.warning("查询消息失败: %s", e)
+                    # 回退到原来的方式
+                    messages = MessageService.get_session_context_raw(
+                        session_id, limit=200, include_tool=not filter_tool
+                    ) or []
                 
                 if messages:
-                    for msg in messages[-limit:]:
+                    for msg in messages:
                         content = msg.get("content") or ""
+                        if not content.strip():
+                            continue
                         if max_chars and len(content) > max_chars:
                             content = content[:max_chars] + "..."
                         
@@ -253,9 +326,6 @@ class ContextCollector:
     def _load_user_habits(self) -> str:
         """加载用户习惯（从 USER.md）"""
         try:
-            from services.active_consciousness_service import load_hermes_persona
-            # load_hermes_persona 已经包含了 USER.md 的内容
-            # 这里我们只提取 USER.md 部分
             from pathlib import Path
             
             hermes_dir = Path.home() / ".hermes"
@@ -265,8 +335,8 @@ class ContextCollector:
                 content = user_path.read_text(encoding="utf-8").strip()
                 if content:
                     # 截取关键部分
-                    if len(content) > 1000:
-                        content = content[:1000] + "\n...(已截断)"
+                    if len(content) > 1500:
+                        content = content[:1500] + "\n...(已截断)"
                     return content
             
             return ""

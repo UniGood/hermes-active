@@ -208,8 +208,9 @@ _DEFAULTS = {
     "active_consciousness.thought_engine.temperature": "0.9",
 
     # 上下文收集配置
-    "active_consciousness.context.conversation_limit": "30",
-    "active_consciousness.context.conversation_max_chars": "500",
+    "active_consciousness.context.conversation_limit": "100",
+    "active_consciousness.context.conversation_max_chars": "2000",
+    "active_consciousness.context.time_range_days": "7",
     "active_consciousness.context.memory_limit": "5",
     "active_consciousness.context.memory_enabled": "true",
     "active_consciousness.context.weather_enabled": "false",
