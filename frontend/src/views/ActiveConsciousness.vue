@@ -651,15 +651,12 @@
         <!-- ===== 结果总览（最醒目） ===== -->
         <n-card size="small" style="margin-bottom: 16px;">
           <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <!-- 结果图标 -->
-            <div style="font-size: 28px;">
-              {{ getHeartbeatResultIcon(detailsData) }}
-            </div>
+            <!-- 结果标签 -->
+            <n-tag :type="getHeartbeatResultTagType(detailsData)" size="large">
+              {{ getHeartbeatResultTitle(detailsData) }}
+            </n-tag>
             <!-- 结果信息 -->
             <div style="flex: 1; min-width: 200px;">
-              <div style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">
-                {{ getHeartbeatResultTitle(detailsData) }}
-              </div>
               <div style="font-size: 13px; color: #666; margin-bottom: 2px;">
                 {{ getHeartbeatResultReason(detailsData) }}
               </div>
@@ -694,7 +691,7 @@
 
         <!-- ===== 执行流程（可折叠） ===== -->
         <n-collapse default-expanded-names="">
-          <n-collapse-item title="⏱️ 执行流程" name="timeline">
+          <n-collapse-item title="执行流程" name="timeline">
             <n-timeline>
               <!-- 1. 心跳触发 -->
               <n-timeline-item type="success" title="心跳触发">
@@ -734,7 +731,7 @@
               <!-- 4. 决策计算 -->
               <n-timeline-item v-if="detailsData.decision" :type="getDecisionTimelineType(detailsData.decision)" title="决策计算">
                 <template #icon>
-                  <n-icon size="16">{{ getDecisionTimelineIcon(detailsData.decision) }}</n-icon>
+                  <n-icon size="16"><CheckmarkCircle /></n-icon>
                 </template>
                 <div style="font-size: 12px; color: #666;">
                   分数 {{ detailsData.decision.score?.toFixed(3) || '0.000' }}
@@ -808,7 +805,7 @@
         <!-- ===== 详细信息（可折叠） ===== -->
         <n-collapse default-expanded-names="">
           <!-- 决策计算详情 -->
-          <n-collapse-item title="📊 决策计算详情" name="decision">
+          <n-collapse-item title="决策计算详情" name="decision">
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
               <n-descriptions-item label="公式" :span="2">score = intensity × time_fitness × silence × freq</n-descriptions-item>
               <n-descriptions-item label="决策类型">
@@ -838,7 +835,7 @@
           </n-collapse-item>
 
           <!-- 情绪演化详情 -->
-          <n-collapse-item v-if="detailsData.emotion_before" title="😊 情绪演化详情" name="emotion">
+          <n-collapse-item v-if="detailsData.emotion_before" title="情绪演化详情" name="emotion">
             <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
               <n-tag v-for="item in [
                 {label: '初始', d: detailsData.emotion_before},
@@ -855,7 +852,7 @@
           </n-collapse-item>
 
           <!-- 上下文详情 -->
-          <n-collapse-item v-if="detailsData.session_context || detailsData.hindsight_context" title="📦 上下文详情" name="context">
+          <n-collapse-item v-if="detailsData.session_context || detailsData.hindsight_context" title="上下文详情" name="context">
             <n-card v-if="detailsData.session_context" title="Session 对话" size="small" style="margin-bottom: 8px;">
               <n-code :code="detailsData.session_context" language="text" word-wrap />
             </n-card>
@@ -870,7 +867,7 @@
           </n-collapse-item>
 
           <!-- 念头生成详情 -->
-          <n-collapse-item v-if="detailsData.thought_generation" title="💭 念头生成详情" name="thought">
+          <n-collapse-item v-if="detailsData.thought_generation" title="念头生成详情" name="thought">
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
               <n-descriptions-item label="念头类型">
                 <n-tag :type="getThoughtTypeTagType(detailsData.thought_type)" size="small">
@@ -898,7 +895,7 @@
           </n-collapse-item>
 
           <!-- 延迟队列详情 -->
-          <n-collapse-item v-if="detailsData.delay_reeval" title="⏰ 延迟队列重评估" name="delay">
+          <n-collapse-item v-if="detailsData.delay_reeval" title="延迟队列重评估" name="delay">
             <n-descriptions bordered :column="3" size="small" style="margin-bottom: 16px">
               <n-descriptions-item label="发送">{{ detailsData.delay_reeval.sent }}</n-descriptions-item>
               <n-descriptions-item label="丢弃">{{ detailsData.delay_reeval.discarded }}</n-descriptions-item>
@@ -907,7 +904,7 @@
           </n-collapse-item>
 
           <!-- 原始 JSON -->
-          <n-collapse-item title="📄 原始 JSON 数据" name="raw">
+          <n-collapse-item title="原始 JSON 数据" name="raw">
             <n-code :code="formatJson(detailsData)" language="json" word-wrap />
           </n-collapse-item>
         </n-collapse>
@@ -922,15 +919,12 @@
         <!-- ===== 结果总览（最醒目） ===== -->
         <n-card size="small" style="margin-bottom: 16px;">
           <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <!-- 结果图标 -->
-            <div style="font-size: 28px;">
-              {{ thoughtDetailsData.decision === "auto_send" ? "✅" : thoughtDetailsData.decision === "delay_send" ? "💤" : thoughtDetailsData.decision === "memory" ? "💾" : "⏭️" }}
-            </div>
+            <!-- 结果标签 -->
+            <n-tag :type="getThoughtResultTagType(thoughtDetailsData)" size="large">
+              {{ getThoughtResultTitle(thoughtDetailsData) }}
+            </n-tag>
             <!-- 结果信息 -->
             <div style="flex: 1; min-width: 200px;">
-              <div style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">
-                {{ getThoughtResultTitle(thoughtDetailsData) }}
-              </div>
               <div style="font-size: 13px; color: #666; margin-bottom: 2px;">
                 {{ thoughtDetailsData.thought || "无念头内容" }}
               </div>
@@ -953,7 +947,7 @@
         <!-- ===== 详细信息（可折叠） ===== -->
         <n-collapse default-expanded-names="">
           <!-- 情绪状态 -->
-          <n-collapse-item v-if="thoughtDetailsData.emotion_state" title="😊 情绪状态" name="emotion">
+          <n-collapse-item v-if="thoughtDetailsData.emotion_state" title="情绪状态" name="emotion">
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
               <n-descriptions-item label="效价">{{ thoughtDetailsData.emotion_state.valence?.toFixed(3) }}</n-descriptions-item>
               <n-descriptions-item label="唤醒度">{{ thoughtDetailsData.emotion_state.arousal?.toFixed(3) }}</n-descriptions-item>
@@ -967,7 +961,7 @@
           </n-collapse-item>
 
           <!-- Hindsight 信息 -->
-          <n-collapse-item v-if="thoughtDetailsData.hindsight_stored !== undefined" title="🧠 Hindsight 存储" name="hindsight">
+          <n-collapse-item v-if="thoughtDetailsData.hindsight_stored !== undefined" title="Hindsight 存储" name="hindsight">
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
               <n-descriptions-item label="存储状态">
                 <n-tag :type="thoughtDetailsData.hindsight_stored ? 'success' : 'warning'" size="small">
@@ -985,7 +979,7 @@
           </n-collapse-item>
 
           <!-- ThoughtEngine 上下文 -->
-          <n-collapse-item v-if="thoughtDetailsData.details_parsed?.context_bundle" title="📦 上下文信息" name="context">
+          <n-collapse-item v-if="thoughtDetailsData.details_parsed?.context_bundle" title="上下文信息" name="context">
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
               <n-descriptions-item label="对话条数">{{ thoughtDetailsData.details_parsed.context_bundle.conversations?.length || 0 }}</n-descriptions-item>
               <n-descriptions-item label="记忆条数">{{ thoughtDetailsData.details_parsed.context_bundle.memories?.length || 0 }}</n-descriptions-item>
@@ -999,7 +993,7 @@
           </n-collapse-item>
 
           <!-- LLM 调用详情 -->
-          <n-collapse-item v-if="thoughtDetailsData.details_parsed?.thought_generation" title="🤖 LLM 调用详情" name="llm">
+          <n-collapse-item v-if="thoughtDetailsData.details_parsed?.thought_generation" title="LLM 调用详情" name="llm">
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
               <n-descriptions-item label="模型">{{ thoughtDetailsData.details_parsed.thought_generation.model || "-" }}</n-descriptions-item>
               <n-descriptions-item label="耗时">{{ thoughtDetailsData.details_parsed.thought_generation.duration_ms || "-" }}ms</n-descriptions-item>
@@ -1020,7 +1014,7 @@
           </n-collapse-item>
 
           <!-- 原始 JSON -->
-          <n-collapse-item title="📄 原始 JSON 数据" name="raw">
+          <n-collapse-item title="原始 JSON 数据" name="raw">
             <n-code :code="formatJson(thoughtDetailsData)" language="json" word-wrap />
           </n-collapse-item>
         </n-collapse>
@@ -1330,14 +1324,14 @@ function getDecisionTagType(type) {
   }
 }
 
-// 心跳结果图标
-function getHeartbeatResultIcon(details) {
-  if (details.message_sending?.success) return '✅'
-  if (details.decision?.blocked_by_protection) return '🛡️'
-  if (details.decision?.type === 'skip') return '⏭️'
-  if (details.decision?.type === 'memory') return '💾'
-  if (details.decision?.type === 'delay_send') return '💤'
-  return '❓'
+// 心跳结果标签类型
+function getHeartbeatResultTagType(details) {
+  if (details.message_sending?.success) return 'success'
+  if (details.decision?.blocked_by_protection) return 'warning'
+  if (details.decision?.type === 'skip') return 'default'
+  if (details.decision?.type === 'memory') return 'info'
+  if (details.decision?.type === 'delay_send') return 'warning'
+  return 'default'
 }
 
 // 心跳结果标题
@@ -1358,6 +1352,15 @@ function getThoughtResultTitle(details) {
   if (details.decision === 'memory') return '存为记忆'
   if (details.decision === 'skip') return '跳过'
   return '未知状态'
+}
+
+// 念头结果标签类型
+function getThoughtResultTagType(details) {
+  if (details.decision === 'auto_send') return 'success'
+  if (details.decision === 'delay_send') return 'warning'
+  if (details.decision === 'memory') return 'info'
+  if (details.decision === 'skip') return 'default'
+  return 'default'
 }
 
 // 心跳结果原因（优化：更易懂）
