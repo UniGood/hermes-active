@@ -580,7 +580,7 @@
           <!-- 完整 JSON -->
           <n-collapse>
             <n-collapse-item title="完整 JSON 数据" name="json">
-              <n-code :code="JSON.stringify(testResult, null, 2)" language="json" word-wrap />
+              <n-code :code="formatJson(testResult)" language="json" word-wrap />
             </n-collapse-item>
           </n-collapse>
         </n-card>
@@ -621,7 +621,7 @@
     <n-modal v-model:show="showRecallModal" preset="card" title="召回内容" style="width: 90vw; max-width: 900px">
       <n-list bordered v-if="recallItems.length">
         <n-list-item v-for="(item, idx) in recallItems" :key="idx">
-          <div style="font-size: 13px; white-space: pre-wrap;">{{ item.content || item.text || JSON.stringify(item) }}</div>
+          <div style="font-size: 13px; white-space: pre-wrap;">{{ item.content || item.text || formatJson(item) }}</div>
         </n-list-item>
       </n-list>
       <n-empty v-else description="无召回内容" />
@@ -704,7 +704,7 @@
           <n-divider title-placement="left">Hindsight 召回</n-divider>
           <n-list bordered size="small" style="margin-bottom: 16px">
             <n-list-item v-for="(item, idx) in detailsData.recall_results" :key="idx">
-              <div style="font-size: 13px;">{{ item.content || item.text || JSON.stringify(item) }}</div>
+              <div style="font-size: 13px;">{{ item.content || item.text || formatJson(item) }}</div>
             </n-list-item>
           </n-list>
         </template>
@@ -803,7 +803,7 @@
         <!-- 原始JSON -->
         <n-collapse>
           <n-collapse-item title="原始 JSON 数据" name="raw">
-            <n-code :code="JSON.stringify(detailsData, null, 2)" language="json" />
+            <n-code :code="formatJson(detailsData)" language="json" />
           </n-collapse-item>
         </n-collapse>
       </div>
@@ -981,7 +981,7 @@
         <!-- 原始JSON -->
         <n-collapse>
           <n-collapse-item title="原始 JSON 数据" name="raw">
-            <n-code :code="JSON.stringify(thoughtDetailsData, null, 2)" language="json" />
+            <n-code :code="formatJson(thoughtDetailsData)" language="json" />
           </n-collapse-item>
         </n-collapse>
       </div>
@@ -999,6 +999,28 @@ import mainApi from '../api'
 
 const message = useMessage()
 const activeTab = ref('status')
+
+// JSON 结构化格式化
+const formatJson = (obj) => {
+  if (!obj) return '（空）'
+  if (typeof obj === 'string') {
+    try {
+      obj = JSON.parse(obj)
+    } catch (e) {
+      return obj
+    }
+  }
+  return JSON.stringify(obj, null, 2)
+}
+
+// JSON 值格式化（用于单个值的展示）
+const formatJsonValue = (val) => {
+  if (val === null || val === undefined) return '-'
+  if (typeof val === 'boolean') return val ? '是' : '否'
+  if (typeof val === 'number') return val.toFixed?.(3) ?? val
+  if (typeof val === 'object') return JSON.stringify(val)
+  return String(val)
+}
 
 // 配置
 const config = ref({
