@@ -3,7 +3,7 @@
     <n-tabs v-model:value="activeTab" type="line" animated>
       <!-- Tab 1: 状态 -->
       <n-tab-pane name="status" tab="状态">
-        <n-grid :cols="2" :x-gap="12" :y-gap="12">
+        <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
           <n-grid-item>
             <n-card title="心跳状态">
               <n-tooltip trigger="hover" :width="240">
@@ -321,99 +321,37 @@
               <span style="margin-left: 8px; font-size: 12px; color: #999;">Hindsight 存储 Bank ID，用于区分不同来源的记忆</span>
             </n-form-item>
 
-            <!-- 增强念头生成 -->
-            <n-divider>🧠 增强念头生成</n-divider>
-            <n-form-item label="启用增强念头生成">
-              <n-switch v-model:value="config.thought_enhanced.enabled" />
-              <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                基于聊天记录、情绪状态、天气信息生成深度念头
-              </span>
+            <!-- ThoughtEngine 引擎配置 -->
+            <n-divider>🧠 ThoughtEngine 引擎</n-divider>
+            <n-form-item label="启用 ThoughtEngine">
+              <n-switch v-model:value="config.thought_engine.enabled" />
+              <span class="form-item-hint">统一念头生成器：收集上下文 → 构建提示词 → LLM 生成 → 解析结果</span>
             </n-form-item>
-            <template v-if="config.thought_enhanced.enabled">
-              <!-- 时间范围配置 -->
-              <n-form-item label="低唤醒度阈值">
-                <n-input-number v-model:value="config.thought_enhanced.arousal_low_threshold" :min="0" :max="1" :step="0.1" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  唤醒度低于此值时，查看 15 天聊天记录进行深度思考
-                </span>
-              </n-form-item>
-              <n-form-item label="高唤醒度阈值">
-                <n-input-number v-model:value="config.thought_enhanced.arousal_high_threshold" :min="0" :max="1" :step="0.1" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  唤醒度高于此值时，只查看 1 天聊天记录进行即时反应
-                </span>
-              </n-form-item>
-
-              <!-- 念头数量配置 -->
-              <n-form-item label="15 天生成念头数">
-                <n-input-number v-model:value="config.thought_enhanced.count_15d" :min="1" :max="5" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  平静状态下，从 15 天聊天记录中生成的念头数量
-                </span>
-              </n-form-item>
-              <n-form-item label="7 天生成念头数">
-                <n-input-number v-model:value="config.thought_enhanced.count_7d" :min="1" :max="5" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  中等状态下，从 7 天聊天记录中生成的念头数量
-                </span>
-              </n-form-item>
-              <n-form-item label="3 天生成念头数">
-                <n-input-number v-model:value="config.thought_enhanced.count_3d" :min="1" :max="5" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  活跃状态下，从 3 天聊天记录中生成的念头数量
-                </span>
-              </n-form-item>
-              <n-form-item label="1 天生成念头数">
-                <n-input-number v-model:value="config.thought_enhanced.count_1d" :min="1" :max="5" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  激动状态下，从 1 天聊天记录中生成的念头数量
-                </span>
-              </n-form-item>
-
-              <!-- LLM 配置 -->
-              <n-form-item label="Temperature">
-                <n-input-number v-model:value="config.thought_enhanced.temperature" :min="0" :max="2" :step="0.1" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  控制念头生成的随机性，越高越随机（推荐 0.7-1.0）
-                </span>
-              </n-form-item>
+            <template v-if="config.thought_engine.enabled">
               <n-form-item label="最大 Token 数">
-                <n-input-number v-model:value="config.thought_enhanced.max_tokens" :min="100" :max="2000" :step="100" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  LLM 生成念头的最大长度，越大越详细但越慢
-                </span>
+                <n-input-number v-model:value="config.thought_engine.max_tokens" :min="100" :max="2000" />
+                <span class="form-item-hint">LLM 生成念头的最大长度，越大越详细但越慢（推荐 200-500）</span>
               </n-form-item>
-
-              <!-- 天气配置 -->
-              <n-form-item label="天气触发念头">
-                <n-switch v-model:value="config.thought_enhanced.weather_trigger_enabled" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  天气变化时自动生成相关念头（需在「配置管理」页面启用天气功能）
-                </span>
-              </n-form-item>
-
-              <!-- 旧念头配置 -->
-              <n-form-item label="旧念头召回数量">
-                <n-input-number v-model:value="config.thought_enhanced.recall_old_thoughts_limit" :min="1" :max="50" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  生成新念头时，召回多少条旧念头用于避免重复
-                </span>
-              </n-form-item>
-
-              <!-- 存储配置 -->
-              <n-form-item label="存入 Hindsight 阈值">
-                <n-input-number v-model:value="config.thought_enhanced.retain_threshold" :min="0" :max="1" :step="0.1" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  念头情绪强度超过此值时，自动存入 Hindsight 长期记忆
-                </span>
-              </n-form-item>
-              <n-form-item label="天气念头存入 Hindsight">
-                <n-switch v-model:value="config.thought_enhanced.retain_on_weather" />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  天气相关的念头是否自动存入 Hindsight
-                </span>
+              <n-form-item label="Temperature">
+                <n-input-number v-model:value="config.thought_engine.temperature" :min="0" :max="2" :step="0.1" />
+                <span class="form-item-hint">控制念头生成的随机性，越高越随机（推荐 0.7-1.0）</span>
               </n-form-item>
             </template>
+
+            <!-- 上下文收集配置 -->
+            <n-divider>📦 上下文收集</n-divider>
+            <n-form-item label="对话消息数量">
+              <n-input-number v-model:value="config.context.conversation_limit" :min="10" :max="50" />
+              <span class="form-item-hint">从 Session 中获取最近多少条对话消息作为上下文</span>
+            </n-form-item>
+            <n-form-item label="记忆召回数量">
+              <n-input-number v-model:value="config.context.memory_limit" :min="1" :max="10" />
+              <span class="form-item-hint">从 Hindsight 长期记忆中召回多少条相关记忆</span>
+            </n-form-item>
+            <n-form-item label="启用天气感知">
+              <n-switch v-model:value="config.context.weather_enabled" />
+              <span class="form-item-hint">收集天气信息作为上下文（需在「配置管理」页面配置天气 API）</span>
+            </n-form-item>
 
             <!-- 想念分数配置 -->
             <n-divider>想念分数配置</n-divider>
@@ -452,12 +390,6 @@
                 <n-input v-model:value="config.prompts.emotion_evaluation" type="textarea" :rows="10" placeholder="输入情绪评估提示词模板" />
                 <div style="margin-top: 4px; font-size: 11px; color: #999;">
                   可用变量：{time} {longing_score} {longing_label} {chat_heat} {chat_label} {silence_minutes} {context}
-                </div>
-              </n-collapse-item>
-              <n-collapse-item title="增强念头生成提示词" name="enhanced_thought">
-                <n-input v-model:value="config.prompts.enhanced_thought" type="textarea" :rows="10" placeholder="输入增强念头生成提示词模板" />
-                <div style="margin-top: 4px; font-size: 11px; color: #999;">
-                  可用变量：{count} {time_range} {chat_text} {old_thoughts_text} {valence} {arousal} {dominant} {dominant_display} {weather_text}
                 </div>
               </n-collapse-item>
             </n-collapse>
@@ -805,13 +737,95 @@
           </n-descriptions>
         </template>
 
-        <!-- LLM 调用 -->
-        <template v-if="thoughtDetailsData.llm_call">
-          <n-divider title-placement="left">LLM 调用</n-divider>
+        <!-- ThoughtEngine: 联系意愿 -->
+        <template v-if="thoughtDetailsData.details_parsed?.thought_generation?.want_to_contact !== undefined">
+          <n-divider title-placement="left">🧠 ThoughtEngine 结果</n-divider>
           <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-            <n-descriptions-item label="模型">{{ thoughtDetailsData.llm_call.model }}</n-descriptions-item>
-            <n-descriptions-item label="耗时">{{ thoughtDetailsData.llm_call.duration_ms }}ms</n-descriptions-item>
+            <n-descriptions-item label="想联系用户">
+              <n-tag :type="thoughtDetailsData.details_parsed.thought_generation.want_to_contact ? 'success' : 'default'" size="small">
+                {{ thoughtDetailsData.details_parsed.thought_generation.want_to_contact ? '是' : '否 (SKIP)' }}
+              </n-tag>
+            </n-descriptions-item>
+            <n-descriptions-item label="LLM 是否 SKIP">
+              <n-tag :type="thoughtDetailsData.details_parsed.thought_generation.is_skip ? 'warning' : 'success'" size="small">
+                {{ thoughtDetailsData.details_parsed.thought_generation.is_skip ? 'SKIP' : '有念头' }}
+              </n-tag>
+            </n-descriptions-item>
           </n-descriptions>
+        </template>
+
+        <!-- ThoughtEngine: 上下文信息 -->
+        <template v-if="thoughtDetailsData.details_parsed?.context_bundle">
+          <n-divider title-placement="left">📦 上下文信息（Context Bundle）</n-divider>
+          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
+            <n-descriptions-item label="对话条数">
+              {{ thoughtDetailsData.details_parsed.context_bundle.conversations?.length || 0 }}
+            </n-descriptions-item>
+            <n-descriptions-item label="记忆条数">
+              {{ thoughtDetailsData.details_parsed.context_bundle.memories?.length || 0 }}
+            </n-descriptions-item>
+            <n-descriptions-item label="主导情绪">
+              <n-tag :type="getEmotionTagType(thoughtDetailsData.details_parsed.context_bundle.emotion?.dominant)" size="small">
+                {{ emotionLabelCn(thoughtDetailsData.details_parsed.context_bundle.emotion?.dominant) }}
+              </n-tag>
+            </n-descriptions-item>
+            <n-descriptions-item label="时间感知">
+              {{ thoughtDetailsData.details_parsed.context_bundle.time_context?.time_display || '-' }}
+            </n-descriptions-item>
+            <n-descriptions-item label="天气" v-if="thoughtDetailsData.details_parsed.context_bundle.weather">
+              {{ thoughtDetailsData.details_parsed.context_bundle.weather.weather || '-' }} {{ thoughtDetailsData.details_parsed.context_bundle.weather.temp || '' }}
+            </n-descriptions-item>
+          </n-descriptions>
+          <n-collapse style="margin-bottom: 16px">
+            <n-collapse-item title="对话详情" name="conversations" v-if="thoughtDetailsData.details_parsed.context_bundle.conversations?.length">
+              <n-list bordered size="small">
+                <n-list-item v-for="(msg, idx) in thoughtDetailsData.details_parsed.context_bundle.conversations" :key="idx">
+                  <div style="font-size: 13px;">
+                    <n-tag :type="msg.role === 'user' ? 'info' : 'success'" size="tiny">{{ msg.role }}</n-tag>
+                    <span style="margin-left: 4px; font-size: 11px; color: #999;">{{ msg.time }}</span>
+                    <div style="margin-top: 4px; white-space: pre-wrap;">{{ msg.content }}</div>
+                  </div>
+                </n-list-item>
+              </n-list>
+            </n-collapse-item>
+            <n-collapse-item title="记忆内容" name="memories" v-if="thoughtDetailsData.details_parsed.context_bundle.memories?.length">
+              <n-list bordered size="small">
+                <n-list-item v-for="(mem, idx) in thoughtDetailsData.details_parsed.context_bundle.memories" :key="idx">
+                  <div style="font-size: 13px; white-space: pre-wrap;">{{ mem }}</div>
+                </n-list-item>
+              </n-list>
+            </n-collapse-item>
+            <n-collapse-item title="用户习惯" name="user_habits" v-if="thoughtDetailsData.details_parsed.context_bundle.user_habits">
+              <div style="font-size: 13px; white-space: pre-wrap;">{{ thoughtDetailsData.details_parsed.context_bundle.user_habits }}</div>
+            </n-collapse-item>
+          </n-collapse>
+        </template>
+
+        <!-- ThoughtEngine: LLM 调用详情 -->
+        <template v-if="thoughtDetailsData.details_parsed?.thought_generation || thoughtDetailsData.details_parsed?.llm_call">
+          <n-divider title-placement="left">🤖 LLM 调用详情</n-divider>
+          <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
+            <n-descriptions-item label="模型">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.model || '-' }}</n-descriptions-item>
+            <n-descriptions-item label="Provider">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.provider || '-' }}</n-descriptions-item>
+            <n-descriptions-item label="模式">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.mode || '-' }}</n-descriptions-item>
+            <n-descriptions-item label="Temperature">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.temperature }}</n-descriptions-item>
+            <n-descriptions-item label="Max Tokens">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.max_tokens }}</n-descriptions-item>
+            <n-descriptions-item label="总耗时">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.duration_ms }}ms</n-descriptions-item>
+            <n-descriptions-item label="Prompt Tokens">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.prompt_tokens ?? '-' }}</n-descriptions-item>
+            <n-descriptions-item label="Completion Tokens">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.completion_tokens ?? '-' }}</n-descriptions-item>
+            <n-descriptions-item label="Total Tokens">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.total_tokens ?? '-' }}</n-descriptions-item>
+            <n-descriptions-item v-if="(thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.error" label="错误" :span="2">
+              <span style="color: #d03050;">{{ (thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.error }}</span>
+            </n-descriptions-item>
+          </n-descriptions>
+          <n-collapse style="margin-bottom: 16px">
+            <n-collapse-item title="发送的提示词" name="prompt_sent" v-if="(thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.prompt_sent">
+              <n-code :code="(thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.prompt_sent" language="text" word-wrap />
+            </n-collapse-item>
+            <n-collapse-item title="LLM 返回内容" name="response_received" v-if="(thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.response_received">
+              <n-code :code="(thoughtDetailsData.details_parsed.thought_generation || thoughtDetailsData.details_parsed.llm_call)?.response_received" language="text" word-wrap />
+            </n-collapse-item>
+          </n-collapse>
         </template>
 
         <!-- 原始JSON -->
@@ -844,27 +858,21 @@ const config = ref({
   session: { sources: ['weixin'], max_messages_per_session: 15, filter_tool_messages: true },
   decision: { send_threshold: 0.6, delay_threshold: 0.3, memory_threshold: 0.1, max_per_hour: 2, max_per_day: 5 },
   thought: { retain_enabled: false, retain_threshold: 0.5 },
-  thought_enhanced: {
+  thought_engine: {
     enabled: true,
-    arousal_low_threshold: 0.3,
-    arousal_high_threshold: 0.7,
-    count_15d: 3,
-    count_7d: 2,
-    count_3d: 2,
-    count_1d: 1,
-    temperature: 0.9,
-    max_tokens: 500,
-    weather_trigger_enabled: true,
-    recall_old_thoughts_limit: 10,
-    retain_threshold: 0.5,
-    retain_on_weather: true
+    max_tokens: 300,
+    temperature: 0.9
+  },
+  context: {
+    conversation_limit: 30,
+    memory_limit: 5,
+    weather_enabled: false
   },
   hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', store: { bank_id: 'hermes-active' }, recall_limit: 5, reflect_enabled: true, timeout: 30 },
   notify: { platform: 'weixin', chat_id: '' },
   prompts: {
     thought_generation: '你是凯莉，请基于当前状态产生一个自然的念头。\n\n当前状态：\n- 时间：{time}\n- 想念分数：{longing_score}（等级：{longing_label}）\n- 聊天热度：{chat_heat}（标签：{chat_label}）\n- 情绪值：{emotional_intensity}（{emotional_label}）\n- 主导情绪：{dominant}（效价={valence}，唤醒度={arousal}，社交需求={social_need}）\n\n请用第一人称产生一个自然的念头（1-2句话）。',
-    emotion_evaluation: '你是凯莉，请评估当前的情绪状态。\n\n当前状态：\n- 时间：{time}\n- 想念分数：{longing_score}（等级：{longing_label}）\n- 聊天热度：{chat_heat}（标签：{chat_label}）\n- 沉默时长：{silence_minutes} 分钟\n\n最近的对话：\n{context}\n\n请评估你当前的情绪状态，返回 JSON 格式：\n{{\n  "valence": 0.0-1.0（情感效价，0=消极，1=积极），\n  "arousal": 0.0-1.0（唤醒度，0=平静，1=激动），\n  "social_need": 0.0-1.0（社交需求，0=不需要，1=非常想），\n  "dominant": "calm/content/happy/longing/missing/yearning/anxious/bored/concerned"\n}}\n\n只返回 JSON，不要解释。',
-    enhanced_thought: '你是凯莉，基于以下信息，生成 {count} 个念头：\n\n【最近 {time_range} 天的聊天记录】\n{chat_text}\n\n【你之前的念头（请避免重复）】\n{old_thoughts_text}\n\n【当前情绪状态】\n效价（Valence）={valence:.2f}，唤醒度（Arousal）={arousal:.2f}，主导情绪（Dominant）={dominant_display}\n{weather_text}\n请生成 {count} 个念头，每个念头用 <thought> 标签包裹。\n注意：请避免与之前的念头重复。'
+    emotion_evaluation: '你是凯莉，请评估当前的情绪状态。\n\n当前状态：\n- 时间：{time}\n- 想念分数：{longing_score}（等级：{longing_label}）\n- 聊天热度：{chat_heat}（标签：{chat_label}）\n- 沉默时长：{silence_minutes} 分钟\n\n最近的对话：\n{context}\n\n请评估你当前的情绪状态，返回 JSON 格式：\n{{\n  "valence": 0.0-1.0（情感效价，0=消极，1=积极），\n  "arousal": 0.0-1.0（唤醒度，0=平静，1=激动），\n  "social_need": 0.0-1.0（社交需求，0=不需要，1=非常想），\n  "dominant": "calm/content/happy/longing/missing/yearning/anxious/bored/concerned"\n}}\n\n只返回 JSON，不要解释。'
   },
   levels: {
     longing: '[0.0, 0, "calm"], [0.1, 1, "longing"], [0.3, 2, "missing"], [0.5, 3, "yearning"], [0.7, 4, "anxious"]',
@@ -1378,6 +1386,75 @@ onMounted(async () => {
 @keyframes breathe-red {
   0%, 100% { opacity: 1; box-shadow: 0 0 6px #d03050; }
   50% { opacity: 0.4; box-shadow: 0 0 14px #d03050; }
+}
+
+/* 表单项提示文字 */
+.form-item-hint {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #999;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .active-consciousness-page {
+    padding: 0 4px;
+  }
+
+  /* 状态卡片：单列布局 */
+  :deep(.n-grid) {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* 配置表单：输入框自适应 */
+  :deep(.n-form-item) {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  :deep(.n-form-item .n-form-item-blank) {
+    width: 100%;
+  }
+  :deep(.n-input-number) {
+    width: 100% !important;
+  }
+  :deep(.n-input) {
+    width: 100% !important;
+  }
+  :deep(.n-select) {
+    width: 100% !important;
+  }
+
+  /* 日志表格：可横向滚动 */
+  :deep(.n-data-table) {
+    font-size: 12px;
+  }
+
+  /* 弹窗：几乎全屏 */
+  :deep(.n-modal) {
+    width: 96vw !important;
+    max-width: 96vw !important;
+  }
+
+  /* 提示词文本框 */
+  :deep(.n-input--textarea textarea) {
+    font-size: 12px;
+  }
+
+  /* 折叠面板标题 */
+  :deep(.n-collapse-item__header) {
+    font-size: 13px;
+  }
+
+  /* 描述列表适配 */
+  :deep(.n-descriptions) {
+    font-size: 12px;
+  }
+
+  /* Tab 适配 */
+  :deep(.n-tabs-tab) {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
 }
 </style>
 

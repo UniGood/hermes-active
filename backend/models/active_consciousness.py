@@ -73,37 +73,6 @@ class ActiveConsciousnessThoughtConfig(BaseModel):
     retain_threshold: float = 0.5       # 存储阈值
 
 
-class ActiveConsciousnessThoughtEnhancedConfig(BaseModel):
-    """增强念头生成配置"""
-    enabled: bool = True
-
-    # 时间范围配置
-    arousal_low_threshold: float = 0.3
-    arousal_high_threshold: float = 0.7
-    count_15d: int = 3
-    count_7d: int = 2
-    count_3d: int = 2
-    count_1d: int = 1
-
-    # LLM 配置
-    temperature: float = 0.9
-    max_tokens: int = 500
-
-    # 天气配置
-    weather_enabled: bool = True
-    weather_cache_ttl: int = 3600
-    weather_trigger_enabled: bool = True
-    weather_type_change_trigger: bool = True
-    weather_temp_change_threshold: float = 5.0
-
-    # 旧念头召回配置
-    recall_old_thoughts_limit: int = 10
-
-    # 存储配置
-    retain_threshold: float = 0.5
-    retain_on_weather: bool = True
-
-
 class ActiveConsciousnessWeatherConfig(BaseModel):
     """天气配置（共享）"""
     enabled: bool = False
@@ -133,7 +102,6 @@ class ActiveConsciousnessConfig(BaseModel):
     time_window: ActiveConsciousnessTimeConfig = ActiveConsciousnessTimeConfig()
     delay: ActiveConsciousnessDelayConfig = ActiveConsciousnessDelayConfig()
     thought: ActiveConsciousnessThoughtConfig = ActiveConsciousnessThoughtConfig()
-    thought_enhanced: ActiveConsciousnessThoughtEnhancedConfig = ActiveConsciousnessThoughtEnhancedConfig()
 
 
 # ============ 状态相关 ============
@@ -305,8 +273,15 @@ class EmotionState:
         )
 
     def intensity(self) -> float:
-        """计算综合情绪强度"""
-        return (self.valence + self.arousal + self.social_need) / 3
+        """
+        计算综合情绪强度（加权公式）
+
+        权重分配：
+        - social_need 占 50%（社交需求是主动发送的核心驱动力）
+        - arousal 占 30%（唤醒度反映情绪激活程度）
+        - valence 占 20%（效价作为辅助参考）
+        """
+        return self.social_need * 0.5 + self.arousal * 0.3 + self.valence * 0.2
 
     def is_stale(self, minutes: float = 60) -> bool:
         """检查情绪状态是否过期"""
