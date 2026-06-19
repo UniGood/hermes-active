@@ -664,7 +664,7 @@
                 {{ getHeartbeatResultReason(detailsData) }}
               </div>
               <div style="font-size: 12px; color: #999;">
-                耗时 {{ detailsData.duration_ms || '-' }}ms
+                {{ detailsData.duration_ms ? `耗时 ${detailsData.duration_ms}ms` : '' }}
               </div>
             </div>
             <!-- 关键指标 -->
@@ -1399,7 +1399,7 @@ function getHeartbeatResultIcon(details) {
   if (details.decision?.blocked_by_protection) return '🛡️'
   if (details.decision?.type === 'skip') return '⏭️'
   if (details.decision?.type === 'memory') return '💾'
-  if (details.decision?.type === 'delay_send') return '⏰'
+  if (details.decision?.type === 'delay_send') return '💤'
   return '❓'
 }
 
@@ -1407,21 +1407,35 @@ function getHeartbeatResultIcon(details) {
 function getHeartbeatResultTitle(details) {
   if (details.message_sending?.success) return '已发送消息'
   if (details.decision?.blocked_by_protection) return '被保护机制拦截'
-  if (details.decision?.type === 'skip') return '跳过（分数不足）'
+  if (details.decision?.type === 'skip') return '跳过'
   if (details.decision?.type === 'memory') return '存为记忆'
-  if (details.decision?.type === 'delay_send') return '加入延迟队列'
+  if (details.decision?.type === 'delay_send') return '等待发送'
   return '未知状态'
 }
 
-// 心跳结果原因
+// 心跳结果原因（优化：更易懂）
 function getHeartbeatResultReason(details) {
   if (details.decision?.blocked_by_protection) {
     return details.decision.protection_reason || '保护机制拦截'
   }
-  if (details.decision?.reason) {
-    return details.decision.reason
+  
+  const type = details.decision?.type
+  const score = details.decision?.score || 0
+  
+  if (type === 'skip') {
+    return `分数 ${score.toFixed(2)} 未达到发送阈值`
   }
-  return '-'
+  if (type === 'delay_send') {
+    return `分数 ${score.toFixed(2)} 达到延迟阈值，等待下次心跳评估`
+  }
+  if (type === 'memory') {
+    return `分数 ${score.toFixed(2)} 存为记忆，不发送`
+  }
+  if (type === 'auto_send') {
+    return `分数 ${score.toFixed(2)} 达到发送阈值`
+  }
+  
+  return details.decision?.reason || '-'
 }
 
 // 决策时间线类型
@@ -1443,7 +1457,7 @@ function getDecisionTimelineIcon(decision) {
   if (decision.blocked_by_protection) return '🛡️'
   switch (decision.type) {
     case 'auto_send': return '✅'
-    case 'delay_send': return '⏰'
+    case 'delay_send': return '💤'
     case 'memory': return '💾'
     case 'skip': return '⏭️'
     default: return '❓'
