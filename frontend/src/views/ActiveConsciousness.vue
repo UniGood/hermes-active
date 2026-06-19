@@ -433,6 +433,38 @@
         <!-- 运行逻辑说明 -->
         <n-card title="主动意识运行逻辑" size="small" style="margin-bottom: 16px">
           <n-collapse default-expanded-names="">
+            <!-- 0. 术语总览 -->
+            <n-collapse-item title="0. 术语总览" name="overview">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>VA 模型</strong>（情绪三维度）：</p>
+                <ul>
+                  <li><strong>Valence（效价）</strong>：情绪的正负性，0=消极，1=积极，0.5=中性</li>
+                  <li><strong>Arousal（唤醒度）</strong>：情绪的激活程度，0=平静，1=激动</li>
+                  <li><strong>Social Need（社交需求）</strong>：想要社交/聊天的程度，0=不需要，1=非常想</li>
+                </ul>
+                <p><strong>主导情绪</strong>（dominant）：根据 VA 值自动计算的情绪标签</p>
+                <ul>
+                  <li>calm（平静）、happy（开心）、content（满足）、bored（无聊）</li>
+                  <li>concerned（担忧）、longing（思念）、missing（想念）</li>
+                  <li>yearning（渴望）、anxious（焦虑）</li>
+                </ul>
+                <p><strong>核心指标</strong>：</p>
+                <ul>
+                  <li><strong>想念分数</strong>（longing_score）：基于沉默时长和回复频率，0-1</li>
+                  <li><strong>聊天热度</strong>（chat_heat）：近1小时用户消息数，消息密度</li>
+                  <li><strong>情绪强度</strong>（intensity）：social_need×0.5 + arousal×0.3 + valence×0.2</li>
+                  <li><strong>决策分数</strong>（score）：intensity × time_fitness × silence_factor × frequency_limit</li>
+                </ul>
+                <p><strong>动作类型</strong>：</p>
+                <ul>
+                  <li><strong>auto_send</strong>：立即发送（score >= 0.35）</li>
+                  <li><strong>delay_send</strong>：延迟发送（score >= 0.15）</li>
+                  <li><strong>memory</strong>：存为记忆（score >= 0.05）</li>
+                  <li><strong>skip</strong>：跳过（score < 0.05）</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+
             <!-- 1. 心跳触发 -->
             <n-collapse-item title="1. 心跳触发" name="heartbeat">
               <div style="font-size: 13px; line-height: 1.8;">
@@ -632,14 +664,50 @@
               <div style="font-size: 13px; line-height: 1.8;">
                 <p><strong>公式</strong>：longing_score = base_score × decay_factor</p>
                 <p><strong>基础分</strong>：min(沉默分钟 / gap_minutes, 1.0)</p>
+                <ul>
+                  <li>gap_minutes = 60（配置项，达到最大值的分钟数）</li>
+                  <li>沉默 60 分钟 → base_score = 1.0</li>
+                </ul>
                 <p><strong>衰减因子</strong>：max(0.1, 1.0 - 回复数 × 0.1)</p>
+                <ul>
+                  <li>用户每回复 1 条消息，衰减 10%</li>
+                  <li>最少保留 10%（避免完全归零）</li>
+                </ul>
+                <p><strong>想念等级</strong>：</p>
+                <ul>
+                  <li>0.0-0.1：calm（平静）</li>
+                  <li>0.1-0.3：longing（思念）</li>
+                  <li>0.3-0.5：missing（想念）</li>
+                  <li>0.5-0.7：yearning（渴望）</li>
+                  <li>0.7-1.0：anxious（焦虑）</li>
+                </ul>
                 <p><strong>示例</strong>：</p>
                 <ul>
-                  <li>沉默 3 小时，0 条回复：0.6 × 1.0 = 0.60</li>
-                  <li>沉默 1 小时，2 条回复：0.2 × 0.8 = 0.16</li>
-                  <li>沉默 30 分钟，5 条回复：0.1 × 0.5 = 0.05</li>
+                  <li>沉默 3 小时，0 条回复：min(180/60,1) × max(0.1, 1-0) = 1.0 × 1.0 = 1.00</li>
+                  <li>沉默 1 小时，2 条回复：min(60/60,1) × max(0.1, 1-0.2) = 1.0 × 0.8 = 0.80</li>
+                  <li>沉默 30 分钟，5 条回复：min(30/60,1) × max(0.1, 1-0.5) = 0.5 × 0.5 = 0.25</li>
                 </ul>
-                <p><strong>配置</strong>：gap_minutes = 60（默认）</p>
+              </div>
+            </n-collapse-item>
+
+            <!-- 10. 聊天热度计算 -->
+            <n-collapse-item title="10. 聊天热度计算" name="heat">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>公式</strong>：chat_heat = 近1小时用户消息数 / 1小时</p>
+                <p><strong>含义</strong>：用户消息密度，值越高说明聊天越活跃</p>
+                <p><strong>热度等级</strong>：</p>
+                <ul>
+                  <li>0.0-0.5：cold（冷清）</li>
+                  <li>0.5-1.0：warm（温暖）</li>
+                  <li>1.0-3.0：hot（热烈）</li>
+                  <li>> 3.0：fire（火热）</li>
+                </ul>
+                <p><strong>示例</strong>：</p>
+                <ul>
+                  <li>近1小时 0 条消息：heat = 0.0（cold）</li>
+                  <li>近1小时 1 条消息：heat = 1.0（hot）</li>
+                  <li>近1小时 5 条消息：heat = 5.0（fire）</li>
+                </ul>
               </div>
             </n-collapse-item>
           </n-collapse>
