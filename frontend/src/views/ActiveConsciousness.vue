@@ -464,7 +464,7 @@
         </n-card>
 
         <!-- 运行逻辑说明 -->
-        <n-card title="主动意识运行逻辑" size="small" style="margin-bottom: 16px">
+        <n-card title="主动意识运行逻辑" size="small" class="run-logic-card" style="margin-bottom: 16px">
           <n-collapse default-expanded-names="">
             <!-- 0. 术语总览 -->
             <n-collapse-item title="0. 术语总览" name="overview">
@@ -1972,6 +1972,22 @@ onMounted(async () => {
 @keyframes breathe-red {
   0%, 100% { opacity: 1; box-shadow: 0 0 6px #d03050; }
   50% { opacity: 0.4; box-shadow: 0 0 14px #d03050; }
+}
+
+/* 运行逻辑卡片样式 */
+.run-logic-card ul {
+  margin: 4px 0 8px 0;
+  padding-left: 20px;
+}
+.run-logic-card li {
+  margin-bottom: 2px;
+  line-height: 1.6;
+}
+.run-logic-card p {
+  margin: 4px 0;
+}
+.run-logic-card .run-logic-section {
+  margin-bottom: 12px;
 }
 
 /* 表单项提示文字 */
