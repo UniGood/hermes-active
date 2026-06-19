@@ -650,17 +650,17 @@
         
         <!-- ===== 结果总览（最醒目） ===== -->
         <n-card size="small" style="margin-bottom: 16px;">
-          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             <!-- 结果图标 -->
-            <div style="font-size: 48px;">
+            <div style="font-size: 28px;">
               {{ getHeartbeatResultIcon(detailsData) }}
             </div>
             <!-- 结果信息 -->
             <div style="flex: 1; min-width: 200px;">
-              <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">
+              <div style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">
                 {{ getHeartbeatResultTitle(detailsData) }}
               </div>
-              <div style="font-size: 14px; color: #666; margin-bottom: 4px;">
+              <div style="font-size: 13px; color: #666; margin-bottom: 2px;">
                 {{ getHeartbeatResultReason(detailsData) }}
               </div>
               <div style="font-size: 12px; color: #999;">
@@ -670,19 +670,19 @@
             <!-- 关键指标 -->
             <div style="display: flex; gap: 16px;">
               <div style="text-align: center;">
-                <div style="font-size: 24px; font-weight: bold; color: #18a058;">
+                <div style="font-size: 18px; font-weight: bold; color: #18a058;">
                   {{ detailsData.decision?.score?.toFixed(2) || '0.00' }}
                 </div>
                 <div style="font-size: 11px; color: #999;">决策分数</div>
               </div>
               <div style="text-align: center;">
-                <div style="font-size: 24px; font-weight: bold; color: #2080f0;">
+                <div style="font-size: 18px; font-weight: bold; color: #2080f0;">
                   {{ detailsData.chat_heat?.toFixed(1) || '0.0' }}
                 </div>
                 <div style="font-size: 11px; color: #999;">聊天热度</div>
               </div>
               <div style="text-align: center;">
-                <div style="font-size: 24px; font-weight: bold; color: #f0a020;">
+                <div style="font-size: 18px; font-weight: bold; color: #f0a020;">
                   {{ detailsData.emotional_intensity?.toFixed(2) || '0.00' }}
                 </div>
                 <div style="font-size: 11px; color: #999;">情绪强度</div>
@@ -802,6 +802,8 @@
             </n-timeline>
           </n-collapse-item>
         </n-collapse>
+
+        <n-divider style="margin: 16px 0;" />
 
         <!-- ===== 详细信息（可折叠） ===== -->
         <n-collapse default-expanded-names="">
