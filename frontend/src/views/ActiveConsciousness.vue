@@ -691,111 +691,120 @@
           </div>
         </n-card>
 
-        <!-- ===== 执行流程时间线 ===== -->
-        <n-card title="⏱️ 执行流程" size="small" style="margin-bottom: 16px;">
-          <n-timeline>
-            <!-- 1. 心跳触发 -->
-            <n-timeline-item type="success" title="心跳触发">
-              <template #icon>
-                <n-icon size="16"><CheckmarkCircle /></n-icon>
-              </template>
-              <div style="font-size: 12px; color: #666;">
-                {{ detailsData.started_at || '-' }}
-              </div>
-            </n-timeline-item>
 
-            <!-- 2. 情绪演化 -->
-            <n-timeline-item v-if="detailsData.emotion_before" type="success" title="情绪演化">
-              <template #icon>
-                <n-icon size="16"><CheckmarkCircle /></n-icon>
-              </template>
-              <div style="font-size: 12px; color: #666;">
-                距上次 {{ detailsData.minutes_since_update?.toFixed(0) || '0' }} 分钟
-                <n-tag size="tiny" :type="getEmotionTagType(detailsData.emotion_merged?.dominant)">
-                  {{ emotionLabelCn(detailsData.emotion_merged?.dominant) }}
-                </n-tag>
-              </div>
-            </n-timeline-item>
-
-            <!-- 3. 上下文收集 -->
-            <n-timeline-item v-if="detailsData.session_context !== undefined" type="success" title="上下文收集">
-              <template #icon>
-                <n-icon size="16"><CheckmarkCircle /></n-icon>
-              </template>
-              <div style="font-size: 12px; color: #666;">
-                对话 {{ detailsData.session_context ? '✓' : '✗' }}
-                | 记忆 {{ detailsData.recall_results?.length || 0 }} 条
-                | Hindsight {{ detailsData.hindsight_context ? '✓' : '✗' }}
-              </div>
-            </n-timeline-item>
-
-            <!-- 4. 决策计算 -->
-            <n-timeline-item v-if="detailsData.decision" :type="getDecisionTimelineType(detailsData.decision)" title="决策计算">
-              <template #icon>
-                <n-icon size="16">{{ getDecisionTimelineIcon(detailsData.decision) }}</n-icon>
-              </template>
-              <div style="font-size: 12px; color: #666;">
-                分数 {{ detailsData.decision.score?.toFixed(3) || '0.000' }}
-                → <n-tag size="tiny" :type="getDecisionTagType(detailsData.decision.type)">
-                  {{ getDecisionLabelCn(detailsData.decision.type) }}
-                </n-tag>
-              </div>
-            </n-timeline-item>
-
-            <!-- 5. 发送保护 -->
-            <n-timeline-item 
-              v-if="detailsData.decision?.blocked_by_protection" 
-              type="error" 
-              title="发送保护拦截"
-            >
-              <template #icon>
-                <n-icon size="16"><CloseCircle /></n-icon>
-              </template>
-              <div style="font-size: 12px; color: #d03050;">
-                {{ detailsData.decision.protection_reason || '保护机制拦截' }}
-              </div>
-            </n-timeline-item>
-
-            <!-- 6. 念头生成 -->
-            <n-timeline-item 
-              v-if="detailsData.thought_generation" 
-              :type="detailsData.thought_generation.success ? 'success' : 'error'" 
-              title="念头生成"
-            >
-              <template #icon>
-                <n-icon size="16">{{ detailsData.thought_generation.success ? CheckmarkCircle : CloseCircle }}</n-icon>
-              </template>
-              <div style="font-size: 12px; color: #666;">
-                <template v-if="detailsData.thought_generation.success">
-                  {{ detailsData.thought_generation.thought?.substring(0, 50) }}...
+        <!-- ===== 执行流程（可折叠） ===== -->
+        <n-collapse default-expanded-names="">
+          <n-collapse-item title="⏱️ 执行流程" name="timeline">
+            <n-timeline>
+              <!-- 1. 心跳触发 -->
+              <n-timeline-item type="success" title="心跳触发">
+                <template #icon>
+                  <n-icon size="16"><CheckmarkCircle /></n-icon>
                 </template>
-                <template v-else>
-                  {{ detailsData.thought_generation.error || '生成失败' }}
-                </template>
-              </div>
-            </n-timeline-item>
+                <div style="font-size: 12px; color: #666;">
+                  {{ detailsData.started_at || '-' }}
+                </div>
+              </n-timeline-item>
 
-            <!-- 7. 消息发送 -->
-            <n-timeline-item 
-              v-if="detailsData.message_sending" 
-              :type="detailsData.message_sending.success ? 'success' : 'error'" 
-              title="消息发送"
-            >
-              <template #icon>
-                <n-icon size="16">{{ detailsData.message_sending.success ? CheckmarkCircle : CloseCircle }}</n-icon>
-              </template>
-              <div style="font-size: 12px; color: #666;">
-                {{ detailsData.message_sending.success ? '发送成功' : '发送失败' }}
-                <template v-if="detailsData.message_sending.thought">
-                  : {{ detailsData.message_sending.thought.substring(0, 30) }}...
+              <!-- 2. 情绪演化 -->
+              <n-timeline-item v-if="detailsData.emotion_before" type="success" title="情绪演化">
+                <template #icon>
+                  <n-icon size="16"><CheckmarkCircle /></n-icon>
                 </template>
-              </div>
-            </n-timeline-item>
-          </n-timeline>
-        </n-card>
+                <div style="font-size: 12px; color: #666;">
+                  距上次 {{ detailsData.minutes_since_update?.toFixed(0) || '0' }} 分钟
+                  <n-tag size="tiny" :type="getEmotionTagType(detailsData.emotion_merged?.dominant)">
+                    {{ emotionLabelCn(detailsData.emotion_merged?.dominant) }}
+                  </n-tag>
+                </div>
+              </n-timeline-item>
+
+              <!-- 3. 上下文收集 -->
+              <n-timeline-item v-if="detailsData.session_context !== undefined" type="success" title="上下文收集">
+                <template #icon>
+                  <n-icon size="16"><CheckmarkCircle /></n-icon>
+                </template>
+                <div style="font-size: 12px; color: #666;">
+                  对话 {{ detailsData.session_context ? '✓' : '✗' }}
+                  | 记忆 {{ detailsData.recall_results?.length || 0 }} 条
+                  | Hindsight {{ detailsData.hindsight_context ? '✓' : '✗' }}
+                </div>
+              </n-timeline-item>
+
+              <!-- 4. 决策计算 -->
+              <n-timeline-item v-if="detailsData.decision" :type="getDecisionTimelineType(detailsData.decision)" title="决策计算">
+                <template #icon>
+                  <n-icon size="16">{{ getDecisionTimelineIcon(detailsData.decision) }}</n-icon>
+                </template>
+                <div style="font-size: 12px; color: #666;">
+                  分数 {{ detailsData.decision.score?.toFixed(3) || '0.000' }}
+                  → <n-tag size="tiny" :type="getDecisionTagType(detailsData.decision.type)">
+                    {{ getDecisionLabelCn(detailsData.decision.type) }}
+                  </n-tag>
+                </div>
+              </n-timeline-item>
+
+              <!-- 5. 发送保护 -->
+              <n-timeline-item 
+                v-if="detailsData.decision?.blocked_by_protection" 
+                type="error" 
+                title="发送保护拦截"
+              >
+                <template #icon>
+                  <n-icon size="16"><CloseCircle /></n-icon>
+                </template>
+                <div style="font-size: 12px; color: #d03050;">
+                  {{ detailsData.decision.protection_reason || '保护机制拦截' }}
+                </div>
+              </n-timeline-item>
+
+              <!-- 6. 念头生成 -->
+              <n-timeline-item 
+                v-if="detailsData.thought_generation" 
+                :type="detailsData.thought_generation.success ? 'success' : 'error'" 
+                title="念头生成"
+              >
+                <template #icon>
+                  <n-icon size="16">
+                    <CheckmarkCircle v-if="detailsData.thought_generation.success" />
+                    <CloseCircle v-else />
+                  </n-icon>
+                </template>
+                <div style="font-size: 12px; color: #666;">
+                  <template v-if="detailsData.thought_generation.success">
+                    {{ detailsData.thought_generation.thought?.substring(0, 50) }}...
+                  </template>
+                  <template v-else>
+                    {{ detailsData.thought_generation.error || '生成失败' }}
+                  </template>
+                </div>
+              </n-timeline-item>
+
+              <!-- 7. 消息发送 -->
+              <n-timeline-item 
+                v-if="detailsData.message_sending" 
+                :type="detailsData.message_sending.success ? 'success' : 'error'" 
+                title="消息发送"
+              >
+                <template #icon>
+                  <n-icon size="16">
+                    <CheckmarkCircle v-if="detailsData.message_sending.success" />
+                    <CloseCircle v-else />
+                  </n-icon>
+                </template>
+                <div style="font-size: 12px; color: #666;">
+                  {{ detailsData.message_sending.success ? '发送成功' : '发送失败' }}
+                  <template v-if="detailsData.message_sending.thought">
+                    : {{ detailsData.message_sending.thought.substring(0, 30) }}...
+                  </template>
+                </div>
+              </n-timeline-item>
+            </n-timeline>
+          </n-collapse-item>
+        </n-collapse>
 
         <!-- ===== 详细信息（可折叠） ===== -->
-        <n-collapse>
+        <n-collapse default-expanded-names="">
           <!-- 决策计算详情 -->
           <n-collapse-item title="📊 决策计算详情" name="decision">
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
@@ -1454,12 +1463,6 @@ function getHindsightTagType(tag) {
 
 // 表格列定义
 const thoughtColumns = [
-  { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
-  { title: '类型', key: 'type', width: 120, render: (row) => thoughtTypeLabelCn(row.type) },
-  { title: '内容', key: 'content', ellipsis: { tooltip: true } },
-  { title: '强度', key: 'intensity', width: 80, render: (row) => row.intensity != null ? Number(row.intensity).toFixed(2) : '' },
-  { title: '决策', key: 'decision', width: 130, render: (row) => getDecisionLabelCn(row.decision) },
-  { title: '来源', key: 'recall_source', width: 100 },
   {
     title: '操作',
     key: 'actions',
@@ -1471,7 +1474,13 @@ const thoughtColumns = [
         { default: () => '详情' }
       )
     }
-  }
+  },
+  { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
+  { title: '类型', key: 'type', width: 120, render: (row) => thoughtTypeLabelCn(row.type) },
+  { title: '内容', key: 'content', ellipsis: { tooltip: true } },
+  { title: '强度', key: 'intensity', width: 80, render: (row) => row.intensity != null ? Number(row.intensity).toFixed(2) : '' },
+  { title: '决策', key: 'decision', width: 130, render: (row) => getDecisionLabelCn(row.decision) },
+  { title: '来源', key: 'recall_source', width: 100 },
 ]
 const formatTime = (isoStr) => {
   if (!isoStr) return ''
@@ -1486,11 +1495,6 @@ const formatTime = (isoStr) => {
 }
 
 const heartbeatColumns = [
-  { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
-  { title: '耗时(ms)', key: 'duration_ms', width: 80 },
-  { title: '召回数量', key: 'recall_count', width: 80, render(row) { const v = row.recall_count || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'info', onClick: () => showRecallDetail(row) }, { default: () => v }) : '0' } },
-  { title: '生成念头', key: 'thoughts_generated', width: 80, render(row) { const v = row.thoughts_generated || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'success', onClick: () => showThoughtContent(row) }, { default: () => v }) : '0' } },
-  { title: '发送消息', key: 'message_sent', width: 80, render(row) { const v = row.message_sent; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'warning', onClick: () => showThoughtContent(row) }, { default: () => '是' }) : '否' } },
   {
     title: '操作',
     key: 'actions',
@@ -1502,7 +1506,12 @@ const heartbeatColumns = [
         { default: () => '详情' }
       )
     }
-  }
+  },
+  { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
+  { title: '耗时(ms)', key: 'duration_ms', width: 80 },
+  { title: '召回数量', key: 'recall_count', width: 80, render(row) { const v = row.recall_count || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'info', onClick: () => showRecallDetail(row) }, { default: () => v }) : '0' } },
+  { title: '生成念头', key: 'thoughts_generated', width: 80, render(row) { const v = row.thoughts_generated || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'success', onClick: () => showThoughtContent(row) }, { default: () => v }) : '0' } },
+  { title: '发送消息', key: 'message_sent', width: 80, render(row) { const v = row.message_sent; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'warning', onClick: () => showThoughtContent(row) }, { default: () => '是' }) : '否' } },
 ]
 
 // 分页
