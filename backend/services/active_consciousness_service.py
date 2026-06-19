@@ -202,6 +202,18 @@ _DEFAULTS = {
     "active_consciousness.thought.retain_enabled": "false",
     "active_consciousness.thought.retain_threshold": "0.5",
 
+    # ThoughtEngine 配置
+    "active_consciousness.thought_engine.enabled": "true",
+    "active_consciousness.thought_engine.max_tokens": "300",
+    "active_consciousness.thought_engine.temperature": "0.9",
+
+    # 上下文收集配置
+    "active_consciousness.context.conversation_limit": "30",
+    "active_consciousness.context.conversation_max_chars": "500",
+    "active_consciousness.context.memory_limit": "5",
+    "active_consciousness.context.memory_enabled": "true",
+    "active_consciousness.context.weather_enabled": "false",
+
     # 念头生成提示词模板
     "active_consciousness.prompts.thought_generation": """你是凯莉，曹凡的 AI 朋友。你们认识很久了，你了解他的生活习惯、工作状态、兴趣爱好。
 
