@@ -456,11 +456,26 @@
                   <li>Arousal（唤醒度）：0-1，0=平静，1=激动</li>
                   <li>Social Need（社交需求）：0-1，0=不需要，1=非常想</li>
                 </ul>
-                <p><strong>演化规则</strong>：</p>
+                <p><strong>演化公式</strong>（基于时间间隔 hours = 分钟/60）：</p>
                 <ul>
-                  <li>每分钟衰减：arousal -= 0.02</li>
-                  <li>社交需求增长：social_need += 0.01/分钟</li>
-                  <li>效价回归中性：valence -= 0.1 × (valence - 0.5)</li>
+                  <li><strong>Arousal 自然衰减</strong>：new_arousal = max(0.1, arousal - 0.02 × hours)
+                    <ul><li>每小时衰减 0.02，最低 0.1</li></ul>
+                  </li>
+                  <li><strong>Social Need 自然增长</strong>：new_social_need = min(1.0, social_need + 0.01 × hours)
+                    <ul><li>每小时增长 0.01，最高 1.0</li></ul>
+                  </li>
+                  <li><strong>Valence 回归中性</strong>：new_valence = valence + (0.5 - valence) × 0.1 × hours
+                    <ul><li>每小时向 0.5 回归 10%，范围 0-1</li></ul>
+                  </li>
+                </ul>
+                <p><strong>主导情绪计算</strong>（calculate_dominant）：</p>
+                <ul>
+                  <li>social_need > 0.7 → yearning（valence>0.5）或 anxious</li>
+                  <li>social_need > 0.5 → longing（valence>0.5）或 missing</li>
+                  <li>arousal < 0.3 → calm</li>
+                  <li>valence > 0.7 → happy（arousal>0.6）或 content</li>
+                  <li>valence < 0.3 → bored（arousal<0.4）或 concerned</li>
+                  <li>其他 → calm</li>
                 </ul>
               </div>
             </n-collapse-item>
@@ -469,9 +484,22 @@
             <n-collapse-item title="3. LLM 情绪评估" name="llm_emotion">
               <div style="font-size: 13px; line-height: 1.8;">
                 <p><strong>模型</strong>：hunyuan-lite</p>
-                <p><strong>输入</strong>：最近对话 + 当前情绪状态</p>
-                <p><strong>输出</strong>：新的 VA 值 + 主导情绪</p>
-                <p><strong>合并规则</strong>：演化值 × 0.4 + LLM值 × 0.6</p>
+                <p><strong>输入</strong>：最近对话 + 当前情绪状态 + 沉默时长</p>
+                <p><strong>输出</strong>：JSON {valence, arousal, social_need, dominant}</p>
+                <p><strong>置信度计算</strong>（calculate_llm_confidence）：</p>
+                <ul>
+                  <li>基础置信度：0.5</li>
+                  <li>值在合理范围（0-1）：+0.2</li>
+                  <li>与演化值差异 < 0.3：+0.3</li>
+                  <li>与演化值差异 > 0.5：-0.2</li>
+                </ul>
+                <p><strong>动态权重合并</strong>（merge_emotion_dynamic）：</p>
+                <ul>
+                  <li>置信度 < 0.3：演化 × 0.7 + LLM × 0.3（不信任 LLM）</li>
+                  <li>置信度 > 0.8：演化 × 0.3 + LLM × 0.7（信任 LLM）</li>
+                  <li>其他：演化 × 0.4 + LLM × 0.6（默认）</li>
+                </ul>
+                <p><strong>Fallback</strong>：LLM 返回全 0 时使用演化值</p>
               </div>
             </n-collapse-item>
 
@@ -528,43 +556,40 @@
             <n-collapse-item title="6. 决策矩阵评分" name="decision">
               <div style="font-size: 13px; line-height: 1.8;">
                 <p><strong>公式</strong>：score = intensity × time_fitness × silence_factor × frequency_limit</p>
-                <p><strong>参数说明</strong>：</p>
+                <p><strong>intensity（情绪强度）</strong>：</p>
                 <ul>
-                  <li><strong>intensity</strong>：情绪强度（加权公式）
-                    <ul>
-                      <li>social_need × 0.5 + arousal × 0.3 + valence × 0.2</li>
-                      <li>最低值 0.2（避免永远为零）</li>
-                    </ul>
-                  </li>
-                  <li><strong>time_fitness</strong>：时间适宜性
-                    <ul>
-                      <li>下班时间：1.0</li>
-                      <li>工作时间：0.5-0.8</li>
-                      <li>深夜：0.3</li>
-                    </ul>
-                  </li>
-                  <li><strong>silence_factor</strong>：沉默因子（基于沉默时长）
-                    <ul>
-                      <li>< 30分钟：0.6</li>
-                      <li>30-60分钟：0.75</li>
-                      <li>1-3小时：0.85</li>
-                      <li>3-6小时：0.95</li>
-                      <li>> 6小时：1.0</li>
-                    </ul>
-                  </li>
-                  <li><strong>frequency_limit</strong>：频率限制
-                    <ul>
-                      <li>未超频：1.0</li>
-                      <li>超频：0.0</li>
-                    </ul>
-                  </li>
+                  <li>公式：social_need × 0.5 + arousal × 0.3 + valence × 0.2</li>
+                  <li>最低值：0.2（避免永远为零）</li>
+                </ul>
+                <p><strong>time_fitness（时间适宜性）</strong>：</p>
+                <ul>
+                  <li>7:00-9:00（早安窗口）：1.0</li>
+                  <li>9:00-12:00（工作时间）：0.8</li>
+                  <li>12:00-14:00（午休时间）：0.9</li>
+                  <li>14:00-18:00（工作时间）：0.7</li>
+                  <li>18:00-22:00（下班时间）：1.0</li>
+                  <li>22:00-23:30（睡前时间）：0.8</li>
+                  <li>23:30-7:00（深夜）：0.3</li>
+                </ul>
+                <p><strong>silence_factor（沉默因子）</strong>：</p>
+                <ul>
+                  <li>< 30分钟：0.6</li>
+                  <li>30-60分钟：0.75</li>
+                  <li>1-3小时：0.85</li>
+                  <li>3-6小时：0.95</li>
+                  <li>> 6小时：1.0</li>
+                </ul>
+                <p><strong>frequency_limit（频率限制）</strong>：</p>
+                <ul>
+                  <li>未超频：1.0</li>
+                  <li>超频（每小时>2 或 每天>5）：0.0</li>
                 </ul>
                 <p><strong>决策阈值</strong>：</p>
                 <ul>
-                  <li>send_threshold：0.35（自动发送）</li>
-                  <li>delay_threshold：0.15（延迟发送）</li>
-                  <li>memory_threshold：0.05（存为记忆）</li>
-                  <li>低于 memory_threshold：skip（跳过）</li>
+                  <li>>= 0.35：auto_send（自动发送）</li>
+                  <li>>= 0.15：delay_send（延迟发送）</li>
+                  <li>>= 0.05：memory（存为记忆）</li>
+                  <li>< 0.05：skip（跳过）</li>
                 </ul>
               </div>
             </n-collapse-item>
