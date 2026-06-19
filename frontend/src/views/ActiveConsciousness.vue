@@ -465,6 +465,86 @@
           </n-space>
         </n-card>
 
+
+        <!-- 测试结果展示 -->
+        <n-card v-if="testResult" title="测试结果" size="small">
+          <template #header-extra>
+            <n-button text @click="testResult = null">清空</n-button>
+          </template>
+          
+          <!-- 状态标签 -->
+          <n-space style="margin-bottom: 12px;">
+            <n-tag :type="testResult.success ? 'success' : 'error'" size="small">
+              {{ testResult.success ? '成功' : '失败' }}
+            </n-tag>
+            <n-tag v-if="testResult.data?.want_to_contact !== undefined" 
+                   :type="testResult.data.want_to_contact ? 'success' : 'warning'" size="small">
+              {{ testResult.data.want_to_contact ? '想联系用户' : 'SKIP（不想联系）' }}
+            </n-tag>
+          </n-space>
+
+          <!-- ThoughtEngine 结果 -->
+          <template v-if="testResult.data?.thought">
+            <n-divider title-placement="left">💭 生成的念头</n-divider>
+            <n-card size="small" style="margin-bottom: 12px;">
+              <div style="font-size: 14px; white-space: pre-wrap;">{{ testResult.data.thought }}</div>
+            </n-card>
+          </template>
+
+          <!-- 上下文信息 -->
+          <template v-if="testResult.data?.context_bundle || testResult.data?.conversations_count !== undefined">
+            <n-divider title-placement="left">📦 上下文信息</n-divider>
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
+              <n-descriptions-item label="对话条数">
+                {{ testResult.data.context_bundle?.conversations_count || testResult.data.conversations_count || 0 }}
+              </n-descriptions-item>
+              <n-descriptions-item label="记忆条数">
+                {{ testResult.data.context_bundle?.memories_count || testResult.data.memories_count || 0 }}
+              </n-descriptions-item>
+              <n-descriptions-item label="主导情绪">
+                {{ testResult.data.context_bundle?.emotion?.dominant || testResult.data.emotion?.dominant || '-' }}
+              </n-descriptions-item>
+              <n-descriptions-item label="时间感知">
+                {{ testResult.data.context_bundle?.time_context?.time_display || testResult.data.time_context?.time_display || '-' }}
+              </n-descriptions-item>
+            </n-descriptions>
+          </template>
+
+          <!-- LLM 调用详情 -->
+          <template v-if="testResult.data?.llm_details">
+            <n-divider title-placement="left">🤖 LLM 调用详情</n-divider>
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
+              <n-descriptions-item label="模型">{{ testResult.data.llm_details.model || '-' }}</n-descriptions-item>
+              <n-descriptions-item label="耗时">{{ testResult.data.llm_details.duration_ms || '-' }}ms</n-descriptions-item>
+              <n-descriptions-item label="Prompt Tokens">{{ testResult.data.llm_details.prompt_tokens ?? '-' }}</n-descriptions-item>
+              <n-descriptions-item label="Completion Tokens">{{ testResult.data.llm_details.completion_tokens ?? '-' }}</n-descriptions-item>
+              <n-descriptions-item v-if="testResult.data.llm_details.error" label="错误" :span="2">
+                <span style="color: #d03050;">{{ testResult.data.llm_details.error }}</span>
+              </n-descriptions-item>
+            </n-descriptions>
+          </template>
+
+          <!-- 错误信息 -->
+          <template v-if="testResult.error">
+            <n-divider title-placement="left">❌ 错误信息</n-divider>
+            <n-alert type="error" style="margin-bottom: 12px;">
+              {{ testResult.error }}
+            </n-alert>
+            <n-collapse v-if="testResult.traceback">
+              <n-collapse-item title="堆栈跟踪" name="traceback">
+                <n-code :code="testResult.traceback" language="text" word-wrap />
+              </n-collapse-item>
+            </n-collapse>
+          </template>
+
+          <!-- 完整 JSON -->
+          <n-collapse>
+            <n-collapse-item title="完整 JSON 数据" name="json">
+              <n-code :code="formatJson(testResult)" language="json" word-wrap />
+            </n-collapse-item>
+          </n-collapse>
+        </n-card>
+
         <!-- 运行逻辑说明 -->
         <n-card title="主动意识运行逻辑" size="small" class="run-logic-card" style="margin-bottom: 16px">
           <n-collapse default-expanded-names="">
@@ -744,85 +824,6 @@
                   <li>近1小时 5 条消息：heat = 5.0（fire）</li>
                 </ul>
               </div>
-            </n-collapse-item>
-          </n-collapse>
-        </n-card>
-
-        <!-- 测试结果展示 -->
-        <n-card v-if="testResult" title="测试结果" size="small">
-          <template #header-extra>
-            <n-button text @click="testResult = null">清空</n-button>
-          </template>
-          
-          <!-- 状态标签 -->
-          <n-space style="margin-bottom: 12px;">
-            <n-tag :type="testResult.success ? 'success' : 'error'" size="small">
-              {{ testResult.success ? '成功' : '失败' }}
-            </n-tag>
-            <n-tag v-if="testResult.data?.want_to_contact !== undefined" 
-                   :type="testResult.data.want_to_contact ? 'success' : 'warning'" size="small">
-              {{ testResult.data.want_to_contact ? '想联系用户' : 'SKIP（不想联系）' }}
-            </n-tag>
-          </n-space>
-
-          <!-- ThoughtEngine 结果 -->
-          <template v-if="testResult.data?.thought">
-            <n-divider title-placement="left">💭 生成的念头</n-divider>
-            <n-card size="small" style="margin-bottom: 12px;">
-              <div style="font-size: 14px; white-space: pre-wrap;">{{ testResult.data.thought }}</div>
-            </n-card>
-          </template>
-
-          <!-- 上下文信息 -->
-          <template v-if="testResult.data?.context_bundle || testResult.data?.conversations_count !== undefined">
-            <n-divider title-placement="left">📦 上下文信息</n-divider>
-            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
-              <n-descriptions-item label="对话条数">
-                {{ testResult.data.context_bundle?.conversations_count || testResult.data.conversations_count || 0 }}
-              </n-descriptions-item>
-              <n-descriptions-item label="记忆条数">
-                {{ testResult.data.context_bundle?.memories_count || testResult.data.memories_count || 0 }}
-              </n-descriptions-item>
-              <n-descriptions-item label="主导情绪">
-                {{ testResult.data.context_bundle?.emotion?.dominant || testResult.data.emotion?.dominant || '-' }}
-              </n-descriptions-item>
-              <n-descriptions-item label="时间感知">
-                {{ testResult.data.context_bundle?.time_context?.time_display || testResult.data.time_context?.time_display || '-' }}
-              </n-descriptions-item>
-            </n-descriptions>
-          </template>
-
-          <!-- LLM 调用详情 -->
-          <template v-if="testResult.data?.llm_details">
-            <n-divider title-placement="left">🤖 LLM 调用详情</n-divider>
-            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
-              <n-descriptions-item label="模型">{{ testResult.data.llm_details.model || '-' }}</n-descriptions-item>
-              <n-descriptions-item label="耗时">{{ testResult.data.llm_details.duration_ms || '-' }}ms</n-descriptions-item>
-              <n-descriptions-item label="Prompt Tokens">{{ testResult.data.llm_details.prompt_tokens ?? '-' }}</n-descriptions-item>
-              <n-descriptions-item label="Completion Tokens">{{ testResult.data.llm_details.completion_tokens ?? '-' }}</n-descriptions-item>
-              <n-descriptions-item v-if="testResult.data.llm_details.error" label="错误" :span="2">
-                <span style="color: #d03050;">{{ testResult.data.llm_details.error }}</span>
-              </n-descriptions-item>
-            </n-descriptions>
-          </template>
-
-          <!-- 错误信息 -->
-          <template v-if="testResult.error">
-            <n-divider title-placement="left">❌ 错误信息</n-divider>
-            <n-alert type="error" style="margin-bottom: 12px;">
-              {{ testResult.error }}
-            </n-alert>
-            <n-collapse v-if="testResult.traceback">
-              <n-collapse-item title="堆栈跟踪" name="traceback">
-                <n-code :code="testResult.traceback" language="text" word-wrap />
-              </n-collapse-item>
-            </n-collapse>
-          </template>
-
-          <!-- 完整 JSON -->
-          <n-collapse>
-            <n-collapse-item title="完整 JSON 数据" name="json">
-              <n-code :code="formatJson(testResult)" language="json" word-wrap />
             </n-collapse-item>
           </n-collapse>
         </n-card>
