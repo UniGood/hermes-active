@@ -2021,40 +2021,22 @@ async def run_heartbeat():
         time_fitness, time_label = get_time_fitness()
         all_details["time_fitness"] = {"score": time_fitness, "label": time_label}
 
-        # 6. 获取 session 上下文和 Hindsight 记忆
-        session_config = config.get("session", {})
-        hindsight_config = config.get("hindsight", {})
-        session_context = await extract_session_context(session_config)
+        # 6. 使用 ContextCollector 收集结构化上下文
+        from services.context_collector import ContextCollector
+        context_collector = ContextCollector(config)
+        context_bundle = await context_collector.collect(status)
+        all_details["context_bundle"] = context_bundle.to_dict()
 
-        hindsight_context = ""
-        recall_count = 0
-        hindsight_results = []
-
-        # 优先从 Hindsight 获取记忆
-        if hindsight_config.get("enabled", True):
-            base_url = hindsight_config.get("base_url", "http://localhost:8888")
-            bank_id = hindsight_config.get("bank_id", "hermes")
-            hs_timeout = float(hindsight_config.get("timeout", 30))
-            hindsight_results = await call_hindsight_with_retry(
-                "最近的对话和情绪",
-                limit=hindsight_config.get("recall_limit", 5),
-                bank_id=bank_id,
-                base_url=base_url,
-                timeout=hs_timeout,
-                max_retries=3,
-            )
-
-        # 如果 Hindsight 没有结果（关闭或召回为空），从本地念头库获取
-        if not hindsight_results:
-            hindsight_results = get_recent_thoughts_from_db(limit=5)
-            if hindsight_results:
-                logger.info("从本地念头库召回 %d 条", len(hindsight_results))
-
-            if hindsight_results:
-                recall_count = len(hindsight_results)
-                hindsight_context = "相关记忆:\n" + "\n".join(
-                    f"- {r.get('text', '')}" for r in hindsight_results
-                )
+        # 兼容旧变量（用于后续情绪评估和记忆存储）
+        session_context = "\n".join(
+            f"{m.get('role', '?')}: {m.get('content', '')[:200]}"
+            for m in context_bundle.conversations[-30:]
+        ) if context_bundle.conversations else ""
+        hindsight_context = "相关记忆:\n" + "\n".join(
+            f"- {m}" for m in context_bundle.memories
+        ) if context_bundle.memories else ""
+        recall_count = len(context_bundle.memories)
+        hindsight_results = [{"text": m, "type": "memory"} for m in context_bundle.memories]
 
         # 存储召回数据到 details（供前端展示）
         all_details["session_context"] = session_context[:500] if session_context else ""
@@ -2709,10 +2691,10 @@ def make_decision_v2(
     else:
         silence_factor = 1.0    # 6 小时以上
 
-    # 4. 频率限制
+    # 4. 频率限制（二元判断：未超频=1.0，已超频=0.0）
     hour_sent = status.get("hour_sent_count", 0)
     max_per_hour = decision_config.get("max_per_hour", 2)
-    frequency_limit = max(0.1, 1.0 - (hour_sent / max_per_hour))
+    frequency_limit = 1.0 if hour_sent < max_per_hour else 0.0
 
     # 计算总分
     score = intensity * time_fitness * silence_factor * frequency_limit
@@ -3101,7 +3083,7 @@ async def reevaluate_delayed_thoughts(
 
         hour_sent = status.get("hour_sent_count", 0)
         max_per_hour = decision_config.get("max_per_hour", 2)
-        frequency_limit = max(0.1, 1.0 - (hour_sent / max_per_hour))
+        frequency_limit = 1.0 if hour_sent < max_per_hour else 0.0
 
         intensity = emotion_state.intensity()
         new_score = intensity * time_fitness * silence_factor * frequency_limit
