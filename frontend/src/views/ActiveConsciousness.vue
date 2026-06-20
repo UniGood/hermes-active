@@ -3,7 +3,7 @@
     <n-tabs v-model:value="activeTab" type="line" animated>
       <!-- Tab 1: 状态 -->
       <n-tab-pane name="status" tab="状态">
-        <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
+        <n-grid :cols="2" :x-gap="12" :y-gap="12">
           <n-grid-item>
             <n-card title="心跳状态">
               <n-tooltip trigger="hover" :width="240">
@@ -436,7 +436,7 @@
         <!-- 测试按钮组 -->
         <n-card title="节点测试" size="small" style="margin-bottom: 16px">
           <n-space vertical>
-            <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
+            <n-grid :cols="2" :x-gap="12" :y-gap="12">
               <n-grid-item>
                 <n-button block @click="testLLMConnect" :loading="testing.llm">
                   ① LLM 连通性测试
@@ -2012,11 +2012,21 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .active-consciousness-page {
     padding: 0 4px;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
   }
 
   /* 状态卡片：单列布局 */
   :deep(.n-grid) {
     grid-template-columns: 1fr !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+  :deep(.n-grid-item) {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
   }
 
   /* 配置表单：输入框自适应 */
@@ -2040,6 +2050,13 @@ onMounted(async () => {
   /* 日志表格：可横向滚动 */
   :deep(.n-data-table) {
     font-size: 12px;
+    max-width: 100% !important;
+  }
+  :deep(.n-data-table-base-table) {
+    min-width: auto !important;
+  }
+  :deep(.n-data-table-table) {
+    min-width: auto !important;
   }
 
   /* 弹窗：几乎全屏 */

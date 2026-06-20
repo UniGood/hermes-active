@@ -31,8 +31,10 @@ logging.basicConfig(
 )
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from config import SERVER_HOST, SERVER_PORT
 from models.database import init_active_db, ActiveSession
@@ -133,6 +135,21 @@ app.include_router(active_consciousness.router)
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "version": "0.1.0"}
+
+
+# 静态文件服务（前端 dist）
+DIST_DIR = Path(__file__).parent.parent / "frontend" / "dist"
+if DIST_DIR.exists():
+    # API 路由不拦截，其余交给静态文件
+    app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets"), name="static-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(request: Request, full_path: str):
+        """SPA fallback：非 API 路径返回 index.html"""
+        file_path = DIST_DIR / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(DIST_DIR / "index.html")
 
 
 if __name__ == "__main__":

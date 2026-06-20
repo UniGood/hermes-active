@@ -107,6 +107,12 @@ async def get_heartbeats(page: int = 1, page_size: int = 20, date: str = None):
     return ActiveConsciousnessService.get_heartbeats(page, page_size, date)
 
 
+@router.get("/heartbeats/{heartbeat_id}")
+async def get_heartbeat_detail(heartbeat_id: int):
+    """获取单条心跳日志详情（含完整 details JSON）"""
+    return ActiveConsciousnessService.get_heartbeat_detail(heartbeat_id)
+
+
 @router.delete("/heartbeats/{heartbeat_id}", response_model=SuccessResponse)
 async def delete_heartbeat(heartbeat_id: int):
     """删除心跳日志"""
@@ -183,95 +189,83 @@ async def test_llm_connect():
         return {"success": False, "error": str(e)}
 
 
+async def _test_llm_connection(llm_config: dict, label: str) -> dict:
+    """通用 LLM 连通测试"""
+    try:
+        test_prompt = "请回复'连接成功'两个字"
+        if llm_config.get("mode") == "hermes":
+            import asyncio, sys
+            from pathlib import Path
+            sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
+            from agent.auxiliary_client import call_llm
+            response = await asyncio.to_thread(
+                call_llm, task='title_generation',
+                messages=[{"role": "user", "content": test_prompt}],
+                temperature=0.1, max_tokens=50,
+            )
+            return {"success": True, "data": {"mode": "hermes", "response": response.choices[0].message.content, "model": "hermes default", "label": label}}
+        else:
+            if not llm_config.get("api_key"):
+                return {"success": False, "error": f"{label}未配置 API Key"}
+            import httpx
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.post(
+                    f"{llm_config.get('base_url', 'https://api.openai.com/v1')}/chat/completions",
+                    headers={"Authorization": f"Bearer {llm_config['api_key']}"},
+                    json={"model": llm_config.get("model", "deepseek-chat"), "messages": [{"role": "user", "content": test_prompt}], "max_tokens": 50, "temperature": 0.1}
+                )
+                data = resp.json()
+                if "choices" in data and data["choices"]:
+                    return {"success": True, "data": {"mode": "custom", "response": data["choices"][0]["message"]["content"], "model": llm_config.get("model"), "base_url": llm_config.get("base_url"), "label": label}}
+                else:
+                    return {"success": False, "error": f"{label} LLM 返回异常: {data}"}
+    except Exception as e:
+        return {"success": False, "error": f"{label}: {str(e)}"}
+
+
+@router.post("/test/emotion-llm-connect")
+async def test_emotion_llm_connect():
+    """测试情绪评估 LLM 连通性"""
+    config = ActiveConsciousnessService.get_config()
+    from services.active_consciousness_service import get_effective_llm_config
+    llm_config = get_effective_llm_config(config, "emotion")
+    return await _test_llm_connection(llm_config, "情绪评估")
+
+
+@router.post("/test/thought-llm-connect")
+async def test_thought_llm_connect():
+    """测试念头生成 LLM 连通性"""
+    config = ActiveConsciousnessService.get_config()
+    from services.active_consciousness_service import get_effective_llm_config
+    llm_config = get_effective_llm_config(config, "thought")
+    return await _test_llm_connection(llm_config, "念头生成")
+
+
 @router.post("/test/thought-generation")
 async def test_thought_generation():
-    """测试念头生成"""
+    """测试念头生成（使用 ThoughtEngine 统一入口）"""
     try:
         config = ActiveConsciousnessService.get_config()
         if not config.get("enabled"):
             return {"success": False, "error": "主动意识未启用"}
 
-        llm_config = config.get("llm", {})
-
-        # 获取当前状态
         status = ActiveConsciousnessService.get_status()
-        longing = status.get("longing", {})
-        chat_heat = status.get("chat_heat", {})
-        emotional = status.get("emotional_intensity", {})
-        emotion_state = status.get("emotion_state", {})
+        from services.thought_engine import ThoughtEngine
+        engine = ThoughtEngine(config)
+        result = await engine.generate(status)
 
-        # 从配置获取提示词模板
-        from services.active_consciousness_service import _DEFAULTS, get_label_display
-        from services.config_service import ConfigService
-        from models.database import ActiveSession
-
-        prompt_template = ConfigService.get_config(
-            ActiveSession(), "active_consciousness.prompts.thought_generation"
-        ) or _DEFAULTS["active_consciousness.prompts.thought_generation"]
-
-        now = __import__('datetime').datetime.now()
-        prompt = prompt_template.format(
-            time=now.strftime('%Y-%m-%d %H:%M %A'),
-            longing_score=longing.get('score', 0),
-            longing_label=longing.get('label', '平静'),
-            chat_heat=chat_heat.get('heat', 0),
-            chat_label=chat_heat.get('label', '冷清'),
-            emotional_intensity=emotional.get('intensity', 0),
-            emotional_label=emotional.get('label', '工作'),
-            dominant=emotion_state.get('dominant', 'calm'),
-            valence=emotion_state.get('valence', 0.5),
-            arousal=emotion_state.get('arousal', 0.3),
-            social_need=emotion_state.get('social_need', 0.3),
-        )
-
-        thought = None
-
-        # 判断 LLM 模式
-        if llm_config.get("mode") == "hermes":
-            # 使用 hermes 的 LLM
-            import sys
-            from pathlib import Path
-            sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
-            from agent.auxiliary_client import call_llm
-
-            response = call_llm(
-                task='title_generation',
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.9,
-                max_tokens=200,
-            )
-            thought = response.choices[0].message.content
-        else:
-            # 使用自定义 LLM
-            if not llm_config.get("api_key"):
-                return {"success": False, "error": "未配置 LLM API Key"}
-
-            import httpx
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.post(
-                    f"{llm_config.get('base_url', 'https://api.openai.com/v1')}/chat/completions",
-                    headers={"Authorization": f"Bearer {llm_config['api_key']}"},
-                    json={
-                        "model": llm_config.get("model", "deepseek-chat"),
-                        "messages": [{"role": "user", "content": prompt}],
-                        "max_tokens": 200,
-                        "temperature": 0.9
-                    }
-                )
-                data = resp.json()
-                if "choices" in data and data["choices"]:
-                    thought = data["choices"][0]["message"]["content"]
-                else:
-                    return {"success": False, "error": f"LLM 返回异常: {data}"}
-
-        if thought:
-            return {
-                "success": True,
-                    "data": {
-                        "thought": thought,
-                        "status": status
-                    }
-                    }
+        return {
+            "success": True,
+            "data": {
+                "thought": result.get("thought"),
+                "want_to_contact": result.get("want_to_contact"),
+                "llm_details": result.get("llm_details"),
+                "context_bundle": {
+                    "conversations_count": len(result.get("context_bundle", {}).get("conversations", [])),
+                    "memories_count": len(result.get("context_bundle", {}).get("memories", [])),
+                }
+            }
+        }
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -280,19 +274,23 @@ async def test_thought_generation():
 async def test_session_context():
     """测试 Session 上下文获取"""
     try:
-        from services.active_consciousness_service import extract_session_context
-        
+        from services.context_collector import ContextCollector
+
         config = ActiveConsciousnessService.get_config()
-        session_config = config.get("session", {})
-        
-        context = await extract_session_context(session_config)
-        
+        status = ActiveConsciousnessService.get_status()
+        collector = ContextCollector(config)
+        context = await collector.collect(status)
+
         return {
             "success": True,
             "data": {
-                "context": context,
-                "session_config": session_config,
-                "has_content": bool(context and context.strip())
+                "context": "\n".join(
+                    f"{m.get('role','?')}: {m.get('content','')[:200]}"
+                    for m in context.conversations[-20:]
+                ),
+                "conversations_count": len(context.conversations),
+                "memories_count": len(context.memories),
+                "has_content": bool(context.conversations)
             }
         }
     except Exception as e:

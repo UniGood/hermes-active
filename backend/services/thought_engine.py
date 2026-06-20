@@ -50,7 +50,10 @@ class ThoughtEngine:
         """
         self.config = config
         self.engine_config = config.get("thought_engine", {})
-        self.llm_config = config.get("llm", {})
+        self.context_config = config.get("context", {})
+        # 念头生成专用 LLM（为空时回退到通用 llm）
+        from services.active_consciousness_service import get_effective_llm_config
+        self.llm_config = get_effective_llm_config(config, "thought")
     
     async def generate(self, status: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -110,21 +113,25 @@ class ThoughtEngine:
     def _build_prompt(self, context: ContextBundle) -> str:
         """构建提示词"""
         from services.active_consciousness_service import load_hermes_persona, _DEFAULTS
-        from services.config_service import ConfigService
-        from models.database import ActiveSession
         
-        # 优先从配置读取提示词
-        prompt_template = ConfigService.get_config(
-            ActiveSession(), "active_consciousness.prompts.thought_generation"
-        ) or _DEFAULTS.get("active_consciousness.prompts.thought_generation") or self.PROMPT_TEMPLATE
+        # 优先从运行时配置读取提示词（避免每次查 DB）
+        prompt_template = self.config.get("prompts", {}).get("thought_generation") \
+            or _DEFAULTS.get("active_consciousness.prompts.thought_generation") \
+            or self.PROMPT_TEMPLATE
         
         # 加载人设
         persona = load_hermes_persona()
         
-        # 格式化对话
+        # 格式化对话（从 thought_engine 配置读取条数和截断长度）
+        conversation_limit = self.engine_config.get("prompt_conversation_limit", 30)
+        max_chars = self.engine_config.get("prompt_max_chars", 300)
+        recent_conversations = context.conversations[-conversation_limit:] if context.conversations else []
         conversations_json = json.dumps(
-            context.conversations, 
-            ensure_ascii=False, 
+            [
+                {**m, "content": (m.get("content", "") or "")[:max_chars]}
+                for m in recent_conversations
+            ],
+            ensure_ascii=False,
             indent=2
         )
         
@@ -180,12 +187,14 @@ class ThoughtEngine:
         
         try:
             if self.llm_config.get("mode") == "hermes":
+                import asyncio
                 import sys
                 from pathlib import Path
                 sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
                 from agent.auxiliary_client import call_llm
                 
-                response = call_llm(
+                response = await asyncio.to_thread(
+                    call_llm,
                     task='title_generation',
                     messages=[{"role": "user", "content": prompt}],
                     temperature=temperature,

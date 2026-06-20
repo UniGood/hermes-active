@@ -347,5 +347,11 @@ watch(() => route.path, () => {
     margin-left: 0;
     margin-top: 56px;
   }
+  .page-content {
+    padding: 12px 8px;
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
 }
 </style>

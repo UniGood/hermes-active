@@ -33,6 +33,9 @@ export default {
     if (date) params.date = date
     return http.get('/active-consciousness/heartbeats', { params })
   },
+  getHeartbeatDetail(id) {
+    return http.get(`/active-consciousness/heartbeats/${id}`)
+  },
   deleteHeartbeat(id) {
     return http.delete(`/active-consciousness/heartbeats/${id}`)
   },
@@ -40,6 +43,12 @@ export default {
   // 测试
   testLLMConnect() {
     return http.post('/active-consciousness/test/llm-connect')
+  },
+  testEmotionLLMConnect() {
+    return http.post('/active-consciousness/test/emotion-llm-connect')
+  },
+  testThoughtLLMConnect() {
+    return http.post('/active-consciousness/test/thought-llm-connect')
   },
   testThoughtGeneration() {
     return http.post('/active-consciousness/test/thought-generation')

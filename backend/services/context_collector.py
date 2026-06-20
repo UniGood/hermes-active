@@ -172,34 +172,33 @@ class ContextCollector:
                 if not user_id:
                     continue
                 
-                session = FallbackSessionService.get_or_create_active_session(platform, user_id)
-                if not session:
-                    continue
-                
-                session_id = session["id"] if isinstance(session, dict) else session.id
-                
-                # 按时间范围查询消息
+                # 按时间范围查询该平台下所有 session 的消息
                 try:
                     with state_engine.connect() as conn:
                         query = text("""
-                            SELECT role, content, timestamp 
-                            FROM messages 
-                            WHERE session_id = :session_id 
-                            AND CAST(timestamp AS REAL) > :cutoff
-                            AND role IN ('user', 'assistant')
-                            ORDER BY timestamp ASC
+                            SELECT m.role, m.content, m.timestamp 
+                            FROM messages m
+                            JOIN sessions s ON m.session_id = s.id
+                            WHERE s.source = :source
+                            AND CAST(m.timestamp AS REAL) > :cutoff
+                            AND m.role IN ('user', 'assistant')
+                            ORDER BY m.timestamp ASC
                         """)
                         result = conn.execute(query, {
-                            "session_id": session_id,
+                            "source": platform,
                             "cutoff": cutoff_timestamp
                         })
                         messages = [dict(row._mapping) for row in result]
                 except Exception as e:
                     logger.warning("查询消息失败: %s", e)
-                    # 回退到原来的方式
-                    messages = MessageService.get_session_context_raw(
-                        session_id, limit=200, include_tool=not filter_tool
-                    ) or []
+                    # 回退：只读查找最近 session（不创建新 session）
+                    session_id = FallbackSessionService.find_latest_session_id(platform, user_id)
+                    if session_id:
+                        messages = MessageService.get_session_context_raw(
+                            session_id, limit=200, include_tool=not filter_tool
+                        ) or []
+                    else:
+                        messages = []
                 
                 if messages:
                     for msg in messages:
@@ -233,12 +232,12 @@ class ContextCollector:
         try:
             from services.active_consciousness_service import call_hindsight_recall
             
-            # 用最近对话内容作为 query
+            # 用最近用户消息内容作为 query（从后往前找）
             query = " ".join([
-                msg.get("content", "") 
-                for msg in conversations[-5:]  # 最近 5 条
+                msg.get("content", "")
+                for msg in reversed(conversations)
                 if msg.get("role") == "user"
-            ])
+            ][:5])
             
             if not query.strip():
                 query = "最近的想法"
