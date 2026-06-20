@@ -234,24 +234,6 @@
           <template v-if="config.enabled">
             <!-- 基础设置 -->
             <n-divider>基础设置</n-divider>
-            <n-form-item label="LLM 模式">
-              <n-radio-group v-model:value="config.llm.mode">
-                <n-radio value="hermes">使用 Hermes LLM</n-radio>
-                <n-radio value="custom">自定义 LLM</n-radio>
-              </n-radio-group>
-            </n-form-item>
-            <n-form-item label="Provider" v-if="config.llm.mode === 'custom'">
-              <n-select v-model:value="config.llm.provider" :options="providerOptions" />
-            </n-form-item>
-            <n-form-item label="Model" v-if="config.llm.mode === 'custom'">
-              <n-input v-model:value="config.llm.model" placeholder="deepseek-chat" />
-            </n-form-item>
-            <n-form-item label="API Key" v-if="config.llm.mode === 'custom'">
-              <n-input v-model:value="config.llm.api_key" type="password" show-password-on="mousedown" placeholder="输入 API Key" />
-            </n-form-item>
-            <n-form-item label="Base URL" v-if="config.llm.mode === 'custom'">
-              <n-input v-model:value="config.llm.base_url" placeholder="https://api.openai.com/v1" />
-            </n-form-item>
             <n-form-item label="启用心跳">
               <n-switch v-model:value="config.active.enabled" />
             </n-form-item>
@@ -323,23 +305,6 @@
               <span style="margin-left: 8px; font-size: 12px; color: #999;">Hindsight 存储 Bank ID，用于区分不同来源的记忆</span>
             </n-form-item>
 
-            <!-- ThoughtEngine 引擎配置 -->
-            <n-divider>🧠 ThoughtEngine 引擎</n-divider>
-            <n-form-item label="启用 ThoughtEngine">
-              <n-switch v-model:value="config.thought_engine.enabled" />
-              <span class="form-item-hint">统一念头生成器：收集上下文 → 构建提示词 → LLM 生成 → 解析结果</span>
-            </n-form-item>
-            <template v-if="config.thought_engine.enabled">
-              <n-form-item label="最大 Token 数">
-                <n-input-number v-model:value="config.thought_engine.max_tokens" :min="100" :max="2000" />
-                <span class="form-item-hint">LLM 生成念头的最大长度，越大越详细但越慢（推荐 200-500）</span>
-              </n-form-item>
-              <n-form-item label="Temperature">
-                <n-input-number v-model:value="config.thought_engine.temperature" :min="0" :max="2" :step="0.1" />
-                <span class="form-item-hint">控制念头生成的随机性，越高越随机（推荐 0.7-1.0）</span>
-              </n-form-item>
-            </template>
-
             <!-- 上下文收集配置 -->
             <n-divider>📦 上下文收集</n-divider>
             <n-form-item label="时间范围（天）">
@@ -383,23 +348,6 @@
               </span>
             </n-form-item>
 
-            <!-- 提示词配置 -->
-            <n-divider>📝 提示词配置</n-divider>
-            <n-collapse>
-              <n-collapse-item title="念头生成提示词" name="thought_generation">
-                <n-input v-model:value="config.prompts.thought_generation" type="textarea" :rows="8" placeholder="输入念头生成提示词模板" />
-                <div style="margin-top: 4px; font-size: 11px; color: #999;">
-                  可用变量：{persona} {session_context} {hindsight_context} {time} {emotion_display}
-                </div>
-              </n-collapse-item>
-              <n-collapse-item title="情绪评估提示词" name="emotion_evaluation">
-                <n-input v-model:value="config.prompts.emotion_evaluation" type="textarea" :rows="10" placeholder="输入情绪评估提示词模板" />
-                <div style="margin-top: 4px; font-size: 11px; color: #999;">
-                  可用变量：{time} {longing_score} {longing_label} {chat_heat} {chat_label} {silence_minutes} {context}
-                </div>
-              </n-collapse-item>
-            </n-collapse>
-
             <!-- 通知目标 -->
             <n-divider>通知目标</n-divider>
             <n-form-item label="目标平台">
@@ -430,7 +378,217 @@
         </n-card>
       </n-tab-pane>
 
-      <!-- Tab 4: 测试 -->
+      <!-- Tab: LLM -->
+      <n-tab-pane name="llm" tab="LLM">
+        <!-- 通用 LLM（默认/回退） -->
+        <n-card title="通用 LLM（默认/回退）" size="small" style="margin-bottom: 16px">
+          <n-form-item label="LLM 模式">
+            <n-radio-group v-model:value="config.llm.mode">
+              <n-radio value="hermes">使用 Hermes LLM</n-radio>
+              <n-radio value="custom">自定义 LLM</n-radio>
+            </n-radio-group>
+          </n-form-item>
+          <template v-if="config.llm.mode === 'custom'">
+            <n-form-item label="Provider">
+              <n-select v-model:value="config.llm.provider" :options="providerOptions" />
+            </n-form-item>
+            <n-form-item label="Model">
+              <n-input v-model:value="config.llm.model" placeholder="deepseek-chat" />
+            </n-form-item>
+            <n-form-item label="API Key">
+              <n-input v-model:value="config.llm.api_key" type="password" show-password-on="mousedown" placeholder="输入 API Key" />
+            </n-form-item>
+            <n-form-item label="Base URL">
+              <n-input v-model:value="config.llm.base_url" placeholder="https://api.openai.com/v1" />
+            </n-form-item>
+          </template>
+          <n-button type="primary" @click="testLLMConnect" :loading="testing.llm" size="small" style="margin-top: 8px">
+            测试连通性
+          </n-button>
+          <n-alert v-if="llmTestResult" :type="llmTestResult.success ? 'success' : 'error'" style="margin-top: 8px" closable @close="llmTestResult = null">
+            {{ llmTestResult.success ? 'LLM 连通成功' : 'LLM 连通失败: ' + (llmTestResult.error || '') }}
+          </n-alert>
+        </n-card>
+
+        <!-- 🎭 情绪评估 LLM -->
+        <n-card title="🎭 情绪评估 LLM" size="small" style="margin-bottom: 16px">
+          <n-form-item label="情绪评估提示词">
+            <n-input v-model:value="config.prompts.emotion_evaluation" type="textarea" :rows="6" placeholder="输入情绪评估提示词模板" />
+          </n-form-item>
+          <div style="font-size: 11px; color: #999; margin-bottom: 8px;">
+            可用变量：{time} {longing_score} {longing_label} {chat_heat} {chat_label} {silence_minutes} {context}
+          </div>
+          <n-button type="primary" @click="testEmotionLLM" :loading="testing.emotionLLM" size="small">
+            测试情绪评估 LLM
+          </n-button>
+          <n-alert v-if="emotionLLMTestResult" :type="emotionLLMTestResult.success ? 'success' : 'error'" style="margin-top: 8px" closable @close="emotionLLMTestResult = null">
+            <template v-if="emotionLLMTestResult.success">
+              情绪评估 LLM 测试成功
+              <div v-if="emotionLLMTestResult.data" style="font-size: 12px; margin-top: 4px;">
+                模型: {{ emotionLLMTestResult.data.model || '-' }} | 耗时: {{ emotionLLMTestResult.data.duration_ms || '-' }}ms
+              </div>
+            </template>
+            <template v-else>
+              情绪评估 LLM 测试失败: {{ emotionLLMTestResult.error || '' }}
+            </template>
+          </n-alert>
+        </n-card>
+
+        <!-- 💭 念头生成 LLM -->
+        <n-card title="💭 念头生成 LLM" size="small" style="margin-bottom: 16px">
+          <n-form-item label="启用 ThoughtEngine">
+            <n-switch v-model:value="config.thought_engine.enabled" />
+            <span class="form-item-hint">统一念头生成器：收集上下文 → 构建提示词 → LLM 生成 → 解析结果</span>
+          </n-form-item>
+          <template v-if="config.thought_engine.enabled">
+            <n-form-item label="最大 Token 数">
+              <n-input-number v-model:value="config.thought_engine.max_tokens" :min="100" :max="2000" />
+              <span class="form-item-hint">推荐 200-500</span>
+            </n-form-item>
+            <n-form-item label="Temperature">
+              <n-input-number v-model:value="config.thought_engine.temperature" :min="0" :max="2" :step="0.1" />
+              <span class="form-item-hint">推荐 0.7-1.0</span>
+            </n-form-item>
+          </template>
+          <n-form-item label="念头生成提示词">
+            <n-input v-model:value="config.prompts.thought_generation" type="textarea" :rows="6" placeholder="输入念头生成提示词模板" />
+          </n-form-item>
+          <div style="font-size: 11px; color: #999; margin-bottom: 8px;">
+            可用变量：{persona} {session_context} {hindsight_context} {time} {emotion_display}
+          </div>
+          <n-button type="primary" @click="testThoughtLLM" :loading="testing.thoughtLLM" size="small">
+            测试念头生成 LLM
+          </n-button>
+          <n-alert v-if="thoughtLLMTestResult" :type="thoughtLLMTestResult.success ? 'success' : 'error'" style="margin-top: 8px" closable @close="thoughtLLMTestResult = null">
+            <template v-if="thoughtLLMTestResult.success">
+              念头生成 LLM 测试成功
+              <div v-if="thoughtLLMTestResult.data" style="font-size: 12px; margin-top: 4px;">
+                模型: {{ thoughtLLMTestResult.data.model || '-' }} | 耗时: {{ thoughtLLMTestResult.data.duration_ms || '-' }}ms
+              </div>
+            </template>
+            <template v-else>
+              念头生成 LLM 测试失败: {{ thoughtLLMTestResult.error || '' }}
+            </template>
+          </n-alert>
+        </n-card>
+      </n-tab-pane>
+
+      <!-- Tab: 运行逻辑 -->
+      <n-tab-pane name="logic" tab="运行逻辑">
+        <n-card title="主动意识运行逻辑" size="small" class="run-logic-card">
+          <n-steps vertical :current="9" size="small">
+            <n-step title="1. 心跳触发">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                APScheduler 定时触发，默认间隔 300 秒（5 分钟）。检查主动意识是否启用、是否在活跃时间窗口内。
+              </div>
+            </n-step>
+            <n-step title="2. 情绪演化">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                VA 模型自然演化：Arousal 每小时衰减 0.02、Social Need 每小时增长 0.01、Valence 每小时向 0.5 回归 10%。根据距上次更新的时间间隔自动计算。
+              </div>
+            </n-step>
+            <n-step title="3. LLM 情绪评估">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                LLM 根据最近对话评估情绪状态，返回 VA 值和主导情绪。通过置信度计算动态合并 LLM 与演化结果（高信任: 演化30%+LLM70%，低信任: 演化70%+LLM30%）。
+              </div>
+            </n-step>
+            <n-step title="4. 上下文收集">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                ContextCollector 收集 Session 对话、Hindsight 记忆、情绪状态、时间感知、天气信息。根据唤醒度自动选择时间范围（低唤醒15天、中唤醒7天、高唤醒3天）。
+              </div>
+            </n-step>
+            <n-step title="5. 念头生成">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                ThoughtEngine 将上下文输入 LLM，生成 1-2 句话的念头。LLM 可输出 SKIP 表示不想联系用户。
+              </div>
+            </n-step>
+            <n-step title="6. 决策矩阵评分">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                score = intensity × time_fitness × silence_factor × frequency_limit。综合情绪强度（social_need×0.5 + arousal×0.3 + valence×0.2）、时间适宜性、沉默时长和频率限制。
+              </div>
+            </n-step>
+            <n-step title="7. 发送保护检查">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                检查：用户消息后 5 分钟等待期、聊天热度 > 3.0、情绪强度 < 0.15、冷却期 30 分钟、每小时最多 2 条 / 每天最多 5 条。任一不通过则拦截。
+              </div>
+            </n-step>
+            <n-step title="8. 执行动作">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                根据决策分数执行：auto_send（≥0.35 立即发送）、delay_send（≥0.15 加入延迟队列，30 分钟内重评估）、memory（≥0.05 存为记忆）、skip（<0.05 跳过）。
+              </div>
+            </n-step>
+            <n-step title="9. 想念分数计算">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                longing_score = min(沉默分钟/gap_minutes, 1.0) × decay_factor。用户每回复 1 条消息衰减 10%，最少保留 10%。等级：平静→思念→想念→渴望→焦虑。
+              </div>
+            </n-step>
+          </n-steps>
+
+          <!-- 参考信息折叠区 -->
+          <n-collapse style="margin-top: 16px;">
+            <n-collapse-item title="📖 术语总览" name="overview">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>VA 模型</strong>（情绪三维度）：</p>
+                <ul>
+                  <li><strong>Valence（效价）</strong>：情绪的正负性，0=消极，1=积极，0.5=中性</li>
+                  <li><strong>Arousal（唤醒度）</strong>：情绪的激活程度，0=平静，1=激动</li>
+                  <li><strong>Social Need（社交需求）</strong>：想要社交/聊天的程度，0=不需要，1=非常想</li>
+                </ul>
+                <p><strong>核心指标</strong>：</p>
+                <ul>
+                  <li><strong>想念分数</strong>（longing_score）：基于沉默时长和回复频率，0-1</li>
+                  <li><strong>聊天热度</strong>（chat_heat）：近1小时用户消息数</li>
+                  <li><strong>情绪强度</strong>（intensity）：social_need×0.5 + arousal×0.3 + valence×0.2</li>
+                  <li><strong>决策分数</strong>（score）：intensity × time_fitness × silence_factor × frequency_limit</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+
+            <n-collapse-item title="📊 决策阈值详情" name="decision_detail">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>intensity（情绪强度）</strong>：social_need × 0.5 + arousal × 0.3 + valence × 0.2，最低 0.2</p>
+                <p><strong>time_fitness（时间适宜性）</strong>：</p>
+                <ul>
+                  <li>7:00-9:00 早安窗口: 1.0 | 9:00-12:00 工作: 0.8 | 12:00-14:00 午休: 0.9</li>
+                  <li>14:00-18:00 工作: 0.7 | 18:00-22:00 下班: 1.0 | 22:00-23:30 睡前: 0.8 | 23:30-7:00 深夜: 0.3</li>
+                </ul>
+                <p><strong>silence_factor（沉默因子）</strong>：</p>
+                <ul>
+                  <li>&lt;30分钟: 0.6 | 30-60分钟: 0.75 | 1-3小时: 0.85 | 3-6小时: 0.95 | &gt;6小时: 1.0</li>
+                </ul>
+                <p><strong>frequency_limit</strong>：未超频 1.0，超频 0.0</p>
+                <p><strong>决策阈值</strong>：≥0.35 auto_send | ≥0.15 delay_send | ≥0.05 memory | &lt;0.05 skip</p>
+              </div>
+            </n-collapse-item>
+
+            <n-collapse-item title="🛡️ 保护规则" name="protection">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <ul>
+                  <li><strong>用户消息后等待期</strong>：用户发消息后 5 分钟内不发送</li>
+                  <li><strong>聊天热度</strong>：热度 > 3.0 时不发送</li>
+                  <li><strong>情绪强度</strong>：强度 < 0.15 时不发送</li>
+                  <li><strong>冷却期</strong>：上次发送后 30 分钟内不发送</li>
+                  <li><strong>频率限制</strong>：每小时最多 2 条，每天最多 5 条</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+
+            <n-collapse-item title="📈 聊天热度等级" name="heat">
+              <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>公式</strong>：chat_heat = 近1小时用户消息数 / 1小时</p>
+                <ul>
+                  <li>0.0-0.5：cold（冷清）</li>
+                  <li>0.5-1.0：warm（温暖）</li>
+                  <li>1.0-3.0：hot（热烈）</li>
+                  <li>> 3.0：fire（火热）</li>
+                </ul>
+              </div>
+            </n-collapse-item>
+          </n-collapse>
+        </n-card>
+      </n-tab-pane>
+
+      <!-- Tab: 测试 -->
       <n-tab-pane name="test" tab="测试">
 
         <!-- 测试按钮组 -->
@@ -545,288 +703,7 @@
           </n-collapse>
         </n-card>
 
-        <!-- 运行逻辑说明 -->
-        <n-card title="主动意识运行逻辑" size="small" class="run-logic-card" style="margin-bottom: 16px">
-          <n-collapse default-expanded-names="">
-            <!-- 0. 术语总览 -->
-            <n-collapse-item title="0. 术语总览" name="overview">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>VA 模型</strong>（情绪三维度）：</p>
-                <ul>
-                  <li><strong>Valence（效价）</strong>：情绪的正负性，0=消极，1=积极，0.5=中性</li>
-                  <li><strong>Arousal（唤醒度）</strong>：情绪的激活程度，0=平静，1=激动</li>
-                  <li><strong>Social Need（社交需求）</strong>：想要社交/聊天的程度，0=不需要，1=非常想</li>
-                </ul>
-                <p><strong>主导情绪</strong>（dominant）：根据 VA 值自动计算的情绪标签</p>
-                <ul>
-                  <li>calm（平静）、happy（开心）、content（满足）、bored（无聊）</li>
-                  <li>concerned（担忧）、longing（思念）、missing（想念）</li>
-                  <li>yearning（渴望）、anxious（焦虑）</li>
-                </ul>
-                <p><strong>核心指标</strong>：</p>
-                <ul>
-                  <li><strong>想念分数</strong>（longing_score）：基于沉默时长和回复频率，0-1</li>
-                  <li><strong>聊天热度</strong>（chat_heat）：近1小时用户消息数，消息密度</li>
-                  <li><strong>情绪强度</strong>（intensity）：social_need×0.5 + arousal×0.3 + valence×0.2</li>
-                  <li><strong>决策分数</strong>（score）：intensity × time_fitness × silence_factor × frequency_limit</li>
-                </ul>
-                <p><strong>动作类型</strong>：</p>
-                <ul>
-                  <li><strong>auto_send</strong>：立即发送（score >= 0.35）</li>
-                  <li><strong>delay_send</strong>：延迟发送（score >= 0.15）</li>
-                  <li><strong>memory</strong>：存为记忆（score >= 0.05）</li>
-                  <li><strong>skip</strong>：跳过（score < 0.05）</li>
-                </ul>
-              </div>
-            </n-collapse-item>
 
-            <!-- 1. 心跳触发 -->
-            <n-collapse-item title="1. 心跳触发" name="heartbeat">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>触发方式</strong>：APScheduler 定时触发</p>
-                <p><strong>默认间隔</strong>：300秒（5分钟）</p>
-                <p><strong>检查条件</strong>：</p>
-                <ul>
-                  <li>主动意识是否启用（enabled=true）</li>
-                  <li>是否在活跃时间窗口内</li>
-                </ul>
-              </div>
-            </n-collapse-item>
-
-            <!-- 2. 情绪演化 -->
-            <n-collapse-item title="2. 情绪演化" name="emotion">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>模型</strong>：VA 模型（Valence-Arousal-Social Need）</p>
-                <p><strong>参数</strong>：</p>
-                <ul>
-                  <li>Valence（效价）：0-1，0=消极，1=积极</li>
-                  <li>Arousal（唤醒度）：0-1，0=平静，1=激动</li>
-                  <li>Social Need（社交需求）：0-1，0=不需要，1=非常想</li>
-                </ul>
-                <p><strong>演化公式</strong>（基于时间间隔 hours = 分钟/60）：</p>
-                <ul>
-                  <li><strong>Arousal 自然衰减</strong>：new_arousal = max(0.1, arousal - 0.02 × hours)
-                    <ul><li>每小时衰减 0.02，最低 0.1</li></ul>
-                  </li>
-                  <li><strong>Social Need 自然增长</strong>：new_social_need = min(1.0, social_need + 0.01 × hours)
-                    <ul><li>每小时增长 0.01，最高 1.0</li></ul>
-                  </li>
-                  <li><strong>Valence 回归中性</strong>：new_valence = valence + (0.5 - valence) × 0.1 × hours
-                    <ul><li>每小时向 0.5 回归 10%，范围 0-1</li></ul>
-                  </li>
-                </ul>
-                <p><strong>主导情绪计算</strong>（calculate_dominant）：</p>
-                <ul>
-                  <li>social_need > 0.7 → yearning（valence>0.5）或 anxious</li>
-                  <li>social_need > 0.5 → longing（valence>0.5）或 missing</li>
-                  <li>arousal < 0.3 → calm</li>
-                  <li>valence > 0.7 → happy（arousal>0.6）或 content</li>
-                  <li>valence < 0.3 → bored（arousal<0.4）或 concerned</li>
-                  <li>其他 → calm</li>
-                </ul>
-              </div>
-            </n-collapse-item>
-
-            <!-- 3. LLM 情绪评估 -->
-            <n-collapse-item title="3. LLM 情绪评估" name="llm_emotion">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>模型</strong>：hunyuan-lite</p>
-                <p><strong>输入</strong>：最近对话 + 当前情绪状态 + 沉默时长</p>
-                <p><strong>输出</strong>：JSON {valence, arousal, social_need, dominant}</p>
-                <p><strong>置信度计算</strong>（calculate_llm_confidence）：</p>
-                <ul>
-                  <li>基础置信度：0.5</li>
-                  <li>值在合理范围（0-1）：+0.2</li>
-                  <li>与演化值差异 < 0.3：+0.3</li>
-                  <li>与演化值差异 > 0.5：-0.2</li>
-                </ul>
-                <p><strong>动态权重合并</strong>（merge_emotion_dynamic）：</p>
-                <ul>
-                  <li>置信度 < 0.3：演化 × 0.7 + LLM × 0.3（不信任 LLM）</li>
-                  <li>置信度 > 0.8：演化 × 0.3 + LLM × 0.7（信任 LLM）</li>
-                  <li>其他：演化 × 0.4 + LLM × 0.6（默认）</li>
-                </ul>
-                <p><strong>Fallback</strong>：LLM 返回全 0 时使用演化值</p>
-              </div>
-            </n-collapse-item>
-
-            <!-- 4. ContextCollector 收集上下文 -->
-            <n-collapse-item title="4. ContextCollector 收集上下文" name="context">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>收集内容</strong>：</p>
-                <ul>
-                  <li>Session 对话（结构化 JSON）</li>
-                  <li>Hindsight 记忆（Recall 结果）</li>
-                  <li>情绪状态（VA 模型）</li>
-                  <li>时间感知（工作日/饭点/深夜）</li>
-                  <li>天气信息（如果启用）</li>
-                  <li>用户习惯（从 USER.md）</li>
-                </ul>
-                <p><strong>动态时间范围</strong>（根据情绪状态自动选择）：</p>
-                <ul>
-                  <li>arousal < 0.3 → 15 天（低唤醒：广泛上下文）</li>
-                  <li>0.3 ≤ arousal < 0.7 → 7 天（中唤醒：一周）</li>
-                  <li>arousal ≥ 0.7 → 3 天（高唤醒：关注近期）</li>
-                  <li>沉默 > 6小时 → 1 天（关注近期互动）</li>
-                </ul>
-                <p><strong>配置参数</strong>：</p>
-                <ul>
-                  <li>time_range_days：查询最近 N 天（默认 7，0=自动）</li>
-                  <li>conversation_max_chars：每条消息最大字符（默认 2000）</li>
-                  <li>memory_limit：Hindsight 召回数量（默认 5）</li>
-                </ul>
-              </div>
-            </n-collapse-item>
-
-            <!-- 5. ThoughtEngine 生成念头 -->
-            <n-collapse-item title="5. ThoughtEngine 生成念头" name="thought">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>核心理念</strong>：给 LLM 足够"养料"，让它自己思考</p>
-                <p><strong>输入</strong>：ContextBundle（对话+记忆+情绪+时间+天气+习惯）</p>
-                <p><strong>输出</strong>：</p>
-                <ul>
-                  <li>念头内容（1-2句话）</li>
-                  <li>want_to_contact（是否想联系用户）</li>
-                  <li>SKIP（LLM 不想联系时输出）</li>
-                </ul>
-                <p><strong>提示词模板</strong>：</p>
-                <ul>
-                  <li>角色定义：凯莉，曹凡的 AI 朋友</li>
-                  <li>人设信息：从 SOUL.md/MEMORY.md/USER.md 加载</li>
-                  <li>上下文：结构化 JSON 格式</li>
-                  <li>要求：自然地想到曹凡，说 1-2 句话</li>
-                </ul>
-              </div>
-            </n-collapse-item>
-
-            <!-- 6. 决策矩阵评分 -->
-            <n-collapse-item title="6. 决策矩阵评分" name="decision">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>公式</strong>：score = intensity × time_fitness × silence_factor × frequency_limit</p>
-                <p><strong>intensity（情绪强度）</strong>：</p>
-                <ul>
-                  <li>公式：social_need × 0.5 + arousal × 0.3 + valence × 0.2</li>
-                  <li>最低值：0.2（避免永远为零）</li>
-                </ul>
-                <p><strong>time_fitness（时间适宜性）</strong>：</p>
-                <ul>
-                  <li>7:00-9:00（早安窗口）：1.0</li>
-                  <li>9:00-12:00（工作时间）：0.8</li>
-                  <li>12:00-14:00（午休时间）：0.9</li>
-                  <li>14:00-18:00（工作时间）：0.7</li>
-                  <li>18:00-22:00（下班时间）：1.0</li>
-                  <li>22:00-23:30（睡前时间）：0.8</li>
-                  <li>23:30-7:00（深夜）：0.3</li>
-                </ul>
-                <p><strong>silence_factor（沉默因子）</strong>：</p>
-                <ul>
-                  <li>< 30分钟：0.6</li>
-                  <li>30-60分钟：0.75</li>
-                  <li>1-3小时：0.85</li>
-                  <li>3-6小时：0.95</li>
-                  <li>> 6小时：1.0</li>
-                </ul>
-                <p><strong>frequency_limit（频率限制）</strong>：</p>
-                <ul>
-                  <li>未超频：1.0</li>
-                  <li>超频（每小时>2 或 每天>5）：0.0</li>
-                </ul>
-                <p><strong>决策阈值</strong>：</p>
-                <ul>
-                  <li>>= 0.35：auto_send（自动发送）</li>
-                  <li>>= 0.15：delay_send（延迟发送）</li>
-                  <li>>= 0.05：memory（存为记忆）</li>
-                  <li>< 0.05：skip（跳过）</li>
-                </ul>
-              </div>
-            </n-collapse-item>
-
-            <!-- 7. 发送保护检查 -->
-            <n-collapse-item title="7. 发送保护检查" name="protection">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>检查项目</strong>（任一不通过则拦截）：</p>
-                <ul>
-                  <li><strong>用户消息后等待期</strong>：用户发消息后 5 分钟内不发送</li>
-                  <li><strong>聊天热度</strong>：热度 > 3.0 时不发送</li>
-                  <li><strong>情绪强度</strong>：强度 < 0.15 时不发送</li>
-                  <li><strong>冷却期</strong>：上次发送后 30 分钟内不发送</li>
-                  <li><strong>频率限制</strong>：每小时最多 2 条，每天最多 5 条</li>
-                </ul>
-              </div>
-            </n-collapse-item>
-
-            <!-- 8. 执行动作 -->
-            <n-collapse-item title="8. 执行动作" name="action">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>动作类型</strong>：</p>
-                <ul>
-                  <li><strong>auto_send</strong>：立即发送消息给用户</li>
-                  <li><strong>delay_send</strong>：加入延迟队列，下次心跳重评估</li>
-                  <li><strong>memory</strong>：存为记忆，不发送</li>
-                  <li><strong>skip</strong>：跳过，不做任何操作</li>
-                </ul>
-                <p><strong>延迟队列</strong>：</p>
-                <ul>
-                  <li>最大存活时间：30 分钟</li>
-                  <li>每次心跳重新评估分数</li>
-                  <li>分数达到 send_threshold 时自动发送</li>
-                </ul>
-              </div>
-            </n-collapse-item>
-
-            <!-- 9. 想念分数计算 -->
-            <n-collapse-item title="9. 想念分数计算" name="longing">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>公式</strong>：longing_score = base_score × decay_factor</p>
-                <p><strong>基础分</strong>：min(沉默分钟 / gap_minutes, 1.0)</p>
-                <ul>
-                  <li>gap_minutes = 60（配置项，达到最大值的分钟数）</li>
-                  <li>沉默 60 分钟 → base_score = 1.0</li>
-                </ul>
-                <p><strong>衰减因子</strong>：max(0.1, 1.0 - 回复数 × 0.1)</p>
-                <ul>
-                  <li>用户每回复 1 条消息，衰减 10%</li>
-                  <li>最少保留 10%（避免完全归零）</li>
-                </ul>
-                <p><strong>想念等级</strong>：</p>
-                <ul>
-                  <li>0.0-0.1：calm（平静）</li>
-                  <li>0.1-0.3：longing（思念）</li>
-                  <li>0.3-0.5：missing（想念）</li>
-                  <li>0.5-0.7：yearning（渴望）</li>
-                  <li>0.7-1.0：anxious（焦虑）</li>
-                </ul>
-                <p><strong>示例</strong>：</p>
-                <ul>
-                  <li>沉默 3 小时，0 条回复：min(180/60,1) × max(0.1, 1-0) = 1.0 × 1.0 = 1.00</li>
-                  <li>沉默 1 小时，2 条回复：min(60/60,1) × max(0.1, 1-0.2) = 1.0 × 0.8 = 0.80</li>
-                  <li>沉默 30 分钟，5 条回复：min(30/60,1) × max(0.1, 1-0.5) = 0.5 × 0.5 = 0.25</li>
-                </ul>
-              </div>
-            </n-collapse-item>
-
-            <!-- 10. 聊天热度计算 -->
-            <n-collapse-item title="10. 聊天热度计算" name="heat">
-              <div style="font-size: 13px; line-height: 1.8;">
-                <p><strong>公式</strong>：chat_heat = 近1小时用户消息数 / 1小时</p>
-                <p><strong>含义</strong>：用户消息密度，值越高说明聊天越活跃</p>
-                <p><strong>热度等级</strong>：</p>
-                <ul>
-                  <li>0.0-0.5：cold（冷清）</li>
-                  <li>0.5-1.0：warm（温暖）</li>
-                  <li>1.0-3.0：hot（热烈）</li>
-                  <li>> 3.0：fire（火热）</li>
-                </ul>
-                <p><strong>示例</strong>：</p>
-                <ul>
-                  <li>近1小时 0 条消息：heat = 0.0（cold）</li>
-                  <li>近1小时 1 条消息：heat = 1.0（hot）</li>
-                  <li>近1小时 5 条消息：heat = 5.0（fire）</li>
-                </ul>
-              </div>
-            </n-collapse-item>
-          </n-collapse>
-        </n-card>
       </n-tab-pane>
     </n-tabs>
 
@@ -1047,6 +924,51 @@
 
         <!-- ===== 详细信息（可折叠） ===== -->
         <n-collapse default-expanded-names="">
+          <!-- 🤖 LLM 调用详情（重点展示） -->
+          <n-collapse-item v-if="detailsData.emotion_llm_details || detailsData.thought_generation" title="🤖 LLM 调用详情" name="llm_io">
+            <!-- 情绪评估 LLM -->
+            <template v-if="detailsData.emotion_llm_details">
+              <h4 style="margin: 8px 0; font-size: 14px;">🎭 情绪评估 LLM</h4>
+              <n-descriptions bordered :column="2" size="small" style="margin-bottom: 8px;">
+                <n-descriptions-item label="模型">{{ detailsData.emotion_llm_details.model || '-' }}</n-descriptions-item>
+                <n-descriptions-item label="耗时">{{ detailsData.emotion_llm_details.duration_ms || '-' }}ms</n-descriptions-item>
+              </n-descriptions>
+              <n-collapse style="margin-bottom: 12px;">
+                <n-collapse-item title="📤 发送的 Prompt" name="emotion_prompt">
+                  <n-code :code="detailsData.emotion_llm_details.prompt_sent || '无'" language="text" word-wrap />
+                </n-collapse-item>
+                <n-collapse-item title="📥 LLM 返回" name="emotion_response">
+                  <n-code :code="detailsData.emotion_llm_details.response_received || '无'" language="text" word-wrap />
+                </n-collapse-item>
+              </n-collapse>
+            </template>
+
+            <!-- 念头生成 LLM -->
+            <template v-if="detailsData.thought_generation">
+              <h4 style="margin: 8px 0; font-size: 14px;">💭 念头生成 LLM</h4>
+              <n-descriptions bordered :column="2" size="small" style="margin-bottom: 8px;">
+                <n-descriptions-item label="模型">{{ detailsData.thought_generation.model || '-' }}</n-descriptions-item>
+                <n-descriptions-item label="耗时">{{ detailsData.thought_generation.duration_ms || '-' }}ms</n-descriptions-item>
+                <n-descriptions-item label="想联系用户">
+                  <n-tag :type="detailsData.thought_generation.want_to_contact ? 'success' : 'default'" size="small">
+                    {{ detailsData.thought_generation.want_to_contact ? '是' : '否 (SKIP)' }}
+                  </n-tag>
+                </n-descriptions-item>
+                <n-descriptions-item v-if="detailsData.thought_generation.thought" label="生成内容">
+                  {{ detailsData.thought_generation.thought }}
+                </n-descriptions-item>
+              </n-descriptions>
+              <n-collapse style="margin-bottom: 12px;">
+                <n-collapse-item title="📤 发送的 Prompt" name="thought_prompt">
+                  <n-code :code="detailsData.thought_generation.prompt_sent || '无'" language="text" word-wrap />
+                </n-collapse-item>
+                <n-collapse-item title="📥 LLM 返回" name="thought_response">
+                  <n-code :code="detailsData.thought_generation.response_received || '无'" language="text" word-wrap />
+                </n-collapse-item>
+              </n-collapse>
+            </template>
+          </n-collapse-item>
+
           <!-- 决策计算详情 -->
           <n-collapse-item title="决策计算详情" name="decision">
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
@@ -1094,46 +1016,20 @@
             </div>
           </n-collapse-item>
 
-          <!-- 上下文详情 -->
-          <n-collapse-item v-if="detailsData.session_context || detailsData.hindsight_context" title="上下文详情" name="context">
-            <n-card v-if="detailsData.session_context" title="Session 对话" size="small" style="margin-bottom: 8px;">
-              <n-code :code="detailsData.session_context" language="text" word-wrap />
-            </n-card>
-            <n-card v-if="detailsData.hindsight_context" title="Hindsight 记忆" size="small" style="margin-bottom: 8px;">
-              <n-code :code="detailsData.hindsight_context" language="text" word-wrap />
-            </n-card>
-            <n-list v-if="detailsData.recall_results?.length" bordered size="small">
-              <n-list-item v-for="(item, idx) in detailsData.recall_results" :key="idx">
-                <div style="font-size: 13px;">{{ item.content || item.text || formatJson(item) }}</div>
-              </n-list-item>
-            </n-list>
-          </n-collapse-item>
-
-          <!-- 念头生成详情 -->
-          <n-collapse-item v-if="detailsData.thought_generation" title="念头生成详情" name="thought">
-            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-              <n-descriptions-item label="念头类型">
-                <n-tag :type="getThoughtTypeTagType(detailsData.thought_type)" size="small">
-                  {{ thoughtTypeLabelCn(detailsData.thought_type) }}
+          <!-- 上下文摘要 -->
+          <n-collapse-item v-if="detailsData.session_context || detailsData.hindsight_context || detailsData.recall_results?.length" title="上下文摘要" name="context">
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
+              <n-descriptions-item label="Session 对话">
+                <n-tag :type="detailsData.session_context ? 'success' : 'default'" size="small">
+                  {{ detailsData.session_context ? '有' : '无' }}
                 </n-tag>
               </n-descriptions-item>
-              <n-descriptions-item label="生成状态">
-                <n-tag :type="detailsData.thought_generation?.success ? 'success' : 'error'" size="small">
-                  {{ detailsData.thought_generation?.success ? '成功' : '失败' }}
+              <n-descriptions-item label="Hindsight 记忆">
+                <n-tag :type="detailsData.hindsight_context ? 'success' : 'default'" size="small">
+                  {{ detailsData.hindsight_context ? '有' : '无' }}
                 </n-tag>
               </n-descriptions-item>
-              <n-descriptions-item v-if="detailsData.thought_generation?.thought" label="生成内容" :span="2">
-                {{ detailsData.thought_generation.thought }}
-              </n-descriptions-item>
-              <n-descriptions-item v-if="detailsData.thought_generation?.model" label="LLM 模型">
-                {{ detailsData.thought_generation.model }}
-              </n-descriptions-item>
-              <n-descriptions-item v-if="detailsData.thought_generation?.duration_ms" label="LLM 耗时">
-                {{ detailsData.thought_generation.duration_ms }}ms
-              </n-descriptions-item>
-              <n-descriptions-item v-if="detailsData.thought_generation?.error" label="错误" :span="2">
-                <span style="color: #d03050;">{{ detailsData.thought_generation.error }}</span>
-              </n-descriptions-item>
+              <n-descriptions-item label="召回记忆数">{{ detailsData.recall_results?.length || 0 }} 条</n-descriptions-item>
             </n-descriptions>
           </n-collapse-item>
 
@@ -1358,9 +1254,14 @@ const showThoughtContentModal = ref(false)
 const thoughtContentData = ref(null)
 
 // 测试
-const testing = ref({ thought: false, llm: false, sessionContext: false, contextCollector: false, thoughtEngine: false })
+const testing = ref({ thought: false, llm: false, emotionLLM: false, thoughtLLM: false, sessionContext: false, contextCollector: false, thoughtEngine: false })
 const showTestResult = ref(false)
 const testResult = ref(null)
+
+// LLM 测试结果
+const llmTestResult = ref(null)
+const emotionLLMTestResult = ref(null)
+const thoughtLLMTestResult = ref(null)
 
 // 选项
 const providerOptions = [
@@ -1861,12 +1762,40 @@ const testLLMConnect = async () => {
   testing.value.llm = true
   try {
     const result = await api.testLLMConnect()
-    testResult.value = result
-    showTestResult.value = true
+    llmTestResult.value = result
   } catch (e) {
     message.error('LLM 测试失败')
+    llmTestResult.value = { success: false, error: e.message }
   } finally {
     testing.value.llm = false
+  }
+}
+
+const testEmotionLLM = async () => {
+  testing.value.emotionLLM = true
+  try {
+    const resp = await fetch('/api/llm/test/emotion')
+    const result = await resp.json()
+    emotionLLMTestResult.value = result
+  } catch (e) {
+    message.error('情绪评估 LLM 测试失败')
+    emotionLLMTestResult.value = { success: false, error: e.message }
+  } finally {
+    testing.value.emotionLLM = false
+  }
+}
+
+const testThoughtLLM = async () => {
+  testing.value.thoughtLLM = true
+  try {
+    const resp = await fetch('/api/llm/test/thought')
+    const result = await resp.json()
+    thoughtLLMTestResult.value = result
+  } catch (e) {
+    message.error('念头生成 LLM 测试失败')
+    thoughtLLMTestResult.value = { success: false, error: e.message }
+  } finally {
+    testing.value.thoughtLLM = false
   }
 }
 
@@ -2084,6 +2013,29 @@ onMounted(async () => {
   :deep(.n-tabs-tab) {
     padding: 6px 8px;
     font-size: 13px;
+  }
+
+  /* Tab 导航横向可滚动 */
+  :deep(.n-tabs-nav) {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  :deep(.n-tabs-nav-scrollable) {
+    overflow-x: auto !important;
+  }
+
+  /* 步骤条适配 */
+  :deep(.n-steps) {
+    padding-left: 0 !important;
+  }
+  :deep(.n-step) {
+    padding-bottom: 12px !important;
+  }
+  :deep(.n-step-content__title) {
+    font-size: 13px !important;
+  }
+  :deep(.n-step-content__description) {
+    font-size: 12px !important;
   }
 }
 </style>
