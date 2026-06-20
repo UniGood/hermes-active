@@ -578,10 +578,10 @@ class ActiveConsciousnessService:
                 sources_placeholders = ", ".join(f"'{s}'" for s in session_sources)
 
                 with state_engine.connect() as conn:
-                    # 最近用户消息（查询所有配置的 session 来源）
+                    # 最近用户消息（查询所有配置的 session 来源，不限制 session 状态）
                     row = conn.execute(text(
                         f"SELECT MAX(timestamp) FROM messages WHERE role='user' AND session_id IN "
-                        f"(SELECT id FROM sessions WHERE source IN ({sources_placeholders}) AND ended_at IS NULL)"
+                        f"(SELECT id FROM sessions WHERE source IN ({sources_placeholders}))"
                     )).fetchone()
                     if row and row[0]:
                         last_user_msg_at = str(row[0])
@@ -593,7 +593,7 @@ class ActiveConsciousnessService:
                     reply_count_row = conn.execute(text(
                         f"SELECT COUNT(*) FROM messages WHERE role='user' "
                         f"AND CAST(timestamp AS REAL) > CAST(strftime('%s', 'now', '-1 hour') AS REAL) "
-                        f"AND session_id IN (SELECT id FROM sessions WHERE source IN ({sources_placeholders}) AND ended_at IS NULL)"
+                        f"AND session_id IN (SELECT id FROM sessions WHERE source IN ({sources_placeholders}))"
                     )).fetchone()
                     recent_reply_count = reply_count_row[0] if reply_count_row else 0
 
@@ -609,7 +609,7 @@ class ActiveConsciousnessService:
                     row = conn.execute(text(
                         f"SELECT MAX(timestamp) FROM messages WHERE role='assistant' "
                         f"AND session_id IN "
-                        f"(SELECT id FROM sessions WHERE source IN ({sources_placeholders}) AND ended_at IS NULL)"
+                        f"(SELECT id FROM sessions WHERE source IN ({sources_placeholders}))"
                     )).fetchone()
                     if row and row[0]:
                         last_self_msg_at = str(row[0])
