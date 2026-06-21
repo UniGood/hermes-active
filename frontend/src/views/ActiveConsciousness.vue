@@ -1935,7 +1935,16 @@ const thoughtColumns = [
 ]
 const formatTime = (isoStr) => {
   if (!isoStr) return ''
-  const d = new Date(isoStr)
+  let d
+  // 支持 Unix 时间戳（数字或字符串形式）
+  if (typeof isoStr === 'number' || /^\d+(\.\d+)?$/.test(isoStr)) {
+    const ts = typeof isoStr === 'number' ? isoStr : parseFloat(isoStr)
+    // 如果是秒级时间戳（小于 1e12），转换为毫秒
+    d = new Date(ts < 1e12 ? ts * 1000 : ts)
+  } else {
+    d = new Date(isoStr)
+  }
+  if (isNaN(d.getTime())) return '-'
   const yyyy = d.getFullYear()
   const MM = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
