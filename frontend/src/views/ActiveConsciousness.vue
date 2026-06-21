@@ -1053,14 +1053,14 @@
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 8px;">
               <n-descriptions-item label="耗时">{{ detailsData.emotion_llm_details.duration_ms || '-' }}ms</n-descriptions-item>
             </n-descriptions>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 12px; color: #666; margin-bottom: 4px;">发送的 Prompt</div>
-              <n-code :code="detailsData.emotion_llm_details.prompt_sent || '无'" language="text" word-wrap />
-            </div>
-            <div style="margin-bottom: 12px;">
-              <div style="font-size: 12px; color: #666; margin-bottom: 4px;">LLM 返回</div>
-              <n-code :code="detailsData.emotion_llm_details.response_received || '无'" language="text" word-wrap />
-            </div>
+            <n-collapse style="margin-bottom: 12px;">
+              <n-collapse-item title="发送的 Prompt" name="emotion_prompt">
+                <n-code :code="detailsData.emotion_llm_details.prompt_sent || '无'" language="text" word-wrap />
+              </n-collapse-item>
+              <n-collapse-item title="LLM 返回" name="emotion_response">
+                <n-code :code="detailsData.emotion_llm_details.response_received || '无'" language="text" word-wrap />
+              </n-collapse-item>
+            </n-collapse>
           </template>
 
           <!-- 念头生成 LLM -->
@@ -1077,14 +1077,14 @@
                 {{ detailsData.thought_generation.thought }}
               </n-descriptions-item>
             </n-descriptions>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 12px; color: #666; margin-bottom: 4px;">发送的 Prompt</div>
-              <n-code :code="detailsData.thought_generation.prompt_sent || '无'" language="text" word-wrap />
-            </div>
-            <div style="margin-bottom: 12px;">
-              <div style="font-size: 12px; color: #666; margin-bottom: 4px;">LLM 返回</div>
-              <n-code :code="detailsData.thought_generation.response_received || '无'" language="text" word-wrap />
-            </div>
+            <n-collapse style="margin-bottom: 12px;">
+              <n-collapse-item title="发送的 Prompt" name="thought_prompt">
+                <n-code :code="detailsData.thought_generation.prompt_sent || '无'" language="text" word-wrap />
+              </n-collapse-item>
+              <n-collapse-item title="LLM 返回" name="thought_response">
+                <n-code :code="detailsData.thought_generation.response_received || '无'" language="text" word-wrap />
+              </n-collapse-item>
+            </n-collapse>
           </template>
         </template>
 
