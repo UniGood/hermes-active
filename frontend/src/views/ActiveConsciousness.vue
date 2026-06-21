@@ -308,7 +308,7 @@
               <n-input-number v-model:value="config.active.no_send_after_user_msg_minutes" :min="1" :max="60" />
             </n-form-item>
             <n-form-item label="热度阈值（高于此不发送）">
-              <n-input-number v-model:value="config.active.no_send_while_heat_above" :min="0" :max="10" :step="0.1" />
+              <n-input-number v-model:value="config.active.no_send_while_heat_above" :min="0" :max="1000" :step="0.1" />
             </n-form-item>
             <n-form-item label="情绪阈值（低于此不发送）">
               <n-input-number v-model:value="config.active.no_send_while_vibe_below" :min="0" :max="1" :step="0.1" />
