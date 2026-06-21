@@ -158,5 +158,5 @@ if __name__ == "__main__":
         "main:app",
         host=SERVER_HOST,
         port=SERVER_PORT,
-        reload=True
+        reload=False
     )
