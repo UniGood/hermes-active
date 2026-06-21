@@ -1434,12 +1434,13 @@ const longingColor = computed(() => {
   return '#d03050'
 })
 const heatTagType = computed(() => {
-  const label = status.value.chat_heat.label
-  if (label === '冷清' || label === 'cold') return 'default'
-  if (label === '温暖' || label === 'warm') return 'success'
-  if (label === '热' || label === 'hot') return 'warning'
-  if (label === '火热' || label === 'fire') return 'error'
-  return 'default'
+  const idx = status.value.chat_heat.level_index ?? 0
+  const total = status.value.chat_heat.total_levels ?? 4
+  const ratio = total > 1 ? idx / (total - 1) : 0
+  if (ratio >= 0.75) return 'error'    // 最高级：红
+  if (ratio >= 0.5) return 'warning'   // 次高：橙
+  if (ratio >= 0.25) return 'success'  // 中等：绿
+  return 'default'                      // 最低：灰
 })
 const intensityColor = computed(() => {
   const intensity = status.value.emotional_intensity.intensity

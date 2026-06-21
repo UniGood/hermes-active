@@ -675,10 +675,12 @@ class ActiveConsciousnessService:
                     pass
 
             # 计算热度等级
-            for item in reversed(heat_levels):
+            chat_level_index = 0
+            for idx, item in enumerate(reversed(heat_levels)):
                 threshold, label = item[0], item[1]
                 if chat_heat >= threshold:
                     chat_label = label
+                    chat_level_index = len(heat_levels) - 1 - idx
                     break
 
             # 情绪值（从 configs 读取，由 LLM 更新）
@@ -759,6 +761,8 @@ class ActiveConsciousnessService:
                     "heat": round(chat_heat, 2),
                     "label": LABEL_CN.get(chat_label, chat_label),
                     "label_display": get_label_display(chat_label),
+                    "level_index": chat_level_index,
+                    "total_levels": len(heat_levels),
                     "recent_count": recent_count,
                     "recent_hours": recent_hours,
                     "recent_user_msg_at": recent_user_msg_at,
