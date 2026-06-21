@@ -95,6 +95,12 @@ async def delete_thought(thought_id: int):
     raise HTTPException(status_code=500, detail="删除失败")
 
 
+@router.get("/thoughts/{thought_id}")
+async def get_thought_detail(thought_id: int):
+    """获取单条念头详情（含完整 details JSON）"""
+    return ActiveConsciousnessService.get_thought_detail(thought_id)
+
+
 @router.post("/thoughts/{thought_id}/retry")
 async def retry_thought(thought_id: int):
     """重试发送念头"""
@@ -191,8 +197,10 @@ async def test_llm_connect():
 
 async def _test_llm_connection(llm_config: dict, label: str) -> dict:
     """通用 LLM 连通测试"""
+    import time
     try:
         test_prompt = "请回复'连接成功'两个字"
+        start_ms = time.time()
         if llm_config.get("mode") == "hermes":
             import asyncio, sys
             from pathlib import Path
@@ -203,7 +211,8 @@ async def _test_llm_connection(llm_config: dict, label: str) -> dict:
                 messages=[{"role": "user", "content": test_prompt}],
                 temperature=0.1, max_tokens=50,
             )
-            return {"success": True, "data": {"mode": "hermes", "response": response.choices[0].message.content, "model": "hermes default", "label": label}}
+            duration_ms = int((time.time() - start_ms) * 1000)
+            return {"success": True, "data": {"mode": "hermes", "response": response.choices[0].message.content, "model": "hermes default", "label": label, "duration_ms": duration_ms}}
         else:
             if not llm_config.get("api_key"):
                 return {"success": False, "error": f"{label}未配置 API Key"}
@@ -214,9 +223,10 @@ async def _test_llm_connection(llm_config: dict, label: str) -> dict:
                     headers={"Authorization": f"Bearer {llm_config['api_key']}"},
                     json={"model": llm_config.get("model", "deepseek-chat"), "messages": [{"role": "user", "content": test_prompt}], "max_tokens": 50, "temperature": 0.1}
                 )
+                duration_ms = int((time.time() - start_ms) * 1000)
                 data = resp.json()
                 if "choices" in data and data["choices"]:
-                    return {"success": True, "data": {"mode": "custom", "response": data["choices"][0]["message"]["content"], "model": llm_config.get("model"), "base_url": llm_config.get("base_url"), "label": label}}
+                    return {"success": True, "data": {"mode": "custom", "response": data["choices"][0]["message"]["content"], "model": llm_config.get("model"), "base_url": llm_config.get("base_url"), "label": label, "duration_ms": duration_ms}}
                 else:
                     return {"success": False, "error": f"{label} LLM 返回异常: {data}"}
     except Exception as e:

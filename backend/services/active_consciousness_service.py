@@ -815,8 +815,9 @@ class ActiveConsciousnessService:
                     params["date"] = date
 
                 total = conn.execute(text(f"SELECT COUNT(*) FROM active_thought_logs {where_clause}"), params).scalar() or 0
+                # 不返回 details 字段以提高性能
                 rows = conn.execute(text(
-                    f"SELECT * FROM active_thought_logs {where_clause} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+                    f"SELECT id, heartbeat_id, type, content, intensity, decision, reason, score, recall_count, recall_source, chat_heat, emotional_intensity, created_at FROM active_thought_logs {where_clause} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
                 ), params).fetchall()
 
                 items = []
@@ -883,6 +884,22 @@ class ActiveConsciousnessService:
                 return d
         except Exception as e:
             logger.error("查询心跳详情失败: %s", e)
+            return None
+
+    @staticmethod
+    def get_thought_detail(thought_id: int) -> Optional[Dict[str, Any]]:
+        """获取单条念头日志详情（含完整 details JSON）"""
+        try:
+            with active_engine.connect() as conn:
+                row = conn.execute(text(
+                    "SELECT * FROM active_thought_logs WHERE id = :id"
+                ), {"id": thought_id}).fetchone()
+                if not row:
+                    return None
+                d = dict(row._mapping) if hasattr(row, '_mapping') else dict(row)
+                return d
+        except Exception as e:
+            logger.error("查询念头详情失败: %s", e)
             return None
 
     @staticmethod

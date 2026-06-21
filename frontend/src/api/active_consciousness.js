@@ -20,6 +20,9 @@ export default {
     if (date) params.date = date
     return http.get('/active-consciousness/thoughts', { params })
   },
+  getThoughtDetail(id) {
+    return http.get(`/active-consciousness/thoughts/${id}`)
+  },
   deleteThought(id) {
     return http.delete(`/active-consciousness/thoughts/${id}`)
   },

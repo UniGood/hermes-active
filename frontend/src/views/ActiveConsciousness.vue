@@ -217,7 +217,7 @@
               <n-button size="small" quaternary @click="thoughtDate = null; loadThoughts(1)">全部</n-button>
             </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
-              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="860" remote />
+              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="860" remote :loading="thoughtsLoading" />
             </div>
           </n-tab-pane>
         </n-tabs>
@@ -797,20 +797,44 @@
     </n-modal>
 
     <!-- 念头内容弹窗 -->
-    <n-modal v-model:show="showThoughtContentModal" preset="card" title="念头内容" style="width: 90vw; max-width: 900px">
+    <n-modal v-model:show="showThoughtContentModal" preset="card" title="发送详情" style="width: 90vw; max-width: 900px">
       <template v-if="thoughtContentData">
         <n-descriptions :column="1" label-placement="left" bordered size="small">
-          <n-descriptions-item label="心跳ID">{{ thoughtContentData.heartbeat_id }}</n-descriptions-item>
-          <n-descriptions-item label="生成数量">{{ thoughtContentData.thoughts_generated }}</n-descriptions-item>
-          <n-descriptions-item label="念头内容" v-if="thoughtContentData.details_parsed?.thought_generation?.thought">
-            {{ thoughtContentData.details_parsed.thought_generation.thought }}
+          <n-descriptions-item label="心跳ID">{{ thoughtContentData.id }}</n-descriptions-item>
+          <n-descriptions-item label="是否发送">
+            <n-tag :type="thoughtContentData.message_sent ? 'success' : 'default'" size="small">
+              {{ thoughtContentData.message_sent ? '已发送' : '未发送' }}
+            </n-tag>
           </n-descriptions-item>
-          <n-descriptions-item label="念头类型" v-if="thoughtContentData.details_parsed?.thought_type">
-            {{ thoughtContentData.details_parsed.thought_type }}
+          <n-descriptions-item label="发送状态" v-if="thoughtContentData.message_sending">
+            <n-tag :type="thoughtContentData.message_sending.success ? 'success' : 'error'" size="small">
+              {{ thoughtContentData.message_sending.success ? '发送成功' : '发送失败' }}
+            </n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="念头类型" v-if="thoughtContentData.thought_type">
+            {{ thoughtContentData.thought_type }}
+          </n-descriptions-item>
+          <n-descriptions-item label="决策类型" v-if="thoughtContentData.decision?.type">
+            <n-tag :type="getDecisionTagType(thoughtContentData.decision.type)" size="small">
+              {{ thoughtContentData.decision.type }}
+            </n-tag>
+            <span v-if="thoughtContentData.decision.score" style="margin-left: 8px; font-size: 12px; color: #999;">
+              分数: {{ thoughtContentData.decision.score?.toFixed(3) }}
+            </span>
+          </n-descriptions-item>
+          <n-descriptions-item label="发送内容" v-if="thoughtContentData.thought_content">
+            <div style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;">{{ thoughtContentData.thought_content }}</div>
+          </n-descriptions-item>
+          <n-descriptions-item label="生成数量">{{ thoughtContentData.thoughts_generated || 0 }}</n-descriptions-item>
+          <n-descriptions-item label="LLM 耗时" v-if="thoughtContentData.details_parsed?.thought_generation?.duration_ms">
+            {{ thoughtContentData.details_parsed.thought_generation.duration_ms }}ms
+          </n-descriptions-item>
+          <n-descriptions-item label="LLM 模型" v-if="thoughtContentData.details_parsed?.thought_generation?.model">
+            {{ thoughtContentData.details_parsed.thought_generation.model }}
           </n-descriptions-item>
         </n-descriptions>
       </template>
-      <n-empty v-else description="无念头内容" />
+      <n-empty v-else description="无发送详情" />
     </n-modal>
 
     <!-- 心跳日志详情弹窗 -->
@@ -1166,44 +1190,39 @@
             </n-descriptions>
           </n-collapse-item>
 
-          <!-- ThoughtEngine 上下文 -->
-          <n-collapse-item v-if="thoughtDetailsData.details_parsed?.context_bundle" title="上下文信息" name="context">
+          <!-- 上下文信息 -->
+          <n-collapse-item v-if="thoughtDetailsData.context_bundle" title="上下文信息" name="context">
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-              <n-descriptions-item label="对话条数">{{ thoughtDetailsData.details_parsed.context_bundle.conversations?.length || 0 }}</n-descriptions-item>
-              <n-descriptions-item label="记忆条数">{{ thoughtDetailsData.details_parsed.context_bundle.memories?.length || 0 }}</n-descriptions-item>
+              <n-descriptions-item label="对话条数">{{ thoughtDetailsData.context_bundle.conversations?.length || 0 }}</n-descriptions-item>
+              <n-descriptions-item label="记忆条数">{{ thoughtDetailsData.context_bundle.memories?.length || 0 }}</n-descriptions-item>
               <n-descriptions-item label="主导情绪">
-                <n-tag :type="getEmotionTagType(thoughtDetailsData.details_parsed.context_bundle.emotion?.dominant)" size="small">
-                  {{ emotionLabelCn(thoughtDetailsData.details_parsed.context_bundle.emotion?.dominant) }}
+                <n-tag :type="getEmotionTagType(thoughtDetailsData.context_bundle.emotion?.dominant)" size="small">
+                  {{ emotionLabelCn(thoughtDetailsData.context_bundle.emotion?.dominant) }}
                 </n-tag>
               </n-descriptions-item>
-              <n-descriptions-item label="时间感知">{{ thoughtDetailsData.details_parsed.context_bundle.time_context?.time_display || "-" }}</n-descriptions-item>
+              <n-descriptions-item label="时间感知">{{ thoughtDetailsData.context_bundle.time_context?.time_display || "-" }}</n-descriptions-item>
             </n-descriptions>
           </n-collapse-item>
 
           <!-- LLM 调用详情 -->
-          <n-collapse-item v-if="thoughtDetailsData.details_parsed?.thought_generation" title="LLM 调用详情" name="llm">
+          <n-collapse-item v-if="thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation" title="LLM 调用详情" name="llm">
             <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-              <n-descriptions-item label="模型">{{ thoughtDetailsData.details_parsed.thought_generation.model || "-" }}</n-descriptions-item>
-              <n-descriptions-item label="耗时">{{ thoughtDetailsData.details_parsed.thought_generation.duration_ms || "-" }}ms</n-descriptions-item>
+              <n-descriptions-item label="模型">{{ (thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.model || "-" }}</n-descriptions-item>
+              <n-descriptions-item label="耗时">{{ (thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.duration_ms || "-" }}ms</n-descriptions-item>
               <n-descriptions-item label="想联系用户">
-                <n-tag :type="thoughtDetailsData.details_parsed.thought_generation.want_to_contact ? 'success' : 'default'" size="small">
-                  {{ thoughtDetailsData.details_parsed.thought_generation.want_to_contact ? "是" : "否 (SKIP)" }}
+                <n-tag :type="(thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.want_to_contact ? 'success' : 'default'" size="small">
+                  {{ (thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.want_to_contact ? "是" : "否 (SKIP)" }}
                 </n-tag>
               </n-descriptions-item>
             </n-descriptions>
             <n-collapse style="margin-bottom: 16px;">
               <n-collapse-item title="发送的提示词" name="prompt">
-                <n-code :code="thoughtDetailsData.details_parsed.thought_generation.prompt_sent || '无'" language="text" word-wrap />
+                <n-code :code="(thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.prompt_sent || '无'" language="text" word-wrap />
               </n-collapse-item>
               <n-collapse-item title="LLM 返回内容" name="response">
-                <n-code :code="thoughtDetailsData.details_parsed.thought_generation.response_received || '无'" language="text" word-wrap />
+                <n-code :code="(thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.response_received || '无'" language="text" word-wrap />
               </n-collapse-item>
             </n-collapse>
-          </n-collapse-item>
-
-          <!-- 原始 JSON -->
-          <n-collapse-item title="原始 JSON 数据" name="raw">
-            <n-code :code="formatJson(thoughtDetailsData)" language="json" word-wrap />
           </n-collapse-item>
         </n-collapse>
       </div>
@@ -1297,6 +1316,8 @@ const status = ref({
 // 日志
 const thoughts = ref({ total: 0, items: [] })
 const heartbeats = ref({ total: 0, items: [] })
+const thoughtsLoading = ref(false)
+const heartbeatsLoading = ref(false)
 const heartbeatDate = ref(Date.now())
 const thoughtDate = ref(Date.now())
 const showRecallModal = ref(false)
@@ -1407,32 +1428,78 @@ const thoughtDetailsTitle = ref('')
 
 function showHeartbeatDetails(row) {
   detailsTitle.value = `心跳日志 #${row.id} 详情`
-  detailsData.value = row.details_parsed || null
-  isHeartbeatDetails.value = true
-  showDetailsModal.value = true
-}
-
-function showThoughtDetails(row) {
-  thoughtDetailsTitle.value = `念头日志 #${row.id} 详情`
-  // 解析 details JSON 并合并顶层字段
+  // 解析 details JSON 并合并数据库列字段
   let parsed = {}
   if (row.details && typeof row.details === 'string') {
     try { parsed = JSON.parse(row.details) } catch (e) { parsed = {} }
   } else if (row.details && typeof row.details === 'object') {
     parsed = row.details
   }
-  thoughtDetailsData.value = {
+  detailsData.value = {
     ...parsed,
-    // 顶层字段覆盖，确保弹窗能正确读取
-    thought: parsed.thought || row.content || '',
-    thought_type: parsed.thought_type || row.type || '',
-    decision: parsed.decision || row.decision || '',
-    score: parsed.score || row.score || 0,
-    emotion_state: parsed.emotion_state || null,
-    hindsight_tags: parsed.hindsight_tags || [],
-    hindsight_stored: parsed.hindsight_stored ?? false,
+    // 数据库列字段覆盖
+    id: row.id,
+    started_at: row.started_at,
+    duration_ms: row.duration_ms,
+    chat_heat: row.chat_heat,
+    emotional_intensity: row.emotional_intensity,
+    message_sent: row.message_sent,
+    thoughts_generated: row.thoughts_generated,
+    error: row.error,
+    created_at: row.created_at,
+    // 从 details 中提取决策信息
+    decision: parsed.decision || null,
+    emotion_before: parsed.emotion_before || null,
+    emotion_evolved: parsed.emotion_evolved || null,
+    emotion_merged: parsed.emotion_merged || null,
+    session_context: parsed.session_context || null,
+    recall_results: parsed.recall_results || [],
+    hindsight_context: parsed.hindsight_context || null,
   }
+  isHeartbeatDetails.value = true
+  showDetailsModal.value = true
+}
+
+async function showThoughtDetails(row) {
+  thoughtDetailsTitle.value = `念头日志 #${row.id} 详情`
+  thoughtDetailsData.value = null
   showThoughtDetailsModal.value = true
+  
+  try {
+    // 从 API 获取完整详情（含 details JSON）
+    const detail = await api.getThoughtDetail(row.id)
+    if (!detail) {
+      thoughtDetailsData.value = null
+      return
+    }
+    
+    // 解析 details JSON
+    let parsed = {}
+    if (detail.details && typeof detail.details === 'string') {
+      try { parsed = JSON.parse(detail.details) } catch (e) { parsed = {} }
+    } else if (detail.details && typeof detail.details === 'object') {
+      parsed = detail.details
+    }
+    
+    thoughtDetailsData.value = {
+      ...parsed,
+      // 顶层字段覆盖，确保弹窗能正确读取
+      id: detail.id,
+      thought: parsed.thought || detail.content || '',
+      thought_type: parsed.thought_type || detail.type || '',
+      decision: parsed.decision || detail.decision || '',
+      score: parsed.score || detail.score || 0,
+      emotion_state: parsed.emotion_state || null,
+      hindsight_tags: parsed.hindsight_tags || [],
+      hindsight_stored: parsed.hindsight_stored ?? false,
+      llm_call: parsed.llm_call || null,
+      context_bundle: parsed.context_bundle || null,
+      created_at: detail.created_at,
+    }
+  } catch (e) {
+    message.error('加载念头详情失败')
+    thoughtDetailsData.value = null
+  }
 }
 
 function showRecallDetail(row) {
@@ -1440,7 +1507,22 @@ function showRecallDetail(row) {
   showRecallModal.value = true
 }
 function showThoughtContent(row) {
-  thoughtContentData.value = row
+  // 解析 details JSON
+  let parsed = {}
+  if (row.details && typeof row.details === 'string') {
+    try { parsed = JSON.parse(row.details) } catch (e) { parsed = {} }
+  } else if (row.details && typeof row.details === 'object') {
+    parsed = row.details
+  }
+  thoughtContentData.value = {
+    ...row,
+    details_parsed: parsed,
+    // 提取发送详情
+    message_sending: parsed.message_sending || null,
+    thought_content: parsed.message_sending?.thought || parsed.thought_generation?.response_received || '',
+    thought_type: parsed.thought_type || '',
+    decision: parsed.decision || null,
+  }
   showThoughtContentModal.value = true
 }
 function onHeartbeatDateChange(val) {
@@ -1726,6 +1808,7 @@ const loadStatus = async () => {
   }
 }
 const loadThoughts = async (page = 1, dateVal) => {
+  thoughtsLoading.value = true
   try {
     let dateParam = null
     if (dateVal || thoughtDate.value) {
@@ -1755,6 +1838,8 @@ const loadThoughts = async (page = 1, dateVal) => {
     }
   } catch (e) {
     message.error('加载念头日志失败')
+  } finally {
+    thoughtsLoading.value = false
   }
 }
 const loadHeartbeats = async (page = 1, dateVal) => {
