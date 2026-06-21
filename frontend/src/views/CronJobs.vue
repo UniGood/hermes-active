@@ -1182,7 +1182,8 @@ function parseContextFromPrompt(rawPrompt) {
     hindsight_recall_limit: 10,
     hindsight_reflect_enabled: false,
     hindsight_reflect_query: '',
-    weather_enabled: false
+    weather_enabled: false,
+    weather_days: 0
   }
 
   if (!rawPrompt || !rawPrompt.startsWith(CTX_MARKER_START)) {
@@ -1229,6 +1230,9 @@ function parseContextFromPrompt(rawPrompt) {
         break
       case 'weather':
         config.weather_enabled = value === 'true'
+        break
+      case 'weather_days':
+        config.weather_days = parseInt(value) || 0
         break
     }
   }
