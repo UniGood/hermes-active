@@ -431,16 +431,16 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
     # 验证 max_per_hour
     try:
         max_per_hour = int(decision.get("max_per_hour", 2))
-        if max_per_hour < 1 or max_per_hour > 10:
-            errors.append("每小时最大消息数必须在 1-10 之间")
+        if max_per_hour < 1 or max_per_hour > 1000:
+            errors.append("每小时最大消息数必须在 1-1000 之间")
     except (ValueError, TypeError):
         errors.append("每小时最大消息数必须是正整数")
 
     # 验证 max_per_day
     try:
         max_per_day = int(decision.get("max_per_day", 5))
-        if max_per_day < 1 or max_per_day > 50:
-            errors.append("每日最大消息数必须在 1-50 之间")
+        if max_per_day < 1 or max_per_day > 1000:
+            errors.append("每日最大消息数必须在 1-1000 之间")
     except (ValueError, TypeError):
         errors.append("每日最大消息数必须是正整数")
 
@@ -695,10 +695,11 @@ class ActiveConsciousnessService:
             hour_sent_count = 0
             try:
                 with active_engine.connect() as conn:
+                    # 注意：数据库存的是北京时间(UTC+8)，查询时需要调整时区
                     row = conn.execute(text(
                         "SELECT COUNT(*) FROM active_heartbeat_logs "
                         "WHERE message_sent = 1 "
-                        "AND created_at > datetime('now', 'start of day')"
+                        "AND created_at > datetime('now', '+8 hours', 'start of day')"
                     )).fetchone()
                     if row:
                         today_sent_count = row[0] or 0
@@ -706,7 +707,7 @@ class ActiveConsciousnessService:
                     row = conn.execute(text(
                         "SELECT COUNT(*) FROM active_heartbeat_logs "
                         "WHERE message_sent = 1 "
-                        "AND created_at > datetime('now', '-1 hour')"
+                        "AND created_at > datetime('now', '+7 hours')"
                     )).fetchone()
                     if row:
                         hour_sent_count = row[0] or 0
@@ -720,7 +721,7 @@ class ActiveConsciousnessService:
                 with active_engine.connect() as conn:
                     row = conn.execute(text(
                         "SELECT COUNT(*), MAX(created_at) FROM active_heartbeat_logs "
-                        "WHERE created_at > datetime('now', 'start of day')"
+                        "WHERE created_at > datetime('now', '+8 hours', 'start of day')"
                     )).fetchone()
                     if row:
                         heartbeat_count = row[0] or 0

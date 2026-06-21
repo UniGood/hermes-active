@@ -276,10 +276,10 @@
               <n-input-number v-model:value="config.decision.memory_threshold" :min="0" :max="1" :step="0.1" />
             </n-form-item>
             <n-form-item label="每小时最大消息">
-              <n-input-number v-model:value="config.decision.max_per_hour" :min="1" :max="10" />
+              <n-input-number v-model:value="config.decision.max_per_hour" :min="1" :max="1000" />
             </n-form-item>
             <n-form-item label="每日最大消息">
-              <n-input-number v-model:value="config.decision.max_per_day" :min="1" :max="50" />
+              <n-input-number v-model:value="config.decision.max_per_day" :min="1" :max="1000" />
             </n-form-item>
 
             <!-- 发送保护 -->
@@ -412,6 +412,27 @@
 
         <!-- 🎭 情绪评估 LLM -->
         <n-card title="🎭 情绪评估 LLM" size="small" style="margin-bottom: 16px">
+          <n-form-item label="LLM 模式">
+            <n-radio-group v-model:value="config.emotion_llm.mode">
+              <n-radio value="">跟随通用 LLM</n-radio>
+              <n-radio value="hermes">使用 Hermes LLM</n-radio>
+              <n-radio value="custom">自定义 LLM</n-radio>
+            </n-radio-group>
+          </n-form-item>
+          <template v-if="config.emotion_llm.mode === 'custom'">
+            <n-form-item label="Provider">
+              <n-select v-model:value="config.emotion_llm.provider" :options="providerOptions" />
+            </n-form-item>
+            <n-form-item label="Model">
+              <n-input v-model:value="config.emotion_llm.model" placeholder="agnes-2.0-flash" />
+            </n-form-item>
+            <n-form-item label="API Key">
+              <n-input v-model:value="config.emotion_llm.api_key" type="password" show-password-on="mousedown" placeholder="输入 API Key" />
+            </n-form-item>
+            <n-form-item label="Base URL">
+              <n-input v-model:value="config.emotion_llm.base_url" placeholder="https://api.openai.com/v1" />
+            </n-form-item>
+          </template>
           <n-form-item label="情绪评估提示词">
             <n-input v-model:value="config.prompts.emotion_evaluation" type="textarea" :rows="6" placeholder="输入情绪评估提示词模板" />
           </n-form-item>
@@ -450,6 +471,27 @@
               <span class="form-item-hint">推荐 0.7-1.0</span>
             </n-form-item>
           </template>
+          <n-form-item label="LLM 模式">
+            <n-radio-group v-model:value="config.thought_llm.mode">
+              <n-radio value="">跟随通用 LLM</n-radio>
+              <n-radio value="hermes">使用 Hermes LLM</n-radio>
+              <n-radio value="custom">自定义 LLM</n-radio>
+            </n-radio-group>
+          </n-form-item>
+          <template v-if="config.thought_llm.mode === 'custom'">
+            <n-form-item label="Provider">
+              <n-select v-model:value="config.thought_llm.provider" :options="providerOptions" />
+            </n-form-item>
+            <n-form-item label="Model">
+              <n-input v-model:value="config.thought_llm.model" placeholder="mimo-v2.5-pro" />
+            </n-form-item>
+            <n-form-item label="API Key">
+              <n-input v-model:value="config.thought_llm.api_key" type="password" show-password-on="mousedown" placeholder="输入 API Key" />
+            </n-form-item>
+            <n-form-item label="Base URL">
+              <n-input v-model:value="config.thought_llm.base_url" placeholder="https://api.openai.com/v1" />
+            </n-form-item>
+          </template>
           <n-form-item label="念头生成提示词">
             <n-input v-model:value="config.prompts.thought_generation" type="textarea" :rows="6" placeholder="输入念头生成提示词模板" />
           </n-form-item>
@@ -471,6 +513,13 @@
             </template>
           </n-alert>
         </n-card>
+        
+        <!-- 保存按钮 -->
+        <div style="text-align: center; padding: 16px 0;">
+          <n-button type="primary" @click="saveConfig" :loading="saving" size="large">
+            保存 LLM 配置
+          </n-button>
+        </div>
       </n-tab-pane>
 
       <!-- Tab: 运行逻辑 -->
@@ -1199,6 +1248,8 @@ const formatJsonValue = (val) => {
 const config = ref({
   enabled: false,
   llm: { mode: 'hermes', provider: 'openai', model: 'deepseek-chat', api_key: '', base_url: '' },
+  emotion_llm: { mode: '', provider: '', model: '', api_key: '', base_url: '' },
+  thought_llm: { mode: '', provider: '', model: '', api_key: '', base_url: '' },
   active: { enabled: true, heartbeat_interval: 600, send_tag: '凯莉', time_format: '%H:%M', no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 3.0, no_send_while_vibe_below: 0.15, cooldown_minutes: 30 },
   session: { sources: ['weixin'], max_messages_per_session: 15, filter_tool_messages: true },
   decision: { send_threshold: 0.35, delay_threshold: 0.15, memory_threshold: 0.05, max_per_hour: 2, max_per_day: 5, longing_gap_threshold: 3 },
