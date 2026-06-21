@@ -1420,12 +1420,17 @@ function onNotifyPlatformChange(platform) {
   }
 }
 
-// 计算属性
+// 想念分数标签（根据 level_index 和 total_levels 动态决定）
 const longingTagType = computed(() => {
-  const level = status.value.longing.level
-  if (level <= 1) return 'success'
-  if (level <= 2) return 'warning'
-  return 'error'
+  const level = status.value.longing.level ?? 0
+  const levels = status.value.config?.levels?.longing
+  // 如果有配置，用比例；否则用默认5级
+  const total = levels ? levels.length : 5
+  const ratio = total > 1 ? level / (total - 1) : 0
+  if (ratio >= 0.6) return 'error'     // 高：红
+  if (ratio >= 0.4) return 'warning'   // 中：橙
+  if (ratio >= 0.2) return 'info'      // 低：蓝
+  return 'default'                      // 最低：灰
 })
 const longingColor = computed(() => {
   const score = status.value.longing.score
@@ -1433,13 +1438,14 @@ const longingColor = computed(() => {
   if (score < 0.6) return '#f0a020'
   return '#d03050'
 })
+// 聊天热度标签（根据 level_index 和 total_levels 动态决定）
 const heatTagType = computed(() => {
   const idx = status.value.chat_heat.level_index ?? 0
   const total = status.value.chat_heat.total_levels ?? 4
   const ratio = total > 1 ? idx / (total - 1) : 0
-  if (ratio >= 0.75) return 'error'    // 最高级：红
-  if (ratio >= 0.5) return 'warning'   // 次高：橙
-  if (ratio >= 0.25) return 'warning'  // 中等：黄/橙
+  if (ratio >= 0.75) return 'error'    // 最高：红
+  if (ratio >= 0.5) return 'warning'   // 中高：橙
+  if (ratio >= 0.25) return 'info'     // 中低：蓝
   return 'default'                      // 最低：灰
 })
 const intensityColor = computed(() => {
