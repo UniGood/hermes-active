@@ -250,8 +250,9 @@
                   <n-radio :value="0">今天</n-radio>
                   <n-radio :value="2">两天</n-radio>
                   <n-radio :value="3">三天</n-radio>
+                  <n-radio :value="4">四天</n-radio>
                 </n-radio-group>
-                <n-text depth="3" style="font-size: 12px">高德 API 最多支持预报 3 天</n-text>
+                <n-text depth="3" style="font-size: 12px">高德 API 实测最多支持 4 天</n-text>
               </n-space>
             </template>
           </n-space>
@@ -752,6 +753,7 @@ const weatherDaysLabel = computed(() => {
   const v = Number(contextConfig.value.weather_days)
   if (v === 2) return '今+明'
   if (v === 3) return '今+明+后'
+  if (v === 4) return '今+明+后+大后'
   return '今天实况'
 })
 

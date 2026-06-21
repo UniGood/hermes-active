@@ -275,7 +275,7 @@ async def run_cron_job(
                 wd = int(raw_days)
             except (ValueError, TypeError):
                 wd = 0
-            if wd not in (0, 2, 3):
+            if wd not in (0, 2, 3, 4):
                 wd = 0
             weather_text = await fetch_weather_for_context(forecast_days=wd)
             if weather_text:
@@ -609,7 +609,7 @@ async def preview_prompt(
                 wd = int(raw_days)
             except (ValueError, TypeError):
                 wd = 0
-            if wd not in (0, 2, 3):
+            if wd not in (0, 2, 3, 4):
                 wd = 0
             context_data["weather_text"] = await fetch_weather_for_context(forecast_days=wd)
         except Exception:

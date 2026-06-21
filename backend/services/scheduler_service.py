@@ -316,7 +316,7 @@ async def run_cron_job(job_id: str):
                 wd = int(raw_days)
             except (ValueError, TypeError):
                 wd = 0
-            if wd not in (0, 2, 3):
+            if wd not in (0, 2, 3, 4):
                 wd = 0
             weather_text = await fetch_weather_for_context(forecast_days=wd)
             if weather_text:
@@ -608,9 +608,8 @@ def _parse_context_config(raw_prompt: str) -> tuple:
         elif key == "weather_days":
             try:
                 v = int(value)
-                # 文档：extensions=all 只支持预报未来 3 天（当天 + 后两天）
-                # 0=今天实况（base），2=今+明，3=今+明+后
-                if v in (0, 2, 3):
+                # 合法值: 0=今天实况，2=今+明，3=今+明+后，4=今+明+后+大后（API 实测最多返回 4 天）
+                if v in (0, 2, 3, 4):
                     config["weather_days"] = v
                 else:
                     config["weather_days"] = 0
