@@ -1165,6 +1165,9 @@ function buildPromptWithContext(userPrompt, config) {
     parts.push(`reflect_query=${encodeURIComponent(config.hindsight_reflect_query)}`)
   }
   parts.push(`weather=${config.weather_enabled ? 'true' : 'false'}`)
+  if (config.weather_enabled) {
+    parts.push(`weather_days=${Number(config.weather_days) || 0}`)
+  }
   const ctxLine = `${CTX_MARKER_START}${parts.join(';')}${CTX_MARKER_END}`
   return `${ctxLine}\n${userPrompt || ''}`
 }
