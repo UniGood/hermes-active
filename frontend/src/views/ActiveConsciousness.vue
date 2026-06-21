@@ -1825,7 +1825,7 @@ const testLLMConnect = async () => {
 const testEmotionLLM = async () => {
   testing.value.emotionLLM = true
   try {
-    const resp = await fetch('/api/llm/test/emotion')
+    const resp = await fetch('/api/active-consciousness/test/emotion-llm-connect', { method: 'POST' })
     const result = await resp.json()
     emotionLLMTestResult.value = result
   } catch (e) {
@@ -1839,7 +1839,7 @@ const testEmotionLLM = async () => {
 const testThoughtLLM = async () => {
   testing.value.thoughtLLM = true
   try {
-    const resp = await fetch('/api/llm/test/thought')
+    const resp = await fetch('/api/active-consciousness/test/thought-llm-connect', { method: 'POST' })
     const result = await resp.json()
     thoughtLLMTestResult.value = result
   } catch (e) {

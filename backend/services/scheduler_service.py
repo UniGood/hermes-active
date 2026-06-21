@@ -2,7 +2,6 @@
 调度器服务 - 使用 APScheduler 管理定时任务
 """
 import logging
-import asyncio
 import aiohttp
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler

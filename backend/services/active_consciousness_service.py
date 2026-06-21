@@ -1380,7 +1380,7 @@ async def generate_and_send_thought_with_emotion(
     }
     
     # 记录念头日志
-    thought_log_id = ActiveConsciousnessService.write_thought_log(
+    ActiveConsciousnessService.write_thought_log(
         heartbeat_id=heartbeat_id,
         thought_type=thought_type,
         content=thought,
