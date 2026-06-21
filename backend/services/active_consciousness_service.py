@@ -737,6 +737,11 @@ class ActiveConsciousnessService:
             # 获取情绪状态
             emotion_state = get_emotion_state()
 
+            # 获取配置信息（用于前端动态计算）
+            decision_config = config.get("decision", {})
+            active_config = config.get("active", {})
+            levels_config = config.get("levels", {})
+            
             return {
                 "enabled": config.get("enabled", False),
                 "heartbeat_count": heartbeat_count,
@@ -775,6 +780,28 @@ class ActiveConsciousnessService:
                 "hour_sent_count": hour_sent_count,
                 "last_sent_at": last_self_msg_at,
                 "delayed_count": delayed_count,
+                # 配置信息（前端动态计算用）
+                "config": {
+                    "decision": {
+                        "send_threshold": float(decision_config.get("send_threshold", 0.35)),
+                        "delay_threshold": float(decision_config.get("delay_threshold", 0.15)),
+                        "memory_threshold": float(decision_config.get("memory_threshold", 0.05)),
+                        "max_per_hour": int(decision_config.get("max_per_hour", 2)),
+                        "max_per_day": int(decision_config.get("max_per_day", 5)),
+                    },
+                    "active": {
+                        "heartbeat_interval": int(active_config.get("heartbeat_interval", 600)),
+                        "cooldown_minutes": int(active_config.get("cooldown_minutes", 30)),
+                        "no_send_after_user_msg_minutes": int(active_config.get("no_send_after_user_msg_minutes", 5)),
+                        "no_send_while_heat_above": float(active_config.get("no_send_while_heat_above", 3.0)),
+                    },
+                    "longing": {
+                        "gap_minutes": int(config.get("longing", {}).get("gap_minutes", 300)),
+                    },
+                    "levels": {
+                        "heat": levels_config.get("heat", ""),
+                    },
+                },
             }
         finally:
             db.close()

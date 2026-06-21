@@ -3,41 +3,27 @@
     <n-tabs v-model:value="activeTab" type="line" animated>
       <!-- Tab 1: 状态 -->
       <n-tab-pane name="status" tab="状态">
-        <n-grid :cols="2" :x-gap="12" :y-gap="12">
+        <!-- 第1行：核心状态（4个卡片） -->
+        <n-grid :cols="4" :x-gap="12" :y-gap="12">
           <n-grid-item>
-            <n-card title="心跳状态">
-              <n-tooltip trigger="hover" :width="240">
-                <template #trigger>
-                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
-                </template>
-                <div style="line-height: 1.6;">
-                  心跳调度器定期触发的状态。<br/>
-                  🟢 绿灯：最近 5 分钟内有心跳<br/>
-                  🔴 红灯：心跳超时
+            <n-card size="small">
+              <template #header>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span :class="['breathing-dot', heartbeatHealthy ? 'dot-green' : 'dot-red']"></span>
+                  <span>心跳状态</span>
                 </div>
-              </n-tooltip>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span :class="['breathing-dot', heartbeatHealthy ? 'dot-green' : 'dot-red']"></span>
-                <n-statistic label="今日心跳次数" :value="status.heartbeat_count" />
+              </template>
+              <n-statistic label="今日心跳" :value="status.heartbeat_count" />
+              <div style="margin-top: 4px; font-size: 11px; color: #999;">
+                上次：{{ formatTime(status.last_heartbeat_at) || '无' }}
               </div>
-              <div style="margin-top: 8px; font-size: 12px; color: #666;">
-                上次心跳：{{ formatTime(status.last_heartbeat_at) || '无' }}
+              <div style="margin-top: 4px; font-size: 11px; color: #666;">
+                下次：{{ nextHeartbeatDisplay }}
               </div>
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card title="想念分数">
-              <n-tooltip trigger="hover" :width="260">
-                <template #trigger>
-                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
-                </template>
-                <div style="line-height: 1.6;">
-                  基于用户最后一条消息的时间间隔计算。<br/>
-                  <strong>公式：</strong>min(沉默分钟数 / 300, 1.0)<br/>
-                  <strong>等级：</strong><br/>
-                  平静(0) → 想念(0.1) → 思念(0.3) → 渴望(0.5) → 焦虑(0.7)
-                </div>
-              </n-tooltip>
+            <n-card size="small" title="想念分数">
               <n-statistic :value="status.longing.score" :precision="3">
                 <template #suffix>
                   <n-tag :type="longingTagType" size="small">{{ status.longing.label }}</n-tag>
@@ -45,48 +31,25 @@
               </n-statistic>
               <n-progress :percentage="Number((status.longing.score * 100).toFixed(1))" :color="longingColor" style="margin-top: 8px" />
               <div style="margin-top: 4px; font-size: 11px; color: #999;">
-                沉默时长：{{ status.longing.silence_minutes ? Math.round(status.longing.silence_minutes) + ' 分钟' : '-' }}
+                沉默：{{ status.longing.silence_minutes ? Math.round(status.longing.silence_minutes) + '分钟' : '-' }}
               </div>
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card title="聊天热度">
-              <n-tooltip trigger="hover" :width="260">
-                <template #trigger>
-                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
-                </template>
-                <div style="line-height: 1.6;">
-                  最近 1 小时内用户消息的密度。<br/>
-                  <strong>公式：</strong>消息数 / 小时数<br/>
-                  <strong>等级：</strong><br/>
-                  冷清(0) → 温暖(0.5) → 火热(1.0) → 沸腾(3.0)<br/>
-                  热度越高，越不适合主动发消息。
-                </div>
-              </n-tooltip>
+            <n-card size="small" title="聊天热度">
               <n-statistic :value="status.chat_heat.heat" :precision="2">
                 <template #suffix>
                   <n-tag :type="heatTagType" size="small">{{ status.chat_heat.label }}</n-tag>
                 </template>
               </n-statistic>
-              <n-progress :percentage="Math.min(status.chat_heat.heat * 20, 100)" :color="heatColor" style="margin-top: 8px" />
+              <n-progress :percentage="chatHeatPercentage" :color="heatColor" style="margin-top: 8px" />
               <div style="margin-top: 4px; font-size: 11px; color: #999;">
-                近1小时消息数：{{ status.chat_heat.recent_count || 0 }}
+                近1小时：{{ status.chat_heat.recent_count || 0 }} 条
               </div>
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card title="情绪值（强度）">
-              <n-tooltip trigger="hover" :width="260">
-                <template #trigger>
-                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
-                </template>
-                <div style="line-height: 1.6;">
-                  综合情绪强度，由 LLM 根据最近对话内容评估。<br/>
-                  <strong>范围：</strong>0-1，越高表示对话越深入/情感化<br/>
-                  <strong>标签：</strong><br/>
-                  工作(0-0.3) → 日常(0.3-0.5) → 八卦(0.5-0.7) → 情感(0.7-0.9) → 深度情感(0.9+)
-                </div>
-              </n-tooltip>
+            <n-card size="small" title="情绪强度">
               <n-statistic :value="status.emotional_intensity.intensity" :precision="3">
                 <template #suffix>
                   <n-tag size="small">{{ status.emotional_intensity.label }}</n-tag>
@@ -95,67 +58,38 @@
               <n-progress :percentage="status.emotional_intensity.intensity * 100" :color="intensityColor" style="margin-top: 8px" />
             </n-card>
           </n-grid-item>
+        </n-grid>
+
+        <!-- 第2行：VA模型 + 决策配置 -->
+        <n-grid :cols="2" :x-gap="12" :y-gap="12" style="margin-top: 12px;">
           <n-grid-item>
-            <n-card title="情绪状态（VA 模型）">
-              <n-tooltip trigger="hover" :width="280">
-                <template #trigger>
-                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
-                </template>
-                <div style="line-height: 1.6;">
-                  <strong>VA 情绪模型：</strong><br/>
-                  Valence（效价）= 情感正负性<br/>
-                  0消极 → 1积极<br/><br/>
-                  Arousal（唤醒度）= 情感激活程度<br/>
-                  0平静 → 1激动<br/><br/>
-                  Social Need（社交需求）= 想聊天的程度<br/><br/>
-                  <strong>自然演化：</strong><br/>
-                  唤醒度衰减 · 社交需求增长 · 效价回归中性
-                </div>
-              </n-tooltip>
+            <n-card size="small" title="情绪状态（VA 模型）">
               <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <n-tooltip trigger="hover" :width="200">
-                    <template #trigger>
-                      <span style="font-size: 13px; color: #666; cursor: help;">效价（Valence）</span>
-                    </template>
-                    <div style="line-height: 1.6;">
-                      情感的正负性。<br/>
-                      0 = 消极，1 = 积极<br/>
-                      会随时间回归中性(0.5)。
-                    </div>
-                  </n-tooltip>
-                  <span style="font-weight: 600;">{{ status.emotion_state?.valence ?? '-' }}</span>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-size: 13px; color: #666;">效价（Valence）</span>
+                    <span style="font-weight: 600;">{{ status.emotion_state?.valence ?? '-' }}</span>
+                  </div>
+                  <n-progress :percentage="(status.emotion_state?.valence ?? 0) * 100" :show-indicator="false" :height="8"
+                    :color="valenceColor" />
                 </div>
-                <n-progress :percentage="(status.emotion_state?.valence ?? 0) * 100" :show-indicator="false" :height="6" />
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <n-tooltip trigger="hover" :width="200">
-                    <template #trigger>
-                      <span style="font-size: 13px; color: #666; cursor: help;">唤醒度（Arousal）</span>
-                    </template>
-                    <div style="line-height: 1.6;">
-                      情感的激活程度。<br/>
-                      0 = 平静，1 = 激动<br/>
-                      越久没聊天会越平静（自然衰减）。
-                    </div>
-                  </n-tooltip>
-                  <span style="font-weight: 600;">{{ status.emotion_state?.arousal ?? '-' }}</span>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-size: 13px; color: #666;">唤醒度（Arousal）</span>
+                    <span style="font-weight: 600;">{{ status.emotion_state?.arousal ?? '-' }}</span>
+                  </div>
+                  <n-progress :percentage="(status.emotion_state?.arousal ?? 0) * 100" :show-indicator="false" :height="8"
+                    :color="arousalColor" />
                 </div>
-                <n-progress :percentage="(status.emotion_state?.arousal ?? 0) * 100" :show-indicator="false" :height="6" />
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <n-tooltip trigger="hover" :width="200">
-                    <template #trigger>
-                      <span style="font-size: 13px; color: #666; cursor: help;">社交需求（Social Need）</span>
-                    </template>
-                    <div style="line-height: 1.6;">
-                      想要社交/聊天的程度。<br/>
-                      0 = 不需要，1 = 非常想<br/>
-                      越久没聊天会越想聊天（自然增长）。
-                    </div>
-                  </n-tooltip>
-                  <span style="font-weight: 600;">{{ status.emotion_state?.social_need ?? '-' }}</span>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-size: 13px; color: #666;">社交需求</span>
+                    <span style="font-weight: 600;">{{ status.emotion_state?.social_need ?? '-' }}</span>
+                  </div>
+                  <n-progress :percentage="(status.emotion_state?.social_need ?? 0) * 100" :show-indicator="false" :height="8"
+                    :color="socialNeedColor" />
                 </div>
-                <n-progress :percentage="(status.emotion_state?.social_need ?? 0) * 100" :show-indicator="false" :height="6" />
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+                <div style="display: flex; justify-content: space-between; margin-top: 4px;">
                   <span style="font-size: 13px; color: #666;">主导情绪</span>
                   <n-tag :type="getEmotionTagType(status.emotion_state?.dominant)" size="small">
                     {{ emotionLabelCn(status.emotion_state?.dominant) }}
@@ -165,29 +99,106 @@
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card title="发送统计">
-              <n-tooltip trigger="hover" :width="240">
-                <template #trigger>
-                  <n-icon size="14" style="cursor: help; color: #999; position: absolute; top: 12px; right: 12px;"><HelpCircleOutline /></n-icon>
-                </template>
-                <div style="line-height: 1.6;">
-                  今日和本小时的主动消息发送数量。<br/>
-                  受配置中的频率限制控制：<br/>
-                  默认每小时最多 2 条，每天最多 5 条。
-                </div>
-              </n-tooltip>
+            <n-card size="small" title="决策配置与阈值">
               <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-size: 13px; color: #666;">今日发送</span>
-                  <n-statistic :value="status.today_sent_count" style="font-size: 20px;" />
+                <div>
+                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">决策阈值</div>
+                  <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1; text-align: center;">
+                      <div style="font-size: 18px; font-weight: bold; color: #18a058;">{{ decisionConfig.send_threshold }}</div>
+                      <div style="font-size: 11px; color: #999;">发送</div>
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                      <div style="font-size: 18px; font-weight: bold; color: #f0a020;">{{ decisionConfig.delay_threshold }}</div>
+                      <div style="font-size: 11px; color: #999;">延迟</div>
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                      <div style="font-size: 18px; font-weight: bold; color: #d03050;">{{ decisionConfig.memory_threshold }}</div>
+                      <div style="font-size: 11px; color: #999;">记忆</div>
+                    </div>
+                  </div>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-size: 13px; color: #666;">本小时发送</span>
-                  <n-statistic :value="status.hour_sent_count" style="font-size: 20px;" />
+                <n-divider style="margin: 0;" />
+                <div>
+                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">频率限制</div>
+                  <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                      <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 12px;">本小时</span>
+                        <span style="font-weight: 600;">{{ status.hour_sent_count }}/{{ decisionConfig.max_per_hour }}</span>
+                      </div>
+                      <n-progress :percentage="frequencyHourPercentage" :show-indicator="false" :height="4"
+                        :color="frequencyHourPercentage >= 100 ? '#d03050' : '#18a058'" />
+                    </div>
+                    <div style="flex: 1;">
+                      <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 12px;">今日</span>
+                        <span style="font-weight: 600;">{{ status.today_sent_count }}/{{ decisionConfig.max_per_day }}</span>
+                      </div>
+                      <n-progress :percentage="frequencyDayPercentage" :show-indicator="false" :height="4"
+                        :color="frequencyDayPercentage >= 100 ? '#d03050' : '#18a058'" />
+                    </div>
+                  </div>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-size: 13px; color: #666;">延迟队列</span>
-                  <n-statistic :value="status.delayed_count ?? 0" style="font-size: 20px;" />
+                <n-divider style="margin: 0;" />
+                <div>
+                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">保护机制</div>
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between;">
+                      <span style="font-size: 12px;">冷却时间</span>
+                      <n-tag :type="isCoolingDown ? 'warning' : 'success'" size="small">
+                        {{ isCoolingDown ? '冷却中' : '正常' }}
+                      </n-tag>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                      <span style="font-size: 12px;">用户刚发消息</span>
+                      <n-tag :type="userJustSent ? 'warning' : 'success'" size="small">
+                        {{ userJustSent ? '等待中' : '正常' }}
+                      </n-tag>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                      <span style="font-size: 12px;">热度保护</span>
+                      <n-tag :type="heatProtected ? 'warning' : 'success'" size="small">
+                        {{ heatProtected ? '已触发' : '正常' }}
+                      </n-tag>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </n-card>
+          </n-grid-item>
+        </n-grid>
+
+        <!-- 第3行：发送统计 -->
+        <n-grid :cols="3" :x-gap="12" :y-gap="12" style="margin-top: 12px;">
+          <n-grid-item>
+            <n-card size="small" title="发送统计">
+              <div style="display: flex; justify-content: space-around;">
+                <n-statistic label="今日" :value="status.today_sent_count" />
+                <n-statistic label="本小时" :value="status.hour_sent_count" />
+                <n-statistic label="上次发送" :value="formatTime(status.last_sent_at) || '-'" />
+              </div>
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card size="small" title="延迟队列">
+              <n-statistic :value="status.delayed_count ?? 0">
+                <template #suffix>
+                  <span style="font-size: 14px; color: #999;">个念头</span>
+                </template>
+              </n-statistic>
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card size="small" title="用户消息">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">最后消息</span>
+                  <span style="font-size: 12px;">{{ formatTime(status.longing.last_user_msg_at) || '-' }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">最后回复</span>
+                  <span style="font-size: 12px;">{{ formatTime(status.longing.last_self_msg_at) || '-' }}</span>
                 </div>
               </div>
             </n-card>
@@ -1435,6 +1446,89 @@ const heartbeatHealthy = computed(() => {
   if (!status.value.last_heartbeat_at) return false
   const last = new Date(status.value.last_heartbeat_at)
   return (Date.now() - last.getTime()) < 5 * 60 * 1000
+})
+
+// 决策配置
+const decisionConfig = computed(() => status.value.config?.decision || {
+  send_threshold: 0.35,
+  delay_threshold: 0.15,
+  memory_threshold: 0.05,
+  max_per_hour: 2,
+  max_per_day: 5
+})
+
+// 聊天热度百分比（根据配置动态计算）
+const chatHeatPercentage = computed(() => {
+  const heat = status.value.chat_heat?.heat || 0
+  const maxHeat = status.value.config?.active?.no_send_while_heat_above || 3.0
+  return Math.min((heat / maxHeat) * 100, 100)
+})
+
+// 频率限制百分比
+const frequencyHourPercentage = computed(() => {
+  const sent = status.value.hour_sent_count || 0
+  const max = decisionConfig.value.max_per_hour || 2
+  return Math.min((sent / max) * 100, 100)
+})
+
+const frequencyDayPercentage = computed(() => {
+  const sent = status.value.today_sent_count || 0
+  const max = decisionConfig.value.max_per_day || 5
+  return Math.min((sent / max) * 100, 100)
+})
+
+// 下次心跳显示
+const nextHeartbeatDisplay = computed(() => {
+  if (!status.value.last_heartbeat_at) return '未知'
+  const last = new Date(status.value.last_heartbeat_at)
+  const interval = (status.value.config?.active?.heartbeat_interval || 600) * 1000
+  const next = new Date(last.getTime() + interval)
+  const diff = next.getTime() - Date.now()
+  if (diff <= 0) return '即将触发'
+  const minutes = Math.floor(diff / 60000)
+  const seconds = Math.floor((diff % 60000) / 1000)
+  return `${minutes}分${seconds}秒`
+})
+
+// 保护机制状态
+const isCoolingDown = computed(() => {
+  if (!status.value.last_sent_at) return false
+  const cooldown = (status.value.config?.active?.cooldown_minutes || 30) * 60 * 1000
+  return (Date.now() - new Date(status.value.last_sent_at).getTime()) < cooldown
+})
+
+const userJustSent = computed(() => {
+  if (!status.value.longing?.last_user_msg_at) return false
+  const threshold = (status.value.config?.active?.no_send_after_user_msg_minutes || 5) * 60 * 1000
+  return (Date.now() - new Date(status.value.longing.last_user_msg_at).getTime()) < threshold
+})
+
+const heatProtected = computed(() => {
+  const heat = status.value.chat_heat?.heat || 0
+  const maxHeat = status.value.config?.active?.no_send_while_heat_above || 3.0
+  return heat >= maxHeat
+})
+
+// VA 颜色
+const valenceColor = computed(() => {
+  const v = status.value.emotion_state?.valence ?? 0.5
+  if (v < 0.3) return '#d03050'  // 红
+  if (v < 0.7) return '#f0a020'  // 橙
+  return '#18a058'  // 绿
+})
+
+const arousalColor = computed(() => {
+  const a = status.value.emotion_state?.arousal ?? 0
+  if (a < 0.3) return '#2080f0'  // 蓝
+  if (a < 0.7) return '#f0a020'  // 橙
+  return '#d03050'  // 红
+})
+
+const socialNeedColor = computed(() => {
+  const s = status.value.emotion_state?.social_need ?? 0
+  if (s < 0.3) return '#999'  // 灰
+  if (s < 0.7) return '#f0a020'  // 橙
+  return '#8a2be2'  // 紫
 })
 
 // 日志详情弹窗
