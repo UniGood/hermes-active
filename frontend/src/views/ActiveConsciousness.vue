@@ -822,30 +822,49 @@
     <!-- 念头内容弹窗（生成念头列点击） -->
     <n-modal v-model:show="showThoughtContentModal" preset="card" title="念头详情" style="width: 90vw; max-width: 900px">
       <template v-if="thoughtContentData">
-        <n-descriptions :column="1" label-placement="left" bordered size="small" :label-style="{ width: '100px' }">
-          <n-descriptions-item label="心跳ID">{{ thoughtContentData.id }}</n-descriptions-item>
-          <n-descriptions-item label="生成数量">{{ thoughtContentData.thoughts_generated || 0 }}</n-descriptions-item>
-          <n-descriptions-item label="念头类型" v-if="thoughtContentData.thought_type">
-            {{ thoughtTypeLabelCn(thoughtContentData.thought_type) }}
-          </n-descriptions-item>
+        <!-- 念头内容（最醒目） -->
+        <n-card size="small" style="margin-bottom: 12px;">
+          <div style="white-space: pre-wrap; font-size: 14px; line-height: 1.6;">{{ thoughtContentData.thought_content || '无念头内容' }}</div>
+        </n-card>
+        <!-- 基本信息 -->
+        <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;" :label-style="{ width: '100px' }">
           <n-descriptions-item label="决策类型" v-if="thoughtContentData.decision?.type">
             <n-tag :type="getDecisionTagType(thoughtContentData.decision.type)" size="small">
-              {{ thoughtContentData.decision.type }}
+              {{ getDecisionLabelCn(thoughtContentData.decision.type) }}
             </n-tag>
             <span v-if="thoughtContentData.decision.score" style="margin-left: 8px; font-size: 12px; color: #999;">
               分数: {{ thoughtContentData.decision.score?.toFixed(3) }}
             </span>
           </n-descriptions-item>
-          <n-descriptions-item label="念头内容" v-if="thoughtContentData.thought_content">
-            <div style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;">{{ thoughtContentData.thought_content }}</div>
+          <n-descriptions-item label="念头类型" v-if="thoughtContentData.thought_type">
+            {{ thoughtTypeLabelCn(thoughtContentData.thought_type) }}
           </n-descriptions-item>
-          <n-descriptions-item label="LLM 耗时" v-if="thoughtContentData.details_parsed?.thought_generation?.duration_ms">
-            {{ thoughtContentData.details_parsed.thought_generation.duration_ms }}ms
+          <n-descriptions-item label="想联系用户" v-if="thoughtContentData.want_to_contact !== null">
+            <n-tag :type="thoughtContentData.want_to_contact ? 'success' : 'default'" size="small">
+              {{ thoughtContentData.want_to_contact ? '是' : '否 (SKIP)' }}
+            </n-tag>
           </n-descriptions-item>
-          <n-descriptions-item label="LLM 模型" v-if="thoughtContentData.details_parsed?.thought_generation?.model">
-            {{ thoughtContentData.details_parsed.thought_generation.model }}
+          <n-descriptions-item label="心跳ID">{{ thoughtContentData.id }}</n-descriptions-item>
+        </n-descriptions>
+        <!-- LLM 信息 -->
+        <n-divider title-placement="left" style="margin: 12px 0 8px;">LLM 调用</n-divider>
+        <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;" :label-style="{ width: '100px' }">
+          <n-descriptions-item label="耗时" v-if="thoughtContentData.llm_duration_ms">
+            {{ thoughtContentData.llm_duration_ms }}ms
+          </n-descriptions-item>
+          <n-descriptions-item label="总Token" v-if="thoughtContentData.llm_total_tokens">
+            {{ thoughtContentData.llm_total_tokens }}（输入 {{ thoughtContentData.llm_prompt_tokens }} / 输出 {{ thoughtContentData.llm_completion_tokens }}）
           </n-descriptions-item>
         </n-descriptions>
+        <!-- Prompt 和 LLM 返回（默认折叠） -->
+        <n-collapse style="margin-bottom: 12px;">
+          <n-collapse-item title="发送的 Prompt" name="prompt">
+            <n-code :code="thoughtContentData.llm_prompt_sent || '无'" language="text" word-wrap />
+          </n-collapse-item>
+          <n-collapse-item title="LLM 原始返回" name="response">
+            <n-code :code="thoughtContentData.llm_response_received || '无'" language="text" word-wrap />
+          </n-collapse-item>
+        </n-collapse>
       </template>
       <n-empty v-else-if="!thoughtContentLoading" description="无念头内容" />
       <div v-else style="display: flex; justify-content: center; padding: 40px 0;">
@@ -1687,9 +1706,19 @@ async function showThoughtContent(row) {
     thoughtContentData.value = {
       ...detail,
       details_parsed: parsed,
-      thought_content: parsed.thought_generation?.response_received || '',
+      // 念头内容优先取解析后的 thought，降级取 response_received
+      thought_content: parsed.thought_generation?.thought || parsed.thought_generation?.response_received || '',
       thought_type: parsed.thought_type || '',
       decision: parsed.decision || null,
+      // LLM 调用详情
+      llm_model: parsed.thought_generation?.model || '',
+      llm_duration_ms: parsed.thought_generation?.duration_ms || 0,
+      llm_prompt_tokens: parsed.thought_generation?.prompt_tokens || 0,
+      llm_completion_tokens: parsed.thought_generation?.completion_tokens || 0,
+      llm_total_tokens: parsed.thought_generation?.total_tokens || 0,
+      want_to_contact: parsed.thought_generation?.want_to_contact ?? null,
+      llm_prompt_sent: parsed.thought_generation?.prompt_sent || '',
+      llm_response_received: parsed.thought_generation?.response_received || '',
     }
   } catch (e) {
     message.error('加载念头详情失败')
