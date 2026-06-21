@@ -267,6 +267,20 @@ async def run_cron_job(
         else:
             context_text = ""
 
+        # 天气上下文（复用配置管理中的 amap 配置；extensions=all 最多预报 3 天）
+        if ctx_config.get("weather_enabled", False):
+            from services.scheduler_service import fetch_weather_for_context
+            raw_days = ctx_config.get("weather_days", 0)
+            try:
+                wd = int(raw_days)
+            except (ValueError, TypeError):
+                wd = 0
+            if wd not in (0, 2, 3):
+                wd = 0
+            weather_text = await fetch_weather_for_context(forecast_days=wd)
+            if weather_text:
+                context_text = (context_text + "\n\n=== 当前天气 ===\n" + weather_text).strip() if context_text else f"=== 当前天气 ===\n{weather_text}"
+
         user_prompt = user_prompt_final.replace("{context}", context_text)
 
         # 冷却时间检查
@@ -528,12 +542,15 @@ async def preview_prompt(
     recall_limit = ctx_config.get("hindsight_recall_limit", 10)
     reflect_enabled = ctx_config.get("hindsight_reflect_enabled", False)
     reflect_query = ctx_config.get("hindsight_reflect_query", "")
+    weather_enabled = ctx_config.get("weather_enabled", False)
+    weather_days = max(0, min(3, int(ctx_config.get("weather_days", 0) or 0)))
 
     # 上下文数据
     context_data = {
         "session_messages": [],
         "recall_results": [],
-        "reflect_result": ""
+        "reflect_result": "",
+        "weather_text": ""
     }
 
     # 确定 session_id：优先使用传入的，否则获取最新活跃 session
@@ -583,6 +600,21 @@ async def preview_prompt(
         except Exception:
             pass  # 静默失败，不影响预览
 
+    # 获取天气（复用配置管理中的 amap 配置；extensions=all 最多预报 3 天）
+    if weather_enabled:
+        try:
+            from services.scheduler_service import fetch_weather_for_context
+            raw_days = ctx_config.get("weather_days", 0)
+            try:
+                wd = int(raw_days)
+            except (ValueError, TypeError):
+                wd = 0
+            if wd not in (0, 2, 3):
+                wd = 0
+            context_data["weather_text"] = await fetch_weather_for_context(forecast_days=wd)
+        except Exception:
+            pass  # 静默失败，不影响预览
+
     # 构建上下文文本并替换 {context}
     context_parts = []
     if context_data["session_messages"]:
@@ -595,6 +627,8 @@ async def preview_prompt(
             context_parts.append("[Recall 记忆]\n" + "\n".join(recall_texts))
     if context_data["reflect_result"]:
         context_parts.append("[Reflect 分析]\n" + context_data["reflect_result"])
+    if context_data["weather_text"]:
+        context_parts.append("[当前天气]\n" + context_data["weather_text"])
 
     context_text = "\n\n".join(context_parts) if context_parts else ""
     final_user_prompt = user_prompt.replace("{context}", context_text)
@@ -607,6 +641,8 @@ async def preview_prompt(
         context_summary_parts.append(f"Recall: {len(context_data['recall_results'])} 条")
     if context_data["reflect_result"]:
         context_summary_parts.append("Reflect: 1 条")
+    if context_data["weather_text"]:
+        context_summary_parts.append("Weather: 已启用")
     if not context_summary_parts:
         context_summary_parts.append("无上下文数据")
 

@@ -18,6 +18,93 @@ logger = logging.getLogger("hermes.scheduler")
 # Hindsight 配置已移至 configs 表
 
 
+def _get_weather_config() -> dict:
+    """从数据库读取高德天气配置（与配置管理共享）"""
+    db = ActiveSession()
+    try:
+        amap_key = ConfigService.get_config(db, "active_consciousness.weather.amap_key") or ""
+        adcode = ConfigService.get_config(db, "active_consciousness.weather.adcode") or "370100"
+        enabled = ConfigService.get_config(db, "active_consciousness.weather.enabled") == "true"
+        cache_ttl = int(ConfigService.get_config(db, "active_consciousness.weather.cache_ttl") or "3600")
+        temp_threshold = float(ConfigService.get_config(db, "active_consciousness.weather.temp_change_threshold") or "5.0")
+        return {
+            "enabled": enabled,
+            "amap_key": amap_key,
+            "adcode": adcode,
+            "cache_ttl": cache_ttl,
+            "temp_threshold": temp_threshold,
+        }
+    finally:
+        db.close()
+
+
+async def fetch_weather_for_context(forecast_days: int = 0) -> str:
+    """调用 WeatherService 获取天气，返回格式化文本（用于上下文拼接）
+
+    Args:
+        forecast_days: 0=仅今天实况；1-3=今天+未来 N 天预报
+
+    返回空字符串表示不启用、配置缺失或调用失败。
+    """
+    cfg = _get_weather_config()
+    if not cfg["enabled"] or not cfg["amap_key"]:
+        return ""
+    try:
+        from services.weather_service import WeatherService
+        service = WeatherService()
+        result = await service.get_weather(
+            amap_key=cfg["amap_key"],
+            adcode=cfg["adcode"],
+            cache_ttl=cfg["cache_ttl"],
+            temp_threshold=cfg["temp_threshold"],
+            forecast_days=forecast_days,
+        )
+        if not result.get("success"):
+            return ""
+
+        city = result.get("city") or ""
+        current = result.get("current") or {}
+        forecast = result.get("forecast") or []
+
+        lines: list[str] = []
+        # 今天实况（仅当 forecast_days==0 时单独打印；>=1 时由 forecast 列表中的第一项承载）
+        if forecast_days == 0 and current:
+            weather = current.get("weather") or "未知"
+            temp = current.get("temp") or "?"
+            humidity = current.get("humidity") or ""
+            winddirection = current.get("winddirection") or ""
+            head = f"{city}今日天气：{weather}，白天温度{temp}℃" if city else f"今日天气：{weather}，白天温度{temp}℃"
+            extras = []
+            if humidity:
+                extras.append(f"湿度{humidity}%")
+            if winddirection:
+                extras.append(f"{winddirection}风")
+            if extras:
+                head += "，" + "，".join(extras)
+            lines.append(head)
+
+        # 预报（仅当 forecast_days>=1 且有数据）
+        if forecast_days >= 1 and forecast:
+            week_map = {"1": "周一", "2": "周二", "3": "周三", "4": "周四", "5": "周五", "6": "周六", "7": "周日"}
+            # 头部加上城市
+            header = f"{city}预报：" if city else "预报："
+            lines.append(header)
+            for idx, day in enumerate(forecast):
+                date = day.get("date") or ""
+                week = week_map.get(str(day.get("week", "")), "")
+                dw = day.get("dayweather") or "?"
+                nw = day.get("nightweather") or "?"
+                dt = day.get("daytemp") or "?"
+                nt = day.get("nighttemp") or "?"
+                prefix = "今天" if idx == 0 else f"{date}" + (f" {week}" if week else "")
+                lines.append(f"  {prefix}：白天{dw} {dt}℃ / 夜间{nw} {nt}℃")
+
+        return "\n".join(lines)
+    except Exception as e:
+        logger.warning("定时任务获取天气失败: %s", e)
+        return ""
+
+
 def _get_hindsight_base_url() -> str:
     """从数据库读取 Hindsight base_url"""
     db = ActiveSession()
@@ -221,6 +308,20 @@ async def run_cron_job(job_id: str):
             if reflect_result:
                 context_parts.append(f"=== 综合分析 ===\n{reflect_result}")
 
+        # 4. 天气感知（高德地图，复用配置管理中的 amap 配置）
+        if ctx_config.get("weather_enabled", False):
+            # 文档：extensions=all 最多预报 3 天（当天 + 后两天）；0=仅今天实况
+            raw_days = ctx_config.get("weather_days", 0)
+            try:
+                wd = int(raw_days)
+            except (ValueError, TypeError):
+                wd = 0
+            if wd not in (0, 2, 3):
+                wd = 0
+            weather_text = await fetch_weather_for_context(forecast_days=wd)
+            if weather_text:
+                context_parts.append(f"=== 当前天气 ===\n{weather_text}")
+
         context_text = "\n\n".join(context_parts)
         user_prompt = user_prompt_final.replace("{context}", context_text)
 
@@ -273,6 +374,8 @@ async def run_cron_job(job_id: str):
                 "session_count": len(context_msgs) if session_enabled and context_msgs else 0,
                 "session_messages": [{"role": m.get("role", ""), "content": m.get("content", "")[:200]} for m in (context_msgs or [])[-10:]],
                 "context_text": context_text[:2000],
+                "weather_enabled": ctx_config.get("weather_enabled", False),
+                "weather_days": ctx_config.get("weather_days", 0),
             }
         }
 
@@ -465,6 +568,8 @@ def _parse_context_config(raw_prompt: str) -> tuple:
         "hindsight_recall_limit": 10,
         "hindsight_reflect_enabled": False,
         "hindsight_reflect_query": "",
+        "weather_enabled": False,
+        "weather_days": 0,
     }
 
     if not raw_prompt or not raw_prompt.startswith(CTX_MARKER_START):
@@ -498,6 +603,19 @@ def _parse_context_config(raw_prompt: str) -> tuple:
             config["hindsight_reflect_enabled"] = value == "true"
         elif key == "reflect_query":
             config["hindsight_reflect_query"] = urllib.parse.unquote(value)
+        elif key == "weather":
+            config["weather_enabled"] = value == "true"
+        elif key == "weather_days":
+            try:
+                v = int(value)
+                # 文档：extensions=all 只支持预报未来 3 天（当天 + 后两天）
+                # 0=今天实况（base），2=今+明，3=今+明+后
+                if v in (0, 2, 3):
+                    config["weather_days"] = v
+                else:
+                    config["weather_days"] = 0
+            except (ValueError, TypeError):
+                config["weather_days"] = 0
 
     return config, user_prompt
 

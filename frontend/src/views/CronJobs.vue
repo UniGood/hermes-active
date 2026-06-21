@@ -141,7 +141,10 @@
               <n-tag v-if="contextConfig.hindsight_reflect_enabled" size="small" type="warning">
                 Reflect: {{ contextConfig.hindsight_reflect_query || '已启用' }}
               </n-tag>
-              <n-tag v-if="contextConfig.session_enabled && !contextConfig.hindsight_recall_enabled && !contextConfig.hindsight_reflect_enabled" size="small">
+              <n-tag v-if="contextConfig.weather_enabled" size="small" type="error">
+                天气：{{ weatherDaysLabel }}
+              </n-tag>
+              <n-tag v-if="contextConfig.session_enabled && !contextConfig.hindsight_recall_enabled && !contextConfig.hindsight_reflect_enabled && !contextConfig.weather_enabled" size="small">
                 仅 Session 上下文
               </n-tag>
             </div>
@@ -224,6 +227,31 @@
                   size="small"
                   style="width: 400px"
                 />
+              </n-space>
+            </template>
+          </n-space>
+        </n-form-item>
+
+        <!-- 天气感知 -->
+        <n-divider title-placement="left">天气感知</n-divider>
+        <n-form-item label="高德地图天气">
+          <n-space vertical style="width: 100%">
+            <n-space align="center">
+              <n-switch v-model:value="contextConfig.weather_enabled" />
+              <span style="font-size: 13px; color: #666">启用天气上下文（复用配置管理中的高德 API Key）</span>
+            </n-space>
+            <n-text v-if="contextConfig.weather_enabled" depth="3" style="font-size: 12px">
+              当前城市的天气会作为上下文注入到 {context} 占位符
+            </n-text>
+            <template v-if="contextConfig.weather_enabled">
+              <n-space align="center">
+                <span style="font-size: 13px; color: #666">预报天数：</span>
+                <n-radio-group v-model:value="contextConfig.weather_days">
+                  <n-radio :value="0">今天</n-radio>
+                  <n-radio :value="2">两天</n-radio>
+                  <n-radio :value="3">三天</n-radio>
+                </n-radio-group>
+                <n-text depth="3" style="font-size: 12px">高德 API 最多支持预报 3 天</n-text>
               </n-space>
             </template>
           </n-space>
@@ -701,7 +729,8 @@ const contextConfig = ref({
   hindsight_recall_query: '',
   hindsight_recall_limit: 10,
   hindsight_reflect_enabled: false,
-  hindsight_reflect_query: ''
+  hindsight_reflect_query: '',
+  weather_enabled: false
 })
 
 // 监听平台变化，重新加载 session 列表
@@ -716,6 +745,14 @@ watch(sessionMode, (newMode) => {
   if (newMode === 'latest') {
     formData.value.session_id = null
   }
+})
+
+// 天气预报天数显示
+const weatherDaysLabel = computed(() => {
+  const v = Number(contextConfig.value.weather_days)
+  if (v === 2) return '今+明'
+  if (v === 3) return '今+明+后'
+  return '今天实况'
 })
 
 function formatTime(ts) {
@@ -845,7 +882,8 @@ function openCreate() {
     hindsight_recall_query: '',
     hindsight_recall_limit: 10,
     hindsight_reflect_enabled: false,
-    hindsight_reflect_query: ''
+    hindsight_reflect_query: '',
+    weather_enabled: false
   }
   sessionMode.value = 'latest'
   cronParseResult.value = null
@@ -1124,6 +1162,7 @@ function buildPromptWithContext(userPrompt, config) {
   if (config.hindsight_reflect_enabled && config.hindsight_reflect_query) {
     parts.push(`reflect_query=${encodeURIComponent(config.hindsight_reflect_query)}`)
   }
+  parts.push(`weather=${config.weather_enabled ? 'true' : 'false'}`)
   const ctxLine = `${CTX_MARKER_START}${parts.join(';')}${CTX_MARKER_END}`
   return `${ctxLine}\n${userPrompt || ''}`
 }
@@ -1137,7 +1176,8 @@ function parseContextFromPrompt(rawPrompt) {
     hindsight_recall_query: '',
     hindsight_recall_limit: 10,
     hindsight_reflect_enabled: false,
-    hindsight_reflect_query: ''
+    hindsight_reflect_query: '',
+    weather_enabled: false
   }
 
   if (!rawPrompt || !rawPrompt.startsWith(CTX_MARKER_START)) {
@@ -1181,6 +1221,9 @@ function parseContextFromPrompt(rawPrompt) {
         break
       case 'reflect_query':
         config.hindsight_reflect_query = decodeURIComponent(value)
+        break
+      case 'weather':
+        config.weather_enabled = value === 'true'
         break
     }
   }
