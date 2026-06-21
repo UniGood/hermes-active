@@ -813,13 +813,16 @@
           <div style="font-size: 13px; white-space: pre-wrap;">{{ item.content || item.text || formatJson(item) }}</div>
         </n-list-item>
       </n-list>
-      <n-empty v-else description="无召回内容" />
+      <n-empty v-else-if="!recallLoading" description="无召回内容" />
+      <div v-else style="display: flex; justify-content: center; padding: 40px 0;">
+        <n-spin size="medium" />
+      </div>
     </n-modal>
 
     <!-- 念头内容弹窗（生成念头列点击） -->
     <n-modal v-model:show="showThoughtContentModal" preset="card" title="念头详情" style="width: 90vw; max-width: 900px">
       <template v-if="thoughtContentData">
-        <n-descriptions :column="1" label-placement="left" bordered size="small">
+        <n-descriptions :column="1" label-placement="left" bordered size="small" :label-style="{ width: '100px' }">
           <n-descriptions-item label="心跳ID">{{ thoughtContentData.id }}</n-descriptions-item>
           <n-descriptions-item label="生成数量">{{ thoughtContentData.thoughts_generated || 0 }}</n-descriptions-item>
           <n-descriptions-item label="念头类型" v-if="thoughtContentData.thought_type">
@@ -844,13 +847,16 @@
           </n-descriptions-item>
         </n-descriptions>
       </template>
-      <n-empty v-else description="无念头内容" />
+      <n-empty v-else-if="!thoughtContentLoading" description="无念头内容" />
+      <div v-else style="display: flex; justify-content: center; padding: 40px 0;">
+        <n-spin size="medium" />
+      </div>
     </n-modal>
 
     <!-- 发送详情弹窗（发送消息列点击） -->
     <n-modal v-model:show="showSendDetailModal" preset="card" title="发送详情" style="width: 90vw; max-width: 900px">
       <template v-if="sendDetailData">
-        <n-descriptions :column="1" label-placement="left" bordered size="small">
+        <n-descriptions :column="1" label-placement="left" bordered size="small" :label-style="{ width: '100px' }">
           <n-descriptions-item label="心跳ID">{{ sendDetailData.id }}</n-descriptions-item>
           <n-descriptions-item label="是否发送">
             <n-tag :type="sendDetailData.message_sent ? 'success' : 'default'" size="small">
@@ -875,7 +881,10 @@
           </n-descriptions-item>
         </n-descriptions>
       </template>
-      <n-empty v-else description="无发送详情" />
+      <n-empty v-else-if="!sendDetailLoading" description="无发送详情" />
+      <div v-else style="display: flex; justify-content: center; padding: 40px 0;">
+        <n-spin size="medium" />
+      </div>
     </n-modal>
 
     <!-- 心跳日志详情弹窗 -->
@@ -1036,133 +1045,105 @@
 
         <n-divider style="margin: 16px 0;" />
 
-        <!-- ===== 详细信息（可折叠） ===== -->
-        <n-collapse default-expanded-names="llm_io">
-          <!-- 🤖 LLM 调用详情（重点展示） -->
-          <n-collapse-item v-if="detailsData.emotion_llm_details || detailsData.thought_generation" title="🤖 LLM 调用详情" name="llm_io">
-            <!-- 情绪评估 LLM -->
-            <template v-if="detailsData.emotion_llm_details">
-              <h4 style="margin: 8px 0; font-size: 14px;">🎭 情绪评估 LLM</h4>
-              <n-descriptions bordered :column="2" size="small" style="margin-bottom: 8px;">
-                <n-descriptions-item label="模型">{{ detailsData.emotion_llm_details.model || '-' }}</n-descriptions-item>
-                <n-descriptions-item label="耗时">{{ detailsData.emotion_llm_details.duration_ms || '-' }}ms</n-descriptions-item>
-              </n-descriptions>
-              <n-collapse style="margin-bottom: 12px;">
-                <n-collapse-item title="📤 发送的 Prompt" name="emotion_prompt">
-                  <n-code :code="detailsData.emotion_llm_details.prompt_sent || '无'" language="text" word-wrap />
-                </n-collapse-item>
-                <n-collapse-item title="📥 LLM 返回" name="emotion_response">
-                  <n-code :code="detailsData.emotion_llm_details.response_received || '无'" language="text" word-wrap />
-                </n-collapse-item>
-              </n-collapse>
-            </template>
-
-            <!-- 念头生成 LLM -->
-            <template v-if="detailsData.thought_generation">
-              <h4 style="margin: 8px 0; font-size: 14px;">💭 念头生成 LLM</h4>
-              <n-descriptions bordered :column="2" size="small" style="margin-bottom: 8px;">
-                <n-descriptions-item label="模型">{{ detailsData.thought_generation.model || '-' }}</n-descriptions-item>
-                <n-descriptions-item label="耗时">{{ detailsData.thought_generation.duration_ms || '-' }}ms</n-descriptions-item>
-                <n-descriptions-item label="想联系用户">
-                  <n-tag :type="detailsData.thought_generation.want_to_contact ? 'success' : 'default'" size="small">
-                    {{ detailsData.thought_generation.want_to_contact ? '是' : '否 (SKIP)' }}
-                  </n-tag>
-                </n-descriptions-item>
-                <n-descriptions-item v-if="detailsData.thought_generation.thought" label="生成内容">
-                  {{ detailsData.thought_generation.thought }}
-                </n-descriptions-item>
-              </n-descriptions>
-              <n-collapse style="margin-bottom: 12px;">
-                <n-collapse-item title="📤 发送的 Prompt" name="thought_prompt">
-                  <n-code :code="detailsData.thought_generation.prompt_sent || '无'" language="text" word-wrap />
-                </n-collapse-item>
-                <n-collapse-item title="📥 LLM 返回" name="thought_response">
-                  <n-code :code="detailsData.thought_generation.response_received || '无'" language="text" word-wrap />
-                </n-collapse-item>
-              </n-collapse>
-            </template>
-          </n-collapse-item>
-
-          <!-- 决策计算详情 -->
-          <n-collapse-item title="决策计算详情" name="decision">
-            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-              <n-descriptions-item label="公式" :span="2">score = intensity × time_fitness × silence × freq</n-descriptions-item>
-              <n-descriptions-item label="决策类型">
-                <n-tag :type="getDecisionTagType(detailsData.decision?.type)" size="small">
-                  {{ getDecisionLabelCn(detailsData.decision?.type) }}
-                </n-tag>
-              </n-descriptions-item>
-              <n-descriptions-item label="最终分数">{{ detailsData.decision?.score?.toFixed(3) }}</n-descriptions-item>
-              <n-descriptions-item label="情绪强度">
-                {{ parseDecisionReason(detailsData.decision?.reason).intensity }}
-                <n-tag size="tiny" type="info" style="margin-left: 4px">情绪越强分越高</n-tag>
-              </n-descriptions-item>
-              <n-descriptions-item label="时间适宜性">
-                {{ parseDecisionReason(detailsData.decision?.reason).time_fitness }}
-                <n-tag size="tiny" type="warning" style="margin-left: 4px">工作时间降权</n-tag>
-              </n-descriptions-item>
-              <n-descriptions-item label="沉默因子">
-                {{ parseDecisionReason(detailsData.decision?.reason).silence_factor }}
-                <n-tag size="tiny" type="default" style="margin-left: 4px">越久没聊天分越高</n-tag>
-              </n-descriptions-item>
-              <n-descriptions-item label="频率限制">
-                {{ parseDecisionReason(detailsData.decision?.reason).frequency }}
-                <n-tag size="tiny" type="error" style="margin-left: 4px">超频归零</n-tag>
-              </n-descriptions-item>
-              <n-descriptions-item label="决策原因" :span="2">{{ detailsData.decision?.reason }}</n-descriptions-item>
+        <!-- LLM 调用详情（直接展示，不嵌套折叠） -->
+        <template v-if="detailsData.emotion_llm_details || detailsData.thought_generation">
+          <!-- 情绪评估 LLM -->
+          <template v-if="detailsData.emotion_llm_details">
+            <n-divider title-placement="left" style="margin: 12px 0 8px;">情绪评估 LLM</n-divider>
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 8px;">
+              <n-descriptions-item label="耗时">{{ detailsData.emotion_llm_details.duration_ms || '-' }}ms</n-descriptions-item>
             </n-descriptions>
-          </n-collapse-item>
-
-          <!-- 情绪演化详情 -->
-          <n-collapse-item v-if="detailsData.emotion_before" title="情绪演化详情" name="emotion">
-            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-              <n-tag v-for="item in [
-                {label: '初始', d: detailsData.emotion_before},
-                {label: '演化', d: detailsData.emotion_evolved},
-                {label: 'LLM', d: detailsData.emotion_llm},
-                {label: '合并', d: detailsData.emotion_merged}
-              ].filter(i => i.d)" :key="item.label" size="small" :type="getEmotionTagType(item.d.dominant)">
-                {{ item.label }}: {{ emotionLabelCn(item.d.dominant) }} ({{ item.d.valence?.toFixed(2) }}, {{ item.d.arousal?.toFixed(2) }}, {{ item.d.social_need?.toFixed(2) }})
-              </n-tag>
+            <div style="margin-bottom: 8px;">
+              <div style="font-size: 12px; color: #666; margin-bottom: 4px;">发送的 Prompt</div>
+              <n-code :code="detailsData.emotion_llm_details.prompt_sent || '无'" language="text" word-wrap />
             </div>
-            <div style="font-size: 12px; color: #666;">
-              距上次 {{ detailsData.minutes_since_update?.toFixed(0) }}分钟 | 合并权重：演化40% + LLM60%
+            <div style="margin-bottom: 12px;">
+              <div style="font-size: 12px; color: #666; margin-bottom: 4px;">LLM 返回</div>
+              <n-code :code="detailsData.emotion_llm_details.response_received || '无'" language="text" word-wrap />
             </div>
-          </n-collapse-item>
+          </template>
 
-          <!-- 上下文摘要 -->
-          <n-collapse-item v-if="detailsData.session_context || detailsData.hindsight_context || detailsData.recall_results?.length" title="上下文摘要" name="context">
-            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
-              <n-descriptions-item label="Session 对话">
-                <n-tag :type="detailsData.session_context ? 'success' : 'default'" size="small">
-                  {{ detailsData.session_context ? '有' : '无' }}
+          <!-- 念头生成 LLM -->
+          <template v-if="detailsData.thought_generation">
+            <n-divider title-placement="left" style="margin: 12px 0 8px;">念头生成 LLM</n-divider>
+            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 8px;">
+              <n-descriptions-item label="耗时">{{ detailsData.thought_generation.duration_ms || '-' }}ms</n-descriptions-item>
+              <n-descriptions-item label="想联系用户">
+                <n-tag :type="detailsData.thought_generation.want_to_contact ? 'success' : 'default'" size="small">
+                  {{ detailsData.thought_generation.want_to_contact ? '是' : '否 (SKIP)' }}
                 </n-tag>
               </n-descriptions-item>
-              <n-descriptions-item label="Hindsight 记忆">
-                <n-tag :type="detailsData.hindsight_context ? 'success' : 'default'" size="small">
-                  {{ detailsData.hindsight_context ? '有' : '无' }}
-                </n-tag>
+              <n-descriptions-item v-if="detailsData.thought_generation.thought" label="生成内容" :span="2">
+                {{ detailsData.thought_generation.thought }}
               </n-descriptions-item>
-              <n-descriptions-item label="召回记忆数">{{ detailsData.recall_results?.length || 0 }} 条</n-descriptions-item>
             </n-descriptions>
-          </n-collapse-item>
+            <div style="margin-bottom: 8px;">
+              <div style="font-size: 12px; color: #666; margin-bottom: 4px;">发送的 Prompt</div>
+              <n-code :code="detailsData.thought_generation.prompt_sent || '无'" language="text" word-wrap />
+            </div>
+            <div style="margin-bottom: 12px;">
+              <div style="font-size: 12px; color: #666; margin-bottom: 4px;">LLM 返回</div>
+              <n-code :code="detailsData.thought_generation.response_received || '无'" language="text" word-wrap />
+            </div>
+          </template>
+        </template>
 
-          <!-- 延迟队列详情 -->
-          <n-collapse-item v-if="detailsData.delay_reeval" title="延迟队列重评估" name="delay">
-            <n-descriptions bordered :column="3" size="small" style="margin-bottom: 16px">
-              <n-descriptions-item label="发送">{{ detailsData.delay_reeval.sent }}</n-descriptions-item>
-              <n-descriptions-item label="丢弃">{{ detailsData.delay_reeval.discarded }}</n-descriptions-item>
-              <n-descriptions-item label="保持">{{ detailsData.delay_reeval.kept }}</n-descriptions-item>
-            </n-descriptions>
-          </n-collapse-item>
+        <!-- 决策计算详情 -->
+        <n-divider title-placement="left" style="margin: 12px 0 8px;">决策计算详情</n-divider>
+        <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
+          <n-descriptions-item label="决策类型">
+            <n-tag :type="getDecisionTagType(detailsData.decision?.type)" size="small">
+              {{ getDecisionLabelCn(detailsData.decision?.type) }}
+            </n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="最终分数">{{ detailsData.decision?.score?.toFixed(3) }}</n-descriptions-item>
+          <n-descriptions-item label="情绪强度">
+            {{ parseDecisionReason(detailsData.decision?.reason).intensity }}
+          </n-descriptions-item>
+          <n-descriptions-item label="时间适宜性">
+            {{ parseDecisionReason(detailsData.decision?.reason).time_fitness }}
+          </n-descriptions-item>
+          <n-descriptions-item label="沉默因子">
+            {{ parseDecisionReason(detailsData.decision?.reason).silence_factor }}
+          </n-descriptions-item>
+          <n-descriptions-item label="频率限制">
+            {{ parseDecisionReason(detailsData.decision?.reason).frequency }}
+          </n-descriptions-item>
+          <n-descriptions-item label="决策原因" :span="2">{{ detailsData.decision?.reason }}</n-descriptions-item>
+        </n-descriptions>
 
-          <!-- 原始 JSON -->
-          <n-collapse-item title="原始 JSON 数据" name="raw">
-            <n-code :code="formatJson(detailsData)" language="json" word-wrap />
-          </n-collapse-item>
-        </n-collapse>
+        <!-- 情绪演化详情 -->
+        <template v-if="detailsData.emotion_before">
+          <n-divider title-placement="left" style="margin: 12px 0 8px;">情绪演化详情</n-divider>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+            <n-tag v-for="item in [
+              {label: '初始', d: detailsData.emotion_before},
+              {label: '演化', d: detailsData.emotion_evolved},
+              {label: 'LLM', d: detailsData.emotion_llm},
+              {label: '合并', d: detailsData.emotion_merged}
+            ].filter(i => i.d)" :key="item.label" size="small" :type="getEmotionTagType(item.d.dominant)">
+              {{ item.label }}: {{ emotionLabelCn(item.d.dominant) }} ({{ item.d.valence?.toFixed(2) }}, {{ item.d.arousal?.toFixed(2) }}, {{ item.d.social_need?.toFixed(2) }})
+            </n-tag>
+          </div>
+          <div style="font-size: 12px; color: #666; margin-bottom: 12px;">
+            距上次 {{ detailsData.minutes_since_update?.toFixed(0) }}分钟
+          </div>
+        </template>
+
+        <!-- 延迟队列详情 -->
+        <template v-if="detailsData.delay_reeval">
+          <n-divider title-placement="left" style="margin: 12px 0 8px;">延迟队列重评估</n-divider>
+          <n-descriptions bordered :column="3" size="small" style="margin-bottom: 12px;">
+            <n-descriptions-item label="发送">{{ detailsData.delay_reeval.sent }}</n-descriptions-item>
+            <n-descriptions-item label="丢弃">{{ detailsData.delay_reeval.discarded }}</n-descriptions-item>
+            <n-descriptions-item label="保持">{{ detailsData.delay_reeval.kept }}</n-descriptions-item>
+          </n-descriptions>
+        </template>
       </div>
-      <n-empty v-else description="暂无详情数据" />
+      <n-empty v-else-if="!heartbeatDetailLoading" description="暂无详情数据" />
+      <div v-else style="display: flex; justify-content: center; padding: 40px 0;">
+        <n-spin size="medium" />
+      </div>
     </n-modal>
 
     <!-- 念头日志详情弹窗 -->
@@ -1364,8 +1345,10 @@ const heartbeatDate = ref(Date.now())
 const thoughtDate = ref(Date.now())
 const showRecallModal = ref(false)
 const recallItems = ref([])
+const recallLoading = ref(false)
 const showThoughtContentModal = ref(false)
 const thoughtContentData = ref(null)
+const thoughtContentLoading = ref(false)
 
 // 测试
 const testing = ref({ thought: false, llm: false, emotionLLM: false, thoughtLLM: false, sessionContext: false, contextCollector: false, thoughtEngine: false })
@@ -1545,6 +1528,7 @@ const socialNeedColor = computed(() => {
 
 // 日志详情弹窗
 const showDetailsModal = ref(false)
+const heartbeatDetailLoading = ref(false)
 const detailsData = ref(null)
 const detailsTitle = ref('')
 const isHeartbeatDetails = ref(true)
@@ -1557,6 +1541,7 @@ const thoughtDetailsTitle = ref('')
 async function showHeartbeatDetails(row) {
   detailsTitle.value = `心跳日志 #${row.id} 详情`
   detailsData.value = null
+  heartbeatDetailLoading.value = true
   isHeartbeatDetails.value = true
   showDetailsModal.value = true
   
@@ -1606,6 +1591,8 @@ async function showHeartbeatDetails(row) {
   } catch (e) {
     message.error('加载心跳详情失败')
     detailsData.value = null
+  } finally {
+    heartbeatDetailLoading.value = false
   }
 }
 
@@ -1653,17 +1640,16 @@ async function showThoughtDetails(row) {
 
 async function showRecallDetail(row) {
   recallItems.value = []
+  recallLoading.value = true
   showRecallModal.value = true
   
   try {
-    // 从 API 获取完整详情（含 recall_results）
     const detail = await api.getHeartbeatDetail(row.id)
     if (!detail) {
       recallItems.value = []
       return
     }
     
-    // 解析 details JSON
     let parsed = {}
     if (detail.details && typeof detail.details === 'string') {
       try { parsed = JSON.parse(detail.details) } catch (e) { parsed = {} }
@@ -1675,21 +1661,22 @@ async function showRecallDetail(row) {
   } catch (e) {
     message.error('加载召回详情失败')
     recallItems.value = []
+  } finally {
+    recallLoading.value = false
   }
 }
 async function showThoughtContent(row) {
   thoughtContentData.value = null
+  thoughtContentLoading.value = true
   showThoughtContentModal.value = true
   
   try {
-    // 从 API 获取完整详情（含 thought_generation）
     const detail = await api.getHeartbeatDetail(row.id)
     if (!detail) {
       thoughtContentData.value = null
       return
     }
     
-    // 解析 details JSON
     let parsed = {}
     if (detail.details && typeof detail.details === 'string') {
       try { parsed = JSON.parse(detail.details) } catch (e) { parsed = {} }
@@ -1700,7 +1687,6 @@ async function showThoughtContent(row) {
     thoughtContentData.value = {
       ...detail,
       details_parsed: parsed,
-      // 提取念头内容
       thought_content: parsed.thought_generation?.response_received || '',
       thought_type: parsed.thought_type || '',
       decision: parsed.decision || null,
@@ -1708,26 +1694,28 @@ async function showThoughtContent(row) {
   } catch (e) {
     message.error('加载念头详情失败')
     thoughtContentData.value = null
+  } finally {
+    thoughtContentLoading.value = false
   }
 }
 
 // 发送详情弹窗
 const showSendDetailModal = ref(false)
 const sendDetailData = ref(null)
+const sendDetailLoading = ref(false)
 
 async function showSendDetail(row) {
   sendDetailData.value = null
+  sendDetailLoading.value = true
   showSendDetailModal.value = true
   
   try {
-    // 从 API 获取完整详情（含 message_sending）
     const detail = await api.getHeartbeatDetail(row.id)
     if (!detail) {
       sendDetailData.value = null
       return
     }
     
-    // 解析 details JSON
     let parsed = {}
     if (detail.details && typeof detail.details === 'string') {
       try { parsed = JSON.parse(detail.details) } catch (e) { parsed = {} }
@@ -1738,7 +1726,6 @@ async function showSendDetail(row) {
     sendDetailData.value = {
       ...detail,
       details_parsed: parsed,
-      // 提取发送详情
       message_sending: parsed.message_sending || null,
       sent_content: parsed.message_sending?.thought || '',
       thought_type: parsed.thought_type || '',
@@ -1747,6 +1734,8 @@ async function showSendDetail(row) {
   } catch (e) {
     message.error('加载发送详情失败')
     sendDetailData.value = null
+  } finally {
+    sendDetailLoading.value = false
   }
 }
 function onHeartbeatDateChange(val) {
