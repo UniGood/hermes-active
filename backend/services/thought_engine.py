@@ -260,4 +260,9 @@ class ThoughtEngine:
         if thought.startswith("'") and thought.endswith("'"):
             thought = thought[1:-1]
         
+        # 移除 LLM 自己生成的时间前缀 [凯莉 HH:MM] 或 [凯莉 HH:MM]:
+        # 这个前缀在发送时由 MessageService 添加，生成时不需要
+        import re
+        thought = re.sub(r'^\[凯莉\s+\d{1,2}:\d{2}\]\s*:?\s*', '', thought)
+        
         return thought, True

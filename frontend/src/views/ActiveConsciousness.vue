@@ -796,23 +796,14 @@
       <n-empty v-else description="无召回内容" />
     </n-modal>
 
-    <!-- 念头内容弹窗 -->
-    <n-modal v-model:show="showThoughtContentModal" preset="card" title="发送详情" style="width: 90vw; max-width: 900px">
+    <!-- 念头内容弹窗（生成念头列点击） -->
+    <n-modal v-model:show="showThoughtContentModal" preset="card" title="念头详情" style="width: 90vw; max-width: 900px">
       <template v-if="thoughtContentData">
         <n-descriptions :column="1" label-placement="left" bordered size="small">
           <n-descriptions-item label="心跳ID">{{ thoughtContentData.id }}</n-descriptions-item>
-          <n-descriptions-item label="是否发送">
-            <n-tag :type="thoughtContentData.message_sent ? 'success' : 'default'" size="small">
-              {{ thoughtContentData.message_sent ? '已发送' : '未发送' }}
-            </n-tag>
-          </n-descriptions-item>
-          <n-descriptions-item label="发送状态" v-if="thoughtContentData.message_sending">
-            <n-tag :type="thoughtContentData.message_sending.success ? 'success' : 'error'" size="small">
-              {{ thoughtContentData.message_sending.success ? '发送成功' : '发送失败' }}
-            </n-tag>
-          </n-descriptions-item>
+          <n-descriptions-item label="生成数量">{{ thoughtContentData.thoughts_generated || 0 }}</n-descriptions-item>
           <n-descriptions-item label="念头类型" v-if="thoughtContentData.thought_type">
-            {{ thoughtContentData.thought_type }}
+            {{ thoughtTypeLabelCn(thoughtContentData.thought_type) }}
           </n-descriptions-item>
           <n-descriptions-item label="决策类型" v-if="thoughtContentData.decision?.type">
             <n-tag :type="getDecisionTagType(thoughtContentData.decision.type)" size="small">
@@ -822,15 +813,45 @@
               分数: {{ thoughtContentData.decision.score?.toFixed(3) }}
             </span>
           </n-descriptions-item>
-          <n-descriptions-item label="发送内容" v-if="thoughtContentData.thought_content">
+          <n-descriptions-item label="念头内容" v-if="thoughtContentData.thought_content">
             <div style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;">{{ thoughtContentData.thought_content }}</div>
           </n-descriptions-item>
-          <n-descriptions-item label="生成数量">{{ thoughtContentData.thoughts_generated || 0 }}</n-descriptions-item>
           <n-descriptions-item label="LLM 耗时" v-if="thoughtContentData.details_parsed?.thought_generation?.duration_ms">
             {{ thoughtContentData.details_parsed.thought_generation.duration_ms }}ms
           </n-descriptions-item>
           <n-descriptions-item label="LLM 模型" v-if="thoughtContentData.details_parsed?.thought_generation?.model">
             {{ thoughtContentData.details_parsed.thought_generation.model }}
+          </n-descriptions-item>
+        </n-descriptions>
+      </template>
+      <n-empty v-else description="无念头内容" />
+    </n-modal>
+
+    <!-- 发送详情弹窗（发送消息列点击） -->
+    <n-modal v-model:show="showSendDetailModal" preset="card" title="发送详情" style="width: 90vw; max-width: 900px">
+      <template v-if="sendDetailData">
+        <n-descriptions :column="1" label-placement="left" bordered size="small">
+          <n-descriptions-item label="心跳ID">{{ sendDetailData.id }}</n-descriptions-item>
+          <n-descriptions-item label="是否发送">
+            <n-tag :type="sendDetailData.message_sent ? 'success' : 'default'" size="small">
+              {{ sendDetailData.message_sent ? '已发送' : '未发送' }}
+            </n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="发送状态" v-if="sendDetailData.message_sending">
+            <n-tag :type="sendDetailData.message_sending.success ? 'success' : 'error'" size="small">
+              {{ sendDetailData.message_sending.success ? '发送成功' : '发送失败' }}
+            </n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="发送内容" v-if="sendDetailData.sent_content">
+            <div style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;">{{ sendDetailData.sent_content }}</div>
+          </n-descriptions-item>
+          <n-descriptions-item label="念头类型" v-if="sendDetailData.thought_type">
+            {{ thoughtTypeLabelCn(sendDetailData.thought_type) }}
+          </n-descriptions-item>
+          <n-descriptions-item label="决策类型" v-if="sendDetailData.decision?.type">
+            <n-tag :type="getDecisionTagType(sendDetailData.decision.type)" size="small">
+              {{ sendDetailData.decision.type }}
+            </n-tag>
           </n-descriptions-item>
         </n-descriptions>
       </template>
@@ -1173,8 +1194,9 @@
           </n-collapse-item>
 
           <!-- Hindsight 信息 -->
-          <n-collapse-item v-if="thoughtDetailsData.hindsight_stored !== undefined" title="Hindsight 存储" name="hindsight">
-            <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
+          <div v-if="thoughtDetailsData.hindsight_stored !== undefined" style="margin-bottom: 16px;">
+            <div style="font-weight: 500; margin-bottom: 8px; font-size: 14px;">Hindsight 存储</div>
+            <n-descriptions bordered :column="2" size="small">
               <n-descriptions-item label="存储状态">
                 <n-tag :type="thoughtDetailsData.hindsight_stored ? 'success' : 'warning'" size="small">
                   {{ thoughtDetailsData.hindsight_stored ? "已存储" : "未存储" }}
@@ -1188,7 +1210,7 @@
                 </n-space>
               </n-descriptions-item>
             </n-descriptions>
-          </n-collapse-item>
+          </div>
 
           <!-- 上下文信息 -->
           <n-collapse-item v-if="thoughtDetailsData.context_bundle" title="上下文信息" name="context">
@@ -1502,28 +1524,103 @@ async function showThoughtDetails(row) {
   }
 }
 
-function showRecallDetail(row) {
-  recallItems.value = row.details_parsed?.recall_results || []
+async function showRecallDetail(row) {
+  recallItems.value = []
   showRecallModal.value = true
+  
+  try {
+    // 从 API 获取完整详情（含 recall_results）
+    const detail = await api.getHeartbeatDetail(row.id)
+    if (!detail) {
+      recallItems.value = []
+      return
+    }
+    
+    // 解析 details JSON
+    let parsed = {}
+    if (detail.details && typeof detail.details === 'string') {
+      try { parsed = JSON.parse(detail.details) } catch (e) { parsed = {} }
+    } else if (detail.details && typeof detail.details === 'object') {
+      parsed = detail.details
+    }
+    
+    recallItems.value = parsed.recall_results || []
+  } catch (e) {
+    message.error('加载召回详情失败')
+    recallItems.value = []
+  }
 }
-function showThoughtContent(row) {
-  // 解析 details JSON
-  let parsed = {}
-  if (row.details && typeof row.details === 'string') {
-    try { parsed = JSON.parse(row.details) } catch (e) { parsed = {} }
-  } else if (row.details && typeof row.details === 'object') {
-    parsed = row.details
-  }
-  thoughtContentData.value = {
-    ...row,
-    details_parsed: parsed,
-    // 提取发送详情
-    message_sending: parsed.message_sending || null,
-    thought_content: parsed.message_sending?.thought || parsed.thought_generation?.response_received || '',
-    thought_type: parsed.thought_type || '',
-    decision: parsed.decision || null,
-  }
+async function showThoughtContent(row) {
+  thoughtContentData.value = null
   showThoughtContentModal.value = true
+  
+  try {
+    // 从 API 获取完整详情（含 thought_generation）
+    const detail = await api.getHeartbeatDetail(row.id)
+    if (!detail) {
+      thoughtContentData.value = null
+      return
+    }
+    
+    // 解析 details JSON
+    let parsed = {}
+    if (detail.details && typeof detail.details === 'string') {
+      try { parsed = JSON.parse(detail.details) } catch (e) { parsed = {} }
+    } else if (detail.details && typeof detail.details === 'object') {
+      parsed = detail.details
+    }
+    
+    thoughtContentData.value = {
+      ...detail,
+      details_parsed: parsed,
+      // 提取念头内容
+      thought_content: parsed.thought_generation?.response_received || '',
+      thought_type: parsed.thought_type || '',
+      decision: parsed.decision || null,
+    }
+  } catch (e) {
+    message.error('加载念头详情失败')
+    thoughtContentData.value = null
+  }
+}
+
+// 发送详情弹窗
+const showSendDetailModal = ref(false)
+const sendDetailData = ref(null)
+
+async function showSendDetail(row) {
+  sendDetailData.value = null
+  showSendDetailModal.value = true
+  
+  try {
+    // 从 API 获取完整详情（含 message_sending）
+    const detail = await api.getHeartbeatDetail(row.id)
+    if (!detail) {
+      sendDetailData.value = null
+      return
+    }
+    
+    // 解析 details JSON
+    let parsed = {}
+    if (detail.details && typeof detail.details === 'string') {
+      try { parsed = JSON.parse(detail.details) } catch (e) { parsed = {} }
+    } else if (detail.details && typeof detail.details === 'object') {
+      parsed = detail.details
+    }
+    
+    sendDetailData.value = {
+      ...detail,
+      details_parsed: parsed,
+      // 提取发送详情
+      message_sending: parsed.message_sending || null,
+      sent_content: parsed.message_sending?.thought || '',
+      thought_type: parsed.thought_type || '',
+      decision: parsed.decision || null,
+    }
+  } catch (e) {
+    message.error('加载发送详情失败')
+    sendDetailData.value = null
+  }
 }
 function onHeartbeatDateChange(val) {
   heartbeatDate.value = val
@@ -1771,7 +1868,7 @@ const heartbeatColumns = [
   { title: '耗时(ms)', key: 'duration_ms', width: 80 },
   { title: '召回数量', key: 'recall_count', width: 80, render(row) { const v = row.recall_count || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'info', onClick: () => showRecallDetail(row) }, { default: () => v }) : '0' } },
   { title: '生成念头', key: 'thoughts_generated', width: 80, render(row) { const v = row.thoughts_generated || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'success', onClick: () => showThoughtContent(row) }, { default: () => v }) : '0' } },
-  { title: '发送消息', key: 'message_sent', width: 80, render(row) { const v = row.message_sent; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'warning', onClick: () => showThoughtContent(row) }, { default: () => '是' }) : '否' } },
+  { title: '发送消息', key: 'message_sent', width: 80, render(row) { const v = row.message_sent; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'warning', onClick: () => showSendDetail(row) }, { default: () => '是' }) : '否' } },
 ]
 
 // 分页
