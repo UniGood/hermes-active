@@ -477,6 +477,22 @@
           </n-descriptions-item>
         </n-descriptions>
 
+        <!-- 基本详情（_minimal 兜底 details 时显示，仅有 message/error/task_type 等基础字段） -->
+        <n-alert v-if="logDetailData._minimal && !logDetailData.llm_request && !logDetailData.context && !logDetailData.send_result" type="info" style="margin-bottom: 16px;">
+          <div style="font-size: 13px;">
+            <div><strong>任务类型：</strong>{{ logDetailData.task_type }}</div>
+            <div v-if="logDetailData.summary"><strong>说明：</strong>{{ logDetailData.summary }}</div>
+            <div v-if="logDetailData.error"><strong>错误：</strong>{{ logDetailData.error }}</div>
+            <div v-if="logDetailData.failure_stage"><strong>失败阶段：</strong>{{ logDetailData.failure_stage }}</div>
+            <div v-if="logDetailData.duration"><strong>耗时：</strong>{{ logDetailData.duration }}s</div>
+            <div v-if="logDetailData.session_id"><strong>Session：</strong><span style="font-family: monospace; font-size: 12px;">{{ logDetailData.session_id }}</span></div>
+            <div v-if="logDetailData.platform"><strong>平台：</strong>{{ logDetailData.platform }}</div>
+            <div style="margin-top: 6px; font-size: 12px; color: #999;">
+              该日志为简化记录，未包含 LLM 请求/响应/上下文等详情
+            </div>
+          </div>
+        </n-alert>
+
         <!-- 上下文 -->
         <n-divider v-if="logDetailData.context" title-placement="left">上下文</n-divider>
         <div v-if="logDetailData.context" style="margin-bottom: 16px;">

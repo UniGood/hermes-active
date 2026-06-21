@@ -303,7 +303,8 @@ class MessageService:
                     status="failed",
                     message=f"发送消息到 session {session_id}",
                     error="sessions 表不存在",
-                    duration=round(time.time() - start_time, 2)
+                    duration=round(time.time() - start_time, 2),
+                    details={"session_id": session_id, "platform": platform, "failure_stage": "session_table_missing"}
                 )
                 return {"success": False, "message": "sessions 表不存在"}
 
@@ -319,7 +320,8 @@ class MessageService:
                     status="failed",
                     message=f"发送消息到 session {session_id}",
                     error=f"Session {session_id} 不存在",
-                    duration=round(time.time() - start_time, 2)
+                    duration=round(time.time() - start_time, 2),
+                    details={"session_id": session_id, "platform": platform, "failure_stage": "session_not_found"}
                 )
                 return {"success": False, "message": f"Session {session_id} 不存在"}
 
@@ -353,7 +355,8 @@ class MessageService:
                     task_type="send_message",
                     status="success",
                     message=f"消息已发送到 {platform}，session: {session_id}",
-                    duration=duration
+                    duration=duration,
+                    details={"session_id": session_id, "platform": platform, "send_result": send_result, "write_to_db": write_to_db, "with_mark": bool(send_mark)}
                 )
                 return {
                     "success": True,
@@ -370,7 +373,8 @@ class MessageService:
                     status="failed",
                     message=f"发送消息到 {platform}，session: {session_id}",
                     error=send_result.get("message", "发送失败"),
-                    duration=duration
+                    duration=duration,
+                    details={"session_id": session_id, "platform": platform, "send_result": send_result, "failure_stage": "send"}
                 )
                 return {
                     "success": False,
@@ -388,7 +392,8 @@ class MessageService:
                     task_type="send_message",
                     status=status,
                     message=f"{msg}，session: {session_id}",
-                    duration=duration
+                    duration=duration,
+                    details={"session_id": session_id, "platform": platform, "write_to_db": write_to_db, "with_mark": bool(send_mark)}
                 )
                 return {
                     "success": write_to_db,
@@ -406,7 +411,8 @@ class MessageService:
                 status="failed",
                 message=f"发送消息到 session {session_id}",
                 error=str(e),
-                duration=duration
+                duration=duration,
+                details={"session_id": session_id, "platform": platform, "failure_stage": "exception", "exception_type": type(e).__name__}
             )
             return {"success": False, "message": f"消息发送失败: {str(e)}"}
 
@@ -458,7 +464,13 @@ class MessageService:
                         task_type="generate",
                         status="success",
                         message=f"LLM 生成消息成功，session: {session_id}",
-                        duration=round(time.time() - start_time, 2)
+                        duration=round(time.time() - start_time, 2),
+                        details={
+                            "session_id": session_id,
+                            "llm_request": {"model": llm_config.get("model",""), "temperature": 0.7, "max_tokens": 200},
+                            "llm_response": {"content": final_message[:500]},
+                            "use_llm": use_llm
+                        }
                     )
                 else:
                     MessageService.create_task_log(
@@ -466,7 +478,12 @@ class MessageService:
                         status="failed",
                         message=f"LLM 生成消息失败，session: {session_id}",
                         error=llm_result.get("message", "未知错误"),
-                        duration=round(time.time() - start_time, 2)
+                        duration=round(time.time() - start_time, 2),
+                        details={
+                            "session_id": session_id,
+                            "llm_request": {"model": llm_config.get("model",""), "temperature": 0.7, "max_tokens": 200},
+                            "failure_stage": "llm_generate"
+                        }
                     )
                     return {
                         "success": False,
@@ -491,7 +508,13 @@ class MessageService:
                     task_type="send_proactive",
                     status="success",
                     message=f"主动消息发送成功，session: {session_id}",
-                    duration=duration
+                    duration=duration,
+                    details={
+                        "session_id": session_id,
+                        "use_llm": use_llm,
+                        "generated_message": final_message if use_llm else None,
+                        "send_result": send_result
+                    }
                 )
                 return {
                     "success": True,
@@ -507,7 +530,14 @@ class MessageService:
                     status="failed",
                     message=f"主动消息发送失败，session: {session_id}",
                     error=send_result.get("message", "未知错误"),
-                    duration=duration
+                    duration=duration,
+                    details={
+                        "session_id": session_id,
+                        "use_llm": use_llm,
+                        "generated_message": final_message if use_llm else None,
+                        "send_result": send_result,
+                        "failure_stage": "send"
+                    }
                 )
                 return send_result
 
@@ -518,7 +548,13 @@ class MessageService:
                 status="failed",
                 message=f"主动消息发送异常，session: {session_id}",
                 error=str(e),
-                duration=duration
+                duration=duration,
+                details={
+                    "session_id": session_id,
+                    "use_llm": use_llm if 'use_llm' in locals() else None,
+                    "failure_stage": "exception",
+                    "exception_type": type(e).__name__
+                }
             )
             return {"success": False, "message": f"主动消息发送失败: {str(e)}"}
 
@@ -570,7 +606,21 @@ class MessageService:
         duration: float = None,
         details: dict = None
     ):
-        """创建任务日志"""
+        """创建任务日志
+
+        details 必须传 dict（即使只有基本信息）。未传会 raise 强制开发修复。
+        统一 details 结构由调用方构造，create_task_log 只负责落库。
+        """
+        if details is None:
+            # 严格模式：避免某些调用方忘记构造 details 导致日志详情丢失。
+            # 临时兜底：把基本信息打成 dict（不能 raise，因为有些路径是动态拼 details 前 fail）
+            details = {
+                "_minimal": True,
+                "task_type": task_type,
+                "summary": message,
+                "error": error,
+                "duration": duration,
+            }
         import json as _json
         db = ActiveSession()
         try:
@@ -580,7 +630,7 @@ class MessageService:
                 message=message,
                 error=error,
                 duration=duration,
-                details=_json.dumps(details, ensure_ascii=False) if details else None
+                details=_json.dumps(details, ensure_ascii=False)
             )
             db.add(log)
             db.commit()

@@ -154,264 +154,40 @@ async def run_cron_job(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
-    """手动运行任务"""
-    start_time = time.time()
+    """手动运行任务（复用 scheduler_service.run_cron_job，保证 details 完整）"""
+    # 先校验任务存在
     jobs = ConfigService.get_cron_jobs(db)
-
-    # 查找任务
-    target_job = None
-    for job in jobs:
-        if job["id"] == job_id:
-            target_job = job
-            break
-
+    target_job = next((j for j in jobs if j["id"] == job_id), None)
     if not target_job:
         raise HTTPException(status_code=404, detail="任务不存在")
 
-    try:
-        # 获取 session - 优先使用任务配置的 session_id
-        session_id = target_job.get("session_id")
-        platform = target_job.get("platform", "weixin")
+    # 记录开始前的最新 task_log id，用来识别本次新写入的日志
+    from models.active import TaskLog as _TaskLog
+    last_log_id = db.query(_TaskLog).order_by(_TaskLog.id.desc()).first()
+    last_log_id = last_log_id.id if last_log_id else 0
 
-        if session_id:
-            # 指定了 session_id，直接使用
-            session = SessionService.get_session_by_id(db, session_id)
-        else:
-            # 未指定 session_id，使用 get_or_create 自动处理过期
-            user_id = SessionService.get_weixin_user_id()
-            if not user_id:
-                MessageService.create_task_log(
-                    task_type="cron_run",
-                    status="failed",
-                    message=f"任务 {target_job['name']} 运行失败",
-                    error="未找到微信用户 ID（sessions.json 中无 weixin dm session）",
-                    duration=round(time.time() - start_time, 2)
-                )
-                raise HTTPException(status_code=400, detail="未找到微信用户 ID")
+    # 复用 scheduler_service 的实现（带 details）
+    from services.scheduler_service import run_cron_job as _scheduler_run
+    await _scheduler_run(job_id)
 
-            from services.fallback_session_service import FallbackSessionService
-            session = FallbackSessionService.get_or_create_active_session(platform, user_id)
-            if session and session.get("was_auto_reset"):
-                logger.info(f"Session 已自动重置（原因: {session.get('auto_reset_reason')}），新 session: {session['id']}")
-        if not session:
-            MessageService.create_task_log(
-                task_type="cron_run",
-                status="failed",
-                message=f"任务 {target_job['name']} 运行失败",
-                error=f"未找到可用 session (平台: {platform})",
-                duration=round(time.time() - start_time, 2)
-            )
-            raise HTTPException(status_code=400, detail=f"未找到可用 session (平台: {platform})")
+    # 查本次产生的最新日志，给前端响应
+    new_log = db.query(_TaskLog).filter(_TaskLog.id > last_log_id)\
+        .order_by(_TaskLog.id.desc()).first()
 
-        session_id = session["id"] if isinstance(session, dict) else session.id
+    if not new_log:
+        return SuccessResponse(message=f"任务 {target_job['name']} 已执行，但未产生日志")
 
-        # 获取 LLM 配置和提示词配置
-        llm_config = ConfigService.get_llm_config(db)
-        prompts_config = ConfigService.get_prompts_config(db)
+    if new_log.status == "success":
+        return SuccessResponse(message=f"任务 {target_job['name']} 运行成功，消息已发送到 session")
+    if new_log.status == "skipped":
+        reason = (new_log.error or "").strip() or "跳过原因未记录"
+        return SuccessResponse(message=f"任务 {target_job['name']} 跳过执行：{reason}")
 
-        # 解析提示词 - 支持新的 system_prompt/user_prompt 字段和旧的 prompt 字段
-        system_prompt_text = target_job.get("system_prompt")
-        user_prompt_text = target_job.get("user_prompt")
-        append_soul_md = target_job.get("append_soul_md", True)
-        raw_prompt = target_job.get("prompt") or ""
-
-        # 如果有新的 system_prompt/user_prompt 字段，优先使用
-        if system_prompt_text is not None or user_prompt_text is not None:
-            # 使用新字段
-            prompt_text = system_prompt_text or prompts_config.get("system", "")
-
-            # 如果需要拼接 soul.md
-            if append_soul_md:
-                soul_content = ConfigService.read_hermes_soul()
-                if soul_content:
-                    prompt_text = prompt_text + "\n\n" + soul_content if prompt_text else soul_content
-
-            # 解析用户提示词中的上下文配置
-            from services.scheduler_service import _parse_context_config
-            ctx_config, user_prompt_clean = _parse_context_config(user_prompt_text or "")
-            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{context}")
-        elif raw_prompt and "|||" in raw_prompt:
-            # 兼容旧的 ||| 分隔格式
-            parts = raw_prompt.split("|||", 1)
-            prompt_text = parts[0].strip()
-            user_prompt_raw = parts[1].strip()
-
-            # 检查是否需要拼接 soul.md
-            if prompt_text.endswith("[SOUL_MD]"):
-                prompt_text = prompt_text[:-9].strip()
-                soul_content = ConfigService.read_hermes_soul()
-                if soul_content:
-                    prompt_text = prompt_text + "\n\n" + soul_content if prompt_text else soul_content
-
-            from services.scheduler_service import _parse_context_config
-            ctx_config, user_prompt_clean = _parse_context_config(user_prompt_raw)
-            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{context}")
-        else:
-            # 兼容旧的单一 prompt 字段
-            from services.scheduler_service import _parse_context_config
-            ctx_config, user_prompt_text = _parse_context_config(raw_prompt)
-            prompt_text = user_prompt_text or prompts_config.get("system", "")
-            user_prompt_final = prompts_config.get("generation", "{context}")
-
-        # 获取上下文
-        context_msgs = []
-        session_enabled = ctx_config.get("session_enabled", True)
-        if session_enabled:
-            context_limit = ctx_config.get("session_limit", 20)
-            include_tool = ctx_config.get("include_tool", False)
-            context_msgs = MessageService.get_session_context_raw(session_id, limit=context_limit, include_tool=include_tool)
-            context_text = "\n".join(
-                f"{m.get('role', 'unknown')}: {m.get('content', '')}"
-                for m in context_msgs
-            )
-        else:
-            context_text = ""
-
-        # 天气上下文（复用配置管理中的 amap 配置；extensions=all 最多预报 3 天）
-        if ctx_config.get("weather_enabled", False):
-            from services.scheduler_service import fetch_weather_for_context
-            raw_days = ctx_config.get("weather_days", 0)
-            try:
-                wd = int(raw_days)
-            except (ValueError, TypeError):
-                wd = 0
-            if wd not in (0, 2, 3, 4):
-                wd = 0
-            weather_text = await fetch_weather_for_context(forecast_days=wd)
-            if weather_text:
-                context_text = (context_text + "\n\n=== 当前天气 ===\n" + weather_text).strip() if context_text else f"=== 当前天气 ===\n{weather_text}"
-
-        user_prompt = user_prompt_final.replace("{context}", context_text)
-
-        # 冷却时间检查
-        cooldown_enabled = target_job.get("cooldown_enabled", False)
-        cooldown_minutes = target_job.get("cooldown_minutes", 10)
-        if cooldown_enabled and context_msgs:
-            from datetime import timezone, timedelta
-            now = datetime.now(timezone(timedelta(hours=8)))
-            last_user_time = None
-            for msg in reversed(context_msgs):
-                if msg.get("role") == "user" and msg.get("timestamp"):
-                    ts = msg["timestamp"]
-                    if isinstance(ts, (int, float)):
-                        last_user_time = datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=8)))
-                    break
-            if last_user_time:
-                elapsed = (now - last_user_time).total_seconds() / 60
-                if elapsed < cooldown_minutes:
-                    reason = f"用户最后发言距今 {elapsed:.1f} 分钟，不足冷却时间 {cooldown_minutes} 分钟"
-                    MessageService.create_task_log(
-                        task_type="cron_run",
-                        status="skipped",
-                        message=f"任务 {target_job['name']} 跳过执行",
-                        error=reason,
-                        duration=round(time.time() - start_time, 2),
-                        details={"skip_reason": reason, "cooldown_minutes": cooldown_minutes, "elapsed_minutes": round(elapsed, 1)}
-                    )
-                    return {"success": True, "message": f"跳过执行: {reason}"}
-
-        # 获取任务参数
-        use_llm = target_job.get("use_llm", True)
-        write_to_db = target_job.get("write_to_db", True)
-        with_mark = target_job.get("with_mark", True)
-        mark_format = target_job.get("mark_format", "[凯莉主动发送] {timestamp}: {content}")
-        send_mark = target_job.get("send_mark", "[凯莉主动发送]")
-        time_format = target_job.get("time_format", "%H:%M 星期{weekday}")
-
-        generated_message = ""
-
-        # 调用 LLM 生成消息
-        if use_llm:
-            if llm_config.get("mode") == "hermes":
-                # 使用 hermes 的 call_llm
-                import sys as _sys
-                from pathlib import Path as _Path
-                _sys.path.insert(0, str(_Path.home() / '.hermes' / 'hermes-agent'))
-                from agent.auxiliary_client import call_llm
-
-                response = call_llm(
-                    task="title_generation",
-                    messages=[
-                        {"role": "system", "content": prompt_text},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=0.7,
-                    max_tokens=200,
-                )
-                generated_message = response.choices[0].message.content.strip()
-            else:
-                llm_result = await LLMService.generate_message(
-                    llm_config=llm_config,
-                    prompt=user_prompt,
-                    system_prompt=prompt_text,
-                    temperature=0.7,
-                    max_tokens=200
-                )
-
-                if not llm_result.get("success"):
-                    MessageService.create_task_log(
-                        task_type="cron_run",
-                        status="failed",
-                        message=f"任务 {target_job['name']} LLM 生成失败",
-                        error=llm_result.get("message", "未知错误"),
-                        duration=round(time.time() - start_time, 2)
-                    )
-                    raise HTTPException(status_code=500, detail=f"LLM 生成失败: {llm_result.get('message')}")
-
-                generated_message = llm_result["content"]
-        else:
-            # 不使用 LLM，使用提示词作为消息
-            generated_message = prompt_text
-
-        # 发送消息
-        send_result = await MessageService.send_message(
-            session_id=session_id,
-            message=generated_message,
-            platform=platform,
-            write_to_db=write_to_db,
-            with_mark=with_mark,
-            mark_format=mark_format,
-            send_mark=send_mark,
-            time_format=time_format
-        )
-
-        duration = round(time.time() - start_time, 2)
-
-        # 更新 last_run_at
-        target_job["last_run_at"] = datetime.utcnow().isoformat()
-        ConfigService.save_cron_jobs(db, jobs)
-
-        # 记录日志
-        if send_result.get("success"):
-            MessageService.create_task_log(
-                task_type="cron_run",
-                status="success",
-                message=f"任务 {target_job['name']} 运行成功，session: {session_id}",
-                duration=duration
-            )
-            return SuccessResponse(message=f"任务运行成功，消息已发送到 session {session_id}")
-        else:
-            MessageService.create_task_log(
-                task_type="cron_run",
-                status="failed",
-                message=f"任务 {target_job['name']} 发送失败",
-                error=send_result.get("message", "未知错误"),
-                duration=duration
-            )
-            raise HTTPException(status_code=500, detail=send_result.get("message", "发送失败"))
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        duration = round(time.time() - start_time, 2)
-        MessageService.create_task_log(
-            task_type="cron_run",
-            status="failed",
-            message=f"任务 {target_job['name']} 运行异常",
-            error=str(e),
-            duration=duration
-        )
-        raise HTTPException(status_code=500, detail=f"任务运行失败: {str(e)}")
+    # failed
+    raise HTTPException(
+        status_code=500,
+        detail=f"任务 {target_job['name']} 失败：{new_log.error or '未知错误'}"
+    )
 
 
 @router.post("/{job_id}/toggle", response_model=SuccessResponse)

@@ -172,7 +172,13 @@ async def generate_message(
                 task_type="generate",
                 status="success",
                 message=f"生成消息成功（hermes），session: {request.session_id}，来源: {context_source}",
-                duration=duration
+                duration=duration,
+                details={
+                    "session_id": request.session_id,
+                    "source": "hermes",
+                    "context_source": context_source,
+                    "llm_response": {"content": content[:500]}
+                }
             )
             return {"success": True, "message": content, "source": "hermes", "context_source": context_source}
         else:
@@ -193,7 +199,14 @@ async def generate_message(
                     task_type="generate",
                     status="success",
                     message=f"生成消息成功（custom），session: {request.session_id}，来源: {context_source}",
-                    duration=duration
+                    duration=duration,
+                    details={
+                        "session_id": request.session_id,
+                        "source": "custom",
+                        "context_source": context_source,
+                        "llm_request": {"model": llm_config.get("model",""), "temperature": 0.7, "max_tokens": 200},
+                        "llm_response": {"content": result.get("content","")[:500]}
+                    }
                 )
                 return {"success": True, "message": result["content"], "source": "custom", "context_source": context_source}
             else:
@@ -203,7 +216,14 @@ async def generate_message(
                     status="failed",
                     message=f"生成消息失败，session: {request.session_id}",
                     error=result.get("message", "生成失败"),
-                    duration=duration
+                    duration=duration,
+                    details={
+                        "session_id": request.session_id,
+                        "source": "custom",
+                        "context_source": context_source,
+                        "llm_request": {"model": llm_config.get("model",""), "temperature": 0.7, "max_tokens": 200},
+                        "failure_stage": "llm_generate"
+                    }
                 )
                 raise HTTPException(status_code=500, detail=result.get("message", "生成失败"))
     except HTTPException:
@@ -215,7 +235,12 @@ async def generate_message(
             status="failed",
             message=f"生成消息异常，session: {request.session_id}",
             error=str(e),
-            duration=duration
+            duration=duration,
+            details={
+                "session_id": request.session_id if 'request' in locals() else None,
+                "failure_stage": "exception",
+                "exception_type": type(e).__name__
+            }
         )
         raise HTTPException(status_code=500, detail=f"LLM 调用失败: {str(e)}")
 
