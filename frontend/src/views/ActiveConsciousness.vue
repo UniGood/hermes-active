@@ -1434,10 +1434,12 @@ const longingColor = computed(() => {
   return '#d03050'
 })
 const heatTagType = computed(() => {
-  const heat = status.value.chat_heat.heat
-  if (heat < 1) return 'success'
-  if (heat < 3) return 'warning'
-  return 'error'
+  const label = status.value.chat_heat.label
+  if (label === '冷清' || label === 'cold') return 'default'
+  if (label === '温暖' || label === 'warm') return 'success'
+  if (label === '热' || label === 'hot') return 'warning'
+  if (label === '火热' || label === 'fire') return 'error'
+  return 'default'
 })
 const intensityColor = computed(() => {
   const intensity = status.value.emotional_intensity.intensity
