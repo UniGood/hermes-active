@@ -1439,7 +1439,7 @@ const heatTagType = computed(() => {
   const ratio = total > 1 ? idx / (total - 1) : 0
   if (ratio >= 0.75) return 'error'    // 最高级：红
   if (ratio >= 0.5) return 'warning'   // 次高：橙
-  if (ratio >= 0.25) return 'success'  // 中等：绿
+  if (ratio >= 0.25) return 'warning'  // 中等：黄/橙
   return 'default'                      // 最低：灰
 })
 const intensityColor = computed(() => {
