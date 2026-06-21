@@ -29,7 +29,7 @@
                   <n-tag :type="longingTagType" size="small">{{ status.longing.label }}</n-tag>
                 </template>
               </n-statistic>
-              <n-progress :percentage="Number((status.longing.score * 100).toFixed(1))" :color="longingColor" style="margin-top: 8px" />
+              <n-progress :percentage="Number((status.longing.score * 100).toFixed(1))" :color="longingColor" :show-indicator="false" :height="8" style="margin-top: 8px" />
               <div style="margin-top: 4px; font-size: 11px; color: #999;">
                 沉默：{{ status.longing.silence_minutes ? Math.round(status.longing.silence_minutes) + '分钟' : '-' }}
               </div>
@@ -42,7 +42,7 @@
                   <n-tag :type="heatTagType" size="small">{{ status.chat_heat.label }}</n-tag>
                 </template>
               </n-statistic>
-              <n-progress :percentage="chatHeatPercentage" :color="heatProgressColor" style="margin-top: 8px" />
+              <n-progress :percentage="chatHeatPercentage" :color="heatProgressColor" :show-indicator="false" :height="8" style="margin-top: 8px" />
               <div style="margin-top: 4px; font-size: 11px; color: #999;">
                 近1小时：{{ status.chat_heat.recent_count || 0 }} 条
               </div>
@@ -55,7 +55,7 @@
                   <n-tag size="small">{{ status.emotional_intensity.label }}</n-tag>
                 </template>
               </n-statistic>
-              <n-progress :percentage="status.emotional_intensity.intensity * 100" :color="intensityColor" style="margin-top: 8px" />
+              <n-progress :percentage="status.emotional_intensity.intensity * 100" :color="intensityColor" :show-indicator="false" :height="8" style="margin-top: 8px" />
             </n-card>
           </n-grid-item>
         </n-grid>
