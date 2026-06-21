@@ -42,7 +42,7 @@
                   <n-tag :type="heatTagType" size="small">{{ status.chat_heat.label }}</n-tag>
                 </template>
               </n-statistic>
-              <n-progress :percentage="chatHeatPercentage" :color="heatColor" style="margin-top: 8px" />
+              <n-progress :percentage="chatHeatPercentage" :color="heatProgressColor" style="margin-top: 8px" />
               <div style="margin-top: 4px; font-size: 11px; color: #999;">
                 近1小时：{{ status.chat_heat.recent_count || 0 }} 条
               </div>
@@ -174,9 +174,18 @@
           <n-grid-item>
             <n-card size="small" title="发送统计">
               <div style="display: flex; justify-content: space-around;">
-                <n-statistic label="今日" :value="status.today_sent_count" />
-                <n-statistic label="本小时" :value="status.hour_sent_count" />
-                <n-statistic label="上次发送" :value="formatTime(status.last_sent_at) || '-'" />
+                <div style="text-align: center;">
+                  <div style="font-size: 20px; font-weight: 600; color: #333;">{{ status.today_sent_count }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">今日</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 20px; font-weight: 600; color: #333;">{{ status.hour_sent_count }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本小时</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 14px; font-weight: 600; color: #333;">{{ formatTime(status.last_sent_at) || '-' }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">上次发送</div>
+                </div>
               </div>
             </n-card>
           </n-grid-item>
@@ -1028,7 +1037,7 @@
         <n-divider style="margin: 16px 0;" />
 
         <!-- ===== 详细信息（可折叠） ===== -->
-        <n-collapse default-expanded-names="">
+        <n-collapse default-expanded-names="llm_io">
           <!-- 🤖 LLM 调用详情（重点展示） -->
           <n-collapse-item v-if="detailsData.emotion_llm_details || detailsData.thought_generation" title="🤖 LLM 调用详情" name="llm_io">
             <!-- 情绪评估 LLM -->
@@ -1428,12 +1437,6 @@ const heatTagType = computed(() => {
   if (heat < 3) return 'warning'
   return 'error'
 })
-const heatColor = computed(() => {
-  const heat = status.value.chat_heat.heat
-  if (heat < 1) return '#18a058'
-  if (heat < 3) return '#f0a020'
-  return '#d03050'
-})
 const intensityColor = computed(() => {
   const intensity = status.value.emotional_intensity.intensity
   if (intensity < 0.3) return '#18a058'
@@ -1457,11 +1460,20 @@ const decisionConfig = computed(() => status.value.config?.decision || {
   max_per_day: 5
 })
 
-// 聊天热度百分比（根据配置动态计算）
+// 聊天热度百分比（根据配置动态计算，允许超过100%）
 const chatHeatPercentage = computed(() => {
   const heat = status.value.chat_heat?.heat || 0
   const maxHeat = status.value.config?.active?.no_send_while_heat_above || 3.0
-  return Math.min((heat / maxHeat) * 100, 100)
+  // 不限制在100%，让进度条能显示超过阈值的情况
+  return Math.round((heat / maxHeat) * 100)
+})
+
+// 聊天热度进度条颜色（超过阈值时变红）
+const heatProgressColor = computed(() => {
+  const percentage = chatHeatPercentage.value
+  if (percentage >= 100) return '#d03050'  // 超过阈值：红色
+  if (percentage >= 70) return '#f0a020'   // 接近阈值：橙色
+  return '#18a058'                          // 正常：绿色
 })
 
 // 频率限制百分比
@@ -1542,38 +1554,59 @@ const showThoughtDetailsModal = ref(false)
 const thoughtDetailsData = ref(null)
 const thoughtDetailsTitle = ref('')
 
-function showHeartbeatDetails(row) {
+async function showHeartbeatDetails(row) {
   detailsTitle.value = `心跳日志 #${row.id} 详情`
-  // 解析 details JSON 并合并数据库列字段
-  let parsed = {}
-  if (row.details && typeof row.details === 'string') {
-    try { parsed = JSON.parse(row.details) } catch (e) { parsed = {} }
-  } else if (row.details && typeof row.details === 'object') {
-    parsed = row.details
-  }
-  detailsData.value = {
-    ...parsed,
-    // 数据库列字段覆盖
-    id: row.id,
-    started_at: row.started_at,
-    duration_ms: row.duration_ms,
-    chat_heat: row.chat_heat,
-    emotional_intensity: row.emotional_intensity,
-    message_sent: row.message_sent,
-    thoughts_generated: row.thoughts_generated,
-    error: row.error,
-    created_at: row.created_at,
-    // 从 details 中提取决策信息
-    decision: parsed.decision || null,
-    emotion_before: parsed.emotion_before || null,
-    emotion_evolved: parsed.emotion_evolved || null,
-    emotion_merged: parsed.emotion_merged || null,
-    session_context: parsed.session_context || null,
-    recall_results: parsed.recall_results || [],
-    hindsight_context: parsed.hindsight_context || null,
-  }
+  detailsData.value = null
   isHeartbeatDetails.value = true
   showDetailsModal.value = true
+  
+  try {
+    // 从 API 获取完整详情（含 details JSON）
+    const detail = await api.getHeartbeatDetail(row.id)
+    if (!detail) {
+      detailsData.value = null
+      return
+    }
+    
+    // 解析 details JSON
+    let parsed = {}
+    if (detail.details && typeof detail.details === 'string') {
+      try { parsed = JSON.parse(detail.details) } catch (e) { parsed = {} }
+    } else if (detail.details && typeof detail.details === 'object') {
+      parsed = detail.details
+    }
+    
+    detailsData.value = {
+      ...parsed,
+      // 数据库列字段覆盖
+      id: detail.id,
+      started_at: detail.started_at,
+      duration_ms: detail.duration_ms,
+      chat_heat: detail.chat_heat,
+      emotional_intensity: detail.emotional_intensity,
+      message_sent: detail.message_sent,
+      thoughts_generated: detail.thoughts_generated,
+      error: detail.error,
+      created_at: detail.created_at,
+      // 从 details 中提取决策信息
+      decision: parsed.decision || null,
+      emotion_before: parsed.emotion_before || null,
+      emotion_evolved: parsed.emotion_evolved || null,
+      emotion_merged: parsed.emotion_merged || null,
+      session_context: parsed.session_context || null,
+      recall_results: parsed.recall_results || [],
+      hindsight_context: parsed.hindsight_context || null,
+      // LLM 调用详情（重点展示）
+      emotion_llm_details: parsed.emotion_llm_details || null,
+      thought_generation: parsed.thought_generation || null,
+      // 上下文数据
+      context_bundle: parsed.context_bundle || null,
+      session_messages: parsed.session_messages || [],
+    }
+  } catch (e) {
+    message.error('加载心跳详情失败')
+    detailsData.value = null
+  }
 }
 
 async function showThoughtDetails(row) {
