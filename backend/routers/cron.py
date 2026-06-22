@@ -1,7 +1,6 @@
 """
 定时任务路由
 """
-import time
 import logging
 from datetime import datetime
 
@@ -11,13 +10,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from models.database import get_active_db
-from models.active import User
+from models.active import User, TaskLog
 from models.schemas import CronJobCreate, CronJobUpdate, CronJobInfo, CronJobListResponse, PreviewPromptRequest, SuccessResponse
 from services.config_service import ConfigService
-from services.llm_service import LLMService
 from services.message_service import MessageService
 from services.session_service import SessionService
-from services.scheduler_service import sync_jobs_from_db
+from services.scheduler_service import sync_jobs_from_db, run_cron_job as scheduler_run
 from middleware.auth import get_current_user
 
 router = APIRouter(prefix="/api/cron", tags=["定时任务"])
@@ -162,17 +160,15 @@ async def run_cron_job(
         raise HTTPException(status_code=404, detail="任务不存在")
 
     # 记录开始前的最新 task_log id，用来识别本次新写入的日志
-    from models.active import TaskLog as _TaskLog
-    last_log_id = db.query(_TaskLog).order_by(_TaskLog.id.desc()).first()
-    last_log_id = last_log_id.id if last_log_id else 0
+    last_log = db.query(TaskLog).order_by(TaskLog.id.desc()).first()
+    last_log_id = last_log.id if last_log else 0
 
-    # 复用 scheduler_service 的实现（带 details）
-    from services.scheduler_service import run_cron_job as _scheduler_run
-    await _scheduler_run(job_id)
+    # 复用 scheduler_service 的实现（带 details），别名避免跟本 endpoint 重名
+    await scheduler_run(job_id)
 
     # 查本次产生的最新日志，给前端响应
-    new_log = db.query(_TaskLog).filter(_TaskLog.id > last_log_id)\
-        .order_by(_TaskLog.id.desc()).first()
+    new_log = db.query(TaskLog).filter(TaskLog.id > last_log_id)\
+        .order_by(TaskLog.id.desc()).first()
 
     if not new_log:
         return SuccessResponse(message=f"任务 {target_job['name']} 已执行，但未产生日志")
@@ -319,7 +315,6 @@ async def preview_prompt(
     reflect_enabled = ctx_config.get("hindsight_reflect_enabled", False)
     reflect_query = ctx_config.get("hindsight_reflect_query", "")
     weather_enabled = ctx_config.get("weather_enabled", False)
-    weather_days = max(0, min(3, int(ctx_config.get("weather_days", 0) or 0)))
 
     # 上下文数据
     context_data = {

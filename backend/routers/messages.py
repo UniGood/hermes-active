@@ -237,7 +237,7 @@ async def generate_message(
             error=str(e),
             duration=duration,
             details={
-                "session_id": request.session_id if 'request' in locals() else None,
+                "session_id": request.session_id,
                 "failure_stage": "exception",
                 "exception_type": type(e).__name__
             }

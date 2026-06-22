@@ -656,8 +656,19 @@ const logDetailData = ref(null)
 
 function viewLogDetail(log) {
   const details = typeof log.details === 'string' ? JSON.parse(log.details) : (log.details || {})
+  // 兜底：历史日志 details 为 NULL 时构造一个最简 details，确保弹窗能展示基本信息
+  const baseDetails = details._minimal || details.llm_request || details.context || details.send_result
+    ? details
+    : {
+        ...details,
+        _minimal: true,
+        task_type: log.task_type,
+        summary: log.message,
+        error: log.error,
+        duration: log.duration,
+      }
   logDetailData.value = {
-    ...details,
+    ...baseDetails,
     _status: log.status,
     _message: log.message,
     _error: log.error,

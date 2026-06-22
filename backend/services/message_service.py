@@ -551,7 +551,7 @@ class MessageService:
                 duration=duration,
                 details={
                     "session_id": session_id,
-                    "use_llm": use_llm if 'use_llm' in locals() else None,
+                    "use_llm": use_llm,
                     "failure_stage": "exception",
                     "exception_type": type(e).__name__
                 }

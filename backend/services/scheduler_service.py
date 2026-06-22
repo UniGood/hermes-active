@@ -210,9 +210,9 @@ scheduler = AsyncIOScheduler(timezone="Asia/Shanghai")
 async def run_cron_job(job_id: str):
     """执行定时任务"""
     db = ActiveSession()
+    target_job = None  # 提前初始化，让 except 块能安全访问
     try:
         jobs = ConfigService.get_cron_jobs(db)
-        target_job = None
         for job in jobs:
             if job["id"] == job_id:
                 target_job = job
@@ -580,19 +580,21 @@ async def run_cron_job(job_id: str):
                 error=send_result.get("message", "未知错误"),
                 platform=platform,
                 session_id=sid,
-                extra={"send_result": details.get("send_result"), "failure_stage": "send"},
+                # 把完整 details（含 context/llm_request/llm_response）都塞进去
+                extra={**details, "failure_stage": "send"},
             )
 
     except Exception as e:
         logger.exception(f"任务 {job_id} 运行异常: {e}")
+        job_name = target_job.get("name", job_id) if target_job else job_id
         _log_run(
             job_id=job_id,
-            job_name=locals().get("target_job", {}).get("name", job_id) if isinstance(locals().get("target_job"), dict) else job_id,
+            job_name=job_name,
             status="failed",
-            message=f"任务运行异常",
+            message=f"任务 {job_name} 运行异常",
             duration=0,
             error=str(e),
-            extra={"failure_stage": "exception", "exception_trace": repr(e)}
+            extra={"failure_stage": "exception", "exception_type": type(e).__name__}
         )
     finally:
         db.close()
