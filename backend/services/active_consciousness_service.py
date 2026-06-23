@@ -988,6 +988,7 @@ class ActiveConsciousnessService:
         recall_source: Optional[str] = None,
         chat_heat: Optional[float] = None,
         emotional_intensity: Optional[float] = None,
+        hindsight_stored: bool = False,
         details: Optional[str] = None
     ) -> int:
         """记录念头日志"""
@@ -997,9 +998,9 @@ class ActiveConsciousnessService:
                 result = conn.execute(text("""
                     INSERT INTO active_thought_logs
                     (heartbeat_id, type, content, intensity, decision, reason, score,
-                     recall_count, recall_source, chat_heat, emotional_intensity, details, created_at)
+                     recall_count, recall_source, chat_heat, emotional_intensity, hindsight_stored, details, created_at)
                     VALUES (:heartbeat_id, :type, :content, :intensity, :decision, :reason, :score,
-                            :recall_count, :recall_source, :chat_heat, :emotional_intensity, :details, :created_at)
+                            :recall_count, :recall_source, :chat_heat, :emotional_intensity, :hindsight_stored, :details, :created_at)
                 """), {
                     "heartbeat_id": heartbeat_id,
                     "type": thought_type,
@@ -1012,6 +1013,7 @@ class ActiveConsciousnessService:
                     "recall_source": recall_source,
                     "chat_heat": chat_heat,
                     "emotional_intensity": emotional_intensity,
+                    "hindsight_stored": hindsight_stored,
                     "details": details,
                     "created_at": datetime.now().isoformat()
                 })
