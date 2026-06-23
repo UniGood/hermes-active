@@ -693,27 +693,27 @@ class ActiveConsciousnessService:
                 pass
 
             # 今日发送数（查心跳日志中的 message_sent=1）
-            # 数据库存的是 UTC 时间，转换为北京时间统计
+            # 数据库 created_at/started_at 存的是北京时间（+8 时区字符串）
+            # SQLite 的 datetime('now') 返回 UTC，必须用 'localtime' 修饰才能对齐
+            # 同时 created_at 是 'YYYY-MM-DDTHH:MM:SS.fff' 格式，需要用 datetime() 转换才能比较
             today_sent_count = 0
             hour_sent_count = 0
             try:
                 with active_engine.connect() as conn:
-                    # 今日 = 北京时间今天 00:00 = UTC today 16:00（昨天 16:00）起
-                    # 用 +8h 把 UTC now 转到北京时间的当天 00:00（语义恰好等价于 localtime start of day）
+                    # 今日 = 北京时间今天 00:00
                     row = conn.execute(text(
                         "SELECT COUNT(*) FROM active_heartbeat_logs "
                         "WHERE message_sent = 1 "
-                        "AND created_at > datetime('now', '+8 hours', 'start of day')"
+                        "AND datetime(created_at) > datetime('now', 'localtime', 'start of day')"
                     )).fetchone()
                     if row:
                         today_sent_count = row[0] or 0
 
-                    # 本小时 = 过去 1 小时（不是 +7h！+7h 会查所有过去 7 小时的数据）
-                    # 修正前错误: datetime('now', '+7 hours') 实际查的是"未来 7 小时之前"，所有历史都满足
+                    # 本小时 = 北京时间过去 1 小时
                     row = conn.execute(text(
                         "SELECT COUNT(*) FROM active_heartbeat_logs "
                         "WHERE message_sent = 1 "
-                        "AND created_at > datetime('now', '-1 hour')"
+                        "AND datetime(created_at) > datetime('now', 'localtime', '-1 hour')"
                     )).fetchone()
                     if row:
                         hour_sent_count = row[0] or 0
