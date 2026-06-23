@@ -5,6 +5,7 @@ import sys
 import os
 import time
 import asyncio
+import logging
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -13,6 +14,8 @@ from sqlalchemy import text
 
 from models.database import get_state_metadata, state_engine, ActiveSession
 from models.active import TaskLog
+
+logger = logging.getLogger("hermes.message")
 
 # 加载 hermes 环境
 sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
@@ -335,9 +338,10 @@ class MessageService:
             elif platform == "feishu" and user_id:
                 send_result = await _send_to_feishu(user_id, message)
 
-            # 2. 写入 state.db（带标记或不带标记）
+            # 2. 只有发送成功才写入 state.db，避免污染 messages 表和后续 agent loop
             db_content = message
-            if write_to_db:
+            sent_ok = send_result and send_result.get("success")
+            if write_to_db and sent_ok:
                 if send_mark:
                     now = datetime.now()
                     time_str = time_format.replace("{weekday}", weekday_name(now)) if time_format else ""
@@ -347,6 +351,11 @@ class MessageService:
                     else:
                         db_content = f"[{send_mark}]: {message}"
                 _write_to_state_db(session_id, db_content)
+            elif write_to_db and not sent_ok:
+                logger.warning(
+                    "send failed for session %s, skipping state.db write. platform=%s, reason=%s",
+                    session_id, platform, (send_result or {}).get("message") or "no_result"
+                )
 
             duration = round(time.time() - start_time, 2)
 

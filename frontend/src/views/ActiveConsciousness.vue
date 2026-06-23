@@ -878,9 +878,12 @@
         <n-descriptions :column="1" label-placement="left" bordered size="small" :label-style="{ width: '100px' }">
           <n-descriptions-item label="心跳ID">{{ sendDetailData.id }}</n-descriptions-item>
           <n-descriptions-item label="是否发送">
-            <n-tag :type="sendDetailData.message_sent ? 'success' : 'default'" size="small">
-              {{ sendDetailData.message_sent ? '已发送' : '未发送' }}
+            <n-tag :type="getSendResultTagType(sendDetailData)" size="small">
+              {{ getSendResultLabel(sendDetailData) }}
             </n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="失败原因" v-if="getSendResultTagType(sendDetailData) === 'error'">
+            <pre style="white-space: pre-wrap; color: #d03050; font-size: 12px; margin: 0;">{{ getSendFailureReason(sendDetailData) }}</pre>
           </n-descriptions-item>
           <n-descriptions-item label="发送状态" v-if="sendDetailData.message_sending">
             <n-tag :type="sendDetailData.message_sending.success ? 'success' : 'error'" size="small">
@@ -1659,6 +1662,9 @@ async function showThoughtDetails(row) {
       llm_call: parsed.llm_call || null,
       context_bundle: parsed.context_bundle || null,
       created_at: detail.created_at,
+      // 发送状态（从 details.message_sending 提取，念头详情原表没有 message_sent 列）
+      message_sending: parsed.message_sending || null,
+      sent_content: parsed.message_sending?.thought || '',
     }
   } catch (e) {
     message.error('加载念头详情失败')
@@ -1746,21 +1752,24 @@ async function showSendDetail(row) {
   sendDetailData.value = null
   sendDetailLoading.value = true
   showSendDetailModal.value = true
-  
+
   try {
-    const detail = await api.getHeartbeatDetail(row.id)
+    // 念头日志 row 和心跳日志 row 都有 id 字段，分别调对应 API
+    const detail = row.heartbeat_id
+      ? await api.getHeartbeatDetail(row.heartbeat_id)
+      : await api.getThoughtDetail(row.id)
     if (!detail) {
       sendDetailData.value = null
       return
     }
-    
+
     let parsed = {}
     if (detail.details && typeof detail.details === 'string') {
       try { parsed = JSON.parse(detail.details) } catch (e) { parsed = {} }
     } else if (detail.details && typeof detail.details === 'object') {
       parsed = detail.details
     }
-    
+
     sendDetailData.value = {
       ...detail,
       details_parsed: parsed,
@@ -1873,7 +1882,8 @@ function getDecisionTagType(type) {
 
 // 心跳结果标签类型
 function getHeartbeatResultTagType(details) {
-  if (details.message_sending?.success) return 'success'
+  if (details.message_sending?.success === true) return 'success'
+  if (details.message_sending?.success === false) return 'error'
   if (details.decision?.blocked_by_protection) return 'warning'
   if (details.decision?.type === 'skip') return 'default'
   if (details.decision?.type === 'memory') return 'info'
@@ -1883,7 +1893,8 @@ function getHeartbeatResultTagType(details) {
 
 // 心跳结果标题
 function getHeartbeatResultTitle(details) {
-  if (details.message_sending?.success) return '已发送消息'
+  if (details.message_sending?.success === true) return '已发送消息'
+  if (details.message_sending?.success === false) return '发送失败'
   if (details.decision?.blocked_by_protection) return '被保护机制拦截'
   if (details.decision?.type === 'skip') return '跳过'
   if (details.decision?.type === 'memory') return '存为记忆'
@@ -1891,9 +1902,40 @@ function getHeartbeatResultTitle(details) {
   return '未知状态'
 }
 
+// "是否发送" 标签：读 message_sending.success（真实值），失败时显示具体原因
+function getSendResultLabel(detail) {
+  if (!detail) return '未知'
+  if (detail.message_sending && typeof detail.message_sending.success === 'boolean') {
+    if (detail.message_sending.success) return '✅ 已发送'
+    return `❌ 发送失败`
+  }
+  // 兜底：旧字段 message_sent（active.db 列表）
+  return detail.message_sent ? '✅ 已发送' : '未发送'
+}
+function getSendResultTagType(detail) {
+  if (!detail) return 'default'
+  if (detail.message_sending && typeof detail.message_sending.success === 'boolean') {
+    return detail.message_sending.success ? 'success' : 'error'
+  }
+  return detail.message_sent ? 'success' : 'default'
+}
+function getSendFailureReason(detail) {
+  if (!detail || !detail.message_sending) return ''
+  if (detail.message_sending.success) return ''
+  // 失败原因从 details_parsed.error 或 message_sending.error 取
+  return detail.details_parsed?.error
+      || detail.error
+      || detail.message_sending.error
+      || detail.message_sending.message
+      || '未知错误'
+}
+
 
 // 念头结果标题
 function getThoughtResultTitle(details) {
+  if (details.message_sending && typeof details.message_sending.success === 'boolean') {
+    return details.message_sending.success ? '已发送消息' : '发送失败'
+  }
   if (details.decision === 'auto_send') return '已发送消息'
   if (details.decision === 'delay_send') return '等待发送'
   if (details.decision === 'memory') return '存为记忆'
@@ -1903,6 +1945,9 @@ function getThoughtResultTitle(details) {
 
 // 念头结果标签类型
 function getThoughtResultTagType(details) {
+  if (details.message_sending && typeof details.message_sending.success === 'boolean') {
+    return details.message_sending.success ? 'success' : 'error'
+  }
   if (details.decision === 'auto_send') return 'success'
   if (details.decision === 'delay_send') return 'warning'
   if (details.decision === 'memory') return 'info'
@@ -2031,7 +2076,18 @@ const heartbeatColumns = [
   { title: '耗时(ms)', key: 'duration_ms', width: 80 },
   { title: '召回数量', key: 'recall_count', width: 80, render(row) { const v = row.recall_count || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'info', onClick: () => showRecallDetail(row) }, { default: () => v }) : '0' } },
   { title: '生成念头', key: 'thoughts_generated', width: 80, render(row) { const v = row.thoughts_generated || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'success', onClick: () => showThoughtContent(row) }, { default: () => v }) : '0' } },
-  { title: '发送消息', key: 'message_sent', width: 80, render(row) { const v = row.message_sent; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'warning', onClick: () => showSendDetail(row) }, { default: () => '是' }) : '否' } },
+  { title: '发送消息', key: 'message_sent', width: 80, render(row) {
+  // 念头列表 API 不返回 message_sent 字段（active_thought_logs 表没有这列）；
+  // 真实状态从已解析的 details_parsed.message_sending.success 读
+  const sent = row.details_parsed?.message_sending?.success
+  if (sent === true) {
+    return h(NButton, { size: 'tiny', quaternary: true, type: 'success', onClick: () => showSendDetail(row) }, { default: () => '是' })
+  }
+  if (sent === false) {
+    return h(NButton, { size: 'tiny', quaternary: true, type: 'error', onClick: () => showSendDetail(row) }, { default: () => '否' })
+  }
+  return '-'
+} },
 ]
 
 // 分页
