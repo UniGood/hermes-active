@@ -693,11 +693,13 @@ class ActiveConsciousnessService:
                 pass
 
             # 今日发送数（查心跳日志中的 message_sent=1）
+            # 数据库存的是 UTC 时间，转换为北京时间统计
             today_sent_count = 0
             hour_sent_count = 0
             try:
                 with active_engine.connect() as conn:
-                    # 注意：数据库存的是北京时间(UTC+8)，查询时需要调整时区
+                    # 今日 = 北京时间今天 00:00 = UTC today 16:00（昨天 16:00）起
+                    # 用 +8h 把 UTC now 转到北京时间的当天 00:00（语义恰好等价于 localtime start of day）
                     row = conn.execute(text(
                         "SELECT COUNT(*) FROM active_heartbeat_logs "
                         "WHERE message_sent = 1 "
@@ -706,10 +708,12 @@ class ActiveConsciousnessService:
                     if row:
                         today_sent_count = row[0] or 0
 
+                    # 本小时 = 过去 1 小时（不是 +7h！+7h 会查所有过去 7 小时的数据）
+                    # 修正前错误: datetime('now', '+7 hours') 实际查的是"未来 7 小时之前"，所有历史都满足
                     row = conn.execute(text(
                         "SELECT COUNT(*) FROM active_heartbeat_logs "
                         "WHERE message_sent = 1 "
-                        "AND created_at > datetime('now', '+7 hours')"
+                        "AND created_at > datetime('now', '-1 hour')"
                     )).fetchone()
                     if row:
                         hour_sent_count = row[0] or 0
