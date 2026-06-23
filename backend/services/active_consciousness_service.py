@@ -1446,6 +1446,7 @@ async def generate_and_send_thought_with_emotion(
         recall_source="hindsight",
         chat_heat=status.get("chat_heat", {}).get("heat", 0),
         emotional_intensity=emotion_state.intensity(),
+        hindsight_stored=bool(details.get("hindsight_stored", False)),
         details=json.dumps(thought_details, ensure_ascii=False)
     )
     
@@ -1644,6 +1645,7 @@ async def run_heartbeat():
                     recall_source="hindsight",
                     chat_heat=status.get("chat_heat", {}).get("heat", 0),
                     emotional_intensity=intensity,
+                    hindsight_stored=bool(stored),
                     details=json.dumps({"emotion_state": merged_state.to_dict(), "hindsight_tags": hindsight_tags}, ensure_ascii=False)
                 )
                 logger.info("念头存为记忆: %s", thought[:50])
@@ -1677,6 +1679,7 @@ async def run_heartbeat():
                     recall_source="hindsight",
                     chat_heat=status.get("chat_heat", {}).get("heat", 0),
                     emotional_intensity=intensity,
+                    hindsight_stored=False,    # 入延迟队列时还没真正存 Hindsight
                     details=json.dumps(llm_details, ensure_ascii=False)
                 )
                 if added:
