@@ -104,6 +104,7 @@ class ThoughtLog(Base):
     chat_heat = Column(Float, nullable=True)
     emotional_intensity = Column(Float, nullable=True)
     details = Column(Text, nullable=True)  # JSON格式的详细日志
+    hindsight_stored = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")), index=True)
 
     def to_dict(self):
