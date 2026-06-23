@@ -1833,7 +1833,9 @@ function thoughtTypeLabelCn(type) {
 // 决策类型 → "中文（英文）" 格式
 const DECISION_TYPE_CN = {
   auto_send: '立即发送（auto_send）', delay_send: '延迟发送（delay_send）',
-  skip: '跳过（skip）', memory: '存为记忆（memory）', pending: '待定（pending）'
+  skip: '跳过（skip）', memory: '存为记忆（memory）', pending: '待定（pending）',
+  enhanced: '增强念头（enhanced）', gap_send: '间隔发送（gap_send）',
+  idle_send: '空闲发送（idle_send）', long_idle_send: '长时空闲发送（long_idle_send）'
 }
 function getDecisionLabelCn(type) {
   if (!type) return '-'
@@ -1933,13 +1935,22 @@ function getSendFailureReason(detail) {
 
 // 念头结果标题
 function getThoughtResultTitle(details) {
+  // 优先：依据 type 判断（type=memory/silence/time 不会发送）
+  const type = details.type || details.thought_type
+  if (type === 'memory') return '存为记忆'
+  if (type === 'silence') return '沉默念头'
+  if (type === 'time') return '时间念头'
+  // 否则：看 message_sending.success（真实发送结果）
   if (details.message_sending && typeof details.message_sending.success === 'boolean') {
     return details.message_sending.success ? '已发送消息' : '发送失败'
   }
-  if (details.decision === 'auto_send') return '已发送消息'
+  // 兜底：依 decision（auto_send/gap_send 等才是发送类）
+  const sendDecisions = ['auto_send', 'gap_send', 'idle_send', 'long_idle_send']
+  if (sendDecisions.includes(details.decision)) return '已发送消息'
   if (details.decision === 'delay_send') return '等待发送'
   if (details.decision === 'memory') return '存为记忆'
   if (details.decision === 'skip') return '跳过'
+  if (details.decision === 'enhanced') return '增强念头'
   return '未知状态'
 }
 
@@ -2037,6 +2048,15 @@ const thoughtColumns = [
   { title: '强度', key: 'intensity', width: 80, render: (row) => row.intensity != null ? Number(row.intensity).toFixed(2) : '' },
   { title: '决策', key: 'decision', width: 180, render: (row) => getDecisionLabelCn(row.decision) },
   { title: '来源', key: 'recall_source', width: 120 },
+  { title: '存储 Hindsight', key: 'hindsight_stored', width: 110, render(row) {
+    if (row.hindsight_stored === true || row.hindsight_stored === 1) {
+      return h(NTag, { type: 'success', size: 'small' }, { default: () => '✅ 已存' })
+    }
+    if (row.hindsight_stored === false || row.hindsight_stored === 0) {
+      return h(NTag, { type: 'default', size: 'small' }, { default: () => '未存' })
+    }
+    return '-'  // 历史 NULL 数据
+  } },
 ]
 const formatTime = (isoStr) => {
   if (!isoStr) return ''
@@ -2077,17 +2097,15 @@ const heartbeatColumns = [
   { title: '召回数量', key: 'recall_count', width: 80, render(row) { const v = row.recall_count || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'info', onClick: () => showRecallDetail(row) }, { default: () => v }) : '0' } },
   { title: '生成念头', key: 'thoughts_generated', width: 80, render(row) { const v = row.thoughts_generated || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'success', onClick: () => showThoughtContent(row) }, { default: () => v }) : '0' } },
   { title: '发送消息', key: 'message_sent', width: 80, render(row) {
-  // 念头列表 API 不返回 message_sent 字段（active_thought_logs 表没有这列）；
-  // 真实状态从已解析的 details_parsed.message_sending.success 读
-  const sent = row.details_parsed?.message_sending?.success
-  if (sent === true) {
-    return h(NButton, { size: 'tiny', quaternary: true, type: 'success', onClick: () => showSendDetail(row) }, { default: () => '是' })
-  }
-  if (sent === false) {
-    return h(NButton, { size: 'tiny', quaternary: true, type: 'error', onClick: () => showSendDetail(row) }, { default: () => '否' })
-  }
-  return '-'
-} },
+    // 直接读后端表字段（最准确，SQL 已 SELECT）
+    if (row.message_sent === true || row.message_sent === 1) {
+      return h(NTag, { type: 'success', size: 'small' }, { default: () => '✅ 已发送' })
+    }
+    if (row.message_sent === false || row.message_sent === 0) {
+      return h(NTag, { type: 'error', size: 'small' }, { default: () => '❌ 未发送' })
+    }
+    return '-'
+  } },
 ]
 
 // 分页
