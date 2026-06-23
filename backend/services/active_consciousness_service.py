@@ -852,7 +852,7 @@ class ActiveConsciousnessService:
                 total = conn.execute(text(f"SELECT COUNT(*) FROM active_thought_logs {where_clause}"), params).scalar() or 0
                 # 不返回 details 字段以提高性能
                 rows = conn.execute(text(
-                    f"SELECT id, heartbeat_id, type, content, intensity, decision, reason, score, recall_count, recall_source, chat_heat, emotional_intensity, created_at FROM active_thought_logs {where_clause} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+                    f"SELECT id, heartbeat_id, type, content, intensity, decision, reason, score, recall_count, recall_source, chat_heat, emotional_intensity, hindsight_stored, created_at FROM active_thought_logs {where_clause} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
                 ), params).fetchall()
 
                 items = []
