@@ -1278,7 +1278,7 @@
 
 <script setup>
 import { ref, onMounted, computed, h } from 'vue'
-import { useMessage, NButton } from 'naive-ui'
+import { useMessage, NButton, NTag } from 'naive-ui'
 import { HelpCircleOutline, CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
 import api from '../api/active_consciousness'
 import mainApi from '../api'
