@@ -2625,6 +2625,10 @@ async def reevaluate_delayed_thoughts(
             success = await send_message_to_target(config, thought.content)
             if success:
                 stats["sent"] += 1
+                # 存入 Hindsight（先存再用返回值记 hindsight_stored）
+                hindsight_stored = await retain_thought_to_hindsight(
+                    thought.content, emotion_state, thought.thought_type, new_score
+                )
                 # 写入念头日志
                 ActiveConsciousnessService.write_thought_log(
                     heartbeat_id=None,
@@ -2634,18 +2638,18 @@ async def reevaluate_delayed_thoughts(
                     decision="delay_send",
                     reason=f"延迟队列升级: old_score={thought.score:.3f}, new_score={new_score:.3f}",
                     score=new_score,
+                    recall_source="delay_queue",    # 标记来自延迟队列重评估
+                    recall_count=0,                # 重评估不再单独召回
                     chat_heat=status.get("chat_heat", {}).get("heat", 0),
                     emotional_intensity=intensity,
+                    hindsight_stored=bool(hindsight_stored),
                     details=json.dumps({
                         "source": "delay_queue",
                         "original_score": thought.score,
                         "new_score": new_score,
                         "retry_count": thought.retry_count,
+                        "hindsight_stored": bool(hindsight_stored),
                     }, ensure_ascii=False)
-                )
-                # 存入 Hindsight
-                await retain_thought_to_hindsight(
-                    thought.content, emotion_state, thought.thought_type, new_score
                 )
             else:
                 thought.retry_count += 1
