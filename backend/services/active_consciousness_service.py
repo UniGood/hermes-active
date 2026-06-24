@@ -140,14 +140,10 @@ _DEFAULTS = {
     "active_consciousness.active.no_send_while_heat_above": "1.0",
     "active_consciousness.active.no_send_while_vibe_below": "0.15",
     "active_consciousness.active.cooldown_minutes": "30",
-    "active_consciousness.session.sources": '["weixin"]',
-    "active_consciousness.session.max_messages_per_session": "15",
-    "active_consciousness.session.filter_tool_messages": "true",
     "active_consciousness.decision.send_threshold": "0.35",
     "active_consciousness.decision.memory_threshold": "0.05",
     "active_consciousness.decision.max_per_hour": "2",
     "active_consciousness.decision.max_per_day": "5",
-    "active_consciousness.decision.longing_gap_threshold": "3",
     "active_consciousness.hindsight.enabled": "true",
     "active_consciousness.hindsight.base_url": "http://localhost:8888",
     "active_consciousness.hindsight.bank_id": "hermes",
@@ -186,6 +182,8 @@ _DEFAULTS = {
     "active_consciousness.thought_engine.prompt_max_chars": "300",
 
     # 上下文收集配置
+    "active_consciousness.context.sources": '["weixin"]',
+    "active_consciousness.context.filter_tool_messages": "true",
     "active_consciousness.context.conversation_limit": "200",
     "active_consciousness.context.memory_limit": "5",
     "active_consciousness.context.memory_enabled": "true",

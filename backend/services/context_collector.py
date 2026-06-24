@@ -61,7 +61,6 @@ class ContextCollector:
         self.config = config
         self.context_config = config.get("context", {})
         self.llm_config = config.get("llm", {})
-        self.session_config = config.get("session", {})
         self.hindsight_config = config.get("hindsight", {})
         self.weather_config = config.get("weather", {})
     
@@ -120,8 +119,8 @@ class ContextCollector:
             from sqlalchemy import text
             from models.database import state_engine
             
-            sources = self.session_config.get("sources", ["weixin"])
-            filter_tool = self.session_config.get("filter_tool_messages", True)
+            sources = self.context_config.get("sources", ["weixin"])
+            filter_tool = self.context_config.get("filter_tool_messages", True)
 
             conversations = []
 

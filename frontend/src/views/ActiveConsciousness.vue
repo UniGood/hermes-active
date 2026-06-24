@@ -265,21 +265,6 @@
               <span class="form-item-hint">strftime 格式，支持 {weekday} 占位符。例：%H:%M 星期{weekday}</span>
             </n-form-item>
 
-            <!-- Session 来源 -->
-            <n-divider>Session 来源</n-divider>
-            <n-form-item label="来源平台">
-              <n-select v-model:value="config.session.sources" multiple :options="platformOptions" />
-            </n-form-item>
-            <n-form-item label="每 Session 最大消息">
-              <n-input-number v-model:value="config.session.max_messages_per_session" :min="5" :max="1000" />
-            </n-form-item>
-            <n-form-item label="过滤 Tool 消息">
-              <n-switch v-model:value="config.session.filter_tool_messages" />
-            </n-form-item>
-            <n-form-item label="获取测试">
-              <n-button @click="testSessionContext" :loading="testingSessionContext">获取 Session 上下文</n-button>
-            </n-form-item>
-
             <!-- 决策阈值 -->
             <n-divider>决策阈值</n-divider>
             <n-form-item label="立即发送阈值">
@@ -320,6 +305,14 @@
 
             <!-- 上下文收集配置 -->
             <n-divider>📦 上下文收集</n-divider>
+            <n-form-item label="来源平台">
+              <n-select v-model:value="config.context.sources" multiple :options="platformOptions" />
+              <span class="form-item-hint">选择要收集对话的平台（可多选）</span>
+            </n-form-item>
+            <n-form-item label="过滤 Tool 消息">
+              <n-switch v-model:value="config.context.filter_tool_messages" />
+              <span class="form-item-hint">开启后不包含工具调用消息，只保留用户和助手对话</span>
+            </n-form-item>
             <n-form-item label="获取最近消息条数">
               <n-input-number v-model:value="config.context.conversation_limit" :min="10" :max="1000" :step="10" />
               <span class="form-item-hint">跨 session 获取最近 N 条消息作为上下文（默认 200）</span>
@@ -776,20 +769,15 @@
       </n-tab-pane>
     </n-tabs>
 
-    <!-- Session 上下文测试结果弹窗 -->
-    <n-modal v-model:show="showSessionContextModal" preset="card" title="Session 上下文测试结果" style="width: 90vw; max-width: 900px">
+    <!-- 上下文测试结果弹窗 -->
+    <n-modal v-model:show="showSessionContextModal" preset="card" title="上下文测试结果" style="width: 90vw; max-width: 900px">
       <template v-if="sessionContextResult">
         <n-descriptions :column="2" label-placement="left" bordered size="small" style="margin-bottom: 12px">
-          <n-descriptions-item label="有内容">
-            <n-tag :type="sessionContextResult.data?.has_content ? 'success' : 'warning'" size="small">
-              {{ sessionContextResult.data?.has_content ? '是' : '否' }}
-            </n-tag>
+          <n-descriptions-item label="对话数量">
+            {{ sessionContextResult.data?.conversations_count ?? '-' }}
           </n-descriptions-item>
-          <n-descriptions-item label="来源平台">
-            {{ sessionContextResult.data?.session_config?.sources?.join(', ') || '未配置' }}
-          </n-descriptions-item>
-          <n-descriptions-item label="最大消息数">
-            {{ sessionContextResult.data?.session_config?.max_messages_per_session || 15 }}
+          <n-descriptions-item label="记忆数量">
+            {{ sessionContextResult.data?.memories_count ?? '-' }}
           </n-descriptions-item>
         </n-descriptions>
 
@@ -1308,8 +1296,7 @@ const config = ref({
   emotion_llm: { mode: '', provider: '', model: '', api_key: '', base_url: '' },
   thought_llm: { mode: '', provider: '', model: '', api_key: '', base_url: '' },
   active: { enabled: true, heartbeat_interval: 600, send_tag: '凯莉', time_format: '%H:%M', no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 3.0, no_send_while_vibe_below: 0.15, cooldown_minutes: 30 },
-  session: { sources: ['weixin'], max_messages_per_session: 15, filter_tool_messages: true },
-  decision: { send_threshold: 0.35, memory_threshold: 0.05, max_per_hour: 2, max_per_day: 5, longing_gap_threshold: 3 },
+  decision: { send_threshold: 0.35, memory_threshold: 0.05, max_per_hour: 2, max_per_day: 5 },
   thought: { retain_enabled: false, retain_threshold: 0.5 },
   thought_engine: {
     enabled: true,
@@ -1317,6 +1304,8 @@ const config = ref({
     temperature: 0.9
   },
   context: {
+    sources: ['weixin'],
+    filter_tool_messages: true,
     conversation_limit: 200,
     memory_limit: 5,
     weather_enabled: false
