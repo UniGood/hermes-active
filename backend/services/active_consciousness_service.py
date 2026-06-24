@@ -144,7 +144,6 @@ _DEFAULTS = {
     "active_consciousness.session.max_messages_per_session": "15",
     "active_consciousness.session.filter_tool_messages": "true",
     "active_consciousness.decision.send_threshold": "0.35",
-    "active_consciousness.decision.delay_threshold": "0.15",
     "active_consciousness.decision.memory_threshold": "0.05",
     "active_consciousness.decision.max_per_hour": "2",
     "active_consciousness.decision.max_per_day": "5",
@@ -403,12 +402,6 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
         send_threshold = 0.6
 
     try:
-        delay_threshold = float(decision.get("delay_threshold", 0.3))
-    except (ValueError, TypeError):
-        errors.append("延迟阈值必须是数字")
-        delay_threshold = 0.3
-
-    try:
         memory_threshold = float(decision.get("memory_threshold", 0.1))
     except (ValueError, TypeError):
         errors.append("记忆阈值必须是数字")
@@ -417,16 +410,12 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
     # 验证阈值范围 0-1
     if not (0 <= send_threshold <= 1):
         errors.append("发送阈值必须在 0-1 之间")
-    if not (0 <= delay_threshold <= 1):
-        errors.append("延迟阈值必须在 0-1 之间")
     if not (0 <= memory_threshold <= 1):
         errors.append("记忆阈值必须在 0-1 之间")
 
     # 验证阈值大小关系
-    if send_threshold <= delay_threshold:
-        errors.append("发送阈值必须大于延迟阈值")
-    if delay_threshold <= memory_threshold:
-        errors.append("延迟阈值必须大于记忆阈值")
+    if send_threshold <= memory_threshold:
+        errors.append("发送阈值必须大于记忆阈值")
 
     # 验证 max_per_hour
     try:
@@ -792,7 +781,6 @@ class ActiveConsciousnessService:
                 "config": {
                     "decision": {
                         "send_threshold": float(decision_config.get("send_threshold", 0.35)),
-                        "delay_threshold": float(decision_config.get("delay_threshold", 0.15)),
                         "memory_threshold": float(decision_config.get("memory_threshold", 0.05)),
                         "max_per_hour": int(decision_config.get("max_per_hour", 2)),
                         "max_per_day": int(decision_config.get("max_per_day", 5)),
