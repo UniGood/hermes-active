@@ -370,7 +370,7 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
 
     # 验证心跳间隔
     try:
-        heartbeat_interval = int(active.get("heartbeat_interval", 600))
+        heartbeat_interval = int(active.get("heartbeat_interval") or 600)
     except (ValueError, TypeError):
         errors.append("心跳间隔必须是数字")
         heartbeat_interval = 600
@@ -379,21 +379,21 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
 
     # 验证 no_send_after_user_msg_minutes
     try:
-        no_send_minutes = int(active.get("no_send_after_user_msg_minutes", 10))
+        no_send_minutes = int(active.get("no_send_after_user_msg_minutes") or 10)
         if no_send_minutes < 0:
             errors.append("用户消息后不发送时间不能为负数")
     except (ValueError, TypeError):
         errors.append("用户消息后不发送时间必须是数字")
 
-    # 验证阈值关系
+    # 验证阈值关系（null 视为使用默认值）
     try:
-        send_threshold = float(decision.get("send_threshold", 0.6))
+        send_threshold = float(decision.get("send_threshold") or 0.6)
     except (ValueError, TypeError):
         errors.append("发送阈值必须是数字")
         send_threshold = 0.6
 
     try:
-        memory_threshold = float(decision.get("memory_threshold", 0.1))
+        memory_threshold = float(decision.get("memory_threshold") or 0.1)
     except (ValueError, TypeError):
         errors.append("记忆阈值必须是数字")
         memory_threshold = 0.1
@@ -410,7 +410,7 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
 
     # 验证 max_per_hour
     try:
-        max_per_hour = int(decision.get("max_per_hour", 2))
+        max_per_hour = int(decision.get("max_per_hour") or 2)
         if max_per_hour < 1 or max_per_hour > 1000:
             errors.append("每小时最大消息数必须在 1-1000 之间")
     except (ValueError, TypeError):
@@ -418,7 +418,7 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
 
     # 验证 max_per_day
     try:
-        max_per_day = int(decision.get("max_per_day", 5))
+        max_per_day = int(decision.get("max_per_day") or 5)
         if max_per_day < 1 or max_per_day > 1000:
             errors.append("每日最大消息数必须在 1-1000 之间")
     except (ValueError, TypeError):
@@ -426,7 +426,7 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
 
     # 验证情绪衰减率
     try:
-        decay_rate = float(emotion.get("decay_rate", 0.02))
+        decay_rate = float(emotion.get("decay_rate") or 0.02)
         if decay_rate < 0 or decay_rate > 0.1:
             errors.append("情绪衰减率必须在 0-0.1 之间")
     except (ValueError, TypeError):
