@@ -76,11 +76,11 @@ class ThoughtEngine:
         collector = ContextCollector(self.config)
         context = await collector.collect(status)
         
-        # 2. 构建提示词
-        prompt = self._build_prompt(context)
-        
+        # 2. 构建消息列表
+        messages = self._build_messages(context)
+
         # 3. 调用 LLM
-        response, llm_details = await self._call_llm(prompt)
+        response, llm_details = await self._call_llm(messages)
         
         # 4. 解析结果
         thought, want_to_contact = self._parse_response(response)
@@ -95,7 +95,7 @@ class ThoughtEngine:
             "llm_details": {
                 **llm_details,
                 "duration_ms": duration_ms,
-                "prompt_sent": prompt,
+                "prompt_sent": messages,
                 "response_received": response,
                 "want_to_contact": want_to_contact,
                 "is_skip": not want_to_contact,
@@ -110,18 +110,17 @@ class ThoughtEngine:
         
         return result
     
-    def _build_prompt(self, context: ContextBundle) -> str:
-        """构建提示词"""
+    def _build_messages(self, context: ContextBundle) -> list:
+        """构建消息列表（system + user 分离，避免 LLM 复读最后一条对话）
+
+        Returns:
+            [{"role": "system", "content": ...}, {"role": "user", "content": ...}]
+        """
         from services.active_consciousness_service import load_hermes_persona, _DEFAULTS
-        
-        # 优先从运行时配置读取提示词（避免每次查 DB）
-        prompt_template = self.config.get("prompts", {}).get("thought_generation") \
-            or _DEFAULTS.get("active_consciousness.prompts.thought_generation") \
-            or self.PROMPT_TEMPLATE
-        
+
         # 加载人设
         persona = load_hermes_persona()
-        
+
         # 格式化对话（从 thought_engine 配置读取条数和截断长度）
         conversation_limit = self.engine_config.get("prompt_conversation_limit", 30)
         max_chars = self.engine_config.get("prompt_max_chars", 300)
@@ -134,39 +133,57 @@ class ThoughtEngine:
             ensure_ascii=False,
             indent=2
         )
-        
+
         # 格式化记忆
         memories = "\n".join(context.memories) if context.memories else "暂无"
-        
+
         # 格式化时间
         time_display = context.time_context.get("time_display", "")
-        
+
         # 格式化情绪
         dominant = context.emotion.get("dominant", "calm")
         emotion_display = f"情绪：{dominant}"
-        
+
         # 格式化天气
         weather_display = ""
         if context.weather:
             w = context.weather
             weather_display = f"天气：{w.get('weather', '未知')} {w.get('temp', '?')}°C（{w.get('city', '')}）"
-        
-        return prompt_template.format(
-            persona=persona,
-            conversations_json=conversations_json,
-            session_context=conversations_json,
-            memories=memories,
-            hindsight_context=memories,
-            time_display=time_display,
-            time=time_display,
-            emotion_display=emotion_display,
-            weather_display=weather_display
-        )
+
+        # System message: 人设 + 对话历史 + 记忆 + 环境信息
+        system_content = f"""你是凯莉，曹凡的 AI 朋友。你们认识很久了，你了解他的生活习惯、工作状态、兴趣爱好。
+
+{persona}
+
+【最近对话】
+{conversations_json}
+
+【你记得的事情】
+{memories}
+
+【现在】
+{time_display}
+{emotion_display}
+{weather_display}"""
+
+        # User message: 任务指令（放在最后，LLM 最关注的位置）
+        user_content = """基于以上对话和你的记忆，想一个要对曹凡说的话。
+以"曹凡，"开头，直接说你想说的。
+注意：不要回复上面的对话内容，主动发起一个新的话题或想法。
+如果没想到什么，回复 SKIP。"""
+
+        return [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": user_content},
+        ]
     
-    async def _call_llm(self, prompt: str) -> Tuple[str, Dict[str, Any]]:
+    async def _call_llm(self, messages: list) -> Tuple[str, Dict[str, Any]]:
         """
         调用 LLM
-        
+
+        Args:
+            messages: 消息列表 [{"role": "system", "content": ...}, {"role": "user", "content": ...}]
+
         Returns:
             (response, llm_details)
         """
@@ -192,27 +209,29 @@ class ThoughtEngine:
                 from pathlib import Path
                 sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
                 from agent.auxiliary_client import call_llm
-                
+
                 response = await asyncio.to_thread(
                     call_llm,
                     task='title_generation',
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
                 )
                 raw = response.choices[0].message.content.strip()
-                
+
                 # 记录 token 使用
                 if hasattr(response, 'usage'):
                     llm_details["prompt_tokens"] = response.usage.prompt_tokens
                     llm_details["completion_tokens"] = response.usage.completion_tokens
                     llm_details["total_tokens"] = response.usage.total_tokens
-                
+
             else:
                 from services.llm_service import LLMService
+                # 自定义模式拼接 messages 为单 prompt
+                prompt_text = "\n\n".join(m["content"] for m in messages)
                 result = await LLMService.generate_message(
                     llm_config=self.llm_config,
-                    prompt=prompt,
+                    prompt=prompt_text,
                     temperature=temperature,
                     max_tokens=max_tokens
                 )
