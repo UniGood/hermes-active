@@ -499,8 +499,10 @@ class ActiveConsciousnessService:
                 d = d[part]
             # 类型转换
             final_key = parts[-1]
-            if value in ("None", "null", ""):
+            if value in ("None", "null"):
                 d[final_key] = None
+            elif value == "":
+                d[final_key] = ""  # 保留空字符串（如 mode="" 表示"跟随通用 LLM"）
             elif value in ("true", "false"):
                 d[final_key] = value == "true"
             elif value.startswith("[") or value.startswith("{"):
