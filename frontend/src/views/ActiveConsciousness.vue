@@ -863,7 +863,7 @@
         <!-- Prompt 和 LLM 返回（默认折叠） -->
         <n-collapse style="margin-bottom: 12px;">
           <n-collapse-item title="发送的 Prompt" name="prompt">
-            <n-code :code="thoughtContentData.llm_prompt_sent || '无'" language="text" word-wrap />
+            <n-code :code="formatPrompt(thoughtContentData.llm_prompt_sent)" language="text" word-wrap />
           </n-collapse-item>
           <n-collapse-item title="LLM 原始返回" name="response">
             <n-code :code="thoughtContentData.llm_response_received || '无'" language="text" word-wrap />
@@ -1082,7 +1082,7 @@
             </n-descriptions>
             <n-collapse style="margin-bottom: 12px;">
               <n-collapse-item title="发送的 Prompt" name="emotion_prompt">
-                <n-code :code="detailsData.emotion_llm_details.prompt_sent || '无'" language="text" word-wrap />
+                <n-code :code="formatPrompt(detailsData.emotion_llm_details.prompt_sent)" language="text" word-wrap />
               </n-collapse-item>
               <n-collapse-item title="LLM 返回" name="emotion_response">
                 <n-code :code="detailsData.emotion_llm_details.response_received || '无'" language="text" word-wrap />
@@ -1106,7 +1106,7 @@
             </n-descriptions>
             <n-collapse style="margin-bottom: 12px;">
               <n-collapse-item title="发送的 Prompt" name="thought_prompt">
-                <n-code :code="detailsData.thought_generation.prompt_sent || '无'" language="text" word-wrap />
+                <n-code :code="formatPrompt(detailsData.thought_generation.prompt_sent)" language="text" word-wrap />
               </n-collapse-item>
               <n-collapse-item title="LLM 返回" name="thought_response">
                 <n-code :code="detailsData.thought_generation.response_received || '无'" language="text" word-wrap />
@@ -1259,7 +1259,7 @@
             </n-descriptions>
             <n-collapse style="margin-bottom: 16px;">
               <n-collapse-item title="发送的提示词" name="prompt">
-                <n-code :code="(thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.prompt_sent || '无'" language="text" word-wrap />
+                <n-code :code="formatPrompt((thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.prompt_sent)" language="text" word-wrap />
               </n-collapse-item>
               <n-collapse-item title="LLM 返回内容" name="response">
                 <n-code :code="(thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.response_received || '无'" language="text" word-wrap />
@@ -2061,6 +2061,20 @@ const thoughtColumns = [
     return '-'  // 历史 NULL 数据
   } },
 ]
+// 格式化 prompt_sent（可能是字符串或 messages 数组）
+const formatPrompt = (val) => {
+  if (!val) return '无'
+  if (typeof val === 'string') return val
+  if (Array.isArray(val)) {
+    return val.map(m => {
+      const role = m.role || '?'
+      const content = m.content || ''
+      return `【${role}】\n${content}`
+    }).join('\n\n---\n\n')
+  }
+  return JSON.stringify(val, null, 2)
+}
+
 const formatTime = (isoStr) => {
   if (!isoStr) return ''
   let d
