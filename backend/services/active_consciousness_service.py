@@ -720,7 +720,7 @@ class ActiveConsciousnessService:
             active_config = config.get("active", {})
             levels_config = config.get("levels", {})
 
-            # LLM 调用统计（今天/本周/本月）
+            # LLM 调用统计（今天/本周/本月，北京时间）
             llm_stats = {"emotion_today": 0, "emotion_week": 0, "emotion_month": 0,
                          "thought_today": 0, "thought_week": 0, "thought_month": 0}
             try:
@@ -728,17 +728,17 @@ class ActiveConsciousnessService:
                     row = conn.execute(text("""
                         SELECT
                             COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL
-                                  AND created_at > datetime('now', 'start of day') THEN 1 END),
+                                  AND created_at > datetime('now', '+8 hours', 'start of day') THEN 1 END),
                             COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
-                                  AND created_at > datetime('now', 'start of day') THEN 1 END),
+                                  AND created_at > datetime('now', '+8 hours', 'start of day') THEN 1 END),
                             COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL
-                                  AND created_at > datetime('now', '-7 days') THEN 1 END),
+                                  AND created_at > datetime('now', '+8 hours', '-7 days') THEN 1 END),
                             COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
-                                  AND created_at > datetime('now', '-7 days') THEN 1 END),
+                                  AND created_at > datetime('now', '+8 hours', '-7 days') THEN 1 END),
                             COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL THEN 1 END),
                             COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL THEN 1 END)
                         FROM active_heartbeat_logs
-                        WHERE created_at > datetime('now', 'start of month')
+                        WHERE created_at > datetime('now', '+8 hours', 'start of month')
                     """)).fetchone()
                     if row:
                         llm_stats["emotion_today"] = row[0] or 0
