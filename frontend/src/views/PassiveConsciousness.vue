@@ -25,7 +25,7 @@
               <n-input v-model:value="config.llm.model" placeholder="deepseek-chat" />
             </n-form-item>
             <n-form-item label="API Key" v-if="config.llm.mode === 'custom'">
-              <n-input v-model:value="config.llm.api_key" type="password" show-password-on="mousedown" placeholder="输入 API Key" />
+              <n-input v-model:value="config.llm.api_key" placeholder="输入 API Key" />
             </n-form-item>
             <n-form-item label="Base URL" v-if="config.llm.mode === 'custom'">
               <n-input v-model:value="config.llm.base_url" placeholder="https://api.openai.com/v1" />

@@ -79,7 +79,7 @@
                 <n-input v-model:value="llmConfig.model" placeholder="gpt-4" />
               </n-form-item>
               <n-form-item label="API Key">
-                <n-input v-model:value="llmConfig.api_key" type="password" show-password-on="click" />
+                <n-input v-model:value="llmConfig.api_key" placeholder="输入 API Key" />
               </n-form-item>
               <n-form-item label="Base URL">
                 <n-input v-model:value="llmConfig.base_url" placeholder="https://api.openai.com/v1" />
@@ -150,8 +150,6 @@
                 <n-input
                   v-model:value="weatherConfig.amap_key"
                   placeholder="输入高德开放平台 Key"
-                  type="password"
-                  show-password-on="mousedown"
                 />
               </n-form-item>
 

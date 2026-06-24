@@ -9,7 +9,7 @@
         </div>
         <div class="config-row">
           <span class="config-label">API Key:</span>
-          <n-input v-model:value="config.apiKey" placeholder="sk-..." size="small" type="password" show-password-on="click" />
+          <n-input v-model:value="config.apiKey" placeholder="sk-..." size="small" placeholder="sk-..." />
         </div>
         <div class="config-row">
           <span class="config-label">Model:</span>

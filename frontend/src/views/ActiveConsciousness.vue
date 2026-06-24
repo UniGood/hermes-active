@@ -409,7 +409,7 @@
               <n-input v-model:value="config.llm.model" placeholder="deepseek-chat" />
             </n-form-item>
             <n-form-item label="API Key">
-              <n-input v-model:value="config.llm.api_key" type="password" show-password-on="mousedown" placeholder="输入 API Key" />
+              <n-input v-model:value="config.llm.api_key" placeholder="输入 API Key" />
             </n-form-item>
             <n-form-item label="Base URL">
               <n-input v-model:value="config.llm.base_url" placeholder="https://api.openai.com/v1" />
@@ -440,7 +440,7 @@
               <n-input v-model:value="config.emotion_llm.model" placeholder="agnes-2.0-flash" />
             </n-form-item>
             <n-form-item label="API Key">
-              <n-input v-model:value="config.emotion_llm.api_key" type="password" show-password-on="mousedown" placeholder="输入 API Key" />
+              <n-input v-model:value="config.emotion_llm.api_key" placeholder="输入 API Key" />
             </n-form-item>
             <n-form-item label="Base URL">
               <n-input v-model:value="config.emotion_llm.base_url" placeholder="https://api.openai.com/v1" />
@@ -499,7 +499,7 @@
               <n-input v-model:value="config.thought_llm.model" placeholder="mimo-v2.5-pro" />
             </n-form-item>
             <n-form-item label="API Key">
-              <n-input v-model:value="config.thought_llm.api_key" type="password" show-password-on="mousedown" placeholder="输入 API Key" />
+              <n-input v-model:value="config.thought_llm.api_key" placeholder="输入 API Key" />
             </n-form-item>
             <n-form-item label="Base URL">
               <n-input v-model:value="config.thought_llm.base_url" placeholder="https://api.openai.com/v1" />
