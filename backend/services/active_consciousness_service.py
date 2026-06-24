@@ -194,7 +194,7 @@ _DEFAULTS = {
     "active_consciousness.context.memory_enabled": "true",
     "active_consciousness.context.weather_enabled": "false",
 
-    # 念头生成提示词模板
+    # 念头生成 - System Message（人设 + 对话 + 记忆 + 环境）
     "active_consciousness.prompts.thought_generation": """你是凯莉，曹凡的 AI 朋友。你们认识很久了，你了解他的生活习惯、工作状态、兴趣爱好。
 
 {persona}
@@ -208,10 +208,13 @@ _DEFAULTS = {
 【现在】
 {time}
 {emotion_display}
+{weather_display}""",
 
-想到曹凡了吗？如果你想联系他，说你想说什么。
-如果没想到，回复 'SKIP'。
-直接说，不要解释。""",
+    # 念头生成 - User Message（任务指令 + Output Priming）
+    "active_consciousness.prompts.thought_generation_instruction": """基于以上对话和你的记忆，想一个要对曹凡说的话。
+以"曹凡，"开头，直接说你想说的。
+注意：不要回复上面的对话内容，主动发起一个新的话题或想法。
+如果没想到什么，回复 SKIP。""",
 
     "active_consciousness.prompts.emotion_evaluation": """你是凯莉，请评估当前的情绪状态。
 

@@ -113,6 +113,10 @@ class ThoughtEngine:
     def _build_messages(self, context: ContextBundle) -> list:
         """构建消息列表（system + user 分离，避免 LLM 复读最后一条对话）
 
+        从配置读取模板：
+        - prompts.thought_generation → system message
+        - prompts.thought_generation_instruction → user message
+
         Returns:
             [{"role": "system", "content": ...}, {"role": "user", "content": ...}]
         """
@@ -150,27 +154,27 @@ class ThoughtEngine:
             w = context.weather
             weather_display = f"天气：{w.get('weather', '未知')} {w.get('temp', '?')}°C（{w.get('city', '')}）"
 
-        # System message: 人设 + 对话历史 + 记忆 + 环境信息
-        system_content = f"""你是凯莉，曹凡的 AI 朋友。你们认识很久了，你了解他的生活习惯、工作状态、兴趣爱好。
+        # 从配置读取 system message 模板
+        system_template = self.config.get("prompts", {}).get("thought_generation") \
+            or _DEFAULTS.get("active_consciousness.prompts.thought_generation") \
+            or ""
 
-{persona}
+        system_content = system_template.format(
+            persona=persona,
+            session_context=conversations_json,
+            conversations_json=conversations_json,
+            hindsight_context=memories,
+            memories=memories,
+            time=time_display,
+            time_display=time_display,
+            emotion_display=emotion_display,
+            weather_display=weather_display,
+        )
 
-【最近对话】
-{conversations_json}
-
-【你记得的事情】
-{memories}
-
-【现在】
-{time_display}
-{emotion_display}
-{weather_display}"""
-
-        # User message: 任务指令（放在最后，LLM 最关注的位置）
-        user_content = """基于以上对话和你的记忆，想一个要对曹凡说的话。
-以"曹凡，"开头，直接说你想说的。
-注意：不要回复上面的对话内容，主动发起一个新的话题或想法。
-如果没想到什么，回复 SKIP。"""
+        # 从配置读取 user message 模板（任务指令 + output priming）
+        user_content = self.config.get("prompts", {}).get("thought_generation_instruction") \
+            or _DEFAULTS.get("active_consciousness.prompts.thought_generation_instruction") \
+            or "基于以上对话和你的记忆，想一个要对曹凡说的话。直接说，不想说就回 SKIP。"
 
         return [
             {"role": "system", "content": system_content},

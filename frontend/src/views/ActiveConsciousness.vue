@@ -505,11 +505,17 @@
               <n-input v-model:value="config.thought_llm.base_url" placeholder="https://api.openai.com/v1" />
             </n-form-item>
           </template>
-          <n-form-item label="念头生成提示词">
-            <n-input v-model:value="config.prompts.thought_generation" type="textarea" :rows="6" placeholder="输入念头生成提示词模板" />
+          <n-form-item label="念头生成 System 提示词">
+            <n-input v-model:value="config.prompts.thought_generation" type="textarea" :rows="6" placeholder="输入念头生成 System 提示词（人设 + 对话 + 记忆 + 环境）" />
           </n-form-item>
           <div style="font-size: 11px; color: #999; margin-bottom: 8px;">
-            可用变量：{persona} {session_context} {hindsight_context} {time} {emotion_display}
+            可用变量：{persona} {session_context} {hindsight_context} {time} {emotion_display} {weather_display}
+          </div>
+          <n-form-item label="念头生成 User 指令">
+            <n-input v-model:value="config.prompts.thought_generation_instruction" type="textarea" :rows="4" placeholder="输入念头生成 User 指令（任务指令 + output priming）" />
+          </n-form-item>
+          <div style="font-size: 11px; color: #999; margin-bottom: 8px;">
+            这是发给 LLM 的最后一条消息，控制 LLM 的行为模式。建议包含 output priming（如"以XXX开头"）和反复读指令。
           </div>
           <n-button type="primary" @click="testThoughtLLM" :loading="testing.thoughtLLM" size="small">
             测试念头生成 LLM
@@ -1324,7 +1330,8 @@ const config = ref({
   hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', store: { bank_id: 'hermes-active' }, recall_limit: 5, reflect_enabled: true, timeout: 30 },
   notify: { platform: 'weixin', chat_id: '' },
   prompts: {
-    thought_generation: '你是凯莉，曹凡的 AI 朋友。你们认识很久了，你了解他的生活习惯、工作状态、兴趣爱好。\n\n{persona}\n\n【最近对话】\n{session_context}\n\n【你记得的事情】\n{hindsight_context}\n\n【现在】\n{time}\n{emotion_display}\n\n想到曹凡了吗？如果你想联系他，说你想说什么。\n如果没想到，回复 \'SKIP\'。\n直接说，不要解释。',
+    thought_generation: '你是凯莉，曹凡的 AI 朋友。你们认识很久了，你了解他的生活习惯、工作状态、兴趣爱好。\n\n{persona}\n\n【最近对话】\n{session_context}\n\n【你记得的事情】\n{hindsight_context}\n\n【现在】\n{time}\n{emotion_display}\n{weather_display}',
+    thought_generation_instruction: '基于以上对话和你的记忆，想一个要对曹凡说的话。\n以"曹凡，"开头，直接说你想说的。\n注意：不要回复上面的对话内容，主动发起一个新的话题或想法。\n如果没想到什么，回复 SKIP。',
     emotion_evaluation: '你是凯莉，请评估当前的情绪状态。\n\n当前状态：\n- 时间：{time}\n- 想念分数：{longing_score}（等级：{longing_label}）\n- 聊天热度：{chat_heat}（标签：{chat_label}）\n- 沉默时长：{silence_minutes} 分钟\n\n最近的对话：\n{context}\n\n请评估你当前的情绪状态，返回 JSON 格式：\n{{\n  "valence": 0.0-1.0（情感效价，0=消极，1=积极），\n  "arousal": 0.0-1.0（唤醒度，0=平静，1=激动），\n  "social_need": 0.0-1.0（社交需求，0=不需要，1=非常想），\n  "dominant": "calm/content/happy/longing/missing/yearning/anxious/bored/concerned"\n}}\n\n只返回 JSON，不要解释。'
   },
   levels: {
