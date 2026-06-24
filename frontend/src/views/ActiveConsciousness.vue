@@ -1021,21 +1021,22 @@
               <!-- 6. 念头生成 -->
               <n-timeline-item 
                 v-if="detailsData.thought_generation" 
-                :type="detailsData.thought_generation.success ? 'success' : 'error'" 
+                :type="detailsData.thought_generation.success === true || (detailsData.thought_generation.response_received && !detailsData.thought_generation.error) ? 'success' : detailsData.thought_generation.success === false ? 'error' : 'success'" 
                 title="念头生成"
               >
                 <template #icon>
                   <n-icon size="16">
-                    <CheckmarkCircle v-if="detailsData.thought_generation.success" />
-                    <CloseCircle v-else />
+                    <CheckmarkCircle v-if="detailsData.thought_generation.success === true || (detailsData.thought_generation.response_received && !detailsData.thought_generation.error)" />
+                    <CloseCircle v-else-if="detailsData.thought_generation.success === false" />
+                    <CheckmarkCircle v-else />
                   </n-icon>
                 </template>
                 <div style="font-size: 12px; color: #666;">
-                  <template v-if="detailsData.thought_generation.success">
-                    {{ detailsData.thought_generation.thought?.substring(0, 50) }}...
+                  <template v-if="detailsData.thought_generation.success === false">
+                    {{ detailsData.thought_generation.error || '生成失败' }}
                   </template>
                   <template v-else>
-                    {{ detailsData.thought_generation.error || '生成失败' }}
+                    {{ (detailsData.thought_generation.thought || detailsData.thought_generation.response_received || '').substring(0, 80) }}...
                   </template>
                 </div>
               </n-timeline-item>
