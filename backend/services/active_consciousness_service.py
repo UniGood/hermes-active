@@ -727,20 +727,18 @@ class ActiveConsciousnessService:
                 with active_engine.connect() as conn:
                     row = conn.execute(text("""
                         SELECT
+                            COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL
+                                  AND created_at > datetime('now', 'start of day') THEN 1 END),
+                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
+                                  AND created_at > datetime('now', 'start of day') THEN 1 END),
+                            COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL
+                                  AND created_at > datetime('now', '-7 days') THEN 1 END),
+                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
+                                  AND created_at > datetime('now', '-7 days') THEN 1 END),
                             COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL THEN 1 END),
-                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL THEN 1 END),
-                            COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL
-                                  AND created_at > datetime('now', '-7 days') THEN 1 END),
-                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
-                                  AND created_at > datetime('now', '-7 days') THEN 1 END),
-                            COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL
-                                  AND created_at > datetime('now', 'start of month') THEN 1 END),
-                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
-                                  AND created_at > datetime('now', 'start of month') THEN 1 END)
+                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL THEN 1 END)
                         FROM active_heartbeat_logs
-                        WHERE created_at > datetime('now', 'start of day')
-                           OR created_at > datetime('now', '-7 days')
-                           OR created_at > datetime('now', 'start of month')
+                        WHERE created_at > datetime('now', 'start of month')
                     """)).fetchone()
                     if row:
                         llm_stats["emotion_today"] = row[0] or 0
