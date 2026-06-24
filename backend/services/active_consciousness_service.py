@@ -2348,28 +2348,6 @@ async def retain_thought_to_hindsight(
 
 
 
-def is_thought_expired(thought: dict, max_age_hours: float = 4.0) -> bool:
-    """
-    检查念头是否过期
-
-    Args:
-        thought: 念头数据（dict 或 dataclass）
-        max_age_hours: 最大存活时间（小时）
-
-    Returns:
-        True 如果念头已过期
-    """
-    created_at = thought.get("created_at") if isinstance(thought, dict) else getattr(thought, "created_at", None)
-    if not created_at:
-        return True
-
-    try:
-        created = datetime.fromisoformat(created_at)
-        age_hours = (datetime.now() - created).total_seconds() / 3600
-        return age_hours > max_age_hours
-    except Exception:
-        return True
-
 
 def get_recent_thoughts_from_db(limit: int = 5) -> List[Dict]:
     """从本地 active_thought_logs 表获取最近的念头"""
@@ -2386,4 +2364,42 @@ def get_recent_thoughts_from_db(limit: int = 5) -> List[Dict]:
         logger.warning("查询本地念头失败: %s", e)
         return []
 
+def pre_calculate_score(
+    emotion_state: EmotionState,
+    status: Dict[str, Any],
+    decision_config: Dict[str, Any]
+) -> float:
+    """在不调 LLM 的情况下估算 score（用于过滤低分心跳，节省 token）
 
+    算法复用 make_decision 的核心公式：
+        score = intensity × time_fitness × silence_factor × frequency_limit
+
+    Args:
+        emotion_state: 当前情绪状态
+        status: 状态 dict（包含 longing、chat_heat 等）
+        decision_config: 决策配置
+
+    Returns:
+        预估 score（0.0~1.0）
+    """
+    intensity = emotion_state.intensity()
+
+    time_fitness, _ = get_time_fitness()
+
+    silence_minutes = status.get("longing", {}).get("silence_minutes", 0)
+    if silence_minutes < 30:
+        silence_factor = 0.6
+    elif silence_minutes < 60:
+        silence_factor = 0.75
+    elif silence_minutes < 180:
+        silence_factor = 0.85
+    elif silence_minutes < 360:
+        silence_factor = 0.95
+    else:
+        silence_factor = 1.0
+
+    hour_sent = status.get("hour_sent_count", 0)
+    max_per_hour = decision_config.get("max_per_hour", 100)
+    frequency_limit = 1.0 if hour_sent < max_per_hour else 0.0
+
+    return intensity * time_fitness * silence_factor * frequency_limit
