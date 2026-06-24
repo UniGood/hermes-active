@@ -200,6 +200,64 @@
             </n-card>
           </n-grid-item>
         </n-grid>
+
+        <!-- LLM 调用统计 -->
+        <n-grid :cols="3" :x-gap="12" :y-gap="12" style="margin-top: 12px;">
+          <n-grid-item>
+            <n-card size="small" title="🎭 情绪 LLM">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">今天</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_today ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本周</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_week ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本月</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_month ?? 0 }}</span>
+                </div>
+              </div>
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card size="small" title="💭 念头 LLM">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">今天</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_today ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本周</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_week ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本月</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_month ?? 0 }}</span>
+                </div>
+              </div>
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card size="small" title="📊 总 LLM 调用">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">今天</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_today ?? 0) + (status.llm_stats?.thought_today ?? 0) }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本周</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_week ?? 0) + (status.llm_stats?.thought_week ?? 0) }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本月</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_month ?? 0) + (status.llm_stats?.thought_month ?? 0) }}</span>
+                </div>
+              </div>
+            </n-card>
+          </n-grid-item>
+        </n-grid>
       </n-tab-pane>
 
       <!-- Tab 2: 日志 -->
@@ -1121,6 +1179,18 @@
             {{ parseDecisionReason(detailsData.decision?.reason).frequency }}
           </n-descriptions-item>
           <n-descriptions-item label="决策原因" :span="2">{{ detailsData.decision?.reason }}</n-descriptions-item>
+          <n-descriptions-item label="结果说明" :span="2">
+            <template v-if="detailsData.decision?.type === 'skip'">
+              分数 {{ detailsData.decision?.score?.toFixed(3) }} 未达记忆阈值，跳过本轮（不调用 LLM）
+            </template>
+            <template v-else-if="detailsData.decision?.type === 'memory'">
+              分数 {{ detailsData.decision?.score?.toFixed(3) }} 达到记忆阈值，生成念头存入记忆
+            </template>
+            <template v-else-if="detailsData.decision?.type === 'auto_send'">
+              分数 {{ detailsData.decision?.score?.toFixed(3) }} 达到发送阈值，生成念头并发送
+            </template>
+            <template v-else>{{ detailsData.decision?.type }}</template>
+          </n-descriptions-item>
         </n-descriptions>
 
         <!-- 情绪演化详情 -->
@@ -2028,10 +2098,10 @@ const thoughtColumns = [
   { title: '内容', key: 'content', ellipsis: { tooltip: true } },
   { title: '决策分数', key: 'score', width: 80, render: (row) => row.score != null ? Number(row.score).toFixed(3) : '' },
   { title: '决策', key: 'decision', width: 180, render: (row) => getDecisionLabelCn(row.decision) },
-  { title: '发送消息', key: 'decision', width: 100, render(row) {
+  { title: '结果', key: 'decision', width: 120, render(row) {
     if (row.decision === 'auto_send') return h(NTag, { type: 'success', size: 'small' }, { default: () => '✅ 已发送' })
-    if (row.decision === 'memory') return h(NTag, { type: 'info', size: 'small' }, { default: () => '存为记忆' })
-    return h(NTag, { type: 'default', size: 'small' }, { default: () => '未发送' })
+    if (row.decision === 'memory') return h(NTag, { type: 'info', size: 'small' }, { default: () => '💾 已存记忆' })
+    return h(NTag, { type: 'default', size: 'small' }, { default: () => '⏭️ 跳过' })
   } },
   { title: '来源', key: 'recall_source', width: 120 },
   { title: '存储 Hindsight', key: 'hindsight_stored', width: 110, render(row) {
@@ -2346,6 +2416,20 @@ onMounted(async () => {
 <style scoped>
 .active-consciousness-page {
   padding: 0;
+}
+/* PC 端状态卡片等高对齐 */
+@media (min-width: 769px) {
+  .active-consciousness-page :deep(.n-grid-item > .n-card) {
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+  }
+  .active-consciousness-page :deep(.n-grid-item > .n-card .n-card__content) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
 }
 .breathing-dot {
   display: inline-block;

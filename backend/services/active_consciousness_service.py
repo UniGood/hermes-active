@@ -719,6 +719,38 @@ class ActiveConsciousnessService:
             decision_config = config.get("decision", {})
             active_config = config.get("active", {})
             levels_config = config.get("levels", {})
+
+            # LLM 调用统计（今天/本周/本月）
+            llm_stats = {"emotion_today": 0, "emotion_week": 0, "emotion_month": 0,
+                         "thought_today": 0, "thought_week": 0, "thought_month": 0}
+            try:
+                with active_engine.connect() as conn:
+                    row = conn.execute(text("""
+                        SELECT
+                            COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL THEN 1 END),
+                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL THEN 1 END),
+                            COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL
+                                  AND created_at > datetime('now', '-7 days') THEN 1 END),
+                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
+                                  AND created_at > datetime('now', '-7 days') THEN 1 END),
+                            COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL
+                                  AND created_at > datetime('now', 'start of month') THEN 1 END),
+                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
+                                  AND created_at > datetime('now', 'start of month') THEN 1 END)
+                        FROM active_heartbeat_logs
+                        WHERE created_at > datetime('now', 'start of day')
+                           OR created_at > datetime('now', '-7 days')
+                           OR created_at > datetime('now', 'start of month')
+                    """)).fetchone()
+                    if row:
+                        llm_stats["emotion_today"] = row[0] or 0
+                        llm_stats["thought_today"] = row[1] or 0
+                        llm_stats["emotion_week"] = row[2] or 0
+                        llm_stats["thought_week"] = row[3] or 0
+                        llm_stats["emotion_month"] = row[4] or 0
+                        llm_stats["thought_month"] = row[5] or 0
+            except Exception as e:
+                logger.warning("查询 LLM 调用统计失败: %s", e)
             
             return {
                 "enabled": config.get("enabled", False),
@@ -780,6 +812,7 @@ class ActiveConsciousnessService:
                         "heat": levels_config.get("heat", ""),
                     },
                 },
+                "llm_stats": llm_stats,
             }
         finally:
             db.close()
