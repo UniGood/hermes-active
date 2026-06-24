@@ -496,7 +496,9 @@ class ActiveConsciousnessService:
                 d = d[part]
             # 类型转换
             final_key = parts[-1]
-            if value in ("true", "false"):
+            if value in ("None", "null", ""):
+                d[final_key] = None
+            elif value in ("true", "false"):
                 d[final_key] = value == "true"
             elif value.startswith("[") or value.startswith("{"):
                 try:
@@ -519,7 +521,9 @@ class ActiveConsciousnessService:
         result = {}
         for key, value in nested.items():
             full_key = f"{prefix}{key}"
-            if isinstance(value, dict):
+            if value is None:
+                continue  # 跳过 null 值，不覆盖数据库中的现有值
+            elif isinstance(value, dict):
                 result.update(ActiveConsciousnessService._nested_to_flat(value, full_key + "."))
             elif isinstance(value, list):
                 result[full_key] = json.dumps(value, ensure_ascii=False)
