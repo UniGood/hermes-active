@@ -2399,6 +2399,14 @@ onMounted(async () => {
   padding-left: 0;
 }
 
+/* 日志表格 PC 端强制可横向滚动 */
+:deep(.n-data-table .n-data-table-base-table) {
+  overflow-x: auto !important;
+}
+:deep(.n-data-table .n-data-table-table) {
+  min-width: max-content !important;
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .active-consciousness-page {
