@@ -109,10 +109,6 @@
                       <div style="font-size: 11px; color: #999;">发送</div>
                     </div>
                     <div style="flex: 1; text-align: center;">
-                      <div style="font-size: 18px; font-weight: bold; color: #f0a020;">{{ decisionConfig.delay_threshold }}</div>
-                      <div style="font-size: 11px; color: #999;">延迟</div>
-                    </div>
-                    <div style="flex: 1; text-align: center;">
                       <div style="font-size: 18px; font-weight: bold; color: #d03050;">{{ decisionConfig.memory_threshold }}</div>
                       <div style="font-size: 11px; color: #999;">记忆</div>
                     </div>
@@ -288,9 +284,6 @@
             <n-divider>决策阈值</n-divider>
             <n-form-item label="立即发送阈值">
               <n-input-number v-model:value="config.decision.send_threshold" :min="0" :max="1" :step="0.1" />
-            </n-form-item>
-            <n-form-item label="延迟发送阈值">
-              <n-input-number v-model:value="config.decision.delay_threshold" :min="0" :max="1" :step="0.1" />
             </n-form-item>
             <n-form-item label="存为记忆阈值">
               <n-input-number v-model:value="config.decision.memory_threshold" :min="0" :max="1" :step="0.1" />
@@ -1316,7 +1309,7 @@ const config = ref({
   thought_llm: { mode: '', provider: '', model: '', api_key: '', base_url: '' },
   active: { enabled: true, heartbeat_interval: 600, send_tag: '凯莉', time_format: '%H:%M', no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 3.0, no_send_while_vibe_below: 0.15, cooldown_minutes: 30 },
   session: { sources: ['weixin'], max_messages_per_session: 15, filter_tool_messages: true },
-  decision: { send_threshold: 0.35, delay_threshold: 0.15, memory_threshold: 0.05, max_per_hour: 2, max_per_day: 5, longing_gap_threshold: 3 },
+  decision: { send_threshold: 0.35, memory_threshold: 0.05, max_per_hour: 2, max_per_day: 5, longing_gap_threshold: 3 },
   thought: { retain_enabled: false, retain_threshold: 0.5 },
   thought_engine: {
     enabled: true,
@@ -1468,7 +1461,6 @@ const heartbeatHealthy = computed(() => {
 // 决策配置
 const decisionConfig = computed(() => status.value.config?.decision || {
   send_threshold: 0.35,
-  delay_threshold: 0.15,
   memory_threshold: 0.05,
   max_per_hour: 2,
   max_per_day: 5
@@ -1977,9 +1969,6 @@ function getHeartbeatResultReason(details) {
   
   if (type === 'skip') {
     return `分数 ${score.toFixed(2)} 未达到发送阈值`
-  }
-  if (type === 'delay_send') {
-    return `分数 ${score.toFixed(2)} 达到延迟阈值，等待下次心跳评估`
   }
   if (type === 'memory') {
     return `分数 ${score.toFixed(2)} 存为记忆，不发送`
