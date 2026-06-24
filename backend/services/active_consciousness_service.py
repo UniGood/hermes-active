@@ -1637,41 +1637,6 @@ async def run_heartbeat():
             else:
                 all_details["thought_generation"] = {"success": False, "error": "念头生成返回空"}
 
-        elif decision_type == "delay_send":
-            # 入延迟队列
-            gen_result = await generate_thought_for_delay(config, status, merged_state)
-            thought = gen_result.get("thought") if gen_result else None
-            if thought:
-                # 合并 llm_details + thought 字段
-                llm_details = gen_result.get("llm_details", {})
-                all_details["thought_generation"] = {**llm_details, "thought": thought, "success": True}
-                weather_info = all_details.get("context_bundle", {}).get("weather")
-                thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, weather_info)
-                added = add_to_delay_queue_v2(thought, thought_type, score, merged_state)
-                all_details["thought_type"] = thought_type
-                all_details["hindsight_stored"] = False
-                # 写入念头日志
-                intensity = merged_state.intensity()
-                ActiveConsciousnessService.write_thought_log(
-                    heartbeat_id=heartbeat_id,
-                    thought_type=thought_type,
-                    content=thought,
-                    intensity=intensity,
-                    decision=decision_type,
-                    reason=f"score={score:.3f}, delay_queue={'added' if added else 'full'}",
-                    score=score,
-                    recall_count=recall_count,
-                    recall_source="hindsight",
-                    chat_heat=status.get("chat_heat", {}).get("heat", 0),
-                    emotional_intensity=intensity,
-                    hindsight_stored=False,    # 入延迟队列时还没真正存 Hindsight
-                    details=json.dumps(llm_details, ensure_ascii=False)
-                )
-                if added:
-                    logger.info("念头入延迟队列: %s", thought[:50])
-                else:
-                    logger.warning("念头入延迟队列失败（队列已满）: %s", thought[:50])
-
         elif decision_type == "auto_send":
             # 自动发送（检查保护机制）
             if blocked_by_protection:
@@ -2206,7 +2171,6 @@ def make_decision_v2(
 
     # 决策阈值
     send_threshold = decision_config.get("send_threshold", 0.6)
-    delay_threshold = decision_config.get("delay_threshold", 0.3)
     memory_threshold = decision_config.get("memory_threshold", 0.1)
 
     # 构建决策原因
@@ -2218,14 +2182,12 @@ def make_decision_v2(
     ]
     reason = ", ".join(reason_parts)
 
-    logger.info("决策结果: score=%.3f, decision=%s, threshold(send=%.3f, delay=%.3f, memory=%.3f)",
-                score, "auto_send" if score > send_threshold else "delay_send" if score > delay_threshold else "memory" if score > memory_threshold else "skip",
-                send_threshold, delay_threshold, memory_threshold)
+    logger.info("决策结果: score=%.3f, decision=%s, threshold(send=%.3f, memory=%.3f)",
+                score, "auto_send" if score > send_threshold else "memory" if score > memory_threshold else "skip",
+                send_threshold, memory_threshold)
 
     if score > send_threshold:
         return "auto_send", f"score={score:.3f} > {send_threshold} ({reason})", score
-    elif score > delay_threshold:
-        return "delay_send", f"score={score:.3f} > {delay_threshold} ({reason})", score
     elif score > memory_threshold:
         return "memory", f"score={score:.3f} > {memory_threshold} ({reason})", score
     else:
