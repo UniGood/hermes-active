@@ -2035,7 +2035,7 @@ const thoughtColumns = [
   } },
   { title: '类型', key: 'type', width: 160, render: (row) => thoughtTypeLabelCn(row.type) },
   { title: '内容', key: 'content', ellipsis: { tooltip: true } },
-  { title: '强度', key: 'intensity', width: 80, render: (row) => row.intensity != null ? Number(row.intensity).toFixed(2) : '' },
+  { title: '决策分数', key: 'score', width: 80, render: (row) => row.score != null ? Number(row.score).toFixed(3) : '' },
   { title: '决策', key: 'decision', width: 180, render: (row) => getDecisionLabelCn(row.decision) },
   { title: '发送消息', key: 'decision', width: 100, render(row) {
     if (row.decision === 'auto_send') return h(NTag, { type: 'success', size: 'small' }, { default: () => '✅ 已发送' })
