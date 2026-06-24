@@ -15,9 +15,11 @@ export default {
   },
 
   // 念头日志
-  getThoughts(page = 1, date = null) {
+  getThoughts(page = 1, date = null, heartbeatId = null, thoughtId = null) {
     const params = { page, page_size: 10 }
     if (date) params.date = date
+    if (heartbeatId != null && heartbeatId !== '') params.heartbeat_id = heartbeatId
+    if (thoughtId != null && thoughtId !== '') params.thought_id = thoughtId
     return http.get('/active-consciousness/thoughts', { params })
   },
   getThoughtDetail(id) {
@@ -31,9 +33,10 @@ export default {
   },
 
   // 心跳日志
-  getHeartbeats(page = 1, date = null) {
+  getHeartbeats(page = 1, date = null, heartbeatId = null) {
     const params = { page }
     if (date) params.date = date
+    if (heartbeatId != null && heartbeatId !== '') params.heartbeat_id = heartbeatId
     return http.get('/active-consciousness/heartbeats', { params })
   },
   getHeartbeatDetail(id) {

@@ -76,9 +76,10 @@ async def get_status():
 # ============ 日志 ============
 
 @router.get("/thoughts")
-async def get_thoughts(page: int = 1, page_size: int = 20, date: str = None):
-    """获取念头日志，支持 date=YYYY-MM-DD 过滤"""
-    result = ActiveConsciousnessService.get_thoughts(page, page_size, date)
+async def get_thoughts(page: int = 1, page_size: int = 20, date: str = None,
+                       heartbeat_id: int = None, thought_id: int = None):
+    """获取念头日志，支持 date=YYYY-MM-DD / heartbeat_id / thought_id 过滤"""
+    result = ActiveConsciousnessService.get_thoughts(page, page_size, date, heartbeat_id, thought_id)
     # 添加展示用的中文标签
     from services.active_consciousness_service import get_thought_type_display, get_decision_display
     for item in result.get("items", []):
@@ -108,9 +109,10 @@ async def retry_thought(thought_id: int):
 
 
 @router.get("/heartbeats")
-async def get_heartbeats(page: int = 1, page_size: int = 20, date: str = None):
-    """获取心跳日志，支持 date=YYYY-MM-DD 过滤"""
-    return ActiveConsciousnessService.get_heartbeats(page, page_size, date)
+async def get_heartbeats(page: int = 1, page_size: int = 20, date: str = None,
+                         heartbeat_id: int = None):
+    """获取心跳日志，支持 date=YYYY-MM-DD / heartbeat_id 过滤"""
+    return ActiveConsciousnessService.get_heartbeats(page, page_size, date, heartbeat_id)
 
 
 @router.get("/heartbeats/{heartbeat_id}")

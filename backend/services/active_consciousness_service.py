@@ -797,8 +797,9 @@ class ActiveConsciousnessService:
     # ============ 日志 ============
 
     @staticmethod
-    def get_thoughts(page: int = 1, page_size: int = 20, date: Optional[str] = None) -> Dict[str, Any]:
-        """获取念头日志，支持日期过滤（格式 YYYY-MM-DD）"""
+    def get_thoughts(page: int = 1, page_size: int = 20, date: Optional[str] = None,
+                     heartbeat_id: Optional[int] = None, thought_id: Optional[int] = None) -> Dict[str, Any]:
+        """获取念头日志，支持日期过滤 + 心跳ID/念头ID精确查询"""
         db = ActiveSession()
         try:
             # 检查表是否存在
@@ -809,11 +810,19 @@ class ActiveConsciousnessService:
                 if not tables:
                     return {"total": 0, "items": []}
 
-                where_clause = ""
+                conditions = []
                 params = {"limit": page_size, "offset": (page - 1) * page_size}
                 if date:
-                    where_clause = "WHERE date(created_at) = :date"
+                    conditions.append("date(created_at) = :date")
                     params["date"] = date
+                if heartbeat_id is not None:
+                    conditions.append("heartbeat_id = :heartbeat_id")
+                    params["heartbeat_id"] = heartbeat_id
+                if thought_id is not None:
+                    conditions.append("id = :thought_id")
+                    params["thought_id"] = thought_id
+
+                where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
                 total = conn.execute(text(f"SELECT COUNT(*) FROM active_thought_logs {where_clause}"), params).scalar() or 0
                 # 不返回 details 字段以提高性能
@@ -834,8 +843,9 @@ class ActiveConsciousnessService:
             db.close()
 
     @staticmethod
-    def get_heartbeats(page: int = 1, page_size: int = 20, date: Optional[str] = None) -> Dict[str, Any]:
-        """获取心跳日志，支持日期过滤（格式 YYYY-MM-DD）"""
+    def get_heartbeats(page: int = 1, page_size: int = 20, date: Optional[str] = None,
+                       heartbeat_id: Optional[int] = None) -> Dict[str, Any]:
+        """获取心跳日志，支持日期过滤 + 心跳ID精确查询"""
         db = ActiveSession()
         try:
             with active_engine.connect() as conn:
@@ -845,11 +855,16 @@ class ActiveConsciousnessService:
                 if not tables:
                     return {"total": 0, "items": []}
 
-                where_clause = ""
+                conditions = []
                 params = {"limit": page_size, "offset": (page - 1) * page_size}
                 if date:
-                    where_clause = "WHERE date(created_at) = :date"
+                    conditions.append("date(created_at) = :date")
                     params["date"] = date
+                if heartbeat_id is not None:
+                    conditions.append("id = :heartbeat_id")
+                    params["heartbeat_id"] = heartbeat_id
+
+                where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
                 total = conn.execute(text(f"SELECT COUNT(*) FROM active_heartbeat_logs {where_clause}"), params).scalar() or 0
                 rows = conn.execute(text(

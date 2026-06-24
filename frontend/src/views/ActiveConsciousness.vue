@@ -209,22 +209,31 @@
             <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
               <n-date-picker v-model:value="heartbeatDate" type="date" clearable
                 @update:value="onHeartbeatDateChange" style="width: 160px" />
-              <n-button size="small" @click="heartbeatDate = Date.now(); loadHeartbeats(1)">今天</n-button>
-              <n-button size="small" quaternary @click="heartbeatDate = null; loadHeartbeats(1)">全部</n-button>
+              <n-input-number v-model:value="heartbeatIdFilter" placeholder="心跳ID" clearable
+                :show-button="false" style="width: 120px"
+                @update:value="() => loadHeartbeats(1)" />
+              <n-button size="small" @click="heartbeatDate = Date.now(); heartbeatIdFilter = null; loadHeartbeats(1)">今天</n-button>
+              <n-button size="small" quaternary @click="heartbeatDate = null; heartbeatIdFilter = null; loadHeartbeats(1)">全部</n-button>
             </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
-              <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="960" remote />
+              <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="1030" remote />
             </div>
           </n-tab-pane>
           <n-tab-pane name="thoughts" tab="念头日志" style="overflow: visible;">
-            <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+            <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
               <n-date-picker v-model:value="thoughtDate" type="date" clearable
                 @update:value="onThoughtDateChange" style="width: 160px" />
-              <n-button size="small" @click="thoughtDate = Date.now(); loadThoughts(1)">今天</n-button>
-              <n-button size="small" quaternary @click="thoughtDate = null; loadThoughts(1)">全部</n-button>
+              <n-input-number v-model:value="thoughtIdFilter" placeholder="念头ID" clearable
+                :show-button="false" style="width: 120px"
+                @update:value="() => loadThoughts(1)" />
+              <n-input-number v-model:value="thoughtHeartbeatIdFilter" placeholder="心跳ID" clearable
+                :show-button="false" style="width: 120px"
+                @update:value="() => loadThoughts(1)" />
+              <n-button size="small" @click="thoughtDate = Date.now(); thoughtIdFilter = null; thoughtHeartbeatIdFilter = null; loadThoughts(1)">今天</n-button>
+              <n-button size="small" quaternary @click="thoughtDate = null; thoughtIdFilter = null; thoughtHeartbeatIdFilter = null; loadThoughts(1)">全部</n-button>
             </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
-              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="1060" remote :loading="thoughtsLoading" />
+              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="1250" remote :loading="thoughtsLoading" />
             </div>
           </n-tab-pane>
         </n-tabs>
@@ -1158,6 +1167,8 @@
             <n-tag :type="getThoughtResultTagType(thoughtDetailsData)" size="large">
               {{ getThoughtResultTitle(thoughtDetailsData) }}
             </n-tag>
+            <n-tag size="small">ID: {{ thoughtDetailsData.id }}</n-tag>
+            <n-tag v-if="thoughtDetailsData.heartbeat_id" size="small" type="info">心跳: {{ thoughtDetailsData.heartbeat_id }}</n-tag>
             <!-- 结果信息 -->
             <div style="flex: 1; min-width: 200px;">
               <div style="font-size: 13px; color: #666; margin-bottom: 2px;">
@@ -1342,7 +1353,10 @@ const heartbeats = ref({ total: 0, items: [] })
 const thoughtsLoading = ref(false)
 const heartbeatsLoading = ref(false)
 const heartbeatDate = ref(Date.now())
+const heartbeatIdFilter = ref(null)
 const thoughtDate = ref(Date.now())
+const thoughtIdFilter = ref(null)
+const thoughtHeartbeatIdFilter = ref(null)
 const showRecallModal = ref(false)
 const recallItems = ref([])
 const recallLoading = ref(false)
@@ -2010,6 +2024,15 @@ const thoughtColumns = [
     }
   },
   { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
+  { title: 'ID', key: 'id', width: 70 },
+  { title: '心跳ID', key: 'heartbeat_id', width: 80, render(row) {
+    if (!row.heartbeat_id) return '-'
+    return h(NButton, { size: 'tiny', quaternary: true, type: 'info', onClick: () => {
+      heartbeatIdFilter.value = row.heartbeat_id
+      activeTab.value = 'heartbeat'
+      loadHeartbeats(1)
+    }}, { default: () => row.heartbeat_id })
+  } },
   { title: '类型', key: 'type', width: 160, render: (row) => thoughtTypeLabelCn(row.type) },
   { title: '内容', key: 'content', ellipsis: { tooltip: true } },
   { title: '强度', key: 'intensity', width: 80, render: (row) => row.intensity != null ? Number(row.intensity).toFixed(2) : '' },
@@ -2064,6 +2087,7 @@ const heartbeatColumns = [
       )
     }
   },
+  { title: 'ID', key: 'id', width: 70 },
   { title: '时间', key: 'created_at', width: 160, render: (row) => formatTime(row.created_at) },
   { title: '耗时(ms)', key: 'duration_ms', width: 80 },
   { title: '召回数量', key: 'recall_count', width: 80, render(row) { const v = row.recall_count || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'info', onClick: () => showRecallDetail(row) }, { default: () => v }) : '0' } },
@@ -2117,7 +2141,7 @@ const loadThoughts = async (page = 1, dateVal) => {
       const d = new Date(dateVal || thoughtDate.value)
       dateParam = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
     }
-    const data = await api.getThoughts(page, dateParam)
+    const data = await api.getThoughts(page, dateParam, thoughtHeartbeatIdFilter.value, thoughtIdFilter.value)
     // 解析details JSON
     data.items = (data.items || []).map(item => {
       if (item.details && typeof item.details === 'string') {
@@ -2152,7 +2176,7 @@ const loadHeartbeats = async (page = 1, dateVal) => {
       const d = new Date(dateVal || heartbeatDate.value)
       dateParam = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
     }
-    const data = await api.getHeartbeats(page, dateParam)
+    const data = await api.getHeartbeats(page, dateParam, heartbeatIdFilter.value)
     console.log('API response:', data)
     // 解析details JSON
     data.items = (data.items || []).map(item => {
