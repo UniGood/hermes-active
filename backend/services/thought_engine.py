@@ -125,14 +125,12 @@ class ThoughtEngine:
         # 加载人设
         persona = load_hermes_persona()
 
-        # 格式化对话（从 thought_engine 配置读取条数和截断长度）
-        conversation_limit = self.engine_config.get("prompt_conversation_limit", 30)
+        # 格式化对话（直接使用 context.conversations，只做单条截断）
         max_chars = self.engine_config.get("prompt_max_chars", 300)
-        recent_conversations = context.conversations[-conversation_limit:] if context.conversations else []
         conversations_json = json.dumps(
             [
                 {**m, "content": (m.get("content", "") or "")[:max_chars]}
-                for m in recent_conversations
+                for m in (context.conversations or [])
             ],
             ensure_ascii=False,
             indent=2
