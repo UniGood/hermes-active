@@ -186,15 +186,6 @@
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card size="small" title="延迟队列">
-              <n-statistic :value="status.delayed_count ?? 0">
-                <template #suffix>
-                  <span style="font-size: 14px; color: #999;">个念头</span>
-                </template>
-              </n-statistic>
-            </n-card>
-          </n-grid-item>
-          <n-grid-item>
             <n-card size="small" title="用户消息">
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <div style="display: flex; justify-content: space-between;">
@@ -233,7 +224,7 @@
               <n-button size="small" quaternary @click="thoughtDate = null; loadThoughts(1)">全部</n-button>
             </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
-              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="860" remote :loading="thoughtsLoading" />
+              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="1060" remote :loading="thoughtsLoading" />
             </div>
           </n-tab-pane>
         </n-tabs>
@@ -538,7 +529,7 @@
       <!-- Tab: 运行逻辑 -->
       <n-tab-pane name="logic" tab="运行逻辑">
         <n-card title="主动意识运行逻辑" size="small" class="run-logic-card">
-          <n-steps vertical :current="9" size="small">
+          <n-steps vertical :current="10" size="small">
             <n-step title="1. 心跳触发">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
                 APScheduler 定时触发，默认间隔 300 秒（5 分钟）。检查主动意识是否启用、是否在活跃时间窗口内。
@@ -554,34 +545,39 @@
                 LLM 根据最近对话评估情绪状态，返回 VA 值和主导情绪。通过置信度计算动态合并 LLM 与演化结果（高信任: 演化30%+LLM70%，低信任: 演化70%+LLM30%）。
               </div>
             </n-step>
-            <n-step title="4. 上下文收集">
+            <n-step title="4. 上下文收集 + Hindsight 记忆召回">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
-                ContextCollector 收集 Session 对话、Hindsight 记忆、情绪状态、时间感知、天气信息。根据唤醒度自动选择时间范围（低唤醒15天、中唤醒7天、高唤醒3天）。
+                ContextCollector 收集 Session 对话、情绪状态、时间感知、天气信息。同时调用 Hindsight Recall 检索相关记忆，为念头生成提供上下文。根据唤醒度自动选择时间范围（低唤醒15天、中唤醒7天、高唤醒3天）。
               </div>
             </n-step>
-            <n-step title="5. 念头生成">
+            <n-step title="5. 决策矩阵评分">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
-                ThoughtEngine 将上下文输入 LLM，生成 1-2 句话的念头。LLM 可输出 SKIP 表示不想联系用户。
+                score = intensity × time_fitness × silence_factor × frequency_limit。综合情绪强度（social_need×0.5 + arousal×0.3 + valence×0.2）、时间适宜性、沉默时长和频率限制。根据 score 与阈值比较得出决策：auto_send（≥send_threshold）、memory（≥memory_threshold）、skip（&lt;memory_threshold）。skip 不调 LLM，省 token。
               </div>
             </n-step>
-            <n-step title="6. 决策矩阵评分">
+            <n-step title="6. 发送保护检查">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
-                score = intensity × time_fitness × silence_factor × frequency_limit。综合情绪强度（social_need×0.5 + arousal×0.3 + valence×0.2）、时间适宜性、沉默时长和频率限制。
+                检查：用户消息后 5 分钟等待期、聊天热度 > 3.0、情绪强度 < 0.15、冷却期 30 分钟、每小时最多 2 条 / 每天最多 5 条。任一不通过则拦截实际发送（但保留决策分数）。
               </div>
             </n-step>
-            <n-step title="7. 发送保护检查">
+            <n-step title="7. 念头生成（LLM）">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
-                检查：用户消息后 5 分钟等待期、聊天热度 > 3.0、情绪强度 < 0.15、冷却期 30 分钟、每小时最多 2 条 / 每天最多 5 条。任一不通过则拦截。
+                仅当决策为 auto_send 或 memory 时调用 LLM 生成念头。ThoughtEngine 将上下文输入 LLM，生成 1-2 句话的念头。LLM 可输出 SKIP 表示不想联系用户。决策为 skip 时跳过此步，不消耗 token。
               </div>
             </n-step>
             <n-step title="8. 执行动作">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
-                根据决策分数执行：auto_send（≥0.35 立即发送）、delay_send（≥0.15 加入延迟队列，30 分钟内重评估）、memory（≥0.05 存为记忆）、skip（<0.05 跳过）。
+                auto_send：发送消息到目标平台。memory：存为记忆不发送。发送或存记忆时同步写入 Hindsight 长期记忆。
               </div>
             </n-step>
             <n-step title="9. 想念分数计算">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
                 longing_score = min(沉默分钟/gap_minutes, 1.0) × decay_factor。用户每回复 1 条消息衰减 10%，最少保留 10%。等级：平静→思念→想念→渴望→焦虑。
+              </div>
+            </n-step>
+            <n-step title="10. 情绪状态持久化">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                保存更新后的情绪状态（VA 值 + 主导情绪 + 更新时间），写入心跳日志（含决策详情、耗时、LLM 调用记录），供前端展示和下次心跳演化使用。
               </div>
             </n-step>
           </n-steps>
@@ -619,7 +615,7 @@
                   <li>&lt;30分钟: 0.6 | 30-60分钟: 0.75 | 1-3小时: 0.85 | 3-6小时: 0.95 | &gt;6小时: 1.0</li>
                 </ul>
                 <p><strong>frequency_limit</strong>：未超频 1.0，超频 0.0</p>
-                <p><strong>决策阈值</strong>：≥0.35 auto_send | ≥0.15 delay_send | ≥0.05 memory | &lt;0.05 skip</p>
+                <p><strong>决策阈值</strong>：≥0.35 auto_send | ≥0.05 memory | &lt;0.05 skip</p>
               </div>
             </n-collapse-item>
 
@@ -1144,16 +1140,6 @@
             距上次 {{ detailsData.minutes_since_update?.toFixed(0) }}分钟
           </div>
         </template>
-
-        <!-- 延迟队列详情 -->
-        <template v-if="detailsData.delay_reeval">
-          <n-divider title-placement="left" style="margin: 12px 0 8px;">延迟队列重评估</n-divider>
-          <n-descriptions bordered :column="3" size="small" style="margin-bottom: 12px;">
-            <n-descriptions-item label="发送">{{ detailsData.delay_reeval.sent }}</n-descriptions-item>
-            <n-descriptions-item label="丢弃">{{ detailsData.delay_reeval.discarded }}</n-descriptions-item>
-            <n-descriptions-item label="保持">{{ detailsData.delay_reeval.kept }}</n-descriptions-item>
-          </n-descriptions>
-        </template>
       </div>
       <n-empty v-else-if="!heartbeatDetailLoading" description="暂无详情数据" />
       <div v-else style="display: flex; justify-content: center; padding: 40px 0;">
@@ -1348,7 +1334,6 @@ const status = ref({
   today_sent_count: 0,
   hour_sent_count: 0,
   last_sent_at: null,
-  delayed_count: 0
 })
 
 // 日志
@@ -1824,7 +1809,7 @@ function thoughtTypeLabelCn(type) {
 
 // 决策类型 → "中文（英文）" 格式
 const DECISION_TYPE_CN = {
-  auto_send: '立即发送（auto_send）', delay_send: '延迟发送（delay_send）',
+  auto_send: '立即发送（auto_send）',
   skip: '跳过（skip）', memory: '存为记忆（memory）', pending: '待定（pending）',
   enhanced: '增强念头（enhanced）', gap_send: '间隔发送（gap_send）',
   idle_send: '空闲发送（idle_send）', long_idle_send: '长时空闲发送（long_idle_send）'
@@ -1867,7 +1852,6 @@ function getDecisionTagType(type) {
     case 'gap_send': return 'success'
     case 'idle_send': return 'success'
     case 'long_idle_send': return 'success'
-    case 'delay_send': return 'warning'
     case 'skip': return 'default'
     case 'memory': return 'info'
     default: return 'default'
@@ -1881,7 +1865,6 @@ function getHeartbeatResultTagType(details) {
   if (details.decision?.blocked_by_protection) return 'warning'
   if (details.decision?.type === 'skip') return 'default'
   if (details.decision?.type === 'memory') return 'info'
-  if (details.decision?.type === 'delay_send') return 'warning'
   return 'default'
 }
 
@@ -1892,7 +1875,6 @@ function getHeartbeatResultTitle(details) {
   if (details.decision?.blocked_by_protection) return '被保护机制拦截'
   if (details.decision?.type === 'skip') return '跳过'
   if (details.decision?.type === 'memory') return '存为记忆'
-  if (details.decision?.type === 'delay_send') return '等待发送'
   return '未知状态'
 }
 
@@ -1939,7 +1921,6 @@ function getThoughtResultTitle(details) {
   // 兜底：依 decision（auto_send/gap_send 等才是发送类）
   const sendDecisions = ['auto_send', 'gap_send', 'idle_send', 'long_idle_send']
   if (sendDecisions.includes(details.decision)) return '已发送消息'
-  if (details.decision === 'delay_send') return '等待发送'
   if (details.decision === 'memory') return '存为记忆'
   if (details.decision === 'skip') return '跳过'
   if (details.decision === 'enhanced') return '增强念头'
@@ -1952,7 +1933,6 @@ function getThoughtResultTagType(details) {
     return details.message_sending.success ? 'success' : 'error'
   }
   if (details.decision === 'auto_send') return 'success'
-  if (details.decision === 'delay_send') return 'warning'
   if (details.decision === 'memory') return 'info'
   if (details.decision === 'skip') return 'default'
   return 'default'
@@ -1986,7 +1966,6 @@ function getDecisionTimelineType(decision) {
   if (decision.blocked_by_protection) return 'warning'
   switch (decision.type) {
     case 'auto_send': return 'success'
-    case 'delay_send': return 'warning'
     case 'memory': return 'info'
     case 'skip': return 'default'
     default: return 'default'
@@ -1999,7 +1978,6 @@ function getDecisionTimelineIcon(decision) {
   if (decision.blocked_by_protection) return '🛡️'
   switch (decision.type) {
     case 'auto_send': return '✅'
-    case 'delay_send': return '💤'
     case 'memory': return '💾'
     case 'skip': return '⏭️'
     default: return '❓'
@@ -2036,6 +2014,11 @@ const thoughtColumns = [
   { title: '内容', key: 'content', ellipsis: { tooltip: true } },
   { title: '强度', key: 'intensity', width: 80, render: (row) => row.intensity != null ? Number(row.intensity).toFixed(2) : '' },
   { title: '决策', key: 'decision', width: 180, render: (row) => getDecisionLabelCn(row.decision) },
+  { title: '发送消息', key: 'decision', width: 100, render(row) {
+    if (row.decision === 'auto_send') return h(NTag, { type: 'success', size: 'small' }, { default: () => '✅ 已发送' })
+    if (row.decision === 'memory') return h(NTag, { type: 'info', size: 'small' }, { default: () => '存为记忆' })
+    return h(NTag, { type: 'default', size: 'small' }, { default: () => '未发送' })
+  } },
   { title: '来源', key: 'recall_source', width: 120 },
   { title: '存储 Hindsight', key: 'hindsight_stored', width: 110, render(row) {
     if (row.hindsight_stored === true || row.hindsight_stored === 1) {

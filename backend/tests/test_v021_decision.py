@@ -52,7 +52,7 @@ class TestDecisionV2:
         from services.active_consciousness_service import make_decision_v2
         # 使用较低的阈值以确保测试通过
         config = {
-            "decision": {"send_threshold": 0.5, "delay_threshold": 0.3, "memory_threshold": 0.1, "max_per_hour": 2}
+            "decision": {"send_threshold": 0.5, "memory_threshold": 0.1, "max_per_hour": 2}
         }
         status = {"longing": {"silence_minutes": 300}, "hour_sent_count": 0}
         emotion = EmotionState(valence=0.9, arousal=0.8, social_need=0.7)
@@ -63,14 +63,14 @@ class TestDecisionV2:
 
     @patch('services.active_consciousness_service.ActiveConsciousnessService.get_config')
     @patch('services.active_consciousness_service.get_time_fitness')
-    def test_medium_score_delay_send(self, mock_time_fitness, mock_get_config):
-        """中分延迟发送"""
+    def test_medium_score_memory(self, mock_time_fitness, mock_get_config):
+        """中分存为记忆（delay_send 已移除）"""
         mock_get_config.return_value = {}
         mock_time_fitness.return_value = (1.0, "下班时间")
 
         from services.active_consciousness_service import make_decision_v2
         config = {
-            "decision": {"send_threshold": 0.6, "delay_threshold": 0.3, "memory_threshold": 0.1, "max_per_hour": 2}
+            "decision": {"send_threshold": 0.6, "memory_threshold": 0.1, "max_per_hour": 2}
         }
         status = {"longing": {"silence_minutes": 300}, "hour_sent_count": 0}
         # intensity = (0.7 + 0.6 + 0.5) / 3 = 0.6
@@ -78,8 +78,8 @@ class TestDecisionV2:
         emotion = EmotionState(valence=0.7, arousal=0.6, social_need=0.5)
 
         decision, reason, score = make_decision_v2(config, status, emotion)
-        assert decision == "delay_send"
-        assert 0.3 < score <= 0.6
+        assert decision == "memory"
+        assert 0.1 < score <= 0.6
 
     @patch('services.active_consciousness_service.ActiveConsciousnessService.get_config')
     @patch('services.active_consciousness_service.get_time_fitness')
@@ -90,7 +90,7 @@ class TestDecisionV2:
 
         from services.active_consciousness_service import make_decision_v2
         config = {
-            "decision": {"send_threshold": 0.6, "delay_threshold": 0.3, "memory_threshold": 0.1, "max_per_hour": 2}
+            "decision": {"send_threshold": 0.6, "memory_threshold": 0.1, "max_per_hour": 2}
         }
         status = {"longing": {"silence_minutes": 30}, "hour_sent_count": 2}
         emotion = EmotionState(valence=0.3, arousal=0.2, social_need=0.2)

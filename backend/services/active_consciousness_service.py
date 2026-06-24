@@ -18,7 +18,7 @@ from models.active_consciousness import (
     ActiveConsciousnessConfig, ActiveConsciousnessStatus,
     LongingState, ChatHeat, EmotionalIntensity,
     ThoughtLog, HeartbeatLog,
-    EmotionState, ThoughtType, DelayedThought
+    EmotionState, ThoughtType
 )
 
 logger = logging.getLogger("hermes.active_consciousness")
@@ -174,13 +174,6 @@ _DEFAULTS = {
 
     # 时间窗口
     "active_consciousness.time.enabled": "true",
-
-    # 延迟发送
-    "active_consciousness.delay.enabled": "true",
-    "active_consciousness.delay.max_retry": "3",
-    "active_consciousness.delay.retry_interval_minutes": "30",
-    "active_consciousness.delay.max_queue_size": "10",
-    "active_consciousness.delay.max_age_hours": "4",
 
     # 念头存储
     "active_consciousness.thought.retain_enabled": "false",
@@ -339,7 +332,6 @@ THOUGHT_TYPE_DISPLAY = {
 # 决策类型 → "中文（英文）" 格式
 DECISION_TYPE_DISPLAY = {
     "auto_send": "立即发送（auto_send）",
-    "delay_send": "延迟发送（delay_send）",
     "memory": "存为记忆（memory）",
     "skip": "跳过（skip）",
     "pending": "待定（pending）",
@@ -375,7 +367,6 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
     active = config.get("active", {})
     decision = config.get("decision", {})
     emotion = config.get("emotion", {})
-    delay = config.get("delay", {})
 
     # 验证心跳间隔
     try:
@@ -440,14 +431,6 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
             errors.append("情绪衰减率必须在 0-0.1 之间")
     except (ValueError, TypeError):
         errors.append("情绪衰减率必须是数字")
-
-    # 验证延迟队列参数
-    try:
-        max_age_hours = float(delay.get("max_age_hours", 4))
-        if max_age_hours < 1 or max_age_hours > 24:
-            errors.append("延迟队列最大存活时间必须在 1-24 小时之间")
-    except (ValueError, TypeError):
-        errors.append("延迟队列最大存活时间必须是数字")
 
     return errors
 
@@ -725,10 +708,6 @@ class ActiveConsciousnessService:
             except Exception as e:
                 logger.warning("查询心跳统计失败: %s", e)
 
-            # 获取延迟队列数量
-            delayed_thoughts = get_delayed_thoughts()
-            delayed_count = len(delayed_thoughts)
-
             # 获取情绪状态
             emotion_state = get_emotion_state()
 
@@ -776,7 +755,6 @@ class ActiveConsciousnessService:
                 "today_sent_count": today_sent_count,
                 "hour_sent_count": hour_sent_count,
                 "last_sent_at": last_self_msg_at,
-                "delayed_count": delayed_count,
                 # 配置信息（前端动态计算用）
                 "config": {
                     "decision": {
@@ -1658,16 +1636,10 @@ async def run_heartbeat():
                         all_details["hindsight_tags"] = hindsight_tags
                         all_details["hindsight_stored"] = stored
 
-        # 15. 重评估延迟队列
-        delay_stats = await reevaluate_delayed_thoughts(config, status, merged_state)
-        all_details["delay_reeval"] = delay_stats
-        if any(v > 0 for v in delay_stats.values()):
-            logger.info("延迟队列重评估: %s", delay_stats)
-
-        # 16. 读取更新后的情绪值
+        # 15. 读取更新后的情绪值
         all_details["emotion_after"] = get_emotion_state().to_dict()
 
-        # 17. 更新心跳日志（含 details）
+        # 16. 更新心跳日志（含 details）
         duration_ms = round((time.time() - start_time) * 1000)
         logger.info("=== 心跳完成 === duration=%dms, decision=%s", duration_ms, decision_type)
         if heartbeat_id:
@@ -2363,43 +2335,3 @@ def get_recent_thoughts_from_db(limit: int = 5) -> List[Dict]:
     except Exception as e:
         logger.warning("查询本地念头失败: %s", e)
         return []
-
-def pre_calculate_score(
-    emotion_state: EmotionState,
-    status: Dict[str, Any],
-    decision_config: Dict[str, Any]
-) -> float:
-    """在不调 LLM 的情况下估算 score（用于过滤低分心跳，节省 token）
-
-    算法复用 make_decision 的核心公式：
-        score = intensity × time_fitness × silence_factor × frequency_limit
-
-    Args:
-        emotion_state: 当前情绪状态
-        status: 状态 dict（包含 longing、chat_heat 等）
-        decision_config: 决策配置
-
-    Returns:
-        预估 score（0.0~1.0）
-    """
-    intensity = emotion_state.intensity()
-
-    time_fitness, _ = get_time_fitness()
-
-    silence_minutes = status.get("longing", {}).get("silence_minutes", 0)
-    if silence_minutes < 30:
-        silence_factor = 0.6
-    elif silence_minutes < 60:
-        silence_factor = 0.75
-    elif silence_minutes < 180:
-        silence_factor = 0.85
-    elif silence_minutes < 360:
-        silence_factor = 0.95
-    else:
-        silence_factor = 1.0
-
-    hour_sent = status.get("hour_sent_count", 0)
-    max_per_hour = decision_config.get("max_per_hour", 100)
-    frequency_limit = 1.0 if hour_sent < max_per_hour else 0.0
-
-    return intensity * time_fitness * silence_factor * frequency_limit

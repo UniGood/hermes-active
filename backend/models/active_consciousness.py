@@ -1,7 +1,7 @@
 """
 主动意识数据模型 - 心跳触发，主动发送消息
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict, Any
@@ -39,7 +39,6 @@ class ActiveConsciousnessSessionConfig(BaseModel):
 class ActiveConsciousnessDecisionConfig(BaseModel):
     """决策阈值配置"""
     send_threshold: float = 0.6
-    delay_threshold: float = 0.3
     memory_threshold: float = 0.1
     max_per_hour: int = 2
     max_per_day: int = 5
@@ -58,13 +57,6 @@ class ActiveConsciousnessTimeConfig(BaseModel):
     deep_night_start: float = 23.5      # 深夜开始（小时）
     deep_night_end: float = 7.0         # 深夜结束（小时）
     deep_night_fitness: float = 0.3     # 深夜权重
-
-
-class ActiveConsciousnessDelayConfig(BaseModel):
-    """延迟发送配置"""
-    enabled: bool = True
-    max_retry: int = 3                  # 最大重试次数
-    retry_interval_minutes: int = 30    # 重试间隔（分钟）
 
 
 class ActiveConsciousnessThoughtConfig(BaseModel):
@@ -100,7 +92,6 @@ class ActiveConsciousnessConfig(BaseModel):
     # v0.2.1 新增
     emotion: ActiveConsciousnessEmotionConfig = ActiveConsciousnessEmotionConfig()
     time_window: ActiveConsciousnessTimeConfig = ActiveConsciousnessTimeConfig()
-    delay: ActiveConsciousnessDelayConfig = ActiveConsciousnessDelayConfig()
     thought: ActiveConsciousnessThoughtConfig = ActiveConsciousnessThoughtConfig()
 
 
@@ -150,7 +141,6 @@ class ActiveConsciousnessStatus(BaseModel):
     emotional_intensity: EmotionalIntensity = EmotionalIntensity()
     # v0.2.1 新增
     time_fitness: Optional[Dict[str, Any]] = None
-    delayed_count: int = 0
     today_sent_count: int = 0
     hour_sent_count: int = 0
     last_sent_at: Optional[str] = None
@@ -292,41 +282,3 @@ class EmotionState:
             return (datetime.now() - updated).total_seconds() / 60 > minutes
         except Exception:
             return True
-
-
-@dataclass
-class DelayedThought:
-    """延迟发送的念头"""
-    id: int
-    content: str
-    thought_type: str
-    score: float
-    created_at: str
-    retry_count: int = 0
-    next_retry_at: str = ""
-    emotion_snapshot: dict = field(default_factory=dict)
-
-    def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "content": self.content,
-            "thought_type": self.thought_type,
-            "score": round(self.score, 3),
-            "created_at": self.created_at,
-            "retry_count": self.retry_count,
-            "next_retry_at": self.next_retry_at,
-            "emotion_snapshot": self.emotion_snapshot
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> 'DelayedThought':
-        return cls(
-            id=data.get("id", 0),
-            content=data.get("content", ""),
-            thought_type=data.get("thought_type", "unknown"),
-            score=float(data.get("score", 0.5)),
-            created_at=data.get("created_at", ""),
-            retry_count=int(data.get("retry_count", 0)),
-            next_retry_at=data.get("next_retry_at", ""),
-            emotion_snapshot=data.get("emotion_snapshot", {})
-        )

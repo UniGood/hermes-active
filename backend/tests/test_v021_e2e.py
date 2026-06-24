@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, AsyncMock, MagicMock
 
 from models.active_consciousness import (
-    EmotionState, ThoughtType, DelayedThought, DominantEmotion
+    EmotionState, ThoughtType, DominantEmotion
 )
 
 
@@ -280,7 +280,7 @@ class TestTimeWindowDecision:
     def test_26_decision_auto_send(self):
         """步骤26: 高分自动发送"""
         from services.active_consciousness_service import make_decision_v2
-        config = {"decision": {"send_threshold": 0.6, "delay_threshold": 0.3, "memory_threshold": 0.1, "max_per_hour": 2}}
+        config = {"decision": {"send_threshold": 0.6, "memory_threshold": 0.1, "max_per_hour": 2}}
         status = {"longing": {"silence_minutes": 300}, "hour_sent_count": 0}
         # intensity = (0.95+0.9+0.8)/3 = 0.883, score = 0.883*1.0*0.7*1.0 = 0.618 > 0.6
         emotion = EmotionState(valence=0.95, arousal=0.9, social_need=0.8)
@@ -291,24 +291,24 @@ class TestTimeWindowDecision:
             assert score > 0.6, f"分数应 > 0.6，实际为 {score}"
             print(f"✅ 自动发送: score={score:.3f}, decision={decision}")
 
-    def test_27_decision_delay_send(self):
-        """步骤27: 中分延迟发送"""
+    def test_27_decision_memory_medium(self):
+        """步骤27: 中分存为记忆（delay_send 已移除）"""
         from services.active_consciousness_service import make_decision_v2
-        config = {"decision": {"send_threshold": 0.6, "delay_threshold": 0.3, "memory_threshold": 0.1, "max_per_hour": 2}}
+        config = {"decision": {"send_threshold": 0.6, "memory_threshold": 0.1, "max_per_hour": 2}}
         status = {"longing": {"silence_minutes": 300}, "hour_sent_count": 0}
         # intensity = (0.7+0.6+0.5)/3 = 0.6, score = 0.6*0.8*0.7*1.0 = 0.336
         emotion = EmotionState(valence=0.7, arousal=0.6, social_need=0.5)
 
         with patch('services.active_consciousness_service.get_time_fitness', return_value=(0.8, "工作时间")):
             decision, reason, score = make_decision_v2(config, status, emotion)
-            assert decision == "delay_send", f"应为 delay_send，实际为 {decision}"
-            assert 0.3 < score <= 0.6
-            print(f"✅ 延迟发送: score={score:.3f}, decision={decision}")
+            assert decision == "memory", f"应为 memory，实际为 {decision}"
+            assert 0.1 < score <= 0.6
+            print(f"✅ 存为记忆: score={score:.3f}, decision={decision}")
 
     def test_28_decision_memory(self):
         """步骤28: 低分存为记忆"""
         from services.active_consciousness_service import make_decision_v2
-        config = {"decision": {"send_threshold": 0.6, "delay_threshold": 0.3, "memory_threshold": 0.1, "max_per_hour": 2}}
+        config = {"decision": {"send_threshold": 0.6, "memory_threshold": 0.1, "max_per_hour": 2}}
         status = {"longing": {"silence_minutes": 30}, "hour_sent_count": 2}
         emotion = EmotionState(valence=0.3, arousal=0.2, social_need=0.2)
 
@@ -402,96 +402,6 @@ class TestThoughtTypeDetermination:
             result = determine_thought_type(status, emotion, [], None)
             assert result == "assoc"
             print(f"✅ 默认 → {result}")
-
-
-# ============================================================
-# 第七阶段：延迟队列
-# ============================================================
-
-class TestDelayQueue:
-    """延迟队列全流程测试"""
-
-    def test_36_delayed_thought_create(self):
-        """步骤36: 创建延迟念头"""
-        thought = DelayedThought(
-            id=1, content="测试念头", thought_type="emotion",
-            score=0.45, created_at=datetime.now().isoformat()
-        )
-        assert thought.id == 1
-        assert thought.content == "测试念头"
-        assert thought.score == 0.45
-        assert thought.retry_count == 0
-        print(f"✅ 延迟念头创建: {thought.to_dict()}")
-
-    def test_37_delayed_thought_serialization(self):
-        """步骤37: 延迟念头序列化/反序列化"""
-        original = DelayedThought(
-            id=1, content="测试", thought_type="silence",
-            score=0.4, created_at="2026-06-17T10:00:00"
-        )
-        d = original.to_dict()
-        restored = DelayedThought.from_dict(d)
-        assert restored.id == original.id
-        assert restored.content == original.content
-        assert restored.score == original.score
-        print(f"✅ 序列化/反序列化一致")
-
-    def test_38_queue_save_and_get(self):
-        """步骤38: 队列保存和读取"""
-        from services.active_consciousness_service import get_delayed_thoughts, save_delayed_thoughts
-
-        thoughts = [
-            DelayedThought(id=1, content="念头1", thought_type="emotion", score=0.4, created_at="2026-06-17T10:00:00"),
-            DelayedThought(id=2, content="念头2", thought_type="silence", score=0.35, created_at="2026-06-17T11:00:00"),
-        ]
-
-        with patch('services.active_consciousness_service.ConfigService') as mock_config:
-            # 模拟保存
-            saved_data = []
-            def mock_set(db, key, value):
-                saved_data.append(value)
-            mock_config.set_config.side_effect = mock_set
-
-            # 模拟读取
-            mock_config.get_config.return_value = json.dumps([t.to_dict() for t in thoughts])
-
-            # 保存
-            result = save_delayed_thoughts(thoughts)
-            assert result == True
-
-            # 读取
-            loaded = get_delayed_thoughts()
-            assert len(loaded) == 2
-            assert loaded[0].content == "念头1"
-            assert loaded[1].content == "念头2"
-            print(f"✅ 队列保存/读取: {len(loaded)} 个念头")
-
-    def test_39_queue_size_limit(self):
-        """步骤39: 队列大小限制"""
-        from services.active_consciousness_service import add_to_delay_queue
-
-        with patch('services.active_consciousness_service.ConfigService') as mock_config, \
-             patch('services.active_consciousness_service.ActiveConsciousnessService.get_config') as mock_get_config:
-            mock_get_config.return_value = {"delay": {"max_queue_size": 3}}
-
-            # 模拟空队列
-            mock_config.get_config.return_value = "[]"
-            saved_data = []
-            def mock_set(db, key, value):
-                saved_data.append(value)
-            mock_config.set_config.side_effect = mock_set
-
-            emotion = EmotionState()
-
-            # 添加4个念头（超过限制3个）
-            for i in range(4):
-                add_to_delay_queue(f"念头{i}", "emotion", 0.4, emotion)
-
-            # 验证最后一次保存的队列长度
-            if saved_data:
-                last_saved = json.loads(saved_data[-1])
-                assert len(last_saved) <= 3, f"队列应限制在3个以内，实际为 {len(last_saved)}"
-                print(f"✅ 队列限制生效: {len(last_saved)} 个（max=3）")
 
 
 # ============================================================
@@ -600,7 +510,7 @@ class TestEndToEndFlow:
         print(f"[Step 5] 时间窗口: fitness={time_fitness}, label={time_label}")
 
         # Step 6: 决策
-        config = {"decision": {"send_threshold": 0.6, "delay_threshold": 0.3, "memory_threshold": 0.1, "max_per_hour": 2}}
+        config = {"decision": {"send_threshold": 0.6, "memory_threshold": 0.1, "max_per_hour": 2}}
         status = {"longing": {"silence_minutes": 180}, "hour_sent_count": 0}
         decision, reason, score = make_decision_v2(config, status, merged)
         print(f"[Step 6] 决策: decision={decision}, score={score:.3f}")
@@ -619,13 +529,6 @@ class TestEndToEndFlow:
             content = f"[{thought_type}] 生成的念头内容"
             print(f"[Step 9] Hindsight 存储: tags={tags}")
             print(f"         content={content}")
-        elif decision == "delay_send":
-            print(f"[Step 8] → 入延迟队列")
-            delayed = DelayedThought(
-                id=1, content="生成的念头", thought_type=thought_type,
-                score=score, created_at=datetime.now().isoformat()
-            )
-            print(f"[Step 9] 延迟念头: {delayed.to_dict()}")
         elif decision == "memory":
             print(f"[Step 8] → 存为记忆")
             tags = ["active_consciousness", "thought", thought_type, merged.dominant]
@@ -637,65 +540,11 @@ class TestEndToEndFlow:
         assert initial is not None, "初始情绪不应为空"
         assert evolved is not None, "演化后不应为空"
         assert merged is not None, "合并后不应为空"
-        assert decision in ("auto_send", "delay_send", "memory", "skip"), "决策类型应有效"
+        assert decision in ("auto_send", "memory", "skip"), "决策类型应有效"
         assert thought_type in ("time", "silence", "assoc", "memory", "emotion", "env"), "念头类型应有效"
 
         print("\n" + "="*60)
         print(f"  ✅ 全流程完成: decision={decision}, score={score:.3f}")
-        print("="*60 + "\n")
-
-    def test_45_delay_queue_reevaluation_simulation(self):
-        """步骤45: 模拟延迟队列重评估流程"""
-        from services.active_consciousness_service import (
-            get_time_fitness, make_decision_v2
-        )
-
-        print("\n" + "="*60)
-        print("  延迟队列重评估模拟")
-        print("="*60)
-
-        # 模拟延迟队列
-        delayed_thoughts = [
-            DelayedThought(id=1, content="念头1", thought_type="emotion", score=0.4, created_at="2026-06-17T10:00:00"),
-            DelayedThought(id=2, content="念头2", thought_type="silence", score=0.35, created_at="2026-06-17T11:00:00"),
-        ]
-        print(f"\n[初始] 延迟队列: {len(delayed_thoughts)} 个念头")
-
-        # 当前情绪状态
-        emotion = EmotionState(valence=0.7, arousal=0.6, social_need=0.5, dominant="happy")
-        print(f"[当前] 情绪: {emotion.to_dict()}")
-
-        config = {"decision": {"send_threshold": 0.6, "delay_threshold": 0.3, "memory_threshold": 0.1, "max_per_hour": 2}}
-        status = {"longing": {"silence_minutes": 300}, "hour_sent_count": 0}
-
-        # 重评估每个念头
-        stats = {"sent": 0, "discarded": 0, "kept": 0}
-        remaining = []
-
-        for thought in delayed_thoughts:
-            # 重新计算分数
-            with patch('services.active_consciousness_service.get_time_fitness', return_value=(1.0, "下班时间")):
-                _, _, new_score = make_decision_v2(config, status, emotion)
-
-            print(f"\n[重评估] id={thought.id}, old_score={thought.score:.3f}, new_score={new_score:.3f}")
-
-            if new_score > 0.6:
-                print(f"  → 升级为发送")
-                stats["sent"] += 1
-            elif new_score < 0.1:
-                print(f"  → 降级为丢弃")
-                stats["discarded"] += 1
-            else:
-                print(f"  → 保持延迟")
-                remaining.append(thought)
-                stats["kept"] += 1
-
-        print(f"\n[结果] 统计: {stats}")
-        print(f"        剩余: {len(remaining)} 个念头")
-
-        assert stats["sent"] + stats["discarded"] + stats["kept"] == len(delayed_thoughts)
-        print("\n" + "="*60)
-        print(f"  ✅ 延迟队列重评估完成")
         print("="*60 + "\n")
 
 

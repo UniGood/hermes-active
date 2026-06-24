@@ -174,27 +174,3 @@ class HeartbeatLog(Base):
             "details": details,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
-
-
-class DelayedThoughtLog(Base):
-    """延迟发送念头表"""
-    __tablename__ = "active_delayed_thoughts"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    content = Column(Text, nullable=False)
-    thought_type = Column(String(20), nullable=False, default="time")
-    score = Column(Float, default=0.0)
-    retry_count = Column(Integer, default=0)
-    next_retry_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")), index=True)
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "content": self.content,
-            "thought_type": self.thought_type,
-            "score": self.score,
-            "retry_count": self.retry_count,
-            "next_retry_at": self.next_retry_at.isoformat() if self.next_retry_at else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-        }
