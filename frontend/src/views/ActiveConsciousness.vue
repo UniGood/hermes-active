@@ -2068,15 +2068,11 @@ const heartbeatColumns = [
   { title: '耗时(ms)', key: 'duration_ms', width: 80 },
   { title: '召回数量', key: 'recall_count', width: 80, render(row) { const v = row.recall_count || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'info', onClick: () => showRecallDetail(row) }, { default: () => v }) : '0' } },
   { title: '生成念头', key: 'thoughts_generated', width: 80, render(row) { const v = row.thoughts_generated || 0; return v ? h(NButton, { size: 'tiny', quaternary: true, type: 'success', onClick: () => showThoughtContent(row) }, { default: () => v }) : '0' } },
-  { title: '发送消息', key: 'message_sent', width: 80, render(row) {
-    // 直接读后端表字段（最准确，SQL 已 SELECT）
+  { title: '发送消息', key: 'message_sent', width: 100, render(row) {
     if (row.message_sent === true || row.message_sent === 1) {
       return h(NTag, { type: 'success', size: 'small' }, { default: () => '✅ 已发送' })
     }
-    if (row.message_sent === false || row.message_sent === 0) {
-      return h(NTag, { type: 'error', size: 'small' }, { default: () => '❌ 未发送' })
-    }
-    return '-'
+    return h(NTag, { type: 'default', size: 'small' }, { default: () => '未发送' })
   } },
 ]
 
