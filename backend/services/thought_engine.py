@@ -211,7 +211,7 @@ class ThoughtEngine:
                 import sys
                 from pathlib import Path
                 sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
-                from agent.auxiliary_client import call_llm
+                from agent.auxiliary_client import call_llm, extract_content_or_reasoning
 
                 call_kwargs = dict(
                     task='title_generation',
@@ -221,7 +221,20 @@ class ThoughtEngine:
                 if max_tokens is not None:
                     call_kwargs["max_tokens"] = max_tokens
                 response = await asyncio.to_thread(call_llm, **call_kwargs)
-                raw = response.choices[0].message.content.strip()
+                raw = extract_content_or_reasoning(response)
+
+                # 提取 reasoning_content
+                msg = response.choices[0].message
+                reasoning_content = getattr(msg, 'reasoning_content', None) or getattr(msg, 'reasoning', None)
+                if not reasoning_content:
+                    details = getattr(msg, 'reasoning_details', None)
+                    if details and isinstance(details, list):
+                        reasoning_content = "\n\n".join(
+                            d.get("summary") or d.get("content") or d.get("text", "")
+                            for d in details
+                            if isinstance(d, dict)
+                        )
+                llm_details["reasoning_content"] = reasoning_content
 
                 # 记录 token 使用
                 if hasattr(response, 'usage'):
@@ -247,6 +260,7 @@ class ThoughtEngine:
                     llm_details["prompt_tokens"] = result.get("prompt_tokens")
                     llm_details["completion_tokens"] = result.get("completion_tokens")
                     llm_details["total_tokens"] = result.get("total_tokens")
+                    llm_details["reasoning_content"] = result.get("reasoning_content")
                 else:
                     raw = ""
                     llm_details["error"] = result.get("message", "LLM 调用失败")
