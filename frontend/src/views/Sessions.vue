@@ -6,8 +6,8 @@
         v-model:value="searchText"
         placeholder="搜索会话（标题/ID）..."
         clearable
-        @clear="loadSessions"
-        @keyup.enter="loadSessions"
+        @clear="onSearch"
+        @keyup.enter="onSearch"
       >
         <template #prefix>
           <n-icon><SearchOutline /></n-icon>
@@ -18,14 +18,14 @@
         :options="platformOptions"
         placeholder="平台"
         style="width: 100px"
-        @update:value="loadSessions"
+        @update:value="onFilterChange"
       />
       <n-select
         v-model:value="statusFilter"
         :options="statusOptions"
         placeholder="状态"
         style="width: 120px"
-        @update:value="loadSessions"
+        @update:value="onFilterChange"
       />
     </div>
 
@@ -105,6 +105,36 @@ const statusOptions = [
   { label: '已结束', value: 'ended' }
 ]
 
+// 从 localStorage 恢复查询条件
+function restoreFilters() {
+  try {
+    const saved = localStorage.getItem('sessions_filters')
+    if (saved) {
+      const filters = JSON.parse(saved)
+      if (filters.searchText !== undefined) searchText.value = filters.searchText
+      if (filters.platformFilter !== undefined) platformFilter.value = filters.platformFilter
+      if (filters.statusFilter !== undefined) statusFilter.value = filters.statusFilter
+      if (filters.currentPage !== undefined) currentPage.value = filters.currentPage
+    }
+  } catch (e) {
+    // 忽略解析错误
+  }
+}
+
+// 保存查询条件到 localStorage
+function saveFilters() {
+  try {
+    localStorage.setItem('sessions_filters', JSON.stringify({
+      searchText: searchText.value,
+      platformFilter: platformFilter.value,
+      statusFilter: statusFilter.value,
+      currentPage: currentPage.value
+    }))
+  } catch (e) {
+    // 忽略存储错误
+  }
+}
+
 function formatTime(ts) {
   if (!ts) return ''
   const d = new Date(ts * 1000)
@@ -159,7 +189,22 @@ async function loadSessions() {
   }
 }
 
-onMounted(loadSessions)
+function onSearch() {
+  currentPage.value = 1
+  saveFilters()
+  loadSessions()
+}
+
+function onFilterChange() {
+  currentPage.value = 1
+  saveFilters()
+  loadSessions()
+}
+
+onMounted(() => {
+  restoreFilters()
+  loadSessions()
+})
 </script>
 
 <style scoped>
