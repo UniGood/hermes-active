@@ -2517,11 +2517,15 @@ onMounted(async () => {
 
 /* PC 端状态卡片等高对齐 */
 @media (min-width: 769px) {
+  .active-consciousness-page .n-grid {
+    align-items: stretch !important;
+  }
   .active-consciousness-page .n-grid-item {
     display: flex !important;
+    align-items: stretch !important;
   }
   .active-consciousness-page .n-grid-item .n-card {
-    flex: 1 !important;
+    width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
   }
