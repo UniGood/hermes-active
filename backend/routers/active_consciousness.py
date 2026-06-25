@@ -198,7 +198,7 @@ async def test_llm_connect():
 
 
 async def _test_llm_connection(llm_config: dict, label: str) -> dict:
-    """通用 LLM 连通测试"""
+    """通用 LLM 连通测试（不限制 max_tokens）"""
     import time
     try:
         test_prompt = "请回复'连接成功'两个字"
@@ -211,10 +211,11 @@ async def _test_llm_connection(llm_config: dict, label: str) -> dict:
             response = await asyncio.to_thread(
                 call_llm, task='title_generation',
                 messages=[{"role": "user", "content": test_prompt}],
-                temperature=0.1, max_tokens=50,
+                temperature=0.1,
             )
+            raw = response.choices[0].message.content or ""
             duration_ms = int((time.time() - start_ms) * 1000)
-            return {"success": True, "data": {"mode": "hermes", "response": response.choices[0].message.content, "model": "hermes default", "label": label, "duration_ms": duration_ms}}
+            return {"success": True, "data": {"mode": "hermes", "response": raw, "model": "hermes default", "label": label, "duration_ms": duration_ms}}
         else:
             if not llm_config.get("api_key"):
                 return {"success": False, "error": f"{label}未配置 API Key"}
@@ -223,12 +224,15 @@ async def _test_llm_connection(llm_config: dict, label: str) -> dict:
                 resp = await client.post(
                     f"{llm_config.get('base_url', 'https://api.openai.com/v1')}/chat/completions",
                     headers={"Authorization": f"Bearer {llm_config['api_key']}"},
-                    json={"model": llm_config.get("model", "deepseek-chat"), "messages": [{"role": "user", "content": test_prompt}], "max_tokens": 50, "temperature": 0.1}
+                    json={"model": llm_config.get("model", "deepseek-chat"), "messages": [{"role": "user", "content": test_prompt}], "temperature": 0.1}
                 )
                 duration_ms = int((time.time() - start_ms) * 1000)
                 data = resp.json()
                 if "choices" in data and data["choices"]:
-                    return {"success": True, "data": {"mode": "custom", "response": data["choices"][0]["message"]["content"], "model": llm_config.get("model"), "base_url": llm_config.get("base_url"), "label": label, "duration_ms": duration_ms}}
+                    msg = data["choices"][0].get("message", {})
+                    # 兼容不同模型：content 可能在 content 或 reasoning 字段
+                    raw = msg.get("content") or msg.get("reasoning") or ""
+                    return {"success": True, "data": {"mode": "custom", "response": raw, "model": llm_config.get("model"), "base_url": llm_config.get("base_url"), "label": label, "duration_ms": duration_ms}}
                 else:
                     return {"success": False, "error": f"{label} LLM 返回异常: {data}"}
     except Exception as e:
