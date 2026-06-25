@@ -609,7 +609,7 @@
             </n-step>
             <n-step title="4. 上下文收集 + Hindsight 记忆召回">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
-                ContextCollector 收集 Session 对话、情绪状态、时间感知、天气信息。同时调用 Hindsight Recall 检索相关记忆，为念头生成提供上下文。根据唤醒度自动选择时间范围（低唤醒15天、中唤醒7天、高唤醒3天）。
+                ContextCollector 跨 Session 获取最近 N 条消息（默认 200 条，彻底过滤 Tool 消息），同时调用 Hindsight Recall 检索相关记忆。收集的信息包括：对话历史、情绪状态、时间感知、天气信息、用户习惯。
               </div>
             </n-step>
             <n-step title="5. 决策矩阵评分">
@@ -624,7 +624,7 @@
             </n-step>
             <n-step title="7. 念头生成（LLM）">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
-                仅当决策为 auto_send 或 memory 时调用 LLM 生成念头。ThoughtEngine 将上下文输入 LLM，生成 1-2 句话的念头。LLM 可输出 SKIP 表示不想联系用户。决策为 skip 时跳过此步，不消耗 token。
+                仅当决策为 auto_send 或 memory 时调用 LLM 生成念头。ThoughtEngine 使用 system/user 消息分离结构：system 放人设+对话+记忆+环境，user 放任务指令（含 output priming）。LLM 可输出 SKIP 表示不想联系用户。决策为 skip 时跳过此步，不消耗 token。max_tokens=0 时不限制输出长度。
               </div>
             </n-step>
             <n-step title="8. 执行动作">
