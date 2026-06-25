@@ -166,7 +166,7 @@
         </n-grid>
 
         <!-- 第3行：发送统计 -->
-        <n-grid :cols="3" :x-gap="12" :y-gap="12" style="margin-top: 12px;">
+        <n-grid :cols="1" :x-gap="12" :y-gap="12" style="margin-top: 12px;">
           <n-grid-item>
             <n-card size="small" title="发送统计">
               <div style="display: flex; justify-content: space-around;">
@@ -181,20 +181,6 @@
                 <div style="text-align: center;">
                   <div style="font-size: 14px; font-weight: 600; color: #333;">{{ formatTime(status.last_sent_at) || '-' }}</div>
                   <div style="font-size: 11px; color: #999; margin-top: 2px;">上次发送</div>
-                </div>
-              </div>
-            </n-card>
-          </n-grid-item>
-          <n-grid-item>
-            <n-card size="small" title="用户消息">
-              <div style="display: flex; flex-direction: column; gap: 4px;">
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">最后消息</span>
-                  <span style="font-size: 12px;">{{ formatTime(status.longing.last_user_msg_at) || '-' }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">最后回复</span>
-                  <span style="font-size: 12px;">{{ formatTime(status.longing.last_self_msg_at) || '-' }}</span>
                 </div>
               </div>
             </n-card>
@@ -2477,21 +2463,21 @@ onMounted(async () => {
 /* PC 端状态卡片等高对齐 */
 @media (min-width: 769px) {
   .active-consciousness-page :deep(.n-grid) {
-    align-items: stretch;
+    align-items: stretch !important;
   }
   .active-consciousness-page :deep(.n-grid-item) {
-    display: flex;
+    display: flex !important;
+    align-items: stretch !important;
   }
   .active-consciousness-page :deep(.n-grid-item > .n-card) {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
-  .active-consciousness-page :deep(.n-grid-item > .n-card .n-card__content) {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  .active-consciousness-page :deep(.n-grid-item > .n-card > .n-card__content) {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 }
 .breathing-dot {
