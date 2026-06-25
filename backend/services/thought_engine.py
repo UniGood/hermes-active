@@ -191,10 +191,11 @@ class ThoughtEngine:
         """
         start_time = time.time()
         
-        # LLM 配置
+        # LLM 配置（max_tokens=0 或不配置 → 不限制）
         temperature = self.engine_config.get("temperature", 0.9)
-        max_tokens = self.engine_config.get("max_tokens", 300)
-        
+        max_tokens_raw = self.engine_config.get("max_tokens", 0)
+        max_tokens = int(max_tokens_raw) if max_tokens_raw and int(max_tokens_raw) > 0 else None
+
         llm_details = {
             "model": self.llm_config.get("model", "unknown"),
             "provider": self.llm_config.get("provider", "unknown"),
@@ -212,13 +213,14 @@ class ThoughtEngine:
                 sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
                 from agent.auxiliary_client import call_llm
 
-                response = await asyncio.to_thread(
-                    call_llm,
+                call_kwargs = dict(
                     task='title_generation',
                     messages=messages,
                     temperature=temperature,
-                    max_tokens=max_tokens,
                 )
+                if max_tokens is not None:
+                    call_kwargs["max_tokens"] = max_tokens
+                response = await asyncio.to_thread(call_llm, **call_kwargs)
                 raw = response.choices[0].message.content.strip()
 
                 # 记录 token 使用
@@ -231,12 +233,14 @@ class ThoughtEngine:
                 from services.llm_service import LLMService
                 # 自定义模式拼接 messages 为单 prompt
                 prompt_text = "\n\n".join(m["content"] for m in messages)
-                result = await LLMService.generate_message(
+                gen_kwargs = dict(
                     llm_config=self.llm_config,
                     prompt=prompt_text,
                     temperature=temperature,
-                    max_tokens=max_tokens
                 )
+                if max_tokens is not None:
+                    gen_kwargs["max_tokens"] = max_tokens
+                result = await LLMService.generate_message(**gen_kwargs)
                 
                 if result.get("success"):
                     raw = result.get("content", "").strip()

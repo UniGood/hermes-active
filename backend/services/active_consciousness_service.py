@@ -177,7 +177,7 @@ _DEFAULTS = {
 
     # ThoughtEngine 配置
     "active_consciousness.thought_engine.enabled": "true",
-    "active_consciousness.thought_engine.max_tokens": "300",
+    "active_consciousness.thought_engine.max_tokens": "0",
     "active_consciousness.thought_engine.temperature": "0.9",
     "active_consciousness.thought_engine.prompt_max_chars": "300",
 

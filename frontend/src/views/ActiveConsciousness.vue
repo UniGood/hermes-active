@@ -523,8 +523,8 @@
           </n-form-item>
           <template v-if="config.thought_engine.enabled">
             <n-form-item label="最大 Token 数">
-              <n-input-number v-model:value="config.thought_engine.max_tokens" :min="100" :max="2000" />
-              <span class="form-item-hint">推荐 200-500</span>
+              <n-input-number v-model:value="config.thought_engine.max_tokens" :min="0" :max="2000" />
+              <span class="form-item-hint">0 = 不限制（推荐 sensenova 设 1000+，deepseek 可设 0）</span>
             </n-form-item>
             <n-form-item label="Temperature">
               <n-input-number v-model:value="config.thought_engine.temperature" :min="0" :max="2" :step="0.1" />
@@ -1370,7 +1370,7 @@ const config = ref({
   thought: { retain_enabled: false, retain_threshold: 0.5 },
   thought_engine: {
     enabled: true,
-    max_tokens: 300,
+    max_tokens: 0,
     temperature: 0.9
   },
   context: {
