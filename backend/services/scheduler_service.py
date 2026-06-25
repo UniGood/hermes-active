@@ -413,6 +413,7 @@ async def run_cron_job(job_id: str):
         time_format = target_job.get("time_format", "%H:%M 星期{weekday}")
 
         generated_message = ""
+        reasoning_content = None  # 推理内容（LLM 返回后提取）
 
         # 收集执行详情
         details = {
@@ -451,7 +452,9 @@ async def run_cron_job(job_id: str):
                         temperature=0.7,
                         max_tokens=200,
                     )
-                    generated_message = response.choices[0].message.content.strip()
+                    msg = response.choices[0].message
+                    generated_message = msg.content.strip()
+                    reasoning_content = getattr(msg, 'reasoning_content', None) or getattr(msg, 'reasoning', None)
                     llm_duration = round(_time.time() - llm_start, 2)
 
                     details["llm_request"] = {
@@ -519,6 +522,7 @@ async def run_cron_job(job_id: str):
                     return
 
                 generated_message = llm_result["content"]
+                reasoning_content = llm_result.get("reasoning_content")
                 details["llm_response"] = {"content": generated_message, "duration": llm_duration}
         else:
             generated_message = prompt_text
@@ -532,7 +536,8 @@ async def run_cron_job(job_id: str):
             with_mark=with_mark,
             mark_format=mark_format,
             send_mark=send_mark,
-            time_format=time_format
+            time_format=time_format,
+            reasoning_content=reasoning_content,
         )
 
         details["send_result"] = {
