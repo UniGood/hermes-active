@@ -1309,7 +1309,7 @@ async def evaluate_emotion_with_llm(
             import sys
             from pathlib import Path
             sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
-            from agent.auxiliary_client import call_llm
+            from agent.auxiliary_client import call_llm, extract_content_or_reasoning
 
             response = await asyncio.to_thread(
                 call_llm,
@@ -1318,7 +1318,20 @@ async def evaluate_emotion_with_llm(
                 temperature=0.7,
                 max_tokens=200,
             )
-            raw = response.choices[0].message.content.strip()
+            raw = extract_content_or_reasoning(response)
+
+            # 提取 reasoning_content
+            msg = response.choices[0].message
+            reasoning_content = getattr(msg, 'reasoning_content', None) or getattr(msg, 'reasoning', None)
+            if not reasoning_content:
+                details = getattr(msg, 'reasoning_details', None)
+                if details and isinstance(details, list):
+                    reasoning_content = "\n\n".join(
+                        d.get("summary") or d.get("content") or d.get("text", "")
+                        for d in details
+                        if isinstance(d, dict)
+                    )
+            llm_details["reasoning_content"] = reasoning_content
         else:
             from services.llm_service import LLMService
             result = await LLMService.generate_message(
@@ -1327,7 +1340,11 @@ async def evaluate_emotion_with_llm(
                 temperature=0.7,
                 max_tokens=200
             )
-            raw = result.get("content", "").strip() if result.get("success") else ""
+            if result.get("success"):
+                raw = result.get("content", "").strip()
+                llm_details["reasoning_content"] = result.get("reasoning_content")
+            else:
+                raw = ""
 
         duration_ms = round((time.time() - start_time) * 1000)
         llm_details["duration_ms"] = duration_ms

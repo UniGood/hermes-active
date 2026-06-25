@@ -1119,6 +1119,9 @@
               <n-collapse-item title="LLM 返回" name="emotion_response">
                 <n-code :code="detailsData.emotion_llm_details.response_received || '无'" language="text" word-wrap />
               </n-collapse-item>
+              <n-collapse-item v-if="detailsData.emotion_llm_details.reasoning_content" title="推理过程" name="emotion_reasoning">
+                <n-code :code="detailsData.emotion_llm_details.reasoning_content" language="text" word-wrap />
+              </n-collapse-item>
             </n-collapse>
           </template>
 
@@ -1142,6 +1145,9 @@
               </n-collapse-item>
               <n-collapse-item title="LLM 返回" name="thought_response">
                 <n-code :code="detailsData.thought_generation.response_received || '无'" language="text" word-wrap />
+              </n-collapse-item>
+              <n-collapse-item v-if="detailsData.thought_generation.reasoning_content" title="推理过程" name="thought_reasoning">
+                <n-code :code="detailsData.thought_generation.reasoning_content" language="text" word-wrap />
               </n-collapse-item>
             </n-collapse>
           </template>
@@ -1307,6 +1313,9 @@
               </n-collapse-item>
               <n-collapse-item title="LLM 返回内容" name="response">
                 <n-code :code="(thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.response_received || '无'" language="text" word-wrap />
+              </n-collapse-item>
+              <n-collapse-item v-if="(thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.reasoning_content" title="推理过程" name="reasoning">
+                <n-code :code="(thoughtDetailsData.llm_call || thoughtDetailsData.thought_generation)?.reasoning_content" language="text" word-wrap />
               </n-collapse-item>
             </n-collapse>
           </n-collapse-item>
