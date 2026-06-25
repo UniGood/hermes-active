@@ -759,6 +759,18 @@ class ActiveConsciousnessService:
                         llm_stats["thought_generated_today"] = row[6] or 0
                         llm_stats["thought_generated_week"] = row[7] or 0
                         llm_stats["thought_generated_month"] = row[8] or 0
+
+                    # 查询最近评估情绪
+                    cursor = conn.execute(text("""
+                        SELECT json_extract(details, '$.emotion_llm.dominant')
+                        FROM active_heartbeat_logs
+                        WHERE json_extract(details, '$.emotion_llm.dominant') IS NOT NULL
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                    """))
+                    emotion_row = cursor.fetchone()
+                    if emotion_row and emotion_row[0]:
+                        llm_stats["last_emotion_dominant"] = emotion_row[0]
             except Exception as e:
                 logger.warning("查询 LLM 调用统计失败: %s", e)
             

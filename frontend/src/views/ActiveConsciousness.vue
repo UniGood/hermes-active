@@ -206,6 +206,13 @@
           <n-grid-item>
             <n-card size="small" title="🎭 情绪 LLM">
               <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; color: #666;">最近评估</span>
+                  <n-tag :type="getEmotionTagType(status.llm_stats?.last_emotion_dominant)" size="small">
+                    {{ emotionLabelCn(status.llm_stats?.last_emotion_dominant) || '-' }}
+                  </n-tag>
+                </div>
+                <n-divider style="margin: 4px 0;" />
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: #666;">今天</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_today ?? 0 }}</span>
@@ -225,13 +232,14 @@
             <n-card size="small" title="💭 念头 LLM">
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">调用次数</span>
+                  <span style="font-size: 12px; color: #666;">今日调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_today ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">生成念头</span>
+                  <span style="font-size: 12px; color: #666;">今日生成</span>
                   <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_today ?? 0 }}</span>
                 </div>
+                <n-divider style="margin: 4px 0;" />
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: #666;">本周调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_week ?? 0 }}</span>
@@ -240,6 +248,7 @@
                   <span style="font-size: 12px; color: #666;">本周生成</span>
                   <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_week ?? 0 }}</span>
                 </div>
+                <n-divider style="margin: 4px 0;" />
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: #666;">本月调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_month ?? 0 }}</span>
