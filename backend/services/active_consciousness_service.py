@@ -1388,41 +1388,55 @@ async def generate_and_send_thought_with_emotion(
     emotion_state: EmotionState,
     decision_type: str,
     heartbeat_id: Optional[int] = None,
-    decision_score: float = 0.0
+    decision_score: float = 0.0,
+    pre_generated_thought: Optional[str] = None,
+    pre_generated_result: Optional[Dict[str, Any]] = None
 ) -> tuple[bool, Dict[str, Any]]:
-    """生成念头并发送消息（使用 ThoughtEngine）"""
+    """生成念头并发送消息（使用 ThoughtEngine）
+
+    Args:
+        pre_generated_thought: 步骤11已生成的念头内容，传入则跳过 LLM 调用
+        pre_generated_result: 步骤11已生成的完整 ThoughtEngine 结果，传入则跳过 LLM 调用
+    """
     details = {
         "thought_generation": None,
         "message_sending": None,
     }
 
-    # 使用 ThoughtEngine 生成念头
-    from services.thought_engine import ThoughtEngine
-    engine = ThoughtEngine(config)
-    result = await engine.generate(status)
-    
-    thought = result.get("thought")
-    want_to_contact = result.get("want_to_contact", False)
-    details["thought_generation"] = result.get("llm_details")
-    details["context_bundle"] = result.get("context_bundle")
-    
+    if pre_generated_thought is not None and pre_generated_result is not None:
+        # 复用步骤11已生成的念头，跳过 LLM 调用
+        thought = pre_generated_thought
+        want_to_contact = True  # 步骤11已经确认 want_to_contact
+        _result = pre_generated_result
+        logger.info("复用已生成的念头，跳过重复 LLM 调用")
+    else:
+        # 使用 ThoughtEngine 生成念头
+        from services.thought_engine import ThoughtEngine
+        engine = ThoughtEngine(config)
+        _result = await engine.generate(status)
+        thought = _result.get("thought")
+        want_to_contact = _result.get("want_to_contact", False)
+
+    details["thought_generation"] = _result.get("llm_details")
+    details["context_bundle"] = _result.get("context_bundle")
+
     # 如果 LLM 不想联系用户，返回 False
     if not want_to_contact or not thought:
         logger.info("LLM 不想联系用户，跳过发送")
         return False, details
 
     # 确定念头类型
-    hindsight_results = result.get("context_bundle", {}).get("memories", [])
-    weather_info = result.get("context_bundle", {}).get("weather")
+    hindsight_results = _result.get("context_bundle", {}).get("memories", [])
+    weather_info = _result.get("context_bundle", {}).get("weather")
     thought_type = determine_thought_type(status, emotion_state, hindsight_results, weather_info)
-    
+
     # 构建念头日志详情
     hindsight_tags = ["active_consciousness", "thought", thought_type, emotion_state.dominant]
     if "曹凡" in thought:
         hindsight_tags.append("user_related")
     if emotion_state.intensity() > 0.7:
         hindsight_tags.append("high_emotion")
-    
+
     thought_details = {
         "thought_type": thought_type,
         "emotion_state": emotion_state.to_dict(),
@@ -1430,8 +1444,8 @@ async def generate_and_send_thought_with_emotion(
         "score": round(decision_score, 3),
         "hindsight_tags": hindsight_tags,
         "hindsight_stored": False,
-        "llm_call": result.get("llm_details", {}),
-        "context_bundle": result.get("context_bundle", {}),
+        "llm_call": _result.get("llm_details", {}),
+        "context_bundle": _result.get("context_bundle", {}),
     }
     
     # 记录念头日志
@@ -1583,14 +1597,33 @@ async def run_heartbeat():
         }
         logger.info("决策结果: type=%s, score=%.3f, reason=%s", decision_type, score, reason)
 
-        # 11. 发送保护检查（在决策计算之后，只拦截实际发送）
-        protection_result, protection_reason = check_send_protection(config, status, merged_state)
-        if protection_result == "skip":
-            # 保护机制拦截，但保留决策分数
-            all_details["decision"]["blocked_by_protection"] = True
-            all_details["decision"]["protection_reason"] = protection_reason
-            logger.info("发送保护拦截（保留决策分数 %.3f）: %s", score, protection_reason)
-            # 不改变 decision_type，让后续逻辑根据原始决策处理
+        # 11. 念头生成（LLM）— skip 不调，memory 和 auto_send 都调
+        pre_gen_thought = None
+        pre_gen_result = None
+        if decision_type == "skip":
+            logger.info("决策 skip，跳过念头生成")
+        else:
+            # memory 和 auto_send 都先生成念头
+            from services.thought_engine import ThoughtEngine
+            engine = ThoughtEngine(config)
+            gen_result = await engine.generate(status)
+            pre_gen_thought = gen_result.get("thought")
+            pre_gen_result = gen_result
+            if pre_gen_thought:
+                logger.info("念头生成成功: %s", pre_gen_thought[:50])
+            else:
+                logger.info("念头生成: SKIP（不想联系用户）")
+
+        # 12. 发送保护检查（在念头生成之后，只对 auto_send 生效）
+        blocked_by_protection = False
+        protection_reason = None
+        if decision_type == "auto_send":
+            protection_result, protection_reason = check_send_protection(config, status, merged_state)
+            if protection_result == "skip":
+                blocked_by_protection = True
+                all_details["decision"]["blocked_by_protection"] = True
+                all_details["decision"]["protection_reason"] = protection_reason
+                logger.info("发送保护拦截（保留决策分数 %.3f）: %s", score, protection_reason)
 
         # 13. 记录心跳日志（初始）
         duration_ms = round((time.time() - start_time) * 1000)
@@ -1606,19 +1639,15 @@ async def run_heartbeat():
             details=json.dumps(all_details, ensure_ascii=False) if all_details else None
         )
 
-        # 14. 处理决策结果
-        blocked_by_protection = all_details.get("decision", {}).get("blocked_by_protection", False)
-        
+        # 14. 执行动作
         if decision_type == "skip":
             logger.info("心跳跳过: %s", reason)
 
         elif decision_type == "memory":
-            # 存为记忆（不发送）
-            gen_result = await generate_memory_thought(config, status, hindsight_results, merged_state, context_bundle)
-            thought = gen_result.get("thought") if gen_result else None
-            if thought:
-                # 合并 llm_details + thought 字段
-                llm_details = gen_result.get("llm_details", {})
+            # 存为记忆（念头已在步骤11生成）
+            if pre_gen_thought and pre_gen_result:
+                thought = pre_gen_thought
+                llm_details = pre_gen_result.get("llm_details", {})
                 all_details["thought_generation"] = {**llm_details, "thought": thought, "success": True}
                 thought_type = "memory"
                 hindsight_tags = [
@@ -1654,22 +1683,45 @@ async def run_heartbeat():
                 all_details["thought_generation"] = {"success": False, "error": "念头生成返回空"}
 
         elif decision_type == "auto_send":
-            # 自动发送（检查保护机制）
             if blocked_by_protection:
-                # 保护机制拦截，跳过实际发送，但记录念头
+                # 保护机制拦截，跳过实际发送，但念头已生成 → 存入 Hindsight
                 logger.info("保护机制拦截，跳过实际发送")
-                all_details["thought_generation"] = {"success": False, "error": "保护机制拦截"}
+                if pre_gen_thought:
+                    thought = pre_gen_thought
+                    thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, None)
+                    intensity = merged_state.intensity()
+                    hindsight_tags = [
+                        "active_consciousness", "thought", thought_type, merged_state.dominant,
+                    ]
+                    if "曹凡" in thought:
+                        hindsight_tags.append("user_related")
+                    if intensity > 0.7:
+                        hindsight_tags.append("high_emotion")
+                    stored = await retain_thought_to_hindsight(thought, merged_state, thought_type, score)
+                    all_details["thought_generation"] = {
+                        "thought": thought, "success": True,
+                        "llm_details": pre_gen_result.get("llm_details", {}) if pre_gen_result else {},
+                        "blocked_by_protection": True
+                    }
+                    all_details["thought_type"] = thought_type
+                    all_details["hindsight_tags"] = hindsight_tags
+                    all_details["hindsight_stored"] = stored
+                    logger.info("保护拦截但念头已存入 Hindsight: %s", thought[:50])
+                else:
+                    all_details["thought_generation"] = {"success": False, "error": "念头生成返回空（保护拦截）"}
             else:
-                # 正常发送
+                # 正常发送（复用步骤11已生成的念头）
                 sent, gen_details = await generate_and_send_thought_with_emotion(
-                    config, status, merged_state, decision_type, heartbeat_id, score
+                    config, status, merged_state, decision_type, heartbeat_id, score,
+                    pre_generated_thought=pre_gen_thought,
+                    pre_generated_result=pre_gen_result
                 )
                 all_details.update(gen_details)
                 all_details["actual_sent"] = sent
 
                 if sent:
                     # 发送成功后存入 Hindsight
-                    thought = gen_details.get("message_sending", {}).get("thought", "")
+                    thought = gen_details.get("message_sending", {}).get("thought", "") or pre_gen_thought or ""
                     if thought:
                         weather_info = all_details.get("context_bundle", {}).get("weather")
                         thought_type = determine_thought_type_v2(status, merged_state, hindsight_results, weather_info)
