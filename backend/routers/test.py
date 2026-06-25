@@ -56,6 +56,7 @@ async def test_full_flow(
 
     # 3. 生成消息
     message = "测试消息"
+    reasoning_content = None
     if request.use_llm:
         llm_config = ConfigService.get_llm_config(db)
         prompts_config = ConfigService.get_prompts_config(db)
@@ -79,6 +80,7 @@ async def test_full_flow(
 
         if llm_result.get("success"):
             message = llm_result["content"]
+            reasoning_content = llm_result.get("reasoning_content")
         else:
             MessageService.create_task_log(
                 task_type="test_flow",
@@ -94,7 +96,8 @@ async def test_full_flow(
     send_result = await MessageService.send_message(
         session_id=session["id"],
         message=message,
-        platform=request.platform
+        platform=request.platform,
+        reasoning_content=reasoning_content
     )
 
     duration = round(time.time() - start_time, 2)
