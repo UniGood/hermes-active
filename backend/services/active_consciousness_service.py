@@ -730,16 +730,13 @@ class ActiveConsciousnessService:
                             COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL
                                   AND created_at > datetime('now', '+8 hours', 'start of day') THEN 1 END),
                             COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
-                                  AND json_extract(details, '$.thought_generation.want_to_contact') = 1
                                   AND created_at > datetime('now', '+8 hours', 'start of day') THEN 1 END),
                             COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL
                                   AND created_at > datetime('now', '+8 hours', '-7 days') THEN 1 END),
                             COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
-                                  AND json_extract(details, '$.thought_generation.want_to_contact') = 1
                                   AND created_at > datetime('now', '+8 hours', '-7 days') THEN 1 END),
                             COUNT(CASE WHEN json_extract(details, '$.emotion_llm_details') IS NOT NULL THEN 1 END),
-                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL
-                                  AND json_extract(details, '$.thought_generation.want_to_contact') = 1 THEN 1 END)
+                            COUNT(CASE WHEN json_extract(details, '$.thought_generation') IS NOT NULL THEN 1 END)
                         FROM active_heartbeat_logs
                         WHERE created_at > datetime('now', '+8 hours', 'start of month')
                     """)).fetchone()
