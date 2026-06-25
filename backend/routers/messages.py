@@ -25,6 +25,7 @@ class SendMessageRequest(BaseModel):
     mark_format: str = DEFAULT_MARK_FORMAT
     send_mark: str = DEFAULT_SEND_MARK
     time_format: str = DEFAULT_TIME_FORMAT
+    reasoning_content: Optional[str] = None
 
 
 class SendProactiveRequest(BaseModel):
@@ -259,7 +260,8 @@ async def send_message(
         with_mark=request.with_mark,
         mark_format=request.mark_format,
         send_mark=request.send_mark,
-        time_format=request.time_format
+        time_format=request.time_format,
+        reasoning_content=request.reasoning_content
     )
     if result.get("success"):
         return {"success": True, "message": result.get("message", "发送成功"), "detail": result}
