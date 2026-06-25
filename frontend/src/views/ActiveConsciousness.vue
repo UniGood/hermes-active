@@ -10,12 +10,9 @@
         </div>
         <n-grid :cols="isMobile ? 1 : 4" :x-gap="12" :y-gap="12">
           <n-grid-item>
-            <n-card size="small">
-              <template #header>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span :class="['breathing-dot', heartbeatHealthy ? 'dot-green' : 'dot-red']"></span>
-                  <span>心跳状态</span>
-                </div>
+            <n-card size="small" title="心跳状态">
+              <template #header-extra>
+                <span :class="['breathing-dot', heartbeatHealthy ? 'dot-green' : 'dot-red']"></span>
               </template>
               <n-statistic label="今日心跳" :value="status.heartbeat_count" />
               <div style="margin-top: 4px; font-size: 11px; color: #999;">
