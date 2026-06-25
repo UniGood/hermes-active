@@ -290,7 +290,7 @@ async function loadRecentMessages() {
 }
 
 .search-result-item:hover {
-  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.15);
+  box-shadow: 0 4px 20px rgba(74, 144, 217, 0.15);
   transform: translateY(-2px);
 }
 
@@ -374,7 +374,7 @@ async function loadRecentMessages() {
 }
 
 .message-item.highlighted {
-  background: rgba(255, 154, 158, 0.05);
+  background: rgba(74, 144, 217, 0.05);
   border-radius: 8px;
   padding: 12px 8px;
 }

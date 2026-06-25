@@ -235,14 +235,14 @@ watch(() => route.path, () => {
 }
 
 .nav-item:hover {
-  background: rgba(255, 154, 158, 0.08);
+  background: rgba(74, 144, 217, 0.08);
   color: #2d2d2d;
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, var(--theme-primary, var(--theme-primary, #4a90d9)), var(--theme-accent, var(--theme-accent, #8bb4e0)));
+  background: linear-gradient(135deg, var(--theme-primary, #4a90d9), var(--theme-accent, #8bb4e0));
   color: #fff;
-  box-shadow: 0 2px 12px rgba(255, 154, 158, 0.3);
+  box-shadow: 0 2px 12px rgba(74, 144, 217, 0.3);
 }
 
 .nav-label {
@@ -260,8 +260,8 @@ watch(() => route.path, () => {
 }
 
 .sidebar-footer .n-button:hover {
-  color: var(--theme-primary, var(--theme-primary, #4a90d9));
-  background: rgba(255, 154, 158, 0.06);
+  color: var(--theme-primary, #4a90d9);
+  background: rgba(74, 144, 217, 0.06);
 }
 
 /* ========== 主内容区 ========== */

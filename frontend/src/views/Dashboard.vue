@@ -157,7 +157,7 @@ onMounted(() => {
 }
 
 .stat-card:hover {
-  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.15);
+  box-shadow: 0 4px 20px rgba(74, 144, 217, 0.15);
   transform: translateY(-2px);
 }
 

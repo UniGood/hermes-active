@@ -1256,7 +1256,7 @@ onMounted(() => {
 }
 
 .job-card:hover {
-  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.12);
+  box-shadow: 0 4px 20px rgba(74, 144, 217, 0.12);
 }
 
 .job-header {
@@ -1288,7 +1288,7 @@ onMounted(() => {
 }
 
 .cron-parse-result {
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(74, 144, 217, 0.06);
   padding: 8px 12px;
   border-radius: 12px;
   font-size: 13px;
@@ -1420,12 +1420,12 @@ onMounted(() => {
 
 .time-format-chip:hover {
   border-color: var(--theme-primary, #4a90d9);
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(74, 144, 217, 0.06);
 }
 
 .time-format-chip.active {
   border-color: var(--theme-primary, #4a90d9);
-  background: rgba(255, 154, 158, 0.1);
+  background: rgba(74, 144, 217, 0.1);
   box-shadow: 0 0 0 1px var(--theme-primary, #4a90d9);
 }
 

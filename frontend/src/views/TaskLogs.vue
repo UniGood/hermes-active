@@ -149,7 +149,7 @@ onMounted(loadLogs)
 }
 
 .log-card:hover {
-  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.12);
+  box-shadow: 0 4px 20px rgba(74, 144, 217, 0.12);
 }
 
 .log-header {
@@ -180,7 +180,7 @@ onMounted(loadLogs)
 .log-error {
   font-size: 13px;
   color: #d03050;
-  background: rgba(255, 154, 158, 0.08);
+  background: rgba(74, 144, 217, 0.08);
   padding: 8px 12px;
   border-radius: 12px;
   margin-bottom: 8px;

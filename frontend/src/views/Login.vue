@@ -223,7 +223,7 @@ async function handleLogin() {
   font-weight: 800;
   color: #fff;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(255, 154, 158, 0.3);
+  box-shadow: 0 8px 24px rgba(74, 144, 217, 0.3);
 }
 
 .avatar-img {

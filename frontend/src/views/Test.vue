@@ -868,7 +868,7 @@ onMounted(() => {
 .reflect-result {
   margin-top: 12px;
   padding: 16px;
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(74, 144, 217, 0.06);
   border-radius: 12px;
 }
 
@@ -913,7 +913,7 @@ onMounted(() => {
   color: var(--theme-primary, #4a90d9);
   margin-top: 6px;
   padding: 6px 8px;
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(74, 144, 217, 0.06);
   border-radius: 8px;
   word-break: break-all;
 }
@@ -921,7 +921,7 @@ onMounted(() => {
 .generated-message {
   margin-top: 12px;
   padding: 12px;
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(74, 144, 217, 0.06);
   border-radius: 12px;
 }
 
@@ -1031,12 +1031,12 @@ onMounted(() => {
 
 .time-format-chip:hover {
   border-color: var(--theme-primary, #4a90d9);
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(74, 144, 217, 0.06);
 }
 
 .time-format-chip.active {
   border-color: var(--theme-primary, #4a90d9);
-  background: rgba(255, 154, 158, 0.1);
+  background: rgba(74, 144, 217, 0.1);
   box-shadow: 0 0 0 1px var(--theme-primary, #4a90d9);
 }
 
