@@ -16,9 +16,9 @@ import api from './api'
 
 const themeOverrides = ref({
   common: {
-    primaryColor: 'var(--theme-primary, #4a90d9)',
-    primaryColorHover: 'var(--theme-primary-hover, #6ba3e0)',
-    primaryColorPressed: 'var(--theme-primary-pressed, #3a7cc9)',
+    primaryColor: '#4a90d9',
+    primaryColorHover: '#6ba3e0',
+    primaryColorPressed: '#3a7cc9',
     borderRadius: '12px',
     borderRadiusSmall: '8px'
   },
@@ -54,8 +54,8 @@ function applyTheme(themeId) {
   root.style.setProperty('--theme-primary', t.primary)
   root.style.setProperty('--theme-primary-hover', t.hover)
   root.style.setProperty('--theme-primary-pressed', t.pressed)
-  root.style.setProperty('--theme-secondary', t.secondary || 'var(--theme-secondary, #e8eef5)')
-  root.style.setProperty('--theme-accent', t.accent || 'var(--theme-accent, #8bb4e0)')
+  root.style.setProperty('--theme-secondary', t.secondary || '#e8eef5')
+  root.style.setProperty('--theme-accent', t.accent || '#8bb4e0')
 
   if (themeId === 'dark') {
     root.style.setProperty('--theme-bg', '#1a1a2e')
@@ -70,10 +70,10 @@ function applyTheme(themeId) {
     document.body.style.background = '#f5f7fa'
     document.body.style.color = '#2d2d2d'
   } else {
-    root.style.setProperty('--theme-bg', 'var(--theme-bg, #f5f7fa)')
+    root.style.setProperty('--theme-bg', '#f5f7fa')
     root.style.setProperty('--theme-text', '#2d2d2d')
     root.style.setProperty('--theme-card-bg', '#ffffff')
-    document.body.style.background = 'var(--theme-bg, #f5f7fa)'
+    document.body.style.background = '#f5f7fa'
     document.body.style.color = '#2d2d2d'
   }
 }
