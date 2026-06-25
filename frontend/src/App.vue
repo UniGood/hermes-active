@@ -100,7 +100,7 @@ onMounted(async () => {
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   color: var(--theme-text, #2d2d2d);
-  background: var(--theme-bg, var(--theme-bg, #f5f7fa));
+  background: var(--theme-bg, #f5f7fa);
   overflow-x: hidden;
 }
 

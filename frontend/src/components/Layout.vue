@@ -170,7 +170,7 @@ watch(() => route.path, () => {
 /* ========== PC 端侧边栏 ========== */
 .sidebar {
   width: 220px;
-  background: var(--theme-bg, var(--theme-bg, #f5f7fa));
+  background: var(--theme-bg, #f5f7fa);
   border-right: 1px solid #f0ece8;
   display: flex;
   flex-direction: column;
@@ -285,7 +285,7 @@ watch(() => route.path, () => {
   justify-content: space-between;
   padding: 0 12px;
   height: 56px;
-  background: var(--theme-primary, var(--theme-primary, #4a90d9));
+  background: var(--theme-primary, #4a90d9);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
@@ -319,7 +319,7 @@ watch(() => route.path, () => {
     z-index: 1001;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
-    background: var(--theme-bg, var(--theme-bg, #f5f7fa));
+    background: var(--theme-bg, #f5f7fa);
   }
 
   .sidebar:not(.collapsed) {
