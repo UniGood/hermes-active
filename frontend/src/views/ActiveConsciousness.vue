@@ -2518,6 +2518,7 @@ onMounted(async () => {
 /* PC 端状态卡片等高对齐 */
 @media (min-width: 769px) {
   .active-consciousness-page .n-grid {
+    display: grid !important;
     align-items: stretch !important;
   }
   .active-consciousness-page .n-grid-item {
