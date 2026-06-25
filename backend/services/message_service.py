@@ -335,8 +335,8 @@ class MessageService:
                         db_content = f"[{send_mark}]: {message}"
                 
                 # 使用 SessionDB 写入（统一方式）
-                from hermes_state import SessionDB
-                db = SessionDB()
+                from services.state_db import get_state_db
+                db = get_state_db()
                 db.append_message(
                     session_id=session_id,
                     role="assistant",
