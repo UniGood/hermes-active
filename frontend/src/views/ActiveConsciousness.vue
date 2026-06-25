@@ -3,8 +3,12 @@
     <n-tabs v-model:value="activeTab" type="line" animated>
       <!-- Tab 1: 状态 -->
       <n-tab-pane name="status" tab="状态">
-        <!-- 第1行：核心状态（4个卡片） -->
-        <n-grid :cols="4" :x-gap="12" :y-gap="12">
+        <!-- 状态概览 -->
+        <div class="section-title">
+          <n-icon size="18"><StatsChartOutline /></n-icon>
+          <span>状态概览</span>
+        </div>
+        <n-grid :cols="isMobile ? 1 : 4" :x-gap="12" :y-gap="12">
           <n-grid-item>
             <n-card size="small">
               <template #header>
@@ -60,8 +64,12 @@
           </n-grid-item>
         </n-grid>
 
-        <!-- 第2行：VA模型 + 决策配置 -->
-        <n-grid :cols="2" :x-gap="12" :y-gap="12" style="margin-top: 12px;">
+        <!-- 情绪系统 -->
+        <div class="section-title" style="margin-top: 16px;">
+          <n-icon size="18"><ColorPaletteOutline /></n-icon>
+          <span>情绪系统</span>
+        </div>
+        <n-grid :cols="isMobile ? 1 : 2" :x-gap="12" :y-gap="12">
           <n-grid-item>
             <n-card size="small" title="情绪状态（VA 模型）">
               <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -165,42 +173,12 @@
           </n-grid-item>
         </n-grid>
 
-        <!-- 第3行：发送统计 -->
-        <n-grid :cols="1" :x-gap="12" :y-gap="12" style="margin-top: 12px;">
-          <n-grid-item>
-            <n-card size="small" title="发送统计">
-              <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 12px;">
-                <div style="text-align: center; min-width: 60px;">
-                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.hour_sent_count }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本小时</div>
-                </div>
-                <div style="text-align: center; min-width: 60px;">
-                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.today_sent_count }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">今日</div>
-                </div>
-                <div style="text-align: center; min-width: 60px;">
-                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.week_sent_count ?? 0 }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本周</div>
-                </div>
-                <div style="text-align: center; min-width: 60px;">
-                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.month_sent_count ?? 0 }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本月</div>
-                </div>
-                <div style="text-align: center; min-width: 60px;">
-                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.year_sent_count ?? 0 }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本年</div>
-                </div>
-                <div style="text-align: center; min-width: 80px;">
-                  <div style="font-size: 14px; font-weight: 600; color: #333;">{{ formatTime(status.last_sent_at) || '-' }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">上次发送</div>
-                </div>
-              </div>
-            </n-card>
-          </n-grid-item>
-        </n-grid>
-
-        <!-- LLM 调用统计 -->
-        <n-grid :cols="3" :x-gap="12" :y-gap="12" style="margin-top: 12px;">
+        <!-- LLM 统计 -->
+        <div class="section-title" style="margin-top: 16px;">
+          <n-icon size="18"><AnalyticsOutline /></n-icon>
+          <span>LLM 统计</span>
+        </div>
+        <n-grid :cols="isMobile ? 1 : 3" :x-gap="12" :y-gap="12">
           <n-grid-item>
             <n-card size="small" title="🎭 情绪 LLM">
               <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -272,6 +250,44 @@
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: #666;">本月</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_month ?? 0) + (status.llm_stats?.thought_month ?? 0) }}</span>
+                </div>
+              </div>
+            </n-card>
+          </n-grid-item>
+        </n-grid>
+
+        <!-- 发送统计 -->
+        <div class="section-title" style="margin-top: 16px;">
+          <n-icon size="18"><SendOutline /></n-icon>
+          <span>发送统计</span>
+        </div>
+        <n-grid :cols="1" :x-gap="12" :y-gap="12">
+          <n-grid-item>
+            <n-card size="small">
+              <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 12px;">
+                <div style="text-align: center; min-width: 60px;">
+                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.hour_sent_count }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本小时</div>
+                </div>
+                <div style="text-align: center; min-width: 60px;">
+                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.today_sent_count }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">今日</div>
+                </div>
+                <div style="text-align: center; min-width: 60px;">
+                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.week_sent_count ?? 0 }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本周</div>
+                </div>
+                <div style="text-align: center; min-width: 60px;">
+                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.month_sent_count ?? 0 }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本月</div>
+                </div>
+                <div style="text-align: center; min-width: 60px;">
+                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.year_sent_count ?? 0 }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本年</div>
+                </div>
+                <div style="text-align: center; min-width: 80px;">
+                  <div style="font-size: 14px; font-weight: 600; color: #333;">{{ formatTime(status.last_sent_at) || '-' }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">上次发送</div>
                 </div>
               </div>
             </n-card>
@@ -1346,14 +1362,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, h } from 'vue'
+import { ref, onMounted, onUnmounted, computed, h } from 'vue'
 import { useMessage, NButton, NTag } from 'naive-ui'
-import { HelpCircleOutline, CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
+import { HelpCircleOutline, CheckmarkCircle, CloseCircle, StatsChartOutline, ColorPaletteOutline, AnalyticsOutline, SendOutline } from '@vicons/ionicons5'
 import api from '../api/active_consciousness'
 import mainApi from '../api'
 
 const message = useMessage()
 const activeTab = ref('status')
+
+// 响应式检测
+const windowWidth = ref(window.innerWidth)
+const isMobile = computed(() => windowWidth.value < 769)
+
+function handleResize() {
+  windowWidth.value = window.innerWidth
+}
+
+onMounted(() => window.addEventListener('resize', handleResize))
+onUnmounted(() => window.removeEventListener('resize', handleResize))
 
 // JSON 结构化格式化
 const formatJson = (obj) => {
@@ -2472,6 +2499,22 @@ onMounted(async () => {
 .active-consciousness-page {
   padding: 0;
 }
+
+/* 分组标题 */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.section-title .n-icon {
+  color: var(--theme-primary, #4a90d9);
+}
+
 /* PC 端状态卡片等高对齐 */
 @media (min-width: 769px) {
   .active-consciousness-page .n-grid {
