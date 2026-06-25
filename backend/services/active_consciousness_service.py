@@ -674,6 +674,9 @@ class ActiveConsciousnessService:
             # 同时 created_at 是 'YYYY-MM-DDTHH:MM:SS.fff' 格式，需要用 datetime() 转换才能比较
             today_sent_count = 0
             hour_sent_count = 0
+            week_sent_count = 0
+            month_sent_count = 0
+            year_sent_count = 0
             try:
                 with active_engine.connect() as conn:
                     # 今日 = 北京时间今天 00:00
@@ -693,6 +696,33 @@ class ActiveConsciousnessService:
                     )).fetchone()
                     if row:
                         hour_sent_count = row[0] or 0
+
+                    # 本周 = 北京时间本周一 00:00
+                    row = conn.execute(text(
+                        "SELECT COUNT(*) FROM active_heartbeat_logs "
+                        "WHERE message_sent = 1 "
+                        "AND datetime(created_at) > datetime('now', 'localtime', 'weekday 1', '-7 days')"
+                    )).fetchone()
+                    if row:
+                        week_sent_count = row[0] or 0
+
+                    # 本月 = 北京时间本月1日 00:00
+                    row = conn.execute(text(
+                        "SELECT COUNT(*) FROM active_heartbeat_logs "
+                        "WHERE message_sent = 1 "
+                        "AND datetime(created_at) > datetime('now', 'localtime', 'start of month')"
+                    )).fetchone()
+                    if row:
+                        month_sent_count = row[0] or 0
+
+                    # 本年 = 北京时间本年1月1日 00:00
+                    row = conn.execute(text(
+                        "SELECT COUNT(*) FROM active_heartbeat_logs "
+                        "WHERE message_sent = 1 "
+                        "AND datetime(created_at) > datetime('now', 'localtime', 'start of year')"
+                    )).fetchone()
+                    if row:
+                        year_sent_count = row[0] or 0
             except Exception as e:
                 logger.warning("查询发送数失败: %s", e)
 
@@ -812,6 +842,9 @@ class ActiveConsciousnessService:
                 },
                 "today_sent_count": today_sent_count,
                 "hour_sent_count": hour_sent_count,
+                "week_sent_count": week_sent_count,
+                "month_sent_count": month_sent_count,
+                "year_sent_count": year_sent_count,
                 "last_sent_at": last_self_msg_at,
                 # 配置信息（前端动态计算用）
                 "config": {

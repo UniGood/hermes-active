@@ -169,16 +169,28 @@
         <n-grid :cols="1" :x-gap="12" :y-gap="12" style="margin-top: 12px;">
           <n-grid-item>
             <n-card size="small" title="发送统计">
-              <div style="display: flex; justify-content: space-around;">
-                <div style="text-align: center;">
-                  <div style="font-size: 20px; font-weight: 600; color: #333;">{{ status.today_sent_count }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">今日</div>
-                </div>
-                <div style="text-align: center;">
-                  <div style="font-size: 20px; font-weight: 600; color: #333;">{{ status.hour_sent_count }}</div>
+              <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 12px;">
+                <div style="text-align: center; min-width: 60px;">
+                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.hour_sent_count }}</div>
                   <div style="font-size: 11px; color: #999; margin-top: 2px;">本小时</div>
                 </div>
-                <div style="text-align: center;">
+                <div style="text-align: center; min-width: 60px;">
+                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.today_sent_count }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">今日</div>
+                </div>
+                <div style="text-align: center; min-width: 60px;">
+                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.week_sent_count ?? 0 }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本周</div>
+                </div>
+                <div style="text-align: center; min-width: 60px;">
+                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.month_sent_count ?? 0 }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本月</div>
+                </div>
+                <div style="text-align: center; min-width: 60px;">
+                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.year_sent_count ?? 0 }}</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本年</div>
+                </div>
+                <div style="text-align: center; min-width: 80px;">
                   <div style="font-size: 14px; font-weight: 600; color: #333;">{{ formatTime(status.last_sent_at) || '-' }}</div>
                   <div style="font-size: 11px; color: #999; margin-top: 2px;">上次发送</div>
                 </div>

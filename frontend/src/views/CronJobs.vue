@@ -454,11 +454,50 @@
         <n-divider v-if="logDetailData.llm_request" title-placement="left">LLM 请求</n-divider>
         <n-descriptions v-if="logDetailData.llm_request" bordered :column="2" size="small" style="margin-bottom: 16px">
           <n-descriptions-item label="模式">{{ logDetailData.llm_request.mode }}</n-descriptions-item>
-          <
+          <n-descriptions-item label="模型">{{ logDetailData.llm_request.model }}</n-descriptions-item>
+          <n-descriptions-item label="Temperature">{{ logDetailData.llm_request.temperature }}</n-descriptions-item>
+          <n-descriptions-item label="Max Tokens">{{ logDetailData.llm_request.max_tokens }}</n-descriptions-item>
+          <n-descriptions-item label="系统提示词" :span="2">
+            <pre style="white-space: pre-wrap; max-height: 200px; overflow-y: auto; font-size: 12px;">{{ logDetailData.llm_request.system_prompt }}</pre>
+          </n-descriptions-item>
+          <n-descriptions-item label="用户提示词" :span="2">
+            <pre style="white-space: pre-wrap; max-height: 200px; overflow-y: auto; font-size: 12px;">{{ logDetailData.llm_request.user_prompt }}</pre>
+          </n-descriptions-item>
+        </n-descriptions>
 
-... [OUTPUT TRUNCATED - 3377 chars omitted out of 53377 total] ...
+        <!-- LLM 返回 -->
+        <n-divider v-if="logDetailData.llm_response" title-placement="left">LLM 返回</n-divider>
+        <n-descriptions v-if="logDetailData.llm_response" bordered :column="2" size="small" style="margin-bottom: 16px">
+          <n-descriptions-item label="生成内容" :span="2">
+            <pre style="white-space: pre-wrap; font-size: 12px;">{{ logDetailData.llm_response.content }}</pre>
+          </n-descriptions-item>
+          <n-descriptions-item label="耗时">{{ logDetailData.llm_response.duration }}s</n-descriptions-item>
+          <n-descriptions-item v-if="logDetailData.llm_response.error" label="错误" :span="2">
+            <pre style="white-space: pre-wrap; color: #d03050; font-size: 12px;">{{ logDetailData.llm_response.error }}</pre>
+          </n-descriptions-item>
+        </n-descriptions>
 
-adding: 8px; margin-top: 4px;">
+        <!-- 基本详情（_minimal 兜底 details 时显示，仅有 message/error/task_type 等基础字段） -->
+        <n-alert v-if="logDetailData._minimal && !logDetailData.llm_request && !logDetailData.context && !logDetailData.send_result" type="info" style="margin-bottom: 16px;">
+          <div style="font-size: 13px;">
+            <div><strong>任务类型：</strong>{{ logDetailData.task_type }}</div>
+            <div v-if="logDetailData.summary"><strong>说明：</strong>{{ logDetailData.summary }}</div>
+            <div v-if="logDetailData.error"><strong>错误：</strong>{{ logDetailData.error }}</div>
+            <div v-if="logDetailData.failure_stage"><strong>失败阶段：</strong>{{ logDetailData.failure_stage }}</div>
+            <div v-if="logDetailData.duration"><strong>耗时：</strong>{{ logDetailData.duration }}s</div>
+            <div v-if="logDetailData.session_id"><strong>Session：</strong><span style="font-family: monospace; font-size: 12px;">{{ logDetailData.session_id }}</span></div>
+            <div v-if="logDetailData.platform"><strong>平台：</strong>{{ logDetailData.platform }}</div>
+            <div style="margin-top: 6px; font-size: 12px; color: #999;">
+              该日志为简化记录，未包含 LLM 请求/响应/上下文等详情
+            </div>
+          </div>
+        </n-alert>
+
+        <!-- 上下文 -->
+        <n-divider v-if="logDetailData.context" title-placement="left">上下文</n-divider>
+        <div v-if="logDetailData.context" style="margin-bottom: 16px;">
+          <n-tag type="info" size="small">Session 消息 ({{ logDetailData.context.session_count }}条)</n-tag>
+          <div v-if="logDetailData.context.session_messages && logDetailData.context.session_messages.length" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px; margin-top: 4px;">
             <div v-for="(msg, idx) in logDetailData.context.session_messages" :key="idx" style="margin-bottom: 4px; font-size: 12px;">
               <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="tiny">{{ msg.role }}</n-tag>
               <span style="margin-left: 4px;">{{ msg.content }}</span>
@@ -1256,7 +1295,7 @@ onMounted(() => {
 }
 
 .job-card:hover {
-  box-shadow: 0 4px 20px rgba(74, 144, 217, 0.12);
+  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.12);
 }
 
 .job-header {
@@ -1288,14 +1327,14 @@ onMounted(() => {
 }
 
 .cron-parse-result {
-  background: rgba(74, 144, 217, 0.06);
+  background: rgba(255, 154, 158, 0.06);
   padding: 8px 12px;
   border-radius: 12px;
   font-size: 13px;
 }
 
 .cron-freq {
-  color: var(--theme-primary, #4a90d9);
+  color: #ff9a9e;
   font-weight: 500;
   margin-bottom: 8px;
 }
@@ -1376,11 +1415,11 @@ onMounted(() => {
 }
 
 .context-msg-role.user {
-  color: var(--theme-primary, #4a90d9);
+  color: #ff9a9e;
 }
 
 .context-msg-role.assistant {
-  color: var(--theme-accent, #8bb4e0);
+  color: #f6d365;
 }
 
 .context-msg-content {
@@ -1419,14 +1458,14 @@ onMounted(() => {
 }
 
 .time-format-chip:hover {
-  border-color: var(--theme-primary, #4a90d9);
-  background: rgba(74, 144, 217, 0.06);
+  border-color: #ff9a9e;
+  background: rgba(255, 154, 158, 0.06);
 }
 
 .time-format-chip.active {
-  border-color: var(--theme-primary, #4a90d9);
-  background: rgba(74, 144, 217, 0.1);
-  box-shadow: 0 0 0 1px var(--theme-primary, #4a90d9);
+  border-color: #ff9a9e;
+  background: rgba(255, 154, 158, 0.1);
+  box-shadow: 0 0 0 1px #ff9a9e;
 }
 
 .chip-label {
@@ -1436,7 +1475,7 @@ onMounted(() => {
 }
 
 .time-format-chip.active .chip-label {
-  color: var(--theme-primary, #4a90d9);
+  color: #ff9a9e;
   font-weight: 500;
 }
 
@@ -1584,10 +1623,10 @@ onMounted(() => {
 }
 
 .tag-assistant {
-  --n-color: #e8f0fe !important;
-  --n-color-hover: #d0e0f8 !important;
-  --n-text-color: var(--theme-primary, #4a90d9) !important;
-  --n-border: 1px solid #b0c8e8 !important;
+  --n-color: #fff0f3 !important;
+  --n-color-hover: #ffe0e6 !important;
+  --n-text-color: #ff9a9e !important;
+  --n-border: 1px solid #ffd0d6 !important;
 }
 
 .log-pagination {
