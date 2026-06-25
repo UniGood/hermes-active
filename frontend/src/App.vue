@@ -78,15 +78,9 @@ function applyTheme(themeId) {
   }
 }
 
-onMounted(async () => {
-  try {
-    const data = await api.get('/config/get/theme').catch(() => null)
-    if (data?.value) {
-      applyTheme(data.value)
-    }
-  } catch (e) {
-    // 使用默认主题
-  }
+onMounted(() => {
+  // 默认使用 elegant 主题（亮蓝+浅灰）
+  applyTheme('elegant')
 })
 </script>
 
