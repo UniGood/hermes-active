@@ -140,7 +140,7 @@
             <div :class="['chat-msg', msg.role === 'user' ? 'user-msg' : 'assistant-msg']">
               <div class="msg-header">
                 <n-tag :type="msg.role === 'user' ? 'info' : 'warning'" size="small">
-                  {{ msg.role === 'user' ? '用户' : '凯莉' }}
+                  {{ msg.role === 'user' ? globalConfig.user_name : globalConfig.assistant_name }}
                 </n-tag>
                 <span class="msg-time">{{ msg.timestamp }}</span>
               </div>
@@ -360,9 +360,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useConfig } from '../composables/useConfig'
 import api from '../api/passive_consciousness'
 
 const message = useMessage()
+const { config: globalConfig } = useConfig()
 const activeTab = ref('config')
 
 // 配置

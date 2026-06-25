@@ -14,7 +14,7 @@
           <img v-if="avatarUrl" :src="avatarUrl" class="avatar-img" />
           <span v-else class="logo-text">K</span>
         </div>
-        <h1>凯莉的控制台</h1>
+        <h1>{{ globalConfig.assistant_name }}的控制台</h1>
         <p class="welcome-text">{{ welcomeText }}</p>
       </div>
 
@@ -59,7 +59,7 @@
         </n-button>
       </n-form>
 
-      <div class="login-footer">v0.1.0 · by 凯莉</div>
+      <div class="login-footer">v0.1.0 · by {{ globalConfig.assistant_name }}</div>
     </div>
   </div>
 </template>
@@ -70,11 +70,13 @@ import { useRouter } from 'vue-router'
 import { useMessage, NIcon } from 'naive-ui'
 import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '../store/auth'
+import { useConfig } from '../composables/useConfig'
 import api from '../api'
 
 const router = useRouter()
 const message = useMessage()
 const authStore = useAuthStore()
+const { config: globalConfig, loadConfig } = useConfig()
 
 const formRef = ref(null)
 const loading = ref(false)
