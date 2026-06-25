@@ -2467,8 +2467,14 @@ onMounted(async () => {
 }
 /* PC 端状态卡片等高对齐 */
 @media (min-width: 769px) {
+  .active-consciousness-page :deep(.n-grid) {
+    align-items: stretch;
+  }
+  .active-consciousness-page :deep(.n-grid-item) {
+    display: flex;
+  }
   .active-consciousness-page :deep(.n-grid-item > .n-card) {
-    min-height: 120px;
+    flex: 1;
     display: flex;
     flex-direction: column;
   }
