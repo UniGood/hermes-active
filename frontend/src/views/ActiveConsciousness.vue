@@ -2513,24 +2513,21 @@ onMounted(async () => {
 }
 
 /* PC 端状态卡片等高对齐 */
+/* Naive UI n-grid-item 渲染为无 class 的 <div>（仅有 inline style: gridColumn），
+   所以不能用 .n-grid-item 选择器，必须用 .n-grid > div 定位 */
 @media (min-width: 769px) {
-  .active-consciousness-page .n-grid {
-    display: grid !important;
+  /* Grid 本身已是 display: grid，默认 align-items: stretch 让同一行等高 */
+  .active-consciousness-page :deep(.n-grid) {
     align-items: stretch !important;
   }
-  .active-consciousness-page .n-grid-item {
+  /* Grid item（无 class 的 div）内部用 flex 让 n-card 填满高度 */
+  .active-consciousness-page :deep(.n-grid > div) {
     display: flex !important;
-    align-items: stretch !important;
   }
-  .active-consciousness-page .n-grid-item .n-card {
+  /* n-card 100% 高度填满 grid cell，已是 flex-column 布局 */
+  .active-consciousness-page :deep(.n-grid > div > .n-card) {
     width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-  .active-consciousness-page .n-grid-item .n-card .n-card__content {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
+    height: 100% !important;
   }
 }
 .breathing-dot {
@@ -2613,7 +2610,7 @@ onMounted(async () => {
     max-width: 100% !important;
     overflow: hidden !important;
   }
-  :deep(.n-grid-item) {
+  :deep(.n-grid > div) {
     min-width: 0 !important;
     max-width: 100% !important;
     overflow: hidden !important;
