@@ -1221,7 +1221,7 @@ async def call_hindsight_reflect(
         return ""
 
 
-async def send_message_to_target(config: Dict[str, Any], thought: str) -> bool:
+async def send_message_to_target(config: Dict[str, Any], thought: str, reasoning_content: Optional[str] = None) -> bool:
     """发送消息到目标"""
     notify_config = config.get("notify", {})
     platform = notify_config.get("platform", "weixin")
@@ -1254,7 +1254,8 @@ async def send_message_to_target(config: Dict[str, Any], thought: str) -> bool:
         write_to_db=True,
         with_mark=True,
         send_mark=send_mark,
-        time_format=time_format
+        time_format=time_format,
+        reasoning_content=reasoning_content
     )
 
     return result.get("success", False)
@@ -1466,7 +1467,7 @@ async def generate_and_send_thought_with_emotion(
     )
     
     # 发送消息
-    sent = await send_message_to_target(config, thought)
+    sent = await send_message_to_target(config, thought, reasoning_content=_result.get("llm_details", {}).get("reasoning_content"))
     details["message_sending"] = {
         "success": sent,
         "thought": thought,
