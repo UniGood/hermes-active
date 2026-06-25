@@ -116,27 +116,6 @@ async def _send_to_feishu(chat_id: str, message: str) -> Dict[str, Any]:
         return {"success": False, "message": f"飞书发送异常: {str(e)}"}
 
 
-def _write_to_state_db(session_id: str, content: str) -> bool:
-    """写入消息到 state.db"""
-    try:
-        metadata = get_state_metadata()
-        if 'messages' not in metadata.tables:
-            return False
-        messages_table = metadata.tables['messages']
-        with state_engine.connect() as conn:
-            conn.execute(messages_table.insert().values(
-                session_id=session_id,
-                role="assistant",
-                content=content,
-                timestamp=time.time(),
-                finish_reason="stop",
-                active=1
-            ))
-            conn.commit()
-        return True
-    except Exception:
-        return False
-
 
 class MessageService:
     """消息服务类"""
@@ -282,7 +261,9 @@ class MessageService:
         with_mark: bool = False,
         mark_format: str = DEFAULT_MARK_FORMAT,
         send_mark: str = DEFAULT_SEND_MARK,
-        time_format: str = DEFAULT_TIME_FORMAT
+        time_format: str = DEFAULT_TIME_FORMAT,
+        reasoning_content: Optional[str] = None,
+        token_count: Optional[int] = None,
     ) -> Dict[str, Any]:
         """发送消息到微信并写入 state.db
 
@@ -295,6 +276,8 @@ class MessageService:
             mark_format: 标记格式模板（向后兼容），支持 {timestamp} 和 {content} 占位符
             send_mark: 发送标记前缀（如 [凯莉主动发送]）
             time_format: 时间格式（strftime 格式，支持 {weekday} 占位符）
+            reasoning_content: 推理内容（可选，写入 reasoning_content 字段）
+            token_count: token 数量（可选，写入 token_count 字段）
         """
         start_time = time.time()
         try:
@@ -350,7 +333,18 @@ class MessageService:
                         db_content = f"[{send_mark} {time_str}]: {message}"
                     else:
                         db_content = f"[{send_mark}]: {message}"
-                _write_to_state_db(session_id, db_content)
+                
+                # 使用 SessionDB 写入（统一方式）
+                from hermes_state import SessionDB
+                db = SessionDB()
+                db.append_message(
+                    session_id=session_id,
+                    role="assistant",
+                    content=db_content,
+                    reasoning_content=reasoning_content,
+                    token_count=token_count,
+                    finish_reason="stop",
+                )
             elif write_to_db and not sent_ok:
                 logger.warning(
                     "send failed for session %s, skipping state.db write. platform=%s, reason=%s",
