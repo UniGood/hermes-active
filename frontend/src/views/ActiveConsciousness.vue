@@ -591,48 +591,43 @@
       <!-- Tab: 运行逻辑 -->
       <n-tab-pane name="logic" tab="运行逻辑">
         <n-card title="主动意识运行逻辑" size="small" class="run-logic-card">
-          <n-steps vertical :current="9" size="small">
+          <n-steps vertical :current="8" size="small">
             <n-step title="1. 心跳触发">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
                 APScheduler 定时触发，默认间隔 300 秒（5 分钟）。检查主动意识是否启用、是否在活跃时间窗口内。
               </div>
             </n-step>
-            <n-step title="2. 情绪演化">
-              <div style="font-size: 13px; color: #666; line-height: 1.6;">
-                VA 模型自然演化：Arousal 每小时衰减 0.02、Social Need 每小时增长 0.01、Valence 每小时向 0.5 回归 10%。根据距上次更新的时间间隔自动计算。
-              </div>
-            </n-step>
-            <n-step title="3. LLM 情绪评估">
-              <div style="font-size: 13px; color: #666; line-height: 1.6;">
-                LLM 根据最近对话评估情绪状态，返回 VA 值和主导情绪。通过置信度计算动态合并 LLM 与演化结果（高信任: 演化30%+LLM70%，低信任: 演化70%+LLM30%）。
-              </div>
-            </n-step>
-            <n-step title="4. 上下文收集 + Hindsight 记忆召回">
+            <n-step title="2. 上下文收集 + Hindsight 记忆召回">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
                 ContextCollector 跨 Session 获取最近 N 条消息（默认 200 条，彻底过滤 Tool 消息），同时调用 Hindsight Recall 检索相关记忆。收集的信息包括：对话历史、情绪状态、时间感知、天气信息、用户习惯。
               </div>
             </n-step>
-            <n-step title="5. 决策矩阵评分">
+            <n-step title="3. 情绪演化 + LLM 评估">
+              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+                VA 模型自然演化（Arousal 衰减、Social Need 增长、Valence 回归中性），然后 LLM 根据上下文评估当前情绪。通过置信度动态合并演化值与 LLM 值（高信任: 演化30%+LLM70%，低信任: 演化70%+LLM30%）。
+              </div>
+            </n-step>
+            <n-step title="4. 决策矩阵评分">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
                 score = intensity × time_fitness × silence_factor × frequency_limit。综合情绪强度（social_need×0.5 + arousal×0.3 + valence×0.2）、时间适宜性、沉默时长和频率限制。根据 score 与阈值比较得出决策：auto_send（≥send_threshold）、memory（≥memory_threshold）、skip（&lt;memory_threshold）。skip 不调 LLM，省 token。send_threshold 和 memory_threshold 可设为相同值。
               </div>
             </n-step>
-            <n-step title="6. 念头生成（LLM）">
+            <n-step title="5. 念头生成（LLM）">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
                 仅 skip 跳过，不调 LLM。memory 和 auto_send 都调 LLM 生成念头。ThoughtEngine 使用 system/user 消息分离结构：system 放人设+对话+记忆+环境，user 放任务指令（含 output priming）。LLM 可输出 SKIP 表示不想联系用户。max_tokens=0 不限制输出长度。
               </div>
             </n-step>
-            <n-step title="7. 发送保护检查 + 执行动作">
+            <n-step title="6. 发送保护检查 + 执行动作">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
                 保护检查仅拦截 auto_send 的实际发送：用户消息后 5 分钟等待期、聊天热度 > 3.0、情绪强度 < 0.15、冷却期 30 分钟、每小时最多 2 条 / 每天最多 5 条。skip → 跳过。memory → 存为记忆。auto_send 未拦截 → 发送。auto_send 被拦截 → 不发送，念头存入 Hindsight。所有非 skip 路径都写入念头日志。
               </div>
             </n-step>
-            <n-step title="8. 想念分数计算">
+            <n-step title="7. 想念分数计算">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
                 longing_score = min(沉默分钟/gap_minutes, 1.0) × decay_factor。用户每回复 1 条消息衰减 10%，最少保留 10%。等级：平静→思念→想念→渴望→焦虑。
               </div>
             </n-step>
-            <n-step title="9. 情绪状态持久化">
+            <n-step title="8. 情绪状态持久化">
               <div style="font-size: 13px; color: #666; line-height: 1.6;">
                 保存更新后的情绪状态（VA 值 + 主导情绪 + 更新时间），写入心跳日志（含决策详情、耗时、LLM 调用记录），供前端展示和下次心跳演化使用。
               </div>
