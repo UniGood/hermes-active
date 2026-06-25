@@ -40,7 +40,7 @@ const themeOverrides = ref({
 
 const THEME_MAP = {
   kelly: { primary: '#ff9a9e', hover: '#ffb3b6', pressed: '#e8838a', secondary: '#fecfef', accent: '#f6d365' },
-  elegant: { primary: '#a0c4e8', hover: '#b5d4f0', pressed: '#8ab4d8', secondary: '#e8e8e8', accent: '#c0c0c0' },
+  elegant: { primary: '#4a90d9', hover: '#6ba3e0', pressed: '#3a7cc9', secondary: '#e8eef5', accent: '#8bb4e0' },
   dark: { primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0', secondary: '#2d2d2d', accent: '#4fc3f7' }
 }
 

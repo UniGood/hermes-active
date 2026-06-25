@@ -264,14 +264,14 @@
       <n-tab-pane name="logs" tab="日志" style="overflow: visible;">
         <n-tabs type="line" animated style="overflow: visible;">
           <n-tab-pane name="heartbeats" tab="心跳日志" style="overflow: visible;">
-            <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+            <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
               <n-date-picker v-model:value="heartbeatDate" type="date" clearable
                 @update:value="onHeartbeatDateChange" style="width: 160px" />
               <n-input-number v-model:value="heartbeatIdFilter" placeholder="心跳ID" clearable
                 :show-button="false" style="width: 120px"
-                @update:value="() => loadHeartbeats(1)" />
-              <n-button size="small" @click="heartbeatDate = Date.now(); heartbeatIdFilter = null; loadHeartbeats(1)">今天</n-button>
-              <n-button size="small" quaternary @click="heartbeatDate = null; heartbeatIdFilter = null; loadHeartbeats(1)">全部</n-button>
+                @update:value="() => { saveFilters(); loadHeartbeats(1) }" />
+              <n-button size="small" @click="heartbeatDate = Date.now(); heartbeatIdFilter = null; saveFilters(); loadHeartbeats(1)">今天</n-button>
+              <n-button size="small" quaternary @click="heartbeatDate = null; heartbeatIdFilter = null; saveFilters(); loadHeartbeats(1)">全部</n-button>
             </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
               <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="1030" remote />
@@ -283,12 +283,12 @@
                 @update:value="onThoughtDateChange" style="width: 160px" />
               <n-input-number v-model:value="thoughtIdFilter" placeholder="念头ID" clearable
                 :show-button="false" style="width: 120px"
-                @update:value="() => loadThoughts(1)" />
+                @update:value="() => { saveFilters(); loadThoughts(1) }" />
               <n-input-number v-model:value="thoughtHeartbeatIdFilter" placeholder="心跳ID" clearable
                 :show-button="false" style="width: 120px"
-                @update:value="() => loadThoughts(1)" />
-              <n-button size="small" @click="thoughtDate = Date.now(); thoughtIdFilter = null; thoughtHeartbeatIdFilter = null; loadThoughts(1)">今天</n-button>
-              <n-button size="small" quaternary @click="thoughtDate = null; thoughtIdFilter = null; thoughtHeartbeatIdFilter = null; loadThoughts(1)">全部</n-button>
+                @update:value="() => { saveFilters(); loadThoughts(1) }" />
+              <n-button size="small" @click="thoughtDate = Date.now(); thoughtIdFilter = null; thoughtHeartbeatIdFilter = null; saveFilters(); loadThoughts(1)">今天</n-button>
+              <n-button size="small" quaternary @click="thoughtDate = null; thoughtIdFilter = null; thoughtHeartbeatIdFilter = null; saveFilters(); loadThoughts(1)">全部</n-button>
             </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
               <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="1250" remote :loading="thoughtsLoading" />
@@ -1417,6 +1417,38 @@ const heartbeatIdFilter = ref(null)
 const thoughtDate = ref(Date.now())
 const thoughtIdFilter = ref(null)
 const thoughtHeartbeatIdFilter = ref(null)
+
+// 从 localStorage 恢复查询条件
+function restoreFilters() {
+  try {
+    const saved = localStorage.getItem('active_consciousness_filters')
+    if (saved) {
+      const filters = JSON.parse(saved)
+      if (filters.heartbeatDate !== undefined) heartbeatDate.value = filters.heartbeatDate
+      if (filters.heartbeatIdFilter !== undefined) heartbeatIdFilter.value = filters.heartbeatIdFilter
+      if (filters.thoughtDate !== undefined) thoughtDate.value = filters.thoughtDate
+      if (filters.thoughtIdFilter !== undefined) thoughtIdFilter.value = filters.thoughtIdFilter
+      if (filters.thoughtHeartbeatIdFilter !== undefined) thoughtHeartbeatIdFilter.value = filters.thoughtHeartbeatIdFilter
+    }
+  } catch (e) {
+    // 忽略解析错误
+  }
+}
+
+// 保存查询条件到 localStorage
+function saveFilters() {
+  try {
+    localStorage.setItem('active_consciousness_filters', JSON.stringify({
+      heartbeatDate: heartbeatDate.value,
+      heartbeatIdFilter: heartbeatIdFilter.value,
+      thoughtDate: thoughtDate.value,
+      thoughtIdFilter: thoughtIdFilter.value,
+      thoughtHeartbeatIdFilter: thoughtHeartbeatIdFilter.value
+    }))
+  } catch (e) {
+    // 忽略存储错误
+  }
+}
 const showRecallModal = ref(false)
 const recallItems = ref([])
 const recallLoading = ref(false)
@@ -1838,10 +1870,12 @@ async function showSendDetail(row) {
 }
 function onHeartbeatDateChange(val) {
   heartbeatDate.value = val
+  saveFilters()
   loadHeartbeats(1, val)
 }
 function onThoughtDateChange(val) {
   thoughtDate.value = val
+  saveFilters()
   loadThoughts(1, val)
 }
 
@@ -2395,6 +2429,9 @@ const testThoughtEngine = async () => {
 
 // 初始化
 onMounted(async () => {
+  // 恢复查询条件
+  restoreFilters()
+
   await Promise.all([
     loadConfig(),
     loadStatus(),
@@ -2580,6 +2617,14 @@ onMounted(async () => {
   }
   :deep(.n-tabs-nav-scrollable) {
     overflow-x: auto !important;
+  }
+
+  /* 搜索框区域优化 */
+  :deep(.n-input-number) {
+    min-width: 100px !important;
+  }
+  :deep(.n-date-picker) {
+    min-width: 140px !important;
   }
 
   /* 步骤条适配 */
