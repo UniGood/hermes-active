@@ -403,8 +403,8 @@ def validate_active_consciousness_config(config: Dict[str, Any]) -> List[str]:
         errors.append("记忆阈值必须在 0-1 之间")
 
     # 验证阈值大小关系
-    if send_threshold <= memory_threshold:
-        errors.append("发送阈值必须大于记忆阈值")
+    if send_threshold < memory_threshold:
+        errors.append("发送阈值必须大于等于记忆阈值")
 
     # 验证 max_per_hour
     try:
@@ -2193,12 +2193,12 @@ def make_decision_v2(
     reason = ", ".join(reason_parts)
 
     logger.info("决策结果: score=%.3f, decision=%s, threshold(send=%.3f, memory=%.3f)",
-                score, "auto_send" if score > send_threshold else "memory" if score > memory_threshold else "skip",
+                score, "auto_send" if score >= send_threshold else "memory" if score >= memory_threshold else "skip",
                 send_threshold, memory_threshold)
 
-    if score > send_threshold:
+    if score >= send_threshold:
         return "auto_send", f"score={score:.3f} > {send_threshold} ({reason})", score
-    elif score > memory_threshold:
+    elif score >= memory_threshold:
         return "memory", f"score={score:.3f} > {memory_threshold} ({reason})", score
     else:
         return "skip", f"score={score:.3f} <= {memory_threshold} ({reason})", score
