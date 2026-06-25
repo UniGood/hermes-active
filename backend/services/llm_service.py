@@ -110,11 +110,17 @@ class LLMService:
             )
 
             content = response.choices[0].message.content.strip()
+
+            # 提取 reasoning_content（部分模型如 DeepSeek 支持）
+            msg = response.choices[0].message
+            reasoning_content = getattr(msg, 'reasoning_content', None) or getattr(msg, 'reasoning', None)
+
             duration = round(time.time() - start_time, 2)
 
             return {
                 "success": True,
                 "content": content,
+                "reasoning_content": reasoning_content,
                 "model": model,
                 "duration": duration
             }
