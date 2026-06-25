@@ -814,11 +814,11 @@ onMounted(() => {
 }
 
 .context-role.user {
-  color: #ff9a9e;
+  color: var(--theme-primary, #4a90d9);
 }
 
 .context-role.assistant {
-  color: #f6d365;
+  color: var(--theme-accent, #8bb4e0);
 }
 
 .context-content {
@@ -910,7 +910,7 @@ onMounted(() => {
 
 .mark-format-preview {
   font-size: 12px;
-  color: #ff9a9e;
+  color: var(--theme-primary, #4a90d9);
   margin-top: 6px;
   padding: 6px 8px;
   background: rgba(255, 154, 158, 0.06);
@@ -955,11 +955,11 @@ onMounted(() => {
 }
 
 .log-item.error {
-  color: #ff9a9e;
+  color: var(--theme-primary, #4a90d9);
 }
 
 .log-item.info {
-  color: #f6d365;
+  color: var(--theme-accent, #8bb4e0);
 }
 
 .log-time {
@@ -1030,14 +1030,14 @@ onMounted(() => {
 }
 
 .time-format-chip:hover {
-  border-color: #ff9a9e;
+  border-color: var(--theme-primary, #4a90d9);
   background: rgba(255, 154, 158, 0.06);
 }
 
 .time-format-chip.active {
-  border-color: #ff9a9e;
+  border-color: var(--theme-primary, #4a90d9);
   background: rgba(255, 154, 158, 0.1);
-  box-shadow: 0 0 0 1px #ff9a9e;
+  box-shadow: 0 0 0 1px var(--theme-primary, #4a90d9);
 }
 
 .chip-label {
@@ -1047,7 +1047,7 @@ onMounted(() => {
 }
 
 .time-format-chip.active .chip-label {
-  color: #ff9a9e;
+  color: var(--theme-primary, #4a90d9);
   font-weight: 500;
 }
 

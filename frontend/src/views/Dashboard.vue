@@ -65,8 +65,8 @@ const recentMessages = ref([])
 const { config, loadConfig } = useConfig()
 
 const stats = ref([
-  { label: '总会话数', value: 0, icon: markRaw(ChatbubblesOutline), color: '#ff9a9e' },
-  { label: '总消息数', value: 0, icon: markRaw(PeopleOutline), color: '#f6d365' },
+  { label: '总会话数', value: 0, icon: markRaw(ChatbubblesOutline), color: 'var(--theme-primary, #4a90d9)' },
+  { label: '总消息数', value: 0, icon: markRaw(PeopleOutline), color: 'var(--theme-accent, #8bb4e0)' },
   { label: '今日消息', value: 0, icon: markRaw(TimeOutline), color: '#a8e6cf' },
   { label: '本周消息', value: 0, icon: markRaw(TrendingUpOutline), color: '#ffd3b6' }
 ])
@@ -95,7 +95,7 @@ async function loadStats() {
     // 加载平台分布
     const total = data.total_messages || 1
     const platformData = await api.get('/stats/platforms')
-    const platformColors = { weixin: '#ff9a9e', feishu: '#f6d365', cli: '#a8e6cf', cron: '#ffd3b6' }
+    const platformColors = { weixin: 'var(--theme-primary, #4a90d9)', feishu: 'var(--theme-accent, #8bb4e0)', cli: '#a8e6cf', cron: '#ffd3b6' }
     const platformNames = { weixin: '微信', feishu: '飞书', cli: 'CLI', cron: '定时任务', unknown: '其他' }
     platforms.value = (platformData || []).map(p => ({
       name: platformNames[p.platform] || p.platform,
@@ -263,10 +263,10 @@ onMounted(() => {
 }
 
 .tag-assistant {
-  --n-color: #fff0f3 !important;
-  --n-color-hover: #ffe0e6 !important;
-  --n-text-color: #ff9a9e !important;
-  --n-border: 1px solid #ffd0d6 !important;
+  --n-color: #e8f0fe !important;
+  --n-color-hover: #d0e0f8 !important;
+  --n-text-color: var(--theme-primary, #4a90d9) !important;
+  --n-border: 1px solid #b0c8e8 !important;
 }
 
 /* 移动端适配 */

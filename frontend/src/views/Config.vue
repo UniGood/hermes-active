@@ -537,14 +537,14 @@ onMounted(() => {
 }
 
 .theme-item:hover {
-  border-color: var(--theme-primary, #ff9a9e);
+  border-color: var(--theme-primary, var(--theme-primary, #4a90d9));
   background: rgba(255, 154, 158, 0.04);
 }
 
 .theme-item.active {
-  border-color: var(--theme-primary, #ff9a9e);
+  border-color: var(--theme-primary, var(--theme-primary, #4a90d9));
   background: rgba(255, 154, 158, 0.08);
-  box-shadow: 0 0 0 1px var(--theme-primary, #ff9a9e);
+  box-shadow: 0 0 0 1px var(--theme-primary, var(--theme-primary, #4a90d9));
 }
 
 .theme-preview {
