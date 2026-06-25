@@ -225,16 +225,28 @@
             <n-card size="small" title="💭 念头 LLM">
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">今天</span>
+                  <span style="font-size: 12px; color: #666;">调用次数</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_today ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本周</span>
+                  <span style="font-size: 12px; color: #666;">生成念头</span>
+                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_today ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本周调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_week ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本月</span>
+                  <span style="font-size: 12px; color: #666;">本周生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_week ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本月调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_month ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本月生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_month ?? 0 }}</span>
                 </div>
               </div>
             </n-card>
