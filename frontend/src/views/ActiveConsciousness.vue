@@ -8,7 +8,7 @@
           <n-icon size="18"><StatsChartOutline /></n-icon>
           <span>状态概览</span>
         </div>
-        <n-grid :cols="isMobile ? 1 : 4" :x-gap="12" :y-gap="12">
+        <n-grid :cols="isMobile ? 1 : 5" :x-gap="12" :y-gap="12">
           <n-grid-item>
             <n-card size="small" title="心跳状态">
               <template #header-extra>
@@ -57,6 +57,24 @@
                 </template>
               </n-statistic>
               <n-progress :percentage="status.emotional_intensity.intensity * 100" :color="intensityColor" :show-indicator="false" :height="8" style="margin-top: 8px" />
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card size="small" title="发送统计">
+              <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 8px;">
+                <div style="text-align: center;">
+                  <div style="font-size: 16px; font-weight: 600; color: #333;">{{ status.today_sent_count }}</div>
+                  <div style="font-size: 10px; color: #999;">今日</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 16px; font-weight: 600; color: #333;">{{ status.week_sent_count ?? 0 }}</div>
+                  <div style="font-size: 10px; color: #999;">本周</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 16px; font-weight: 600; color: #333;">{{ status.month_sent_count ?? 0 }}</div>
+                  <div style="font-size: 10px; color: #999;">本月</div>
+                </div>
+              </div>
             </n-card>
           </n-grid-item>
         </n-grid>
@@ -253,46 +271,198 @@
           </n-grid-item>
         </n-grid>
 
-        <!-- 发送统计 -->
+        <!-- 情绪系统 -->
         <div class="section-title" style="margin-top: 16px;">
-          <n-icon size="18"><SendOutline /></n-icon>
-          <span>发送统计</span>
+          <n-icon size="18"><ColorPaletteOutline /></n-icon>
+          <span>情绪系统</span>
         </div>
-        <n-grid :cols="1" :x-gap="12" :y-gap="12">
+        <n-grid :cols="isMobile ? 1 : 2" :x-gap="12" :y-gap="12">
           <n-grid-item>
-            <n-card size="small">
-              <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 12px;">
-                <div style="text-align: center; min-width: 60px;">
-                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.hour_sent_count }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本小时</div>
+            <n-card size="small" title="情绪状态（VA 模型）">
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-size: 13px; color: #666;">效价（Valence）</span>
+                    <span style="font-weight: 600;">{{ status.emotion_state?.valence ?? '-' }}</span>
+                  </div>
+                  <n-progress :percentage="(status.emotion_state?.valence ?? 0) * 100" :show-indicator="false" :height="8"
+                    :color="valenceColor" />
                 </div>
-                <div style="text-align: center; min-width: 60px;">
-                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.today_sent_count }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">今日</div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-size: 13px; color: #666;">唤醒度（Arousal）</span>
+                    <span style="font-weight: 600;">{{ status.emotion_state?.arousal ?? '-' }}</span>
+                  </div>
+                  <n-progress :percentage="(status.emotion_state?.arousal ?? 0) * 100" :show-indicator="false" :height="8"
+                    :color="arousalColor" />
                 </div>
-                <div style="text-align: center; min-width: 60px;">
-                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.week_sent_count ?? 0 }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本周</div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-size: 13px; color: #666;">社交需求</span>
+                    <span style="font-weight: 600;">{{ status.emotion_state?.social_need ?? '-' }}</span>
+                  </div>
+                  <n-progress :percentage="(status.emotion_state?.social_need ?? 0) * 100" :show-indicator="false" :height="8"
+                    :color="socialNeedColor" />
                 </div>
-                <div style="text-align: center; min-width: 60px;">
-                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.month_sent_count ?? 0 }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本月</div>
+                <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                  <span style="font-size: 13px; color: #666;">主导情绪</span>
+                  <n-tag :type="getEmotionTagType(status.emotion_state?.dominant)" size="small">
+                    {{ emotionLabelCn(status.emotion_state?.dominant) }}
+                  </n-tag>
                 </div>
-                <div style="text-align: center; min-width: 60px;">
-                  <div style="font-size: 18px; font-weight: 600; color: #333;">{{ status.year_sent_count ?? 0 }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">本年</div>
+              </div>
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card size="small" title="决策配置与阈值">
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">决策阈值</div>
+                  <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1; text-align: center;">
+                      <div style="font-size: 18px; font-weight: bold; color: #18a058;">{{ decisionConfig.send_threshold }}</div>
+                      <div style="font-size: 11px; color: #999;">发送</div>
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                      <div style="font-size: 18px; font-weight: bold; color: #d03050;">{{ decisionConfig.memory_threshold }}</div>
+                      <div style="font-size: 11px; color: #999;">记忆</div>
+                    </div>
+                  </div>
                 </div>
-                <div style="text-align: center; min-width: 80px;">
-                  <div style="font-size: 14px; font-weight: 600; color: #333;">{{ formatTime(status.last_sent_at) || '-' }}</div>
-                  <div style="font-size: 11px; color: #999; margin-top: 2px;">上次发送</div>
+                <n-divider style="margin: 0;" />
+                <div>
+                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">频率限制</div>
+                  <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                      <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 12px;">本小时</span>
+                        <span style="font-weight: 600;">{{ status.hour_sent_count }}/{{ decisionConfig.max_per_hour }}</span>
+                      </div>
+                      <n-progress :percentage="frequencyHourPercentage" :show-indicator="false" :height="4"
+                        :color="frequencyHourPercentage >= 100 ? '#d03050' : '#18a058'" />
+                    </div>
+                    <div style="flex: 1;">
+                      <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 12px;">今日</span>
+                        <span style="font-weight: 600;">{{ status.today_sent_count }}/{{ decisionConfig.max_per_day }}</span>
+                      </div>
+                      <n-progress :percentage="frequencyDayPercentage" :show-indicator="false" :height="4"
+                        :color="frequencyDayPercentage >= 100 ? '#d03050' : '#18a058'" />
+                    </div>
+                  </div>
+                </div>
+                <n-divider style="margin: 0;" />
+                <div>
+                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">保护机制</div>
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between;">
+                      <span style="font-size: 12px;">冷却时间</span>
+                      <n-tag :type="isCoolingDown ? 'warning' : 'success'" size="small">
+                        {{ isCoolingDown ? '冷却中' : '正常' }}
+                      </n-tag>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                      <span style="font-size: 12px;">用户刚发消息</span>
+                      <n-tag :type="userJustSent ? 'warning' : 'success'" size="small">
+                        {{ userJustSent ? '等待中' : '正常' }}
+                      </n-tag>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                      <span style="font-size: 12px;">热度保护</span>
+                      <n-tag :type="heatProtected ? 'warning' : 'success'" size="small">
+                        {{ heatProtected ? '已触发' : '正常' }}
+                      </n-tag>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </n-card>
+          </n-grid-item>
+        </n-grid>
+
+        <!-- LLM 统计 -->
+        <div class="section-title" style="margin-top: 16px;">
+          <n-icon size="18"><AnalyticsOutline /></n-icon>
+          <span>LLM 统计</span>
+        </div>
+        <n-grid :cols="isMobile ? 1 : 3" :x-gap="12" :y-gap="12">
+          <n-grid-item>
+            <n-card size="small" title="🎭 情绪 LLM">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; color: #666;">最近评估</span>
+                  <n-tag :type="getEmotionTagType(status.llm_stats?.last_emotion_dominant)" size="small">
+                    {{ emotionLabelCn(status.llm_stats?.last_emotion_dominant) || '-' }}
+                  </n-tag>
+                </div>
+                <n-divider style="margin: 4px 0;" />
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">今天</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_today ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本周</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_week ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本月</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_month ?? 0 }}</span>
+                </div>
+              </div>
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card size="small" title="💭 念头 LLM">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">今日调用</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_today ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">今日生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_today ?? 0 }}</span>
+                </div>
+                <n-divider style="margin: 4px 0;" />
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本周调用</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_week ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本周生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_week ?? 0 }}</span>
+                </div>
+                <n-divider style="margin: 4px 0;" />
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本月调用</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_month ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本月生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_month ?? 0 }}</span>
+                </div>
+              </div>
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card size="small" title="📊 总 LLM 调用">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">今天</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_today ?? 0) + (status.llm_stats?.thought_today ?? 0) }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本周</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_week ?? 0) + (status.llm_stats?.thought_week ?? 0) }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: #666;">本月</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_month ?? 0) + (status.llm_stats?.thought_month ?? 0) }}</span>
                 </div>
               </div>
             </n-card>
           </n-grid-item>
         </n-grid>
       </n-tab-pane>
-
-      <!-- Tab 2: 日志 -->
       <n-tab-pane name="logs" tab="日志" style="overflow: visible;">
         <n-tabs type="line" animated style="overflow: visible;">
           <n-tab-pane name="heartbeats" tab="心跳日志" style="overflow: visible;">
