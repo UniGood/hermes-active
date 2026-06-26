@@ -256,7 +256,7 @@ const passwordForm = ref({
 // 主题配置
 const themes = [
   { id: 'kelly', name: '凯莉', desc: '珊瑚粉 + 暖橙', color1: '#ff9a9e', color2: '#f6d365' },
-  { id: 'elegant', name: '素雅', desc: '淡蓝 + 浅灰', color1: '#a0c4e8', color2: '#e8e8e8' }
+  { id: 'elegant', name: '素雅', desc: '亮蓝 + 浅灰', color1: '#4a90d9', color2: '#e8eef5' }
 ]
 const currentTheme = ref('kelly')
 
