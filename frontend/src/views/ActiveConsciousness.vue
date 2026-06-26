@@ -203,8 +203,9 @@
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card size="small" title="💭 念头 LLM">
+            <n-card size="small" title="💭 念头 & 发送">
               <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="font-size: 11px; color: var(--theme-text-muted); font-weight: 600; letter-spacing: 1px;">LLM 念头</div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: var(--theme-text-secondary);">今日调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_today ?? 0 }}</span>
@@ -213,7 +214,6 @@
                   <span style="font-size: 12px; color: var(--theme-text-secondary);">今日生成</span>
                   <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.llm_stats?.thought_generated_today ?? 0 }}</span>
                 </div>
-                <n-divider style="margin: 4px 0;" />
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: var(--theme-text-secondary);">本周调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_week ?? 0 }}</span>
@@ -221,34 +221,6 @@
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: var(--theme-text-secondary);">本周生成</span>
                   <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.llm_stats?.thought_generated_week ?? 0 }}</span>
-                </div>
-                <n-divider style="margin: 4px 0;" />
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月调用</span>
-                  <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_month ?? 0 }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月生成</span>
-                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.llm_stats?.thought_generated_month ?? 0 }}</span>
-                </div>
-              </div>
-            </n-card>
-          </n-grid-item>
-          <n-grid-item>
-            <n-card size="small" title="📊 统计总览">
-              <div style="display: flex; flex-direction: column; gap: 6px;">
-                <div style="font-size: 11px; color: var(--theme-text-muted); font-weight: 600; letter-spacing: 1px;">LLM 调用</div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: var(--theme-text-secondary);">今天</span>
-                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_today ?? 0) + (status.llm_stats?.thought_today ?? 0) }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本周</span>
-                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_week ?? 0) + (status.llm_stats?.thought_week ?? 0) }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月</span>
-                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_month ?? 0) + (status.llm_stats?.thought_month ?? 0) }}</span>
                 </div>
                 <n-divider style="margin: 4px 0;" />
                 <div style="font-size: 11px; color: var(--theme-text-muted); font-weight: 600; letter-spacing: 1px;">消息发送</div>
@@ -263,6 +235,24 @@
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: var(--theme-text-secondary);">本月</span>
                   <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.month_sent_count ?? 0 }}</span>
+                </div>
+              </div>
+            </n-card>
+          </n-grid-item>
+          <n-grid-item>
+            <n-card size="small" title="📊 总 LLM 调用">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">今天</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_today ?? 0) + (status.llm_stats?.thought_today ?? 0) }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本周</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_week ?? 0) + (status.llm_stats?.thought_week ?? 0) }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月</span>
+                  <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_month ?? 0) + (status.llm_stats?.thought_month ?? 0) }}</span>
                 </div>
               </div>
             </n-card>
