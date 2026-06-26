@@ -2679,7 +2679,7 @@ onMounted(async () => {
 }
 
 .section-title .n-icon {
-  color: var(--theme-primary, #4a90d9);
+  color: var(--theme-primary);
 }
 
 /* PC 端状态卡片等高对齐 */
