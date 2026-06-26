@@ -352,29 +352,8 @@ async def run_cron_job(job_id: str):
                 # 读取角色名配置
                 user_name = ConfigService.get_config(db, "user_name") or "曹凡"
                 assistant_name = ConfigService.get_config(db, "assistant_name") or "凯莉"
-                role_map = {"user": user_name, "assistant": assistant_name, "tool": "工具", "system": "系统"}
-
-                def format_msg(m):
-                    role = role_map.get(m.get("role", "unknown"), m.get("role", "unknown"))
-                    ts = m.get("timestamp", "")
-                    # 格式化时间：支持 Unix 时间戳和 ISO 字符串
-                    try:
-                        if isinstance(ts, (int, float)):
-                            from datetime import datetime, timezone, timedelta
-                            dt = datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=8)))
-                            time_part = dt.strftime("%Y-%m-%d %H:%M")
-                        elif isinstance(ts, str) and len(ts) >= 16:
-                            time_part = ts[:16].replace("T", " ")
-                        else:
-                            time_part = ""
-                    except Exception:
-                        time_part = ""
-                    content = m.get("content", "") or ""
-                    if time_part:
-                        return f"[{time_part}] {role}: {content}"
-                    return f"{role}: {content}"
-
-                session_text = "\n".join(format_msg(m) for m in context_msgs)
+                role_map = {"user": user_name, "assistant": assistant_name}
+                session_text = MessageService.format_session_messages(context_msgs, role_map)
 
         # 2. Hindsight 记忆（Recall + Reflect 合并）
         memory_parts = []

@@ -398,23 +398,7 @@ async def preview_prompt(
     # 构建独立上下文文本
     session_text = ""
     if context_data["session_messages"]:
-        def format_preview_msg(m):
-            ts = m.get("timestamp", "")
-            try:
-                if isinstance(ts, (int, float)):
-                    from datetime import datetime, timezone, timedelta
-                    dt = datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=8)))
-                    time_part = dt.strftime("%Y-%m-%d %H:%M")
-                elif isinstance(ts, str) and len(ts) >= 16:
-                    time_part = ts[:16].replace("T", " ")
-                else:
-                    time_part = ""
-            except Exception:
-                time_part = ""
-            if time_part:
-                return f"[{time_part}] {m['role']}: {m['content']}"
-            return f"{m['role']}: {m['content']}"
-        session_text = "\n".join(format_preview_msg(m) for m in context_data["session_messages"])
+        session_text = MessageService.format_session_messages(context_data["session_messages"])
 
     memory_parts = []
     if context_data["recall_results"]:

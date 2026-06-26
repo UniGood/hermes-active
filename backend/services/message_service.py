@@ -642,6 +642,41 @@ class MessageService:
         return list(reversed(items))
 
     @staticmethod
+    def format_session_messages(msgs: List[Dict[str, Any]], role_map: Dict[str, str] = None) -> str:
+        """将消息列表格式化为带时间+角色名的文本（通用方法）
+
+        Args:
+            msgs: 消息列表（get_recent_messages_by_platform 的返回值）
+            role_map: 角色名映射，如 {"user": "曹凡", "assistant": "凯莉"}
+                     为 None 时使用原始 role 名
+        Returns:
+            格式化后的多行文本，每行格式: [2026-06-26 13:43] 角色名: 内容
+        """
+        from datetime import datetime, timezone, timedelta
+        default_map = {"tool": "工具", "system": "系统"}
+        rmap = {**default_map, **(role_map or {})}
+
+        def _fmt(m):
+            role = rmap.get(m.get("role", "unknown"), m.get("role", "unknown"))
+            ts = m.get("timestamp", "")
+            try:
+                if isinstance(ts, (int, float)):
+                    dt = datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=8)))
+                    time_part = dt.strftime("%Y-%m-%d %H:%M")
+                elif isinstance(ts, str) and len(ts) >= 16:
+                    time_part = ts[:16].replace("T", " ")
+                else:
+                    time_part = ""
+            except Exception:
+                time_part = ""
+            content = (m.get("content", "") or "").strip()
+            if time_part:
+                return f"[{time_part}] {role}: {content}"
+            return f"{role}: {content}"
+
+        return "\n".join(_fmt(m) for m in msgs)
+
+    @staticmethod
     def create_task_log(
         task_type: str,
         status: str,
