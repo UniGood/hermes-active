@@ -400,7 +400,7 @@ async def preview_prompt(
     if context_data["session_messages"]:
         def format_preview_msg(m):
             ts = m.get("timestamp", "")
-            time_part = ts[11:16] if ts and len(ts) >= 16 else ""
+            time_part = ts[:16].replace("T", " ") if ts and len(ts) >= 16 else ""
             if time_part:
                 return f"[{time_part}] {m['role']}: {m['content']}"
             return f"{m['role']}: {m['content']}"
