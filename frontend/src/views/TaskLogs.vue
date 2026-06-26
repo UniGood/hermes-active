@@ -167,19 +167,19 @@ onMounted(loadLogs)
 
 .log-time {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
   margin-left: auto;
 }
 
 .log-message {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
   margin-bottom: 8px;
 }
 
 .log-error {
   font-size: 13px;
-  color: #d03050;
+  color: var(--theme-error);
   background: rgba(var(--theme-primary-rgb), 0.08);
   padding: 8px 12px;
   border-radius: 12px;
@@ -188,7 +188,7 @@ onMounted(loadLogs)
 
 .log-meta {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .pagination {
