@@ -335,9 +335,12 @@ async def preview_prompt(
             if latest_session:
                 effective_session_id = latest_session.get("id")
 
-    # 获取 Session 上下文
-    if session_enabled and effective_session_id:
-        context_msgs = MessageService.get_session_context_raw(effective_session_id, limit=session_limit, include_tool=include_tool)
+    # 获取 Session 上下文（按平台跨 session 获取）
+    platform = request.platform or "weixin"
+    if session_enabled:
+        context_msgs = MessageService.get_recent_messages_by_platform(
+            platform=platform, limit=session_limit, include_tool=include_tool
+        )
         context_data["session_messages"] = [
             {"role": m.get("role", "unknown"), "content": m.get("content", "")}
             for m in context_msgs

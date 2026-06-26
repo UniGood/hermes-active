@@ -601,6 +601,47 @@ class MessageService:
         return list(reversed(items))
 
     @staticmethod
+    def get_recent_messages_by_platform(platform: str = "weixin", limit: int = 20, include_tool: bool = False) -> List[Dict[str, Any]]:
+        """按平台跨 session 获取最近消息（不限制 session_id）
+
+        Args:
+            platform: 平台来源（weixin/feishu/cli 等）
+            limit: 读取消息条数
+            include_tool: 是否包含 tool 角色的消息
+        """
+        from sqlalchemy import and_, or_
+        metadata = get_state_metadata()
+        if 'messages' not in metadata.tables:
+            return []
+
+        messages_table = metadata.tables['messages']
+        sessions_table = metadata.tables['sessions']
+
+        # JOIN sessions 表按 source 过滤
+        query = (
+            messages_table.select()
+            .join(sessions_table, messages_table.c.session_id == sessions_table.c.id)
+            .where(sessions_table.c.source == platform)
+        )
+
+        if not include_tool:
+            query = query.where(and_(
+                messages_table.c.role != 'tool',
+                or_(
+                    messages_table.c.role != 'assistant',
+                    and_(messages_table.c.content != None, messages_table.c.content != '')
+                )
+            ))
+
+        query = query.order_by(messages_table.c.timestamp.desc()).limit(limit)
+
+        with state_engine.connect() as conn:
+            result = conn.execute(query)
+            items = [dict(row._mapping) for row in result]
+
+        return list(reversed(items))
+
+    @staticmethod
     def create_task_log(
         task_type: str,
         status: str,

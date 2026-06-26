@@ -338,14 +338,16 @@ async def run_cron_job(job_id: str):
         else:
             time_str = now_bj.strftime('%Y-%m-%d %H:%M:%S')
 
-        # 1. Session 上下文
+        # 1. Session 上下文（按平台跨 session 获取，不限制单个 session）
         context_msgs = []
         session_text = ""
         session_enabled = ctx_config.get("session_enabled", True)
         if session_enabled:
             context_limit = ctx_config.get("session_limit", 20)
             include_tool = ctx_config.get("include_tool", False)
-            context_msgs = MessageService.get_session_context_raw(sid, limit=context_limit, include_tool=include_tool)
+            context_msgs = MessageService.get_recent_messages_by_platform(
+                platform=platform, limit=context_limit, include_tool=include_tool
+            )
             if context_msgs:
                 session_text = "\n".join(
                     f"{m.get('role', 'unknown')}: {m.get('content', '')}"

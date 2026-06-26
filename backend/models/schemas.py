@@ -120,6 +120,7 @@ class PreviewPromptRequest(BaseModel):
     append_soul_md: bool = True
     context_config: Optional[Dict[str, Any]] = None
     session_id: Optional[str] = None
+    platform: str = "weixin"
 
 
 # ============ 定时任务相关 ============
