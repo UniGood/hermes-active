@@ -50,7 +50,8 @@ const THEME_MAP = {
     primaryRgb: '255, 154, 158',
     textPrimary: '#333', textSecondary: '#666', textMuted: '#999',
     success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
-    borderLight: '#f0ece8'
+    borderLight: '#f0ece8',
+    userMsgBg: '#e3f2fd', assistantMsgBg: '#fff3e0'
   },
   elegant: {
     primary: '#4a90d9', hover: '#6ba3e0', pressed: '#3a7cc9',
@@ -63,7 +64,8 @@ const THEME_MAP = {
     primaryRgb: '74, 144, 217',
     textPrimary: '#333', textSecondary: '#666', textMuted: '#999',
     success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
-    borderLight: '#f0ece8'
+    borderLight: '#f0ece8',
+    userMsgBg: '#e3f2fd', assistantMsgBg: '#fff3e0'
   },
   dark: {
     primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0',
@@ -76,7 +78,8 @@ const THEME_MAP = {
     primaryRgb: '79, 195, 247',
     textPrimary: '#e0e0e0', textSecondary: '#aaa', textMuted: '#888',
     success: '#63e6a0', error: '#ff6b8a', info: '#70c0e8', warning: '#f0c060',
-    borderLight: '#2d3748'
+    borderLight: '#2d3748',
+    userMsgBg: '#1a3a5c', assistantMsgBg: '#3d2e1a'
   }
 }
 
@@ -125,6 +128,10 @@ function applyTheme(themeId) {
   root.style.setProperty('--theme-error', t.error)
   root.style.setProperty('--theme-info', t.info)
   root.style.setProperty('--theme-warning', t.warning)
+
+  // 聊天消息背景
+  root.style.setProperty('--theme-user-msg-bg', t.userMsgBg)
+  root.style.setProperty('--theme-assistant-msg-bg', t.assistantMsgBg)
 
   // RGB 版本（用于 rgba()）
   root.style.setProperty('--theme-primary-rgb', t.primaryRgb)

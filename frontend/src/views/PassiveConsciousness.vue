@@ -589,12 +589,12 @@ onMounted(async () => {
 }
 
 .user-msg {
-  background: #e3f2fd;
+  background: var(--theme-user-msg-bg);
   margin-left: 20%;
 }
 
 .assistant-msg {
-  background: #fff3e0;
+  background: var(--theme-assistant-msg-bg);
   margin-right: 20%;
 }
 
@@ -607,7 +607,7 @@ onMounted(async () => {
 
 .msg-time {
   font-size: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .msg-content {
