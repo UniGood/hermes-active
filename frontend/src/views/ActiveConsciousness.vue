@@ -15,10 +15,10 @@
                 <span :class="['breathing-dot', heartbeatHealthy ? 'dot-green' : 'dot-red']"></span>
               </template>
               <n-statistic label="今日心跳" :value="status.heartbeat_count" />
-              <div style="margin-top: 4px; font-size: 11px; color: #999;">
+              <div style="margin-top: 4px; font-size: 11px; color: var(--theme-text-muted);">
                 上次：{{ formatTime(status.last_heartbeat_at) || '无' }}
               </div>
-              <div style="margin-top: 4px; font-size: 11px; color: #666;">
+              <div style="margin-top: 4px; font-size: 11px; color: var(--theme-text-secondary);">
                 下次：{{ nextHeartbeatDisplay }}
               </div>
             </n-card>
@@ -31,7 +31,7 @@
                 </template>
               </n-statistic>
               <n-progress :percentage="Number((status.longing.score * 100).toFixed(1))" :color="longingColor" :show-indicator="false" :height="8" style="margin-top: 8px" />
-              <div style="margin-top: 4px; font-size: 11px; color: #999;">
+              <div style="margin-top: 4px; font-size: 11px; color: var(--theme-text-muted);">
                 沉默：{{ status.longing.silence_minutes ? Math.round(status.longing.silence_minutes) + '分钟' : '-' }}
               </div>
             </n-card>
@@ -44,7 +44,7 @@
                 </template>
               </n-statistic>
               <n-progress :percentage="chatHeatPercentage" :color="heatProgressColor" :show-indicator="false" :height="8" style="margin-top: 8px" />
-              <div style="margin-top: 4px; font-size: 11px; color: #999;">
+              <div style="margin-top: 4px; font-size: 11px; color: var(--theme-text-muted);">
                 近1小时：{{ status.chat_heat.recent_count || 0 }} 条
               </div>
             </n-card>
@@ -63,16 +63,16 @@
             <n-card size="small" title="发送统计">
               <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 8px;">
                 <div style="text-align: center;">
-                  <div style="font-size: 16px; font-weight: 600; color: #333;">{{ status.today_sent_count }}</div>
-                  <div style="font-size: 10px; color: #999;">今日</div>
+                  <div style="font-size: 16px; font-weight: 600; color: var(--theme-text-primary);">{{ status.today_sent_count }}</div>
+                  <div style="font-size: 10px; color: var(--theme-text-muted);">今日</div>
                 </div>
                 <div style="text-align: center;">
-                  <div style="font-size: 16px; font-weight: 600; color: #333;">{{ status.week_sent_count ?? 0 }}</div>
-                  <div style="font-size: 10px; color: #999;">本周</div>
+                  <div style="font-size: 16px; font-weight: 600; color: var(--theme-text-primary);">{{ status.week_sent_count ?? 0 }}</div>
+                  <div style="font-size: 10px; color: var(--theme-text-muted);">本周</div>
                 </div>
                 <div style="text-align: center;">
-                  <div style="font-size: 16px; font-weight: 600; color: #333;">{{ status.month_sent_count ?? 0 }}</div>
-                  <div style="font-size: 10px; color: #999;">本月</div>
+                  <div style="font-size: 16px; font-weight: 600; color: var(--theme-text-primary);">{{ status.month_sent_count ?? 0 }}</div>
+                  <div style="font-size: 10px; color: var(--theme-text-muted);">本月</div>
                 </div>
               </div>
             </n-card>
@@ -90,7 +90,7 @@
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 <div>
                   <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="font-size: 13px; color: #666;">效价（Valence）</span>
+                    <span style="font-size: 13px; color: var(--theme-text-secondary);">效价（Valence）</span>
                     <span style="font-weight: 600;">{{ status.emotion_state?.valence ?? '-' }}</span>
                   </div>
                   <n-progress :percentage="(status.emotion_state?.valence ?? 0) * 100" :show-indicator="false" :height="8"
@@ -98,7 +98,7 @@
                 </div>
                 <div>
                   <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="font-size: 13px; color: #666;">唤醒度（Arousal）</span>
+                    <span style="font-size: 13px; color: var(--theme-text-secondary);">唤醒度（Arousal）</span>
                     <span style="font-weight: 600;">{{ status.emotion_state?.arousal ?? '-' }}</span>
                   </div>
                   <n-progress :percentage="(status.emotion_state?.arousal ?? 0) * 100" :show-indicator="false" :height="8"
@@ -106,14 +106,14 @@
                 </div>
                 <div>
                   <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="font-size: 13px; color: #666;">社交需求</span>
+                    <span style="font-size: 13px; color: var(--theme-text-secondary);">社交需求</span>
                     <span style="font-weight: 600;">{{ status.emotion_state?.social_need ?? '-' }}</span>
                   </div>
                   <n-progress :percentage="(status.emotion_state?.social_need ?? 0) * 100" :show-indicator="false" :height="8"
                     :color="socialNeedColor" />
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 4px;">
-                  <span style="font-size: 13px; color: #666;">主导情绪</span>
+                  <span style="font-size: 13px; color: var(--theme-text-secondary);">主导情绪</span>
                   <n-tag :type="getEmotionTagType(status.emotion_state?.dominant)" size="small">
                     {{ emotionLabelCn(status.emotion_state?.dominant) }}
                   </n-tag>
@@ -125,21 +125,21 @@
             <n-card size="small" title="决策配置与阈值">
               <div style="display: flex; flex-direction: column; gap: 12px;">
                 <div>
-                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">决策阈值</div>
+                  <div style="font-size: 13px; color: var(--theme-text-secondary); margin-bottom: 8px;">决策阈值</div>
                   <div style="display: flex; gap: 12px;">
                     <div style="flex: 1; text-align: center;">
-                      <div style="font-size: 18px; font-weight: bold; color: #18a058;">{{ decisionConfig.send_threshold }}</div>
-                      <div style="font-size: 11px; color: #999;">发送</div>
+                      <div style="font-size: 18px; font-weight: bold; color: var(--theme-success);">{{ decisionConfig.send_threshold }}</div>
+                      <div style="font-size: 11px; color: var(--theme-text-muted);">发送</div>
                     </div>
                     <div style="flex: 1; text-align: center;">
-                      <div style="font-size: 18px; font-weight: bold; color: #d03050;">{{ decisionConfig.memory_threshold }}</div>
-                      <div style="font-size: 11px; color: #999;">记忆</div>
+                      <div style="font-size: 18px; font-weight: bold; color: var(--theme-error);">{{ decisionConfig.memory_threshold }}</div>
+                      <div style="font-size: 11px; color: var(--theme-text-muted);">记忆</div>
                     </div>
                   </div>
                 </div>
                 <n-divider style="margin: 0;" />
                 <div>
-                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">频率限制</div>
+                  <div style="font-size: 13px; color: var(--theme-text-secondary); margin-bottom: 8px;">频率限制</div>
                   <div style="display: flex; gap: 12px;">
                     <div style="flex: 1;">
                       <div style="display: flex; justify-content: space-between;">
@@ -161,7 +161,7 @@
                 </div>
                 <n-divider style="margin: 0;" />
                 <div>
-                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">保护机制</div>
+                  <div style="font-size: 13px; color: var(--theme-text-secondary); margin-bottom: 8px;">保护机制</div>
                   <div style="display: flex; flex-direction: column; gap: 4px;">
                     <div style="display: flex; justify-content: space-between;">
                       <span style="font-size: 12px;">冷却时间</span>
@@ -198,22 +198,22 @@
             <n-card size="small" title="🎭 情绪 LLM">
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 12px; color: #666;">最近评估</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">最近评估</span>
                   <n-tag :type="getEmotionTagType(status.llm_stats?.last_emotion_dominant)" size="small">
                     {{ emotionLabelCn(status.llm_stats?.last_emotion_dominant) || '-' }}
                   </n-tag>
                 </div>
                 <n-divider style="margin: 4px 0;" />
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">今天</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">今天</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_today ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本周</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本周</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_week ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本月</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_month ?? 0 }}</span>
                 </div>
               </div>
@@ -223,30 +223,30 @@
             <n-card size="small" title="💭 念头 LLM">
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">今日调用</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">今日调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_today ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">今日生成</span>
-                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_today ?? 0 }}</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">今日生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.llm_stats?.thought_generated_today ?? 0 }}</span>
                 </div>
                 <n-divider style="margin: 4px 0;" />
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本周调用</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本周调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_week ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本周生成</span>
-                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_week ?? 0 }}</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本周生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.llm_stats?.thought_generated_week ?? 0 }}</span>
                 </div>
                 <n-divider style="margin: 4px 0;" />
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本月调用</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_month ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本月生成</span>
-                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_month ?? 0 }}</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.llm_stats?.thought_generated_month ?? 0 }}</span>
                 </div>
               </div>
             </n-card>
@@ -255,15 +255,15 @@
             <n-card size="small" title="📊 总 LLM 调用">
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">今天</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">今天</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_today ?? 0) + (status.llm_stats?.thought_today ?? 0) }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本周</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本周</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_week ?? 0) + (status.llm_stats?.thought_week ?? 0) }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本月</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_month ?? 0) + (status.llm_stats?.thought_month ?? 0) }}</span>
                 </div>
               </div>
@@ -282,7 +282,7 @@
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 <div>
                   <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="font-size: 13px; color: #666;">效价（Valence）</span>
+                    <span style="font-size: 13px; color: var(--theme-text-secondary);">效价（Valence）</span>
                     <span style="font-weight: 600;">{{ status.emotion_state?.valence ?? '-' }}</span>
                   </div>
                   <n-progress :percentage="(status.emotion_state?.valence ?? 0) * 100" :show-indicator="false" :height="8"
@@ -290,7 +290,7 @@
                 </div>
                 <div>
                   <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="font-size: 13px; color: #666;">唤醒度（Arousal）</span>
+                    <span style="font-size: 13px; color: var(--theme-text-secondary);">唤醒度（Arousal）</span>
                     <span style="font-weight: 600;">{{ status.emotion_state?.arousal ?? '-' }}</span>
                   </div>
                   <n-progress :percentage="(status.emotion_state?.arousal ?? 0) * 100" :show-indicator="false" :height="8"
@@ -298,14 +298,14 @@
                 </div>
                 <div>
                   <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="font-size: 13px; color: #666;">社交需求</span>
+                    <span style="font-size: 13px; color: var(--theme-text-secondary);">社交需求</span>
                     <span style="font-weight: 600;">{{ status.emotion_state?.social_need ?? '-' }}</span>
                   </div>
                   <n-progress :percentage="(status.emotion_state?.social_need ?? 0) * 100" :show-indicator="false" :height="8"
                     :color="socialNeedColor" />
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 4px;">
-                  <span style="font-size: 13px; color: #666;">主导情绪</span>
+                  <span style="font-size: 13px; color: var(--theme-text-secondary);">主导情绪</span>
                   <n-tag :type="getEmotionTagType(status.emotion_state?.dominant)" size="small">
                     {{ emotionLabelCn(status.emotion_state?.dominant) }}
                   </n-tag>
@@ -317,21 +317,21 @@
             <n-card size="small" title="决策配置与阈值">
               <div style="display: flex; flex-direction: column; gap: 12px;">
                 <div>
-                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">决策阈值</div>
+                  <div style="font-size: 13px; color: var(--theme-text-secondary); margin-bottom: 8px;">决策阈值</div>
                   <div style="display: flex; gap: 12px;">
                     <div style="flex: 1; text-align: center;">
-                      <div style="font-size: 18px; font-weight: bold; color: #18a058;">{{ decisionConfig.send_threshold }}</div>
-                      <div style="font-size: 11px; color: #999;">发送</div>
+                      <div style="font-size: 18px; font-weight: bold; color: var(--theme-success);">{{ decisionConfig.send_threshold }}</div>
+                      <div style="font-size: 11px; color: var(--theme-text-muted);">发送</div>
                     </div>
                     <div style="flex: 1; text-align: center;">
-                      <div style="font-size: 18px; font-weight: bold; color: #d03050;">{{ decisionConfig.memory_threshold }}</div>
-                      <div style="font-size: 11px; color: #999;">记忆</div>
+                      <div style="font-size: 18px; font-weight: bold; color: var(--theme-error);">{{ decisionConfig.memory_threshold }}</div>
+                      <div style="font-size: 11px; color: var(--theme-text-muted);">记忆</div>
                     </div>
                   </div>
                 </div>
                 <n-divider style="margin: 0;" />
                 <div>
-                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">频率限制</div>
+                  <div style="font-size: 13px; color: var(--theme-text-secondary); margin-bottom: 8px;">频率限制</div>
                   <div style="display: flex; gap: 12px;">
                     <div style="flex: 1;">
                       <div style="display: flex; justify-content: space-between;">
@@ -353,7 +353,7 @@
                 </div>
                 <n-divider style="margin: 0;" />
                 <div>
-                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">保护机制</div>
+                  <div style="font-size: 13px; color: var(--theme-text-secondary); margin-bottom: 8px;">保护机制</div>
                   <div style="display: flex; flex-direction: column; gap: 4px;">
                     <div style="display: flex; justify-content: space-between;">
                       <span style="font-size: 12px;">冷却时间</span>
@@ -390,22 +390,22 @@
             <n-card size="small" title="🎭 情绪 LLM">
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 12px; color: #666;">最近评估</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">最近评估</span>
                   <n-tag :type="getEmotionTagType(status.llm_stats?.last_emotion_dominant)" size="small">
                     {{ emotionLabelCn(status.llm_stats?.last_emotion_dominant) || '-' }}
                   </n-tag>
                 </div>
                 <n-divider style="margin: 4px 0;" />
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">今天</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">今天</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_today ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本周</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本周</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_week ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本月</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.emotion_month ?? 0 }}</span>
                 </div>
               </div>
@@ -415,30 +415,30 @@
             <n-card size="small" title="💭 念头 LLM">
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">今日调用</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">今日调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_today ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">今日生成</span>
-                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_today ?? 0 }}</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">今日生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.llm_stats?.thought_generated_today ?? 0 }}</span>
                 </div>
                 <n-divider style="margin: 4px 0;" />
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本周调用</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本周调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_week ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本周生成</span>
-                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_week ?? 0 }}</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本周生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.llm_stats?.thought_generated_week ?? 0 }}</span>
                 </div>
                 <n-divider style="margin: 4px 0;" />
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本月调用</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月调用</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ status.llm_stats?.thought_month ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本月生成</span>
-                  <span style="font-size: 14px; font-weight: bold; color: #18a058;">{{ status.llm_stats?.thought_generated_month ?? 0 }}</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月生成</span>
+                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.llm_stats?.thought_generated_month ?? 0 }}</span>
                 </div>
               </div>
             </n-card>
@@ -447,15 +447,15 @@
             <n-card size="small" title="📊 总 LLM 调用">
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">今天</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">今天</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_today ?? 0) + (status.llm_stats?.thought_today ?? 0) }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本周</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本周</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_week ?? 0) + (status.llm_stats?.thought_week ?? 0) }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="font-size: 12px; color: #666;">本月</span>
+                  <span style="font-size: 12px; color: var(--theme-text-secondary);">本月</span>
                   <span style="font-size: 14px; font-weight: bold;">{{ (status.llm_stats?.emotion_month ?? 0) + (status.llm_stats?.thought_month ?? 0) }}</span>
                 </div>
               </div>
@@ -556,11 +556,11 @@
             <n-divider>念头存储</n-divider>
             <n-form-item label="存入 Hindsight">
               <n-switch v-model:value="config.thought.retain_enabled" />
-              <span style="margin-left: 8px; font-size: 12px; color: #999;">开启后念头会写入长期记忆库</span>
+              <span style="margin-left: 8px; font-size: 12px; color: var(--theme-text-muted);">开启后念头会写入长期记忆库</span>
             </n-form-item>
             <n-form-item label="Bank ID">
               <n-input v-model:value="config.hindsight.store.bank_id" placeholder="hermes-active" />
-              <span style="margin-left: 8px; font-size: 12px; color: #999;">Hindsight 存储 Bank ID，用于区分不同来源的记忆</span>
+              <span style="margin-left: 8px; font-size: 12px; color: var(--theme-text-muted);">Hindsight 存储 Bank ID，用于区分不同来源的记忆</span>
             </n-form-item>
 
             <!-- 上下文收集配置 -->
@@ -590,7 +590,7 @@
             <n-divider>想念分数配置</n-divider>
             <n-form-item label="计算基准（分钟）">
               <n-input-number v-model:value="config.longing.gap_minutes" :min="60" :max="1440" :step="30" />
-              <span style="margin-left: 8px; font-size: 12px; color: #999;">
+              <span style="margin-left: 8px; font-size: 12px; color: var(--theme-text-muted);">
                 沉默分钟数 / 此值 = 想念分数（最大1.0）。默认300分钟（5小时）达到最大值
               </span>
             </n-form-item>
@@ -599,13 +599,13 @@
             <n-divider>等级配置</n-divider>
             <n-form-item label="想念等级阈值">
               <n-input v-model:value="config.levels.longing" type="textarea" :rows="3" placeholder='[0.0, 0, "calm"], [0.1, 1, "longing"], ...' />
-              <span style="margin-left: 8px; font-size: 12px; color: #999;">
+              <span style="margin-left: 8px; font-size: 12px; color: var(--theme-text-muted);">
                 格式：[阈值, 等级, 标签]，逗号分隔
               </span>
             </n-form-item>
             <n-form-item label="聊天热度等级">
               <n-input v-model:value="config.levels.heat" type="textarea" :rows="2" placeholder='[0.0, "cold"], [0.5, "warm"], ...' />
-              <span style="margin-left: 8px; font-size: 12px; color: #999;">
+              <span style="margin-left: 8px; font-size: 12px; color: var(--theme-text-muted);">
                 格式：[阈值, 标签]，逗号分隔
               </span>
             </n-form-item>
@@ -698,7 +698,7 @@
           <n-form-item label="情绪评估提示词">
             <n-input v-model:value="config.prompts.emotion_evaluation" type="textarea" :rows="6" placeholder="输入情绪评估提示词模板" />
           </n-form-item>
-          <div style="font-size: 11px; color: #999; margin-bottom: 8px;">
+          <div style="font-size: 11px; color: var(--theme-text-muted); margin-bottom: 8px;">
             可用变量：{time} {longing_score} {longing_label} {chat_heat} {chat_label} {silence_minutes} {context}
           </div>
           <n-button type="primary" @click="testEmotionLLM" :loading="testing.emotionLLM" size="small">
@@ -757,13 +757,13 @@
           <n-form-item label="念头生成 System 提示词">
             <n-input v-model:value="config.prompts.thought_generation" type="textarea" :rows="6" placeholder="输入念头生成 System 提示词（人设 + 对话 + 记忆 + 环境）" />
           </n-form-item>
-          <div style="font-size: 11px; color: #999; margin-bottom: 8px;">
+          <div style="font-size: 11px; color: var(--theme-text-muted); margin-bottom: 8px;">
             可用变量：{persona} {session_context} {hindsight_context} {time} {emotion_display} {weather_display}
           </div>
           <n-form-item label="念头生成 User 指令">
             <n-input v-model:value="config.prompts.thought_generation_instruction" type="textarea" :rows="4" placeholder="输入念头生成 User 指令（任务指令 + output priming）" />
           </n-form-item>
-          <div style="font-size: 11px; color: #999; margin-bottom: 8px;">
+          <div style="font-size: 11px; color: var(--theme-text-muted); margin-bottom: 8px;">
             这是发给 LLM 的最后一条消息，控制 LLM 的行为模式。建议包含 output priming（如"以XXX开头"）和反复读指令。
           </div>
           <n-button type="primary" @click="testThoughtLLM" :loading="testing.thoughtLLM" size="small">
@@ -795,42 +795,42 @@
         <n-card title="主动意识运行逻辑" size="small" class="run-logic-card">
           <n-steps vertical :current="8" size="small">
             <n-step title="1. 心跳触发">
-              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+              <div style="font-size: 13px; color: var(--theme-text-secondary); line-height: 1.6;">
                 APScheduler 定时触发，默认间隔 300 秒（5 分钟）。检查主动意识是否启用、是否在活跃时间窗口内。
               </div>
             </n-step>
             <n-step title="2. 上下文收集 + Hindsight 记忆召回">
-              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+              <div style="font-size: 13px; color: var(--theme-text-secondary); line-height: 1.6;">
                 ContextCollector 跨 Session 获取最近 N 条消息（默认 200 条，彻底过滤 Tool 消息），同时调用 Hindsight Recall 检索相关记忆。收集的信息包括：对话历史、情绪状态、时间感知、天气信息、用户习惯。
               </div>
             </n-step>
             <n-step title="3. 情绪演化 + LLM 评估">
-              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+              <div style="font-size: 13px; color: var(--theme-text-secondary); line-height: 1.6;">
                 VA 模型自然演化（Arousal 衰减、Social Need 增长、Valence 回归中性），然后 LLM 根据上下文评估当前情绪。通过置信度动态合并演化值与 LLM 值（高信任: 演化30%+LLM70%，低信任: 演化70%+LLM30%）。
               </div>
             </n-step>
             <n-step title="4. 决策矩阵评分">
-              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+              <div style="font-size: 13px; color: var(--theme-text-secondary); line-height: 1.6;">
                 score = intensity × time_fitness × silence_factor × frequency_limit。综合情绪强度（social_need×0.5 + arousal×0.3 + valence×0.2）、时间适宜性、沉默时长和频率限制。根据 score 与阈值比较得出决策：auto_send（≥send_threshold）、memory（≥memory_threshold）、skip（&lt;memory_threshold）。skip 不调 LLM，省 token。send_threshold 和 memory_threshold 可设为相同值。
               </div>
             </n-step>
             <n-step title="5. 念头生成（LLM）">
-              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+              <div style="font-size: 13px; color: var(--theme-text-secondary); line-height: 1.6;">
                 仅 skip 跳过，不调 LLM。memory 和 auto_send 都调 LLM 生成念头。ThoughtEngine 使用 system/user 消息分离结构：system 放人设+对话+记忆+环境，user 放任务指令（含 output priming）。LLM 可输出 SKIP 表示不想联系用户。max_tokens=0 不限制输出长度。
               </div>
             </n-step>
             <n-step title="6. 发送保护检查 + 执行动作">
-              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+              <div style="font-size: 13px; color: var(--theme-text-secondary); line-height: 1.6;">
                 保护检查仅拦截 auto_send 的实际发送：用户消息后 5 分钟等待期、聊天热度 > 3.0、情绪强度 < 0.15、冷却期 30 分钟、每小时最多 2 条 / 每天最多 5 条。skip → 跳过。memory → 存为记忆。auto_send 未拦截 → 发送。auto_send 被拦截 → 不发送，念头存入 Hindsight。所有非 skip 路径都写入念头日志。
               </div>
             </n-step>
             <n-step title="7. 想念分数计算">
-              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+              <div style="font-size: 13px; color: var(--theme-text-secondary); line-height: 1.6;">
                 longing_score = min(沉默分钟/gap_minutes, 1.0) × decay_factor。用户每回复 1 条消息衰减 10%，最少保留 10%。等级：平静→思念→想念→渴望→焦虑。
               </div>
             </n-step>
             <n-step title="8. 情绪状态持久化">
-              <div style="font-size: 13px; color: #666; line-height: 1.6;">
+              <div style="font-size: 13px; color: var(--theme-text-secondary); line-height: 1.6;">
                 保存更新后的情绪状态（VA 值 + 主导情绪 + 更新时间），写入心跳日志（含决策详情、耗时、LLM 调用记录），供前端展示和下次心跳演化使用。
               </div>
             </n-step>
@@ -911,25 +911,25 @@
                 <n-button block @click="testLLMConnect" :loading="testing.llm">
                   ① LLM 连通性测试
                 </n-button>
-                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试 LLM 服务是否可连接</div>
+                <div style="font-size: 11px; color: var(--theme-text-muted); margin-top: 4px;">测试 LLM 服务是否可连接</div>
               </n-grid-item>
               <n-grid-item>
                 <n-button block @click="testSessionContext" :loading="testing.sessionContext">
                   ② Session 上下文测试
                 </n-button>
-                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试从 state.db 读取最近对话</div>
+                <div style="font-size: 11px; color: var(--theme-text-muted); margin-top: 4px;">测试从 state.db 读取最近对话</div>
               </n-grid-item>
               <n-grid-item>
                 <n-button block @click="testContextCollector" :loading="testing.contextCollector">
                   ③ ContextCollector 测试
                 </n-button>
-                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试完整上下文收集（对话+记忆+情绪+时间+天气）</div>
+                <div style="font-size: 11px; color: var(--theme-text-muted); margin-top: 4px;">测试完整上下文收集（对话+记忆+情绪+时间+天气）</div>
               </n-grid-item>
               <n-grid-item>
                 <n-button block type="primary" @click="testThoughtEngine" :loading="testing.thoughtEngine">
                   ④ ThoughtEngine 完整测试
                 </n-button>
-                <div style="font-size: 11px; color: #999; margin-top: 4px;">测试完整流程：上下文收集 → LLM 生成 → SKIP 判断</div>
+                <div style="font-size: 11px; color: var(--theme-text-muted); margin-top: 4px;">测试完整流程：上下文收集 → LLM 生成 → SKIP 判断</div>
               </n-grid-item>
             </n-grid>
           </n-space>
@@ -989,7 +989,7 @@
               <n-descriptions-item label="Prompt Tokens">{{ testResult.data.llm_details.prompt_tokens ?? '-' }}</n-descriptions-item>
               <n-descriptions-item label="Completion Tokens">{{ testResult.data.llm_details.completion_tokens ?? '-' }}</n-descriptions-item>
               <n-descriptions-item v-if="testResult.data.llm_details.error" label="错误" :span="2">
-                <span style="color: #d03050;">{{ testResult.data.llm_details.error }}</span>
+                <span style="color: var(--theme-error);">{{ testResult.data.llm_details.error }}</span>
               </n-descriptions-item>
             </n-descriptions>
           </template>
@@ -1070,7 +1070,7 @@
             <n-tag :type="getDecisionTagType(thoughtContentData.decision.type)" size="small">
               {{ getDecisionLabelCn(thoughtContentData.decision.type) }}
             </n-tag>
-            <span v-if="thoughtContentData.decision.score" style="margin-left: 8px; font-size: 12px; color: #999;">
+            <span v-if="thoughtContentData.decision.score" style="margin-left: 8px; font-size: 12px; color: var(--theme-text-muted);">
               分数: {{ thoughtContentData.decision.score?.toFixed(3) }}
             </span>
           </n-descriptions-item>
@@ -1121,7 +1121,7 @@
             </n-tag>
           </n-descriptions-item>
           <n-descriptions-item label="失败原因" v-if="getSendResultTagType(sendDetailData) === 'error'">
-            <pre style="white-space: pre-wrap; color: #d03050; font-size: 12px; margin: 0;">{{ getSendFailureReason(sendDetailData) }}</pre>
+            <pre style="white-space: pre-wrap; color: var(--theme-error); font-size: 12px; margin: 0;">{{ getSendFailureReason(sendDetailData) }}</pre>
           </n-descriptions-item>
           <n-descriptions-item label="发送状态" v-if="sendDetailData.message_sending">
             <n-tag :type="sendDetailData.message_sending.success ? 'success' : 'error'" size="small">
@@ -1160,32 +1160,32 @@
             </n-tag>
             <!-- 结果信息 -->
             <div style="flex: 1; min-width: 200px;">
-              <div style="font-size: 13px; color: #666; margin-bottom: 2px;">
+              <div style="font-size: 13px; color: var(--theme-text-secondary); margin-bottom: 2px;">
                 {{ getHeartbeatResultReason(detailsData) }}
               </div>
-              <div style="font-size: 12px; color: #999;">
+              <div style="font-size: 12px; color: var(--theme-text-muted);">
                 {{ detailsData.duration_ms ? `耗时 ${detailsData.duration_ms}ms` : '' }}
               </div>
             </div>
             <!-- 关键指标 -->
             <div style="display: flex; gap: 16px;">
               <div style="text-align: center;">
-                <div style="font-size: 18px; font-weight: bold; color: #18a058;">
+                <div style="font-size: 18px; font-weight: bold; color: var(--theme-success);">
                   {{ detailsData.decision?.score?.toFixed(2) || '0.00' }}
                 </div>
-                <div style="font-size: 11px; color: #999;">决策分数</div>
+                <div style="font-size: 11px; color: var(--theme-text-muted);">决策分数</div>
               </div>
               <div style="text-align: center;">
-                <div style="font-size: 18px; font-weight: bold; color: #2080f0;">
+                <div style="font-size: 18px; font-weight: bold; color: var(--theme-info);">
                   {{ detailsData.chat_heat?.toFixed(1) || '0.0' }}
                 </div>
-                <div style="font-size: 11px; color: #999;">聊天热度</div>
+                <div style="font-size: 11px; color: var(--theme-text-muted);">聊天热度</div>
               </div>
               <div style="text-align: center;">
-                <div style="font-size: 18px; font-weight: bold; color: #f0a020;">
+                <div style="font-size: 18px; font-weight: bold; color: var(--theme-warning);">
                   {{ detailsData.emotional_intensity?.toFixed(2) || '0.00' }}
                 </div>
-                <div style="font-size: 11px; color: #999;">情绪强度</div>
+                <div style="font-size: 11px; color: var(--theme-text-muted);">情绪强度</div>
               </div>
             </div>
           </div>
@@ -1201,7 +1201,7 @@
                 <template #icon>
                   <n-icon size="16"><CheckmarkCircle /></n-icon>
                 </template>
-                <div style="font-size: 12px; color: #666;">
+                <div style="font-size: 12px; color: var(--theme-text-secondary);">
                   {{ detailsData.started_at || '-' }}
                 </div>
               </n-timeline-item>
@@ -1211,7 +1211,7 @@
                 <template #icon>
                   <n-icon size="16"><CheckmarkCircle /></n-icon>
                 </template>
-                <div style="font-size: 12px; color: #666;">
+                <div style="font-size: 12px; color: var(--theme-text-secondary);">
                   距上次 {{ detailsData.minutes_since_update?.toFixed(0) || '0' }} 分钟
                   <n-tag size="tiny" :type="getEmotionTagType(detailsData.emotion_merged?.dominant)">
                     {{ emotionLabelCn(detailsData.emotion_merged?.dominant) }}
@@ -1224,7 +1224,7 @@
                 <template #icon>
                   <n-icon size="16"><CheckmarkCircle /></n-icon>
                 </template>
-                <div style="font-size: 12px; color: #666;">
+                <div style="font-size: 12px; color: var(--theme-text-secondary);">
                   对话 {{ detailsData.session_context ? '✓' : '✗' }}
                   | 记忆 {{ detailsData.recall_results?.length || 0 }} 条
                   | Hindsight {{ detailsData.hindsight_context ? '✓' : '✗' }}
@@ -1236,7 +1236,7 @@
                 <template #icon>
                   <n-icon size="16"><CheckmarkCircle /></n-icon>
                 </template>
-                <div style="font-size: 12px; color: #666;">
+                <div style="font-size: 12px; color: var(--theme-text-secondary);">
                   分数 {{ detailsData.decision.score?.toFixed(3) || '0.000' }}
                   → <n-tag size="tiny" :type="getDecisionTagType(detailsData.decision.type)">
                     {{ getDecisionLabelCn(detailsData.decision.type) }}
@@ -1253,7 +1253,7 @@
                 <template #icon>
                   <n-icon size="16"><CloseCircle /></n-icon>
                 </template>
-                <div style="font-size: 12px; color: #d03050;">
+                <div style="font-size: 12px; color: var(--theme-error);">
                   {{ detailsData.decision.protection_reason || '保护机制拦截' }}
                 </div>
               </n-timeline-item>
@@ -1271,7 +1271,7 @@
                     <CheckmarkCircle v-else />
                   </n-icon>
                 </template>
-                <div style="font-size: 12px; color: #666;">
+                <div style="font-size: 12px; color: var(--theme-text-secondary);">
                   <template v-if="detailsData.thought_generation.success === false">
                     {{ detailsData.thought_generation.error || '生成失败' }}
                   </template>
@@ -1293,7 +1293,7 @@
                     <CloseCircle v-else />
                   </n-icon>
                 </template>
-                <div style="font-size: 12px; color: #666;">
+                <div style="font-size: 12px; color: var(--theme-text-secondary);">
                   {{ detailsData.message_sending.success ? '发送成功' : '发送失败' }}
                   <template v-if="detailsData.message_sending.thought">
                     : {{ detailsData.message_sending.thought.substring(0, 30) }}...
@@ -1404,7 +1404,7 @@
               {{ item.label }}: {{ emotionLabelCn(item.d.dominant) }} ({{ item.d.valence?.toFixed(2) }}, {{ item.d.arousal?.toFixed(2) }}, {{ item.d.social_need?.toFixed(2) }})
             </n-tag>
           </div>
-          <div style="font-size: 12px; color: #666; margin-bottom: 12px;">
+          <div style="font-size: 12px; color: var(--theme-text-secondary); margin-bottom: 12px;">
             距上次 {{ detailsData.minutes_since_update?.toFixed(0) }}分钟
           </div>
         </template>
@@ -1430,20 +1430,20 @@
             <n-tag v-if="thoughtDetailsData.heartbeat_id" size="small" type="info">心跳: {{ thoughtDetailsData.heartbeat_id }}</n-tag>
             <!-- 结果信息 -->
             <div style="flex: 1; min-width: 200px;">
-              <div style="font-size: 13px; color: #666; margin-bottom: 2px;">
+              <div style="font-size: 13px; color: var(--theme-text-secondary); margin-bottom: 2px;">
                 {{ thoughtDetailsData.thought || "无念头内容" }}
               </div>
-              <div style="font-size: 12px; color: #999;">
+              <div style="font-size: 12px; color: var(--theme-text-muted);">
                 {{ thoughtTypeLabelCn(thoughtDetailsData.thought_type) }} · {{ emotionLabelCn(thoughtDetailsData.emotion_state?.dominant) }}
               </div>
             </div>
             <!-- 关键指标 -->
             <div style="display: flex; gap: 16px;">
               <div style="text-align: center;">
-                <div style="font-size: 18px; font-weight: bold; color: #18a058;">
+                <div style="font-size: 18px; font-weight: bold; color: var(--theme-success);">
                   {{ thoughtDetailsData.score?.toFixed(2) || "0.00" }}
                 </div>
-                <div style="font-size: 11px; color: #999;">决策分数</div>
+                <div style="font-size: 11px; color: var(--theme-text-muted);">决策分数</div>
               </div>
             </div>
           </div>
@@ -2674,7 +2674,7 @@ onMounted(async () => {
   gap: 6px;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--theme-text-primary);
   margin-bottom: 12px;
 }
 
@@ -2708,22 +2708,22 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .dot-green {
-  background: #18a058;
-  box-shadow: 0 0 6px #18a058;
+  background: var(--theme-success);
+  box-shadow: 0 0 6px var(--theme-success);
   animation: breathe-green 2s ease-in-out infinite;
 }
 .dot-red {
-  background: #d03050;
-  box-shadow: 0 0 6px #d03050;
+  background: var(--theme-error);
+  box-shadow: 0 0 6px var(--theme-error);
   animation: breathe-red 1.5s ease-in-out infinite;
 }
 @keyframes breathe-green {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px #18a058; }
-  50% { opacity: 0.5; box-shadow: 0 0 12px #18a058; }
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--theme-success); }
+  50% { opacity: 0.5; box-shadow: 0 0 12px var(--theme-success); }
 }
 @keyframes breathe-red {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px #d03050; }
-  50% { opacity: 0.4; box-shadow: 0 0 14px #d03050; }
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--theme-error); }
+  50% { opacity: 0.4; box-shadow: 0 0 14px var(--theme-error); }
 }
 
 /* 运行逻辑卡片样式 */
@@ -2746,7 +2746,7 @@ onMounted(async () => {
 .form-item-hint {
   margin-left: 8px;
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 /* 修复多选框左边空隙 */

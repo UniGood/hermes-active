@@ -47,7 +47,10 @@ const THEME_MAP = {
     tagBg: '#fff0f3', tagBorder: '#ffd0d6',
     borderColor: '#ffe0e6',
     shadowColor: 'rgba(255, 154, 158, 0.15)',
-    primaryRgb: '255, 154, 158'
+    primaryRgb: '255, 154, 158',
+    textPrimary: '#333', textSecondary: '#666', textMuted: '#999',
+    success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
+    borderLight: '#f0ece8'
   },
   elegant: {
     primary: '#4a90d9', hover: '#6ba3e0', pressed: '#3a7cc9',
@@ -57,7 +60,10 @@ const THEME_MAP = {
     tagBg: '#e8f0fe', tagBorder: '#b0c8e8',
     borderColor: '#d0d7de',
     shadowColor: 'rgba(74, 144, 217, 0.12)',
-    primaryRgb: '74, 144, 217'
+    primaryRgb: '74, 144, 217',
+    textPrimary: '#333', textSecondary: '#666', textMuted: '#999',
+    success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
+    borderLight: '#f0ece8'
   },
   dark: {
     primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0',
@@ -67,7 +73,10 @@ const THEME_MAP = {
     tagBg: '#1e3a5f', tagBorder: '#2d5f8a',
     borderColor: '#2d3748',
     shadowColor: 'rgba(0, 0, 0, 0.3)',
-    primaryRgb: '79, 195, 247'
+    primaryRgb: '79, 195, 247',
+    textPrimary: '#e0e0e0', textSecondary: '#aaa', textMuted: '#888',
+    success: '#63e6a0', error: '#ff6b8a', info: '#70c0e8', warning: '#f0c060',
+    borderLight: '#2d3748'
   }
 }
 
@@ -104,6 +113,18 @@ function applyTheme(themeId) {
   // 边框和阴影
   root.style.setProperty('--theme-border', t.borderColor)
   root.style.setProperty('--theme-shadow', t.shadowColor)
+  root.style.setProperty('--theme-border-light', t.borderLight)
+
+  // 文字层级
+  root.style.setProperty('--theme-text-primary', t.textPrimary)
+  root.style.setProperty('--theme-text-secondary', t.textSecondary)
+  root.style.setProperty('--theme-text-muted', t.textMuted)
+
+  // 语义颜色
+  root.style.setProperty('--theme-success', t.success)
+  root.style.setProperty('--theme-error', t.error)
+  root.style.setProperty('--theme-info', t.info)
+  root.style.setProperty('--theme-warning', t.warning)
 
   // RGB 版本（用于 rgba()）
   root.style.setProperty('--theme-primary-rgb', t.primaryRgb)
