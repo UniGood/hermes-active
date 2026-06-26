@@ -305,17 +305,7 @@
             <n-input v-model:value="formData.send_mark" placeholder="凯莉" style="max-width: 300px" />
           </n-form-item>
           <n-form-item label="时间格式">
-            <div class="time-format-selector">
-              <div
-                v-for="opt in timeFormatOptions" :key="opt.value"
-                class="time-format-chip"
-                :class="{ active: formData.time_format === opt.value }"
-                @click="formData.time_format = opt.value"
-              >
-                <span class="chip-label">{{ opt.label }}</span>
-                <span class="chip-preview">{{ formatWithOption(opt.value) }}</span>
-              </div>
-            </div>
+            <TimeFormatSelector v-model="formData.time_format" />
           </n-form-item>
           <n-form-item label="预览">
             <div class="mark-preview" v-if="testMessageForPreview">
@@ -610,9 +600,9 @@
 
 <script setup>
 import { ref, watch, onMounted, computed, h } from 'vue'
-
 import { useMessage, useDialog, NButton } from 'naive-ui'
 import api from '../api'
+import TimeFormatSelector from '../components/TimeFormatSelector.vue'
 
 const message = useMessage()
 const dialog = useDialog()
