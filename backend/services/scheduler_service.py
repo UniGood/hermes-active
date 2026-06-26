@@ -459,6 +459,9 @@ async def run_cron_job(job_id: str):
             import time as _time
             llm_start = _time.time()
 
+            # 读取 max_tokens 配置（0=不限制）
+            max_tokens = int(target_job.get("max_tokens", 0) or 0)
+
             # 判断 LLM 模式：hermes 用 call_llm，自定义用 LLMService
             if llm_config.get("mode") == "hermes":
                 try:
@@ -467,14 +470,17 @@ async def run_cron_job(job_id: str):
                     _sys.path.insert(0, str(_Path.home() / '.hermes' / 'hermes-agent'))
                     from agent.auxiliary_client import call_llm
 
-                    response = call_llm(
+                    llm_kwargs = dict(
                         task="title_generation",
                         messages=[
                             {"role": "system", "content": prompt_text},
                             {"role": "user", "content": user_prompt}
                         ],
                         temperature=0.7,
-                        max_tokens=200,
+                    )
+                    if max_tokens > 0:
+                        llm_kwargs["max_tokens"] = max_tokens
+                    response = call_llm(**llm_kwargs,
                     )
                     msg = response.choices[0].message
                     generated_message = msg.content.strip()
@@ -485,7 +491,7 @@ async def run_cron_job(job_id: str):
                         "mode": "hermes",
                         "model": getattr(response, 'model', 'default'),
                         "temperature": 0.7,
-                        "max_tokens": 200,
+                        "max_tokens": max_tokens,
                         "system_prompt": prompt_text,
                         "user_prompt": user_prompt,
                     }
@@ -511,20 +517,22 @@ async def run_cron_job(job_id: str):
                     )
                     return
             else:
-                llm_result = await LLMService.generate_message(
+                llm_kwargs_custom = dict(
                     llm_config=llm_config,
                     prompt=user_prompt,
                     system_prompt=prompt_text,
                     temperature=0.7,
-                    max_tokens=200
                 )
+                if max_tokens > 0:
+                    llm_kwargs_custom["max_tokens"] = max_tokens
+                llm_result = await LLMService.generate_message(**llm_kwargs_custom)
                 llm_duration = round(_time.time() - llm_start, 2)
 
                 details["llm_request"] = {
                     "mode": "custom",
                     "model": llm_config.get("model", ""),
                     "temperature": 0.7,
-                    "max_tokens": 200,
+                    "max_tokens": max_tokens,
                     "system_prompt": prompt_text,
                     "user_prompt": user_prompt,
                 }

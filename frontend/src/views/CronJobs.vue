@@ -305,6 +305,10 @@
             {{ formData.use_llm ? '大模型生成消息' : '直接发送固定消息' }}
           </span>
         </n-form-item>
+        <n-form-item v-if="formData.use_llm" label="Max Tokens">
+          <n-input-number v-model:value="formData.max_tokens" :min="0" :max="8192" :step="100" style="width: 180px" />
+          <span style="margin-left: 8px; color: #999; font-size: 13px">0 = 不限制</span>
+        </n-form-item>
         <n-form-item v-if="!formData.use_llm" label="固定消息">
           <n-input v-model:value="formData.fixed_message" type="textarea" :autosize="{ minRows: 2, maxRows: 6 }" placeholder="输入固定发送的消息内容" />
         </n-form-item>
@@ -765,7 +769,8 @@ const formData = ref({
   time_format: '%H:%M 星期{weekday}',
   cooldown_enabled: false,
   cooldown_minutes: 10,
-  fixed_message: ''
+  fixed_message: '',
+  max_tokens: 0
 })
 
 // 上下文配置
@@ -1051,7 +1056,8 @@ function editJob(job) {
       time_format: job.time_format || '',
       cooldown_enabled: job.cooldown_enabled || false,
       cooldown_minutes: job.cooldown_minutes || 10,
-      fixed_message: job.fixed_message || ''
+      fixed_message: job.fixed_message || '',
+      max_tokens: job.max_tokens || 0
     }
   } else {
     // 兼容旧的单一 prompt 字段
@@ -1072,7 +1078,8 @@ function editJob(job) {
       mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}',
       send_mark: job.send_mark || '',
       time_format: job.time_format || '',
-      fixed_message: job.fixed_message || ''
+      fixed_message: job.fixed_message || '',
+      max_tokens: job.max_tokens || 0
     }
   }
   sessionMode.value = job.session_id ? 'fixed' : 'latest'
@@ -1088,11 +1095,9 @@ async function viewJobLogs(job) {
   showJobLogs.value = true
   jobLogsPage.value = 1
   try {
-    const data = await api.get('/task-logs', { params: { task_type: 'cron_run', job_name: job.name, page_size: 100 } })
-    // 前端按任务名称过滤
-    jobLogs.value = (data.items || []).filter(log => 
-      log.message && log.message.includes(job.name)
-    )
+    // 用 job_id 精确查询，改名不影响日志
+    const data = await api.get('/task-logs', { params: { task_type: 'cron_run', job_id: job.id, page_size: 100 } })
+    jobLogs.value = data.items || []
   } catch (e) {
     message.error('加载日志失败')
     jobLogs.value = []

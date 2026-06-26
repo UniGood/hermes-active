@@ -143,6 +143,7 @@ class CronJobCreate(BaseModel):
     time_format: Optional[str] = "%H:%M 星期{weekday}"
     cooldown_enabled: bool = False
     cooldown_minutes: int = 10
+    max_tokens: int = 0
 
 
 class CronJobUpdate(BaseModel):
@@ -163,6 +164,7 @@ class CronJobUpdate(BaseModel):
     time_format: Optional[str] = None
     cooldown_enabled: Optional[bool] = None
     cooldown_minutes: Optional[int] = None
+    max_tokens: Optional[int] = None
 
 
 class CronJobInfo(BaseModel):
