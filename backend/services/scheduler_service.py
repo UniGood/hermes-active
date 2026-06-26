@@ -162,7 +162,7 @@ def _get_hindsight_base_url() -> str:
 async def call_hindsight_recall(query: str, limit: int = 10) -> list:
     """调用 Hindsight Recall API 获取相关记忆"""
     base_url = _get_hindsight_base_url()
-    url = f"{base_url}/memories/recall"
+    url = f"{base_url}/v1/default/banks/hermes/memories/recall"
     payload = {"query": query, "limit": limit}
     try:
         async with aiohttp.ClientSession() as session:
@@ -184,7 +184,7 @@ async def call_hindsight_recall(query: str, limit: int = 10) -> list:
 async def call_hindsight_reflect(query: str) -> str:
     """调用 Hindsight Reflect API 获取综合分析"""
     base_url = _get_hindsight_base_url()
-    url = f"{base_url}/reflect"
+    url = f"{base_url}/v1/default/banks/hermes/reflect"
     payload = {"query": query}
     try:
         async with aiohttp.ClientSession() as session:
