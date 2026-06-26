@@ -227,7 +227,7 @@ onMounted(() => {
 }
 
 .session-card {
-  background: #fff;
+  background: var(--theme-card-bg);
   border-radius: 16px;
   padding: 16px;
   cursor: pointer;
@@ -236,7 +236,7 @@ onMounted(() => {
 }
 
 .session-card:hover {
-  box-shadow: 0 4px 20px rgba(74, 144, 217, 0.15);
+  box-shadow: 0 4px 20px rgba(var(--theme-primary-rgb), 0.15);
   transform: translateY(-2px);
 }
 
@@ -265,7 +265,7 @@ onMounted(() => {
 .session-title {
   font-size: 16px;
   font-weight: 500;
-  color: #2d2d2d;
+  color: var(--theme-text);
   margin-bottom: 8px;
 }
 

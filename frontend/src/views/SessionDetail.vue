@@ -290,7 +290,7 @@ onMounted(() => {
 
 .info-item .value {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   word-break: break-all;
 }
 
@@ -357,7 +357,7 @@ onMounted(() => {
 
 .message-content {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -369,12 +369,12 @@ onMounted(() => {
 }
 
 .message-item.user .message-content {
-  background: #fff;
+  background: var(--theme-card-bg);
   color: #333;
 }
 
 .message-item.assistant .message-content {
-  background: #fff;
+  background: var(--theme-card-bg);
   color: #333;
 }
 

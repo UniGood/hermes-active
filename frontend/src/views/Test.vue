@@ -778,7 +778,7 @@ onMounted(() => {
 
 .info-item .value {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   word-break: break-all;
 }
 
@@ -814,11 +814,11 @@ onMounted(() => {
 }
 
 .context-role.user {
-  color: var(--theme-primary, #4a90d9);
+  color: var(--theme-primary);
 }
 
 .context-role.assistant {
-  color: var(--theme-accent, #8bb4e0);
+  color: var(--theme-accent);
 }
 
 .context-content {
@@ -848,7 +848,7 @@ onMounted(() => {
 
 .recall-text {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   line-height: 1.6;
   margin-bottom: 8px;
 }
@@ -868,7 +868,7 @@ onMounted(() => {
 .reflect-result {
   margin-top: 12px;
   padding: 16px;
-  background: rgba(74, 144, 217, 0.06);
+  background: rgba(var(--theme-primary-rgb), 0.06);
   border-radius: 12px;
 }
 
@@ -880,7 +880,7 @@ onMounted(() => {
 
 .reflect-content {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   line-height: 1.8;
   white-space: pre-wrap;
 }
@@ -910,10 +910,10 @@ onMounted(() => {
 
 .mark-format-preview {
   font-size: 12px;
-  color: var(--theme-primary, #4a90d9);
+  color: var(--theme-primary);
   margin-top: 6px;
   padding: 6px 8px;
-  background: rgba(74, 144, 217, 0.06);
+  background: rgba(var(--theme-primary-rgb), 0.06);
   border-radius: 8px;
   word-break: break-all;
 }
@@ -921,7 +921,7 @@ onMounted(() => {
 .generated-message {
   margin-top: 12px;
   padding: 12px;
-  background: rgba(74, 144, 217, 0.06);
+  background: rgba(var(--theme-primary-rgb), 0.06);
   border-radius: 12px;
 }
 
@@ -933,7 +933,7 @@ onMounted(() => {
 
 .generated-content {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   line-height: 1.6;
 }
 
@@ -955,11 +955,11 @@ onMounted(() => {
 }
 
 .log-item.error {
-  color: var(--theme-primary, #4a90d9);
+  color: var(--theme-primary);
 }
 
 .log-item.info {
-  color: var(--theme-accent, #8bb4e0);
+  color: var(--theme-accent);
 }
 
 .log-time {
@@ -1030,14 +1030,14 @@ onMounted(() => {
 }
 
 .time-format-chip:hover {
-  border-color: var(--theme-primary, #4a90d9);
-  background: rgba(74, 144, 217, 0.06);
+  border-color: var(--theme-primary);
+  background: rgba(var(--theme-primary-rgb), 0.06);
 }
 
 .time-format-chip.active {
-  border-color: var(--theme-primary, #4a90d9);
-  background: rgba(74, 144, 217, 0.1);
-  box-shadow: 0 0 0 1px var(--theme-primary, #4a90d9);
+  border-color: var(--theme-primary);
+  background: rgba(var(--theme-primary-rgb), 0.1);
+  box-shadow: 0 0 0 1px var(--theme-primary);
 }
 
 .chip-label {
@@ -1047,7 +1047,7 @@ onMounted(() => {
 }
 
 .time-format-chip.active .chip-label {
-  color: var(--theme-primary, #4a90d9);
+  color: var(--theme-primary);
   font-weight: 500;
 }
 

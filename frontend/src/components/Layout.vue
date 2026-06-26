@@ -212,7 +212,7 @@ watch(() => route.path, () => {
 .sidebar-title {
   font-size: 16px;
   font-weight: 600;
-  color: #2d2d2d;
+  color: var(--theme-text);
 }
 
 .sidebar-nav {
@@ -235,14 +235,14 @@ watch(() => route.path, () => {
 }
 
 .nav-item:hover {
-  background: rgba(74, 144, 217, 0.08);
-  color: #2d2d2d;
+  background: rgba(var(--theme-primary-rgb), 0.08);
+  color: var(--theme-text);
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, var(--theme-primary, #4a90d9), var(--theme-accent, #8bb4e0));
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
   color: #fff;
-  box-shadow: 0 2px 12px rgba(74, 144, 217, 0.3);
+  box-shadow: 0 2px 12px rgba(var(--theme-primary-rgb), 0.3);
 }
 
 .nav-label {
@@ -251,7 +251,7 @@ watch(() => route.path, () => {
 
 .sidebar-footer {
   padding: 12px 8px;
-  border-top: 1px solid #f0ece8;
+  border-top: 1px solid var(--theme-border);
 }
 
 .sidebar-footer .n-button {
@@ -260,8 +260,8 @@ watch(() => route.path, () => {
 }
 
 .sidebar-footer .n-button:hover {
-  color: var(--theme-primary, #4a90d9);
-  background: rgba(74, 144, 217, 0.06);
+  color: var(--theme-primary);
+  background: rgba(var(--theme-primary-rgb), 0.06);
 }
 
 /* ========== 主内容区 ========== */
@@ -285,7 +285,7 @@ watch(() => route.path, () => {
   justify-content: space-between;
   padding: 0 12px;
   height: 56px;
-  background: var(--theme-primary, #4a90d9);
+  background: var(--theme-primary);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);

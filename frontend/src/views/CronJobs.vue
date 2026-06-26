@@ -497,7 +497,7 @@
         <n-divider v-if="logDetailData.context" title-placement="left">上下文</n-divider>
         <div v-if="logDetailData.context" style="margin-bottom: 16px;">
           <n-tag type="info" size="small">Session 消息 ({{ logDetailData.context.session_count }}条)</n-tag>
-          <div v-if="logDetailData.context.session_messages && logDetailData.context.session_messages.length" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px; margin-top: 4px;">
+          <div v-if="logDetailData.context.session_messages && logDetailData.context.session_messages.length" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--theme-border); border-radius: 4px; padding: 8px; margin-top: 4px;">
             <div v-for="(msg, idx) in logDetailData.context.session_messages" :key="idx" style="margin-bottom: 4px; font-size: 12px;">
               <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="tiny">{{ msg.role }}</n-tag>
               <span style="margin-left: 4px;">{{ msg.content }}</span>
@@ -1287,7 +1287,7 @@ onMounted(() => {
 }
 
 .job-card {
-  background: #fff;
+  background: var(--theme-card-bg);
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
@@ -1295,7 +1295,7 @@ onMounted(() => {
 }
 
 .job-card:hover {
-  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.12);
+  box-shadow: 0 4px 20px rgba(var(--theme-primary-rgb), 0.12);
 }
 
 .job-header {
@@ -1308,7 +1308,7 @@ onMounted(() => {
 .job-name {
   font-size: 16px;
   font-weight: 500;
-  color: #2d2d2d;
+  color: var(--theme-text);
 }
 
 .job-meta {
@@ -1327,14 +1327,14 @@ onMounted(() => {
 }
 
 .cron-parse-result {
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(var(--theme-primary-rgb), 0.06);
   padding: 8px 12px;
   border-radius: 12px;
   font-size: 13px;
 }
 
 .cron-freq {
-  color: #ff9a9e;
+  color: var(--theme-primary);
   font-weight: 500;
   margin-bottom: 8px;
 }
@@ -1448,24 +1448,24 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 6px 12px;
-  border: 1px solid #e0e0e6;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  background: #fff;
+  background: var(--theme-card-bg);
   min-width: 80px;
   min-height: 48px;
 }
 
 .time-format-chip:hover {
-  border-color: #ff9a9e;
-  background: rgba(255, 154, 158, 0.06);
+  border-color: var(--theme-primary);
+  background: var(--theme-tag-bg);
 }
 
 .time-format-chip.active {
-  border-color: #ff9a9e;
-  background: rgba(255, 154, 158, 0.1);
-  box-shadow: 0 0 0 1px #ff9a9e;
+  border-color: var(--theme-primary);
+  background: var(--theme-tag-bg);
+  box-shadow: 0 0 0 1px var(--theme-primary);
 }
 
 .chip-label {
@@ -1475,7 +1475,7 @@ onMounted(() => {
 }
 
 .time-format-chip.active .chip-label {
-  color: #ff9a9e;
+  color: var(--theme-primary);
   font-weight: 500;
 }
 
@@ -1577,10 +1577,10 @@ onMounted(() => {
   .log-pagination {
     position: sticky;
     bottom: 0;
-    background: #fff;
+    background: var(--theme-card-bg);
     padding: 12px 0;
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 20px));
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--theme-border);
     z-index: 10;
   }
 
@@ -1613,10 +1613,10 @@ onMounted(() => {
     bottom: 0;
     left: 0;
     right: 0;
-    background: #fff;
+    background: var(--theme-card-bg);
     padding: 12px 16px;
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--theme-border);
     z-index: 100;
     box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
   }

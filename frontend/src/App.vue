@@ -39,43 +39,78 @@ const themeOverrides = ref({
 })
 
 const THEME_MAP = {
-  kelly: { primary: '#ff9a9e', hover: '#ffb3b6', pressed: '#e8838a', secondary: '#fecfef', accent: '#f6d365' },
-  elegant: { primary: '#4a90d9', hover: '#6ba3e0', pressed: '#3a7cc9', secondary: '#e8eef5', accent: '#8bb4e0' },
-  dark: { primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0', secondary: '#2d2d2d', accent: '#4fc3f7' }
+  kelly: {
+    primary: '#ff9a9e', hover: '#ffb3b6', pressed: '#e8838a',
+    secondary: '#fecfef', accent: '#f6d365',
+    bg: '#faf9f7', text: '#2d2d2d', cardBg: '#ffffff',
+    headerBg: '#ff9a9e', sidebarBg: '#fff0f3',
+    tagBg: '#fff0f3', tagBorder: '#ffd0d6',
+    borderColor: '#ffe0e6',
+    shadowColor: 'rgba(255, 154, 158, 0.15)',
+    primaryRgb: '255, 154, 158'
+  },
+  elegant: {
+    primary: '#4a90d9', hover: '#6ba3e0', pressed: '#3a7cc9',
+    secondary: '#e8eef5', accent: '#8bb4e0',
+    bg: '#f5f7fa', text: '#2d2d2d', cardBg: '#ffffff',
+    headerBg: '#4a90d9', sidebarBg: '#e8eef5',
+    tagBg: '#e8f0fe', tagBorder: '#b0c8e8',
+    borderColor: '#d0d7de',
+    shadowColor: 'rgba(74, 144, 217, 0.12)',
+    primaryRgb: '74, 144, 217'
+  },
+  dark: {
+    primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0',
+    secondary: '#16213e', accent: '#4fc3f7',
+    bg: '#0a0e1a', text: '#e0e0e0', cardBg: '#1a1a2e',
+    headerBg: '#0d1b2a', sidebarBg: '#16213e',
+    tagBg: '#1e3a5f', tagBorder: '#2d5f8a',
+    borderColor: '#2d3748',
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    primaryRgb: '79, 195, 247'
+  }
 }
 
 function applyTheme(themeId) {
-  const t = THEME_MAP[themeId] || THEME_MAP.kelly
+  const t = THEME_MAP[themeId] || THEME_MAP.elegant
+  
+  // Naive UI 主题（必须用具体颜色值，不能用 CSS 变量）
   themeOverrides.value.common.primaryColor = t.primary
   themeOverrides.value.common.primaryColorHover = t.hover
   themeOverrides.value.common.primaryColorPressed = t.pressed
-
+  
   const root = document.documentElement
+  
+  // 核心颜色
   root.style.setProperty('--theme-primary', t.primary)
   root.style.setProperty('--theme-primary-hover', t.hover)
   root.style.setProperty('--theme-primary-pressed', t.pressed)
-  root.style.setProperty('--theme-secondary', t.secondary || '#e8eef5')
-  root.style.setProperty('--theme-accent', t.accent || '#8bb4e0')
+  root.style.setProperty('--theme-secondary', t.secondary)
+  root.style.setProperty('--theme-accent', t.accent)
+  
+  // 背景和文字
+  root.style.setProperty('--theme-bg', t.bg)
+  root.style.setProperty('--theme-text', t.text)
+  root.style.setProperty('--theme-card-bg', t.cardBg)
+  
+  // 组件背景
+  root.style.setProperty('--theme-header-bg', t.headerBg)
+  root.style.setProperty('--theme-sidebar-bg', t.sidebarBg)
+  
+  // Tag 样式
+  root.style.setProperty('--theme-tag-bg', t.tagBg)
+  root.style.setProperty('--theme-tag-border', t.tagBorder)
+  
+  // 边框和阴影
+  root.style.setProperty('--theme-border', t.borderColor)
+  root.style.setProperty('--theme-shadow', t.shadowColor)
 
-  if (themeId === 'dark') {
-    root.style.setProperty('--theme-bg', '#1a1a2e')
-    root.style.setProperty('--theme-text', '#e0e0e0')
-    root.style.setProperty('--theme-card-bg', '#16213e')
-    document.body.style.background = '#1a1a2e'
-    document.body.style.color = '#e0e0e0'
-  } else if (themeId === 'elegant') {
-    root.style.setProperty('--theme-bg', '#f5f7fa')
-    root.style.setProperty('--theme-text', '#2d2d2d')
-    root.style.setProperty('--theme-card-bg', '#ffffff')
-    document.body.style.background = '#f5f7fa'
-    document.body.style.color = '#2d2d2d'
-  } else {
-    root.style.setProperty('--theme-bg', '#f5f7fa')
-    root.style.setProperty('--theme-text', '#2d2d2d')
-    root.style.setProperty('--theme-card-bg', '#ffffff')
-    document.body.style.background = '#f5f7fa'
-    document.body.style.color = '#2d2d2d'
-  }
+  // RGB 版本（用于 rgba()）
+  root.style.setProperty('--theme-primary-rgb', t.primaryRgb)
+  
+  // body 样式
+  document.body.style.background = t.bg
+  document.body.style.color = t.text
 }
 
 onMounted(() => {

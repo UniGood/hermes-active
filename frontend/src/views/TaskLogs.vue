@@ -141,7 +141,7 @@ onMounted(loadLogs)
 }
 
 .log-card {
-  background: #fff;
+  background: var(--theme-card-bg);
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
@@ -149,7 +149,7 @@ onMounted(loadLogs)
 }
 
 .log-card:hover {
-  box-shadow: 0 4px 20px rgba(74, 144, 217, 0.12);
+  box-shadow: 0 4px 20px rgba(var(--theme-primary-rgb), 0.12);
 }
 
 .log-header {
@@ -162,7 +162,7 @@ onMounted(loadLogs)
 .log-type {
   font-size: 14px;
   font-weight: 500;
-  color: #2d2d2d;
+  color: var(--theme-text);
 }
 
 .log-time {
@@ -180,7 +180,7 @@ onMounted(loadLogs)
 .log-error {
   font-size: 13px;
   color: #d03050;
-  background: rgba(74, 144, 217, 0.08);
+  background: rgba(var(--theme-primary-rgb), 0.08);
   padding: 8px 12px;
   border-radius: 12px;
   margin-bottom: 8px;
