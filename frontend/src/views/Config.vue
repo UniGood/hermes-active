@@ -253,8 +253,7 @@ const passwordForm = ref({
 // 主题配置
 const themes = [
   { id: 'kelly', name: '凯莉', desc: '珊瑚粉 + 暖橙', color1: '#ff9a9e', color2: '#f6d365' },
-  { id: 'elegant', name: '素雅', desc: '淡蓝 + 浅灰', color1: '#a0c4e8', color2: '#e8e8e8' },
-  { id: 'dark', name: '酷黑', desc: '深灰 + 亮蓝', color1: '#2d2d2d', color2: '#4fc3f7' }
+  { id: 'elegant', name: '素雅', desc: '淡蓝 + 浅灰', color1: '#a0c4e8', color2: '#e8e8e8' }
 ]
 const currentTheme = ref('kelly')
 
@@ -417,8 +416,7 @@ function applyTheme(themeId) {
   const root = document.documentElement
   const themeMap = {
     kelly: { primary: '#ff9a9e', primaryHover: '#ffb3b6', primaryPressed: '#e8838a', bg: '#faf9f7', accent: '#f6d365' },
-    elegant: { primary: '#a0c4e8', primaryHover: '#b5d4f0', primaryPressed: '#8ab4d8', bg: '#f5f7fa', accent: '#e8e8e8' },
-    dark: { primary: '#4fc3f7', primaryHover: '#72d0fa', primaryPressed: '#3ab0e0', bg: '#1a1a2e', accent: '#2d2d2d' }
+    elegant: { primary: '#a0c4e8', primaryHover: '#b5d4f0', primaryPressed: '#8ab4d8', bg: '#f5f7fa', accent: '#e8e8e8' }
   }
   const t = themeMap[themeId] || themeMap.kelly
   root.style.setProperty('--theme-primary', t.primary)
@@ -429,13 +427,7 @@ function applyTheme(themeId) {
 
   // 更新 body 背景
   document.body.style.background = t.bg
-
-  // 深色主题特殊处理
-  if (themeId === 'dark') {
-    document.body.style.color = '#e0e0e0'
-  } else {
-    document.body.style.color = '#2d2d2d'
-  }
+  document.body.style.color = '#2d2d2d'
 }
 
 // 天气配置

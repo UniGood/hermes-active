@@ -51,7 +51,7 @@ const THEME_MAP = {
     textPrimary: '#333', textSecondary: '#666', textMuted: '#999',
     success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
     borderLight: '#f0ece8',
-    userMsgBg: '#e3f2fd', assistantMsgBg: '#fff3e0',
+    userMsgBg: '#fff0f3', assistantMsgBg: '#fff3e0',
     statusActive: '#a8e6cf',
     bgMuted: '#f8f6f4', bgLight: '#fafafa', textHint: '#aaa', errorLight: '#e53935'
   },
@@ -70,22 +70,6 @@ const THEME_MAP = {
     userMsgBg: '#e3f2fd', assistantMsgBg: '#fff3e0',
     statusActive: '#a8e6cf',
     bgMuted: '#f8f6f4', bgLight: '#fafafa', textHint: '#aaa', errorLight: '#e53935'
-  },
-  dark: {
-    primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0',
-    secondary: '#16213e', accent: '#4fc3f7',
-    bg: '#0a0e1a', text: '#e0e0e0', cardBg: '#1a1a2e',
-    headerBg: '#0d1b2a', sidebarBg: '#16213e',
-    tagBg: '#1e3a5f', tagBorder: '#2d5f8a',
-    borderColor: '#2d3748',
-    shadowColor: 'rgba(0, 0, 0, 0.3)',
-    primaryRgb: '79, 195, 247',
-    textPrimary: '#e0e0e0', textSecondary: '#aaa', textMuted: '#888',
-    success: '#63e6a0', error: '#ff6b8a', info: '#70c0e8', warning: '#f0c060',
-    borderLight: '#2d3748',
-    userMsgBg: '#1a3a5c', assistantMsgBg: '#3d2e1a',
-    statusActive: '#63e6a0',
-    bgMuted: '#16213e', bgLight: '#1a1a2e', textHint: '#666', errorLight: '#ff6b8a'
   }
 }
 
