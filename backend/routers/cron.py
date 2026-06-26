@@ -400,7 +400,17 @@ async def preview_prompt(
     if context_data["session_messages"]:
         def format_preview_msg(m):
             ts = m.get("timestamp", "")
-            time_part = ts[:16].replace("T", " ") if ts and len(ts) >= 16 else ""
+            try:
+                if isinstance(ts, (int, float)):
+                    from datetime import datetime, timezone, timedelta
+                    dt = datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=8)))
+                    time_part = dt.strftime("%Y-%m-%d %H:%M")
+                elif isinstance(ts, str) and len(ts) >= 16:
+                    time_part = ts[:16].replace("T", " ")
+                else:
+                    time_part = ""
+            except Exception:
+                time_part = ""
             if time_part:
                 return f"[{time_part}] {m['role']}: {m['content']}"
             return f"{m['role']}: {m['content']}"

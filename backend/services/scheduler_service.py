@@ -357,10 +357,17 @@ async def run_cron_job(job_id: str):
                 def format_msg(m):
                     role = role_map.get(m.get("role", "unknown"), m.get("role", "unknown"))
                     ts = m.get("timestamp", "")
-                    # 格式化时间：取 YYYY-MM-DD HH:MM 部分
-                    if ts and isinstance(ts, str) and len(ts) >= 16:
-                        time_part = ts[:16].replace("T", " ")  # "2026-06-26T09:30:00" → "2026-06-26 09:30"
-                    else:
+                    # 格式化时间：支持 Unix 时间戳和 ISO 字符串
+                    try:
+                        if isinstance(ts, (int, float)):
+                            from datetime import datetime, timezone, timedelta
+                            dt = datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=8)))
+                            time_part = dt.strftime("%Y-%m-%d %H:%M")
+                        elif isinstance(ts, str) and len(ts) >= 16:
+                            time_part = ts[:16].replace("T", " ")
+                        else:
+                            time_part = ""
+                    except Exception:
                         time_part = ""
                     content = m.get("content", "") or ""
                     if time_part:
