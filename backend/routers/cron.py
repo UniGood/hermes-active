@@ -348,7 +348,7 @@ async def preview_prompt(
         context_data["session_messages"] = [
             {"role": role_map.get(m.get("role", "unknown"), m.get("role", "unknown")),
              "content": m.get("content", ""),
-             "timestamp": str(m.get("timestamp", ""))}
+             "timestamp": m.get("timestamp", "")}
             for m in context_msgs
         ]
 
