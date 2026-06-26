@@ -259,7 +259,7 @@ onMounted(() => {
 
 .session-time {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .session-title {
@@ -271,7 +271,7 @@ onMounted(() => {
 
 .session-id {
   font-size: 11px;
-  color: #bbb;
+  color: var(--theme-text-muted);
   font-family: monospace;
   margin-bottom: 4px;
 }
@@ -280,16 +280,16 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .status-active {
-  color: #a8e6cf;
+  color: var(--theme-status-active);
   font-weight: 500;
 }
 
 .status-ended {
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .pagination {
