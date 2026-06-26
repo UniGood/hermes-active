@@ -246,7 +246,7 @@
               <span style="font-size: 13px; color: #666">启用天气上下文（复用配置管理中的高德 API Key）</span>
             </n-space>
             <n-text v-if="contextConfig.weather_enabled" depth="3" style="font-size: 12px">
-              当前城市的天气会作为上下文注入到 {context} 占位符
+              当前城市的天气会作为上下文通过 {weather} 占位符注入
             </n-text>
             <template v-if="contextConfig.weather_enabled">
               <n-space align="center">
@@ -355,7 +355,7 @@
             v-model:value="defaultPromptsData.user_prompt"
             type="textarea"
             :autosize="{ minRows: 5, maxRows: 15 }"
-            placeholder="用户提示词模板，支持 {context} 占位符"
+            placeholder="用户提示词模板，支持 {session} {memory} {weather} {time} 占位符"
           />
         </n-form-item>
         <n-form-item label="拼接 soul.md">
@@ -640,7 +640,6 @@ const placeholderOptions = [
   { label: '{memory}', value: '{memory}', desc: '记忆反思' },
   { label: '{weather}', value: '{weather}', desc: '天气感知' },
   { label: '{time}', value: '{time}', desc: '当前时间' },
-  { label: '{context}', value: '{context}', desc: '所有上下文' },
 ]
 
 function insertPlaceholder(placeholder) {

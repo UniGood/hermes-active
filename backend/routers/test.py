@@ -67,8 +67,8 @@ async def test_full_flow(
         )
 
         system_prompt = prompts_config.get("system", "")
-        generation_template = prompts_config.get("generation", "{context}")
-        user_prompt = generation_template.replace("{context}", context_text)
+        generation_template = prompts_config.get("generation", "{session}")
+        user_prompt = generation_template.replace("{session}", context_text)
 
         llm_result = await LLMService.generate_message(
             llm_config=llm_config,

@@ -298,7 +298,7 @@ async def run_cron_job(job_id: str):
 
             # 解析用户提示词中的上下文配置
             ctx_config, user_prompt_clean = _parse_context_config(user_prompt_text or "")
-            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{context}")
+            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{session}\n{memory}\n{weather}\n当前时间：{time}")
         elif raw_prompt and "|||" in raw_prompt:
             # 兼容旧的 ||| 分隔格式
             parts = raw_prompt.split("|||", 1)
@@ -313,15 +313,15 @@ async def run_cron_job(job_id: str):
                     prompt_text = prompt_text + "\n\n" + soul_content if prompt_text else soul_content
 
             ctx_config, user_prompt_clean = _parse_context_config(user_prompt_raw)
-            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{context}")
+            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{session}\n{memory}\n{weather}\n当前时间：{time}")
         else:
             # 兼容旧的单一 prompt 字段
             ctx_config, user_prompt_text = _parse_context_config(raw_prompt)
             prompt_text = user_prompt_text or prompts_config.get("system", "")
-            user_prompt_final = prompts_config.get("generation", "{context}")
+            user_prompt_final = prompts_config.get("generation", "{session}\n{memory}\n{weather}\n当前时间：{time}")
 
         # 获取上下文 - 支持独立占位符：{session} {memory} {weather} {time}
-        # 同时保留 {context} 兼容旧配置
+        # 获取上下文数据
 
         # 0. 当前时间占位符
         from datetime import timezone, timedelta
@@ -384,23 +384,12 @@ async def run_cron_job(job_id: str):
                 wd = 0
             weather_text = await fetch_weather_for_context(forecast_days=wd) or ""
 
-        # 拼接 {context}（兼容旧配置）
-        context_parts = []
-        if session_text:
-            context_parts.append(f"=== 最近对话 ===\n{session_text}")
-        if memory_text:
-            context_parts.append(memory_text)
-        if weather_text:
-            context_parts.append(f"=== 当前天气 ===\n{weather_text}")
-        context_text = "\n\n".join(context_parts)
-
         # 替换所有占位符
         user_prompt = user_prompt_final
         user_prompt = user_prompt.replace("{session}", session_text or "（无对话记录）")
         user_prompt = user_prompt.replace("{memory}", memory_text or "（无相关记忆）")
         user_prompt = user_prompt.replace("{weather}", weather_text or "（无天气信息）")
         user_prompt = user_prompt.replace("{time}", time_str)
-        user_prompt = user_prompt.replace("{context}", context_text)  # 兼容旧配置
 
         # 冷却时间检查
         cooldown_enabled = target_job.get("cooldown_enabled", False)
@@ -454,7 +443,10 @@ async def run_cron_job(job_id: str):
             "context": {
                 "session_count": len(context_msgs) if session_enabled and context_msgs else 0,
                 "session_messages": [{"role": m.get("role", ""), "content": m.get("content", "")[:200]} for m in (context_msgs or [])[-10:]],
-                "context_text": context_text[:2000],
+                "session_text": (session_text or "")[:2000],
+                "memory_text": (memory_text or "")[:2000],
+                "weather_text": (weather_text or "")[:500],
+                "time_str": time_str,
                 "weather_enabled": ctx_config.get("weather_enabled", False),
                 "weather_days": ctx_config.get("weather_days", 0),
             }

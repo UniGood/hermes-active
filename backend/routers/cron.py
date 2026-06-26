@@ -386,23 +386,40 @@ async def preview_prompt(
         except Exception:
             pass  # 静默失败，不影响预览
 
-    # 构建上下文文本并替换 {context}
-    context_parts = []
+    # 构建独立上下文文本
+    session_text = ""
     if context_data["session_messages"]:
-        context_parts.append(
-            "\n".join(f"{m['role']}: {m['content']}" for m in context_data["session_messages"])
-        )
+        session_text = "\n".join(f"{m['role']}: {m['content']}" for m in context_data["session_messages"])
+
+    memory_parts = []
     if context_data["recall_results"]:
         recall_texts = [r.get("text", "") for r in context_data["recall_results"] if r.get("text")]
         if recall_texts:
-            context_parts.append("[Recall 记忆]\n" + "\n".join(recall_texts))
+            memory_parts.append("=== 相关记忆 ===\n" + "\n".join(f"- {t}" for t in recall_texts))
     if context_data["reflect_result"]:
-        context_parts.append("[Reflect 分析]\n" + context_data["reflect_result"])
-    if context_data["weather_text"]:
-        context_parts.append("[当前天气]\n" + context_data["weather_text"])
+        memory_parts.append("=== 综合分析 ===\n" + context_data["reflect_result"])
+    memory_text = "\n\n".join(memory_parts)
 
-    context_text = "\n\n".join(context_parts) if context_parts else ""
-    final_user_prompt = user_prompt.replace("{context}", context_text)
+    weather_text = context_data["weather_text"] or ""
+
+    # 时间
+    from datetime import datetime, timezone, timedelta
+    tz_bj = timezone(timedelta(hours=8))
+    now_bj = datetime.now(tz_bj)
+    time_format = ctx_config.get("time_format", "%Y-%m-%d %H:%M:%S")
+    WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日']
+    weekday = WEEKDAY_NAMES[now_bj.weekday()]
+    time_str = time_format.replace('{weekday}', weekday)
+    for fmt, val in [('%Y', now_bj.year), ('%m', f'{now_bj.month:02d}'), ('%d', f'{now_bj.day:02d}'),
+                     ('%H', f'{now_bj.hour:02d}'), ('%M', f'{now_bj.minute:02d}'), ('%S', f'{now_bj.second:02d}')]:
+        time_str = time_str.replace(str(fmt), str(val))
+
+    # 替换所有占位符（不再拼接 {context}）
+    final_user_prompt = user_prompt
+    final_user_prompt = final_user_prompt.replace("{session}", session_text or "（无对话记录）")
+    final_user_prompt = final_user_prompt.replace("{memory}", memory_text or "（无相关记忆）")
+    final_user_prompt = final_user_prompt.replace("{weather}", weather_text or "（无天气信息）")
+    final_user_prompt = final_user_prompt.replace("{time}", time_str)
 
     # 构建上下文配置摘要
     context_summary_parts = []

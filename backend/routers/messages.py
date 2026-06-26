@@ -148,8 +148,8 @@ async def generate_message(
             if soul_content:
                 system_prompt = system_prompt + "\n\n" + soul_content if system_prompt else soul_content
 
-        generation_template = request.user_prompt if request.user_prompt is not None else prompts_config.get("generation", "{context}")
-        user_prompt = generation_template.replace("{context}", context_text)
+        generation_template = request.user_prompt if request.user_prompt is not None else prompts_config.get("generation", "{session}")
+        user_prompt = generation_template.replace("{session}", context_text)
 
         if llm_config.get("mode") == "hermes":
             # 使用 hermes 的 LLM
@@ -332,8 +332,8 @@ async def preview_prompt(
         if soul_md:
             system_prompt = system_prompt + "\n\n" + soul_md if system_prompt else soul_md
 
-    user_prompt_template = request.user_prompt if request.user_prompt is not None else prompts_config.get("generation", "{context}")
-    user_prompt_final = user_prompt_template.replace("{context}", context_content)
+    user_prompt_template = request.user_prompt if request.user_prompt is not None else prompts_config.get("generation", "{session}")
+    user_prompt_final = user_prompt_template.replace("{session}", context_content)
 
     return {
         "system_prompt": system_prompt,

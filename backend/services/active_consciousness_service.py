@@ -220,7 +220,7 @@ _DEFAULTS = {
 - 沉默时长：{silence_minutes} 分钟
 
 最近的对话：
-{context}
+{session_context}
 
 请评估你当前的情绪状态，返回 JSON 格式：
 {{
