@@ -341,8 +341,14 @@ async def preview_prompt(
         context_msgs = MessageService.get_recent_messages_by_platform(
             platform=platform, limit=session_limit, include_tool=include_tool
         )
+        # 读取角色名配置
+        user_name = ConfigService.get_config(db, "user_name") or "曹凡"
+        assistant_name = ConfigService.get_config(db, "assistant_name") or "凯莉"
+        role_map = {"user": user_name, "assistant": assistant_name, "tool": "工具", "system": "系统"}
         context_data["session_messages"] = [
-            {"role": m.get("role", "unknown"), "content": m.get("content", "")}
+            {"role": role_map.get(m.get("role", "unknown"), m.get("role", "unknown")),
+             "content": m.get("content", ""),
+             "timestamp": str(m.get("timestamp", ""))}
             for m in context_msgs
         ]
 
@@ -392,7 +398,13 @@ async def preview_prompt(
     # 构建独立上下文文本
     session_text = ""
     if context_data["session_messages"]:
-        session_text = "\n".join(f"{m['role']}: {m['content']}" for m in context_data["session_messages"])
+        def format_preview_msg(m):
+            ts = m.get("timestamp", "")
+            time_part = ts[11:16] if ts and len(ts) >= 16 else ""
+            if time_part:
+                return f"[{time_part}] {m['role']}: {m['content']}"
+            return f"{m['role']}: {m['content']}"
+        session_text = "\n".join(format_preview_msg(m) for m in context_data["session_messages"])
 
     memory_parts = []
     if context_data["recall_results"]:
