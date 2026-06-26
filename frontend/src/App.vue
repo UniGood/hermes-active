@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, provide } from 'vue'
 import api from './api'
 
 const themeOverrides = ref({
@@ -140,9 +140,21 @@ function applyTheme(themeId) {
   document.body.style.color = t.text
 }
 
+// provide 主题相关函数给子组件使用
+provide('applyTheme', applyTheme)
+provide('THEME_MAP', THEME_MAP)
+
 onMounted(() => {
-  // 默认使用 elegant 主题（亮蓝+浅灰）
-  applyTheme('elegant')
+  // 读取保存的主题配置
+  api.get('/config/get/theme').then(data => {
+    if (data?.value) {
+      applyTheme(data.value)
+    } else {
+      applyTheme('elegant')
+    }
+  }).catch(() => {
+    applyTheme('elegant')
+  })
 })
 </script>
 

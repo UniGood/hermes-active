@@ -197,10 +197,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { useMessage } from 'naive-ui'
 import api from '../api'
 import { useConfig } from '../composables/useConfig'
+
+// 从 App.vue 注入的主题函数
+const applyTheme = inject('applyTheme')
 
 const message = useMessage()
 const activeTab = ref('basic')
@@ -412,23 +415,7 @@ function selectTheme(themeId) {
   message.success('主题已切换')
 }
 
-function applyTheme(themeId) {
-  const root = document.documentElement
-  const themeMap = {
-    kelly: { primary: '#ff9a9e', primaryHover: '#ffb3b6', primaryPressed: '#e8838a', bg: '#faf9f7', accent: '#f6d365' },
-    elegant: { primary: '#a0c4e8', primaryHover: '#b5d4f0', primaryPressed: '#8ab4d8', bg: '#f5f7fa', accent: '#e8e8e8' }
-  }
-  const t = themeMap[themeId] || themeMap.kelly
-  root.style.setProperty('--theme-primary', t.primary)
-  root.style.setProperty('--theme-primary-hover', t.primaryHover)
-  root.style.setProperty('--theme-primary-pressed', t.primaryPressed)
-  root.style.setProperty('--theme-bg', t.bg)
-  root.style.setProperty('--theme-accent', t.accent)
 
-  // 更新 body 背景
-  document.body.style.background = t.bg
-  document.body.style.color = '#2d2d2d'
-}
 
 // 天气配置
 async function loadWeatherConfig() {
