@@ -1415,11 +1415,11 @@ onMounted(() => {
 }
 
 .context-msg-role.user {
-  color: #ff9a9e;
+  color: #4a90d9;
 }
 
 .context-msg-role.assistant {
-  color: #f6d365;
+  color: #ff9a9e;
 }
 
 .context-msg-content {
