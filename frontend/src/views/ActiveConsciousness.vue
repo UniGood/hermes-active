@@ -14,9 +14,9 @@
               <template #header-extra>
                 <span :class="['breathing-dot', heartbeatHealthy ? 'dot-green' : 'dot-red']"></span>
               </template>
-              <n-statistic label="今日心跳" :value="status.heartbeat_count" />
+              <n-statistic label="今日心跳" :value="status.heartbeat.count" />
               <div style="margin-top: 4px; font-size: 11px; color: var(--theme-text-muted);">
-                上次：{{ formatTime(status.last_heartbeat_at) || '无' }}
+                上次：{{ formatTime(status.heartbeat.last_at) || '无' }}
               </div>
               <div style="margin-top: 4px; font-size: 11px; color: var(--theme-text-secondary);">
                 下次：{{ nextHeartbeatDisplay }}
@@ -127,7 +127,7 @@
                     <div style="flex: 1;">
                       <div style="display: flex; justify-content: space-between;">
                         <span style="font-size: 12px;">本小时</span>
-                        <span style="font-weight: 600;">{{ status.hour_sent_count }}/{{ decisionConfig.max_per_hour }}</span>
+                        <span style="font-weight: 600;">{{ status.decision.hour_sent_count }}/{{ decisionConfig.max_per_hour }}</span>
                       </div>
                       <n-progress :percentage="frequencyHourPercentage" :show-indicator="false" :height="4"
                         :color="frequencyHourPercentage >= 100 ? '#d03050' : '#18a058'" />
@@ -135,7 +135,7 @@
                     <div style="flex: 1;">
                       <div style="display: flex; justify-content: space-between;">
                         <span style="font-size: 12px;">今日</span>
-                        <span style="font-weight: 600;">{{ status.today_sent_count }}/{{ decisionConfig.max_per_day }}</span>
+                        <span style="font-weight: 600;">{{ status.sent_stats.today }}/{{ decisionConfig.max_per_day }}</span>
                       </div>
                       <n-progress :percentage="frequencyDayPercentage" :show-indicator="false" :height="4"
                         :color="frequencyDayPercentage >= 100 ? '#d03050' : '#18a058'" />
@@ -226,15 +226,15 @@
                 <div style="font-size: 11px; color: var(--theme-text-muted); font-weight: 600; letter-spacing: 1px;">消息发送</div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: var(--theme-text-secondary);">今天</span>
-                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.today_sent_count ?? 0 }}</span>
+                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.sent_stats.today ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: var(--theme-text-secondary);">本周</span>
-                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.week_sent_count ?? 0 }}</span>
+                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.sent_stats.week ?? 0 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 12px; color: var(--theme-text-secondary);">本月</span>
-                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.month_sent_count ?? 0 }}</span>
+                  <span style="font-size: 14px; font-weight: bold; color: var(--theme-success);">{{ status.sent_stats.month ?? 0 }}</span>
                 </div>
               </div>
             </n-card>
@@ -1405,15 +1405,14 @@ const config = ref({
 // 状态
 const status = ref({
   enabled: false,
-  heartbeat_count: 0,
-  last_heartbeat_at: null,
-  longing: { score: 0, level: 0, label: '平静', label_display: '平静（calm）', last_user_msg_at: null, last_self_msg_at: null, silence_minutes: 0 },
-  chat_heat: { heat: 0, label: '冷清', label_display: '冷清（cold）', recent_count: 0, recent_hours: 0, recent_user_msg_at: null },
+  heartbeat: { count: 0, last_at: null },
+  longing: { score: 0, level: 0, label: '平静', label_display: '平静（calm）', silence_minutes: 0 },
+  chat_heat: { heat: 0, label: '冷清', label_display: '冷清（cold）', level_index: 0, total_levels: 4, recent_count: 0 },
   emotional_intensity: { intensity: 0, label: '工作' },
   emotion_state: { valence: 0.5, arousal: 0.3, social_need: 0.3, dominant: 'calm', dominant_display: '平静（calm）', intensity: 0.367, updated_at: '' },
-  today_sent_count: 0,
-  hour_sent_count: 0,
-  last_sent_at: null,
+  decision: { send_threshold: 0.35, memory_threshold: 0.05, max_per_hour: 2, max_per_day: 5, heartbeat_interval: 600, cooldown_minutes: 30, no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 3.0, hour_sent_count: 0, today_sent_count: 0 },
+  llm_stats: { emotion_today: 0, emotion_week: 0, emotion_month: 0, last_emotion_dominant: null, thought_today: 0, thought_week: 0, thought_month: 0, thought_generated_today: 0, thought_generated_week: 0, thought_generated_month: 0 },
+  sent_stats: { today: 0, week: 0, month: 0, year: 0, last_at: null },
 })
 
 // 日志
@@ -1553,13 +1552,13 @@ const intensityColor = computed(() => {
 
 // 心跳健康状态：上次心跳在5分钟内=绿，否则红
 const heartbeatHealthy = computed(() => {
-  if (!status.value.last_heartbeat_at) return false
-  const last = new Date(status.value.last_heartbeat_at)
+  if (!status.value.heartbeat?.last_at) return false
+  const last = new Date(status.value.heartbeat?.last_at)
   return (Date.now() - last.getTime()) < 5 * 60 * 1000
 })
 
 // 决策配置
-const decisionConfig = computed(() => status.value.config?.decision || {
+const decisionConfig = computed(() => status.value.decision || {
   send_threshold: 0.35,
   memory_threshold: 0.05,
   max_per_hour: 2,
@@ -1569,7 +1568,7 @@ const decisionConfig = computed(() => status.value.config?.decision || {
 // 聊天热度百分比（根据配置动态计算，允许超过100%）
 const chatHeatPercentage = computed(() => {
   const heat = status.value.chat_heat?.heat || 0
-  const maxHeat = status.value.config?.active?.no_send_while_heat_above || 3.0
+  const maxHeat = status.value.decision?.no_send_while_heat_above || 3.0
   // 不限制在100%，让进度条能显示超过阈值的情况
   return Math.round((heat / maxHeat) * 100)
 })
@@ -1584,21 +1583,21 @@ const heatProgressColor = computed(() => {
 
 // 频率限制百分比
 const frequencyHourPercentage = computed(() => {
-  const sent = status.value.hour_sent_count || 0
+  const sent = status.value.decision?.hour_sent_count || 0
   const max = decisionConfig.value.max_per_hour || 2
   return Math.min((sent / max) * 100, 100)
 })
 
 const frequencyDayPercentage = computed(() => {
-  const sent = status.value.today_sent_count || 0
+  const sent = status.value.sent_stats?.today || 0
   const max = decisionConfig.value.max_per_day || 5
   return Math.min((sent / max) * 100, 100)
 })
 
 // 下次心跳显示
 const nextHeartbeatDisplay = computed(() => {
-  if (!status.value.last_heartbeat_at) return '未知'
-  const last = new Date(status.value.last_heartbeat_at)
+  if (!status.value.heartbeat?.last_at) return '未知'
+  const last = new Date(status.value.heartbeat?.last_at)
   const interval = (status.value.config?.active?.heartbeat_interval || 600) * 1000
   const next = new Date(last.getTime() + interval)
   const diff = next.getTime() - Date.now()
@@ -1610,9 +1609,9 @@ const nextHeartbeatDisplay = computed(() => {
 
 // 保护机制状态
 const isCoolingDown = computed(() => {
-  if (!status.value.last_sent_at) return false
+  if (!status.value.sent_stats?.last_at) return false
   const cooldown = (status.value.config?.active?.cooldown_minutes || 30) * 60 * 1000
-  return (Date.now() - new Date(status.value.last_sent_at).getTime()) < cooldown
+  return (Date.now() - new Date(status.value.sent_stats?.last_at).getTime()) < cooldown
 })
 
 const userJustSent = computed(() => {
@@ -1623,7 +1622,7 @@ const userJustSent = computed(() => {
 
 const heatProtected = computed(() => {
   const heat = status.value.chat_heat?.heat || 0
-  const maxHeat = status.value.config?.active?.no_send_while_heat_above || 3.0
+  const maxHeat = status.value.decision?.no_send_while_heat_above || 3.0
   return heat >= maxHeat
 })
 

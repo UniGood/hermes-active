@@ -805,33 +805,35 @@ class ActiveConsciousnessService:
                 logger.warning("查询 LLM 调用统计失败: %s", e)
             
             return {
+                # ── 状态概览卡片 ──
                 "enabled": config.get("enabled", False),
-                "heartbeat_count": heartbeat_count,
-                "last_heartbeat_at": last_heartbeat_at,
-                "longing": {
+                "heartbeat": {
+                    "count": heartbeat_count,
+                    "last_at": last_heartbeat_at,
+                    "next_at": None,  # 前端根据 interval 计算
+                },
+                "longing": {  # 想念分数卡片
                     "score": round(longing_score, 3),
                     "level": longing_level,
                     "label": LABEL_CN.get(longing_label, longing_label),
                     "label_display": get_label_display(longing_label),
-                    "last_user_msg_at": last_user_msg_at,
-                    "last_self_msg_at": last_self_msg_at,
                     "silence_minutes": round(silence_minutes, 1),
                 },
-                "chat_heat": {
+                "chat_heat": {  # 聊天热度卡片
                     "heat": round(chat_heat, 2),
                     "label": LABEL_CN.get(chat_label, chat_label),
                     "label_display": get_label_display(chat_label),
                     "level_index": chat_level_index,
                     "total_levels": len(heat_levels),
                     "recent_count": recent_count,
-                    "recent_hours": recent_hours,
-                    "recent_user_msg_at": recent_user_msg_at,
                 },
-                "emotional_intensity": {
+                "emotional_intensity": {  # 情绪强度卡片
                     "intensity": round(emotional_intensity, 3),
                     "label": ActiveConsciousnessService._intensity_label(emotional_intensity),
                 },
-                "emotion_state": {
+
+                # ── 情绪系统卡片 ──
+                "emotion_state": {  # VA 模型卡片
                     "valence": round(emotion_state.valence, 3),
                     "arousal": round(emotion_state.arousal, 3),
                     "social_need": round(emotion_state.social_need, 3),
@@ -840,34 +842,41 @@ class ActiveConsciousnessService:
                     "intensity": round(emotion_state.intensity(), 3),
                     "updated_at": emotion_state.updated_at,
                 },
-                "today_sent_count": today_sent_count,
-                "hour_sent_count": hour_sent_count,
-                "week_sent_count": week_sent_count,
-                "month_sent_count": month_sent_count,
-                "year_sent_count": year_sent_count,
-                "last_sent_at": last_self_msg_at,
-                # 配置信息（前端动态计算用）
-                "config": {
-                    "decision": {
-                        "send_threshold": float(decision_config.get("send_threshold", 0.35)),
-                        "memory_threshold": float(decision_config.get("memory_threshold", 0.05)),
-                        "max_per_hour": int(decision_config.get("max_per_hour", 2)),
-                        "max_per_day": int(decision_config.get("max_per_day", 5)),
-                    },
-                    "active": {
-                        "heartbeat_interval": int(active_config.get("heartbeat_interval", 600)),
-                        "cooldown_minutes": int(active_config.get("cooldown_minutes", 30)),
-                        "no_send_after_user_msg_minutes": int(active_config.get("no_send_after_user_msg_minutes", 5)),
-                        "no_send_while_heat_above": float(active_config.get("no_send_while_heat_above", 3.0)),
-                    },
-                    "longing": {
-                        "gap_minutes": int(config.get("longing", {}).get("gap_minutes", 300)),
-                    },
-                    "levels": {
-                        "heat": levels_config.get("heat", ""),
-                    },
+                "decision": {  # 决策配置与阈值卡片
+                    "send_threshold": float(decision_config.get("send_threshold", 0.35)),
+                    "memory_threshold": float(decision_config.get("memory_threshold", 0.05)),
+                    "max_per_hour": int(decision_config.get("max_per_hour", 2)),
+                    "max_per_day": int(decision_config.get("max_per_day", 5)),
+                    "heartbeat_interval": int(active_config.get("heartbeat_interval", 600)),
+                    "cooldown_minutes": int(active_config.get("cooldown_minutes", 30)),
+                    "no_send_after_user_msg_minutes": int(active_config.get("no_send_after_user_msg_minutes", 5)),
+                    "no_send_while_heat_above": float(active_config.get("no_send_while_heat_above", 3.0)),
+                    "hour_sent_count": hour_sent_count,
+                    "today_sent_count": today_sent_count,
                 },
-                "llm_stats": llm_stats,
+
+                # ── LLM 统计卡片 ──
+                "llm_stats": {  # 🎭 情绪 LLM + 💭 念头 LLM + 📊 总调用
+                    "emotion_today": llm_stats.get("emotion_today", 0),
+                    "emotion_week": llm_stats.get("emotion_week", 0),
+                    "emotion_month": llm_stats.get("emotion_month", 0),
+                    "last_emotion_dominant": llm_stats.get("last_emotion_dominant"),
+                    "thought_today": llm_stats.get("thought_today", 0),
+                    "thought_week": llm_stats.get("thought_week", 0),
+                    "thought_month": llm_stats.get("thought_month", 0),
+                    "thought_generated_today": llm_stats.get("thought_generated_today", 0),
+                    "thought_generated_week": llm_stats.get("thought_generated_week", 0),
+                    "thought_generated_month": llm_stats.get("thought_generated_month", 0),
+                },
+
+                # ── 💭 念头 & 发送卡片（合并）──
+                "sent_stats": {
+                    "today": today_sent_count,
+                    "week": week_sent_count,
+                    "month": month_sent_count,
+                    "year": year_sent_count,
+                    "last_at": last_self_msg_at,
+                },
             }
         finally:
             db.close()
