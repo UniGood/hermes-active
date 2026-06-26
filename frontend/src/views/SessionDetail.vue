@@ -414,10 +414,10 @@ onMounted(() => {
 }
 
 .tag-assistant {
-  --n-color: #e8f0fe !important;
-  --n-color-hover: #d0e0f8 !important;
-  --n-text-color: var(--theme-primary, #4a90d9) !important;
-  --n-border: 1px solid #b0c8e8 !important;
+  --n-color: #fff0f3 !important;
+  --n-color-hover: #ffe0e6 !important;
+  --n-text-color: #ff9a9e !important;
+  --n-border: 1px solid #ffd0d6 !important;
 }
 
 /* 移动端适配 */
