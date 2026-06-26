@@ -259,9 +259,12 @@ async function handleDeleteMessage(msg) {
 }
 
 onMounted(() => {
-  loadConfig()
-  loadSession()
-  loadMessages()
+  // 并行加载，提高页面切换速度
+  Promise.all([
+    loadConfig(),
+    loadSession(),
+    loadMessages()
+  ])
 })
 </script>
 

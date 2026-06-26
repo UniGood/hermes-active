@@ -237,9 +237,12 @@ function scrollToBottom() {
   }
 }
 
-onMounted(async () => {
-  await loadConfig()
-  await loadRecentMessages()
+onMounted(() => {
+  // 并行加载，提高页面切换速度
+  Promise.all([
+    loadConfig(),
+    loadRecentMessages()
+  ])
 })
 
 async function loadRecentMessages() {

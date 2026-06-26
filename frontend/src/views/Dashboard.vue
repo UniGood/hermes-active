@@ -121,9 +121,12 @@ async function loadRecentMessages() {
 }
 
 onMounted(() => {
-  loadConfig()
-  loadStats()
-  loadRecentMessages()
+  // 并行加载所有数据，提高页面切换速度
+  Promise.all([
+    loadConfig(),
+    loadStats(),
+    loadRecentMessages()
+  ])
 })
 </script>
 

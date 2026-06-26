@@ -461,11 +461,14 @@ async function testWeather() {
 }
 
 onMounted(() => {
-  loadConfig()
-  loadUserConfig()
-  loadTheme()
-  loadHindsightConfig()
-  loadWeatherConfig()
+  // 并行加载所有配置，提高页面切换速度
+  Promise.all([
+    loadConfig(),
+    loadUserConfig(),
+    loadTheme(),
+    loadHindsightConfig(),
+    loadWeatherConfig()
+  ])
 })
 </script>
 

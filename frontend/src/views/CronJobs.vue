@@ -1268,9 +1268,12 @@ function parseContextFromPrompt(rawPrompt) {
 }
 
 onMounted(() => {
-  loadJobs()
-  loadDefaultPrompt()
-  loadSoulMd()
+  // 并行加载，提高页面切换速度
+  Promise.all([
+    loadJobs(),
+    loadDefaultPrompt(),
+    loadSoulMd()
+  ])
 })
 </script>
 
