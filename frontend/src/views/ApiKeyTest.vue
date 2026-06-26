@@ -427,23 +427,23 @@ async function sendMessage() {
 .config-label {
   min-width: 80px;
   font-size: 13px;
-  color: #999;
+  color: var(--theme-text-muted);
   text-align: right;
 }
 
 .chat-container {
   max-height: 500px;
   overflow-y: auto;
-  border: 1px solid #eee;
+  border: 1px solid var(--theme-border-light);
   border-radius: 6px;
   padding: 12px;
   margin-bottom: 12px;
-  background: #fafafa;
+  background: var(--theme-bg-light);
 }
 
 .chat-empty {
   text-align: center;
-  color: #ccc;
+  color: var(--theme-text-hint);
   padding: 40px 0;
   font-size: 14px;
 }
@@ -455,11 +455,11 @@ async function sendMessage() {
 }
 
 .chat-message.user .message-content {
-  background: #e3f2fd;
+  background: var(--theme-user-msg-bg);
 }
 
 .chat-message.assistant .message-content {
-  background: #f5f5f5;
+  background: var(--theme-bg-muted);
 }
 
 .message-role {
@@ -487,24 +487,24 @@ async function sendMessage() {
 }
 
 .tool-call {
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .tool-args {
-  color: #999;
+  color: var(--theme-text-muted);
   font-size: 12px;
 }
 
 .message-meta {
   margin-top: 6px;
   font-size: 11px;
-  color: #aaa;
+  color: var(--theme-text-hint);
 }
 
 .message-error {
   margin-top: 6px;
   font-size: 13px;
-  color: #e53935;
+  color: var(--theme-error-light);
 }
 
 .chat-input {

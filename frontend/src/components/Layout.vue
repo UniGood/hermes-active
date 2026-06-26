@@ -229,7 +229,7 @@ watch(() => route.path, () => {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
   text-decoration: none;
   transition: all 0.2s;
 }
@@ -256,7 +256,7 @@ watch(() => route.path, () => {
 
 .sidebar-footer .n-button {
   border-radius: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .sidebar-footer .n-button:hover {

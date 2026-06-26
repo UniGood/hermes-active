@@ -52,7 +52,8 @@ const THEME_MAP = {
     success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
     borderLight: '#f0ece8',
     userMsgBg: '#e3f2fd', assistantMsgBg: '#fff3e0',
-    statusActive: '#a8e6cf'
+    statusActive: '#a8e6cf',
+    bgMuted: '#f8f6f4', bgLight: '#fafafa', textHint: '#aaa', errorLight: '#e53935'
   },
   elegant: {
     primary: '#4a90d9', hover: '#6ba3e0', pressed: '#3a7cc9',
@@ -67,7 +68,8 @@ const THEME_MAP = {
     success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
     borderLight: '#f0ece8',
     userMsgBg: '#e3f2fd', assistantMsgBg: '#fff3e0',
-    statusActive: '#a8e6cf'
+    statusActive: '#a8e6cf',
+    bgMuted: '#f8f6f4', bgLight: '#fafafa', textHint: '#aaa', errorLight: '#e53935'
   },
   dark: {
     primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0',
@@ -82,7 +84,8 @@ const THEME_MAP = {
     success: '#63e6a0', error: '#ff6b8a', info: '#70c0e8', warning: '#f0c060',
     borderLight: '#2d3748',
     userMsgBg: '#1a3a5c', assistantMsgBg: '#3d2e1a',
-    statusActive: '#63e6a0'
+    statusActive: '#63e6a0',
+    bgMuted: '#16213e', bgLight: '#1a1a2e', textHint: '#666', errorLight: '#ff6b8a'
   }
 }
 
@@ -138,6 +141,12 @@ function applyTheme(themeId) {
 
   // 状态颜色
   root.style.setProperty('--theme-status-active', t.statusActive)
+
+  // 背景色调
+  root.style.setProperty('--theme-bg-muted', t.bgMuted)
+  root.style.setProperty('--theme-bg-light', t.bgLight)
+  root.style.setProperty('--theme-text-hint', t.textHint)
+  root.style.setProperty('--theme-error-light', t.errorLight)
 
   // RGB 版本（用于 rgba()）
   root.style.setProperty('--theme-primary-rgb', t.primaryRgb)
