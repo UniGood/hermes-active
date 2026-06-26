@@ -120,10 +120,15 @@
               v-model:value="formData.user_prompt"
               type="textarea"
               :autosize="{ minRows: 3, maxRows: 8 }"
-              placeholder="生成提示词，支持 {context} 占位符"
+              placeholder="生成提示词，支持占位符"
             />
-            <div style="font-size: 12px; color: #999">
-              支持 {context} 占位符，运行时替换为实际上下文
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+              <span style="font-size: 12px; color: var(--theme-text-muted);">插入：</span>
+              <n-tag v-for="ph in placeholderOptions" :key="ph.value" size="small"
+                :bordered="false" style="cursor: pointer;"
+                @click="insertPlaceholder(ph.value)">
+                {{ ph.label }}
+              </n-tag>
             </div>
             <n-button size="small" @click="fillDefaultUserPrompt" style="margin-top: 4px">
               填充默认用户提示词
@@ -255,6 +260,17 @@
                 <n-text depth="3" style="font-size: 12px">高德 API 实测最多支持 4 天</n-text>
               </n-space>
             </template>
+          </n-space>
+        </n-form-item>
+
+        <!-- 时间格式 -->
+        <n-divider title-placement="left">时间格式</n-divider>
+        <n-form-item label="{time} 占位符">
+          <n-space vertical style="width: 100%">
+            <TimeFormatSelector v-model="contextConfig.time_format" />
+            <n-text depth="3" style="font-size: 12px">
+              在提示词中使用 {time} 插入当前时间
+            </n-text>
           </n-space>
         </n-form-item>
 
@@ -618,6 +634,21 @@ const defaultPrompt = ref('')
 const soulMdContent = ref('')
 const sessionMode = ref('latest')
 
+// 占位符选项
+const placeholderOptions = [
+  { label: '{session}', value: '{session}', desc: '最近对话' },
+  { label: '{memory}', value: '{memory}', desc: '记忆反思' },
+  { label: '{weather}', value: '{weather}', desc: '天气感知' },
+  { label: '{time}', value: '{time}', desc: '当前时间' },
+  { label: '{context}', value: '{context}', desc: '所有上下文' },
+]
+
+function insertPlaceholder(placeholder) {
+  // 简单追加到 user_prompt 末尾
+  const cur = formData.value.user_prompt || ''
+  formData.value.user_prompt = cur + placeholder
+}
+
 // 默认提示词配置
 const showDefaultPrompts = ref(false)
 const defaultPromptsData = ref({
@@ -748,7 +779,9 @@ const contextConfig = ref({
   hindsight_recall_limit: 10,
   hindsight_reflect_enabled: false,
   hindsight_reflect_query: '',
-  weather_enabled: false
+  weather_enabled: false,
+  weather_days: 0,
+  time_format: '%H:%M 星期{weekday}'
 })
 
 // 监听平台变化，重新加载 session 列表
@@ -1185,6 +1218,9 @@ function buildPromptWithContext(userPrompt, config) {
   if (config.weather_enabled) {
     parts.push(`weather_days=${Number(config.weather_days) || 0}`)
   }
+  if (config.time_format) {
+    parts.push(`time_format=${encodeURIComponent(config.time_format)}`)
+  }
   const ctxLine = `${CTX_MARKER_START}${parts.join(';')}${CTX_MARKER_END}`
   return `${ctxLine}\n${userPrompt || ''}`
 }
@@ -1200,7 +1236,8 @@ function parseContextFromPrompt(rawPrompt) {
     hindsight_reflect_enabled: false,
     hindsight_reflect_query: '',
     weather_enabled: false,
-    weather_days: 0
+    weather_days: 0,
+    time_format: '%H:%M 星期{weekday}'
   }
 
   if (!rawPrompt || !rawPrompt.startsWith(CTX_MARKER_START)) {
@@ -1250,6 +1287,9 @@ function parseContextFromPrompt(rawPrompt) {
         break
       case 'weather_days':
         config.weather_days = parseInt(value) || 0
+        break
+      case 'time_format':
+        config.time_format = decodeURIComponent(value)
         break
     }
   }

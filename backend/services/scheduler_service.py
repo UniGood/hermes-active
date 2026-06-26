@@ -320,11 +320,27 @@ async def run_cron_job(job_id: str):
             prompt_text = user_prompt_text or prompts_config.get("system", "")
             user_prompt_final = prompts_config.get("generation", "{context}")
 
-        # 获取上下文 - 拼接 Session、Hindsight Recall、Hindsight Reflect
-        context_parts = []
+        # 获取上下文 - 支持独立占位符：{session} {memory} {weather} {time}
+        # 同时保留 {context} 兼容旧配置
+
+        # 0. 当前时间占位符
+        from datetime import timezone, timedelta
+        tz_bj = timezone(timedelta(hours=8))
+        now_bj = datetime.now(tz_bj)
+        time_format = ctx_config.get("time_format", "%Y-%m-%d %H:%M:%S")
+        if time_format:
+            WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日']
+            weekday = WEEKDAY_NAMES[now_bj.weekday()]
+            time_str = time_format.replace('{weekday}', weekday)
+            for fmt, val in [('%Y', now_bj.year), ('%m', f'{now_bj.month:02d}'), ('%d', f'{now_bj.day:02d}'),
+                             ('%H', f'{now_bj.hour:02d}'), ('%M', f'{now_bj.minute:02d}'), ('%S', f'{now_bj.second:02d}')]:
+                time_str = time_str.replace(str(fmt), str(val))
+        else:
+            time_str = now_bj.strftime('%Y-%m-%d %H:%M:%S')
 
         # 1. Session 上下文
         context_msgs = []
+        session_text = ""
         session_enabled = ctx_config.get("session_enabled", True)
         if session_enabled:
             context_limit = ctx_config.get("session_limit", 20)
@@ -335,9 +351,9 @@ async def run_cron_job(job_id: str):
                     f"{m.get('role', 'unknown')}: {m.get('content', '')}"
                     for m in context_msgs
                 )
-                context_parts.append(f"=== 最近对话 ===\n{session_text}")
 
-        # 2. Hindsight Recall
+        # 2. Hindsight 记忆（Recall + Reflect 合并）
+        memory_parts = []
         recall_enabled = ctx_config.get("hindsight_recall_enabled", False)
         recall_query = ctx_config.get("hindsight_recall_query", "")
         if recall_enabled and recall_query:
@@ -345,19 +361,20 @@ async def run_cron_job(job_id: str):
             recall_results = await call_hindsight_recall(recall_query, recall_limit)
             if recall_results:
                 recall_text = "\n".join(f"- {r.get('text', '')}" for r in recall_results)
-                context_parts.append(f"=== 相关记忆 ===\n{recall_text}")
+                memory_parts.append(f"=== 相关记忆 ===\n{recall_text}")
 
-        # 3. Hindsight Reflect
         reflect_enabled = ctx_config.get("hindsight_reflect_enabled", False)
         reflect_query = ctx_config.get("hindsight_reflect_query", "")
         if reflect_enabled and reflect_query:
             reflect_result = await call_hindsight_reflect(reflect_query)
             if reflect_result:
-                context_parts.append(f"=== 综合分析 ===\n{reflect_result}")
+                memory_parts.append(f"=== 综合分析 ===\n{reflect_result}")
 
-        # 4. 天气感知（高德地图，复用配置管理中的 amap 配置）
+        memory_text = "\n\n".join(memory_parts)
+
+        # 3. 天气感知
+        weather_text = ""
         if ctx_config.get("weather_enabled", False):
-            # 文档：extensions=all 最多预报 3 天（当天 + 后两天）；0=仅今天实况
             raw_days = ctx_config.get("weather_days", 0)
             try:
                 wd = int(raw_days)
@@ -365,12 +382,25 @@ async def run_cron_job(job_id: str):
                 wd = 0
             if wd not in (0, 2, 3, 4):
                 wd = 0
-            weather_text = await fetch_weather_for_context(forecast_days=wd)
-            if weather_text:
-                context_parts.append(f"=== 当前天气 ===\n{weather_text}")
+            weather_text = await fetch_weather_for_context(forecast_days=wd) or ""
 
+        # 拼接 {context}（兼容旧配置）
+        context_parts = []
+        if session_text:
+            context_parts.append(f"=== 最近对话 ===\n{session_text}")
+        if memory_text:
+            context_parts.append(memory_text)
+        if weather_text:
+            context_parts.append(f"=== 当前天气 ===\n{weather_text}")
         context_text = "\n\n".join(context_parts)
-        user_prompt = user_prompt_final.replace("{context}", context_text)
+
+        # 替换所有占位符
+        user_prompt = user_prompt_final
+        user_prompt = user_prompt.replace("{session}", session_text or "（无对话记录）")
+        user_prompt = user_prompt.replace("{memory}", memory_text or "（无相关记忆）")
+        user_prompt = user_prompt.replace("{weather}", weather_text or "（无天气信息）")
+        user_prompt = user_prompt.replace("{time}", time_str)
+        user_prompt = user_prompt.replace("{context}", context_text)  # 兼容旧配置
 
         # 冷却时间检查
         cooldown_enabled = target_job.get("cooldown_enabled", False)
@@ -640,6 +670,7 @@ def _parse_context_config(raw_prompt: str) -> tuple:
         "hindsight_reflect_query": "",
         "weather_enabled": False,
         "weather_days": 0,
+        "time_format": "%Y-%m-%d %H:%M:%S",
     }
 
     if not raw_prompt or not raw_prompt.startswith(CTX_MARKER_START):
@@ -685,6 +716,8 @@ def _parse_context_config(raw_prompt: str) -> tuple:
                     config["weather_days"] = 0
             except (ValueError, TypeError):
                 config["weather_days"] = 0
+        elif key == "time_format":
+            config["time_format"] = urllib.parse.unquote(value)
 
     return config, user_prompt
 
