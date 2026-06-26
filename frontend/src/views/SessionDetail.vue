@@ -362,7 +362,7 @@ onMounted(() => {
   white-space: pre-wrap;
   word-break: break-word;
   padding: 8px 12px;
-  background: #f8f6f4;
+  background: var(--theme-bg-muted, #f8f6f4);
   border-radius: 12px;
   max-height: 300px;
   overflow-y: auto;
@@ -370,21 +370,21 @@ onMounted(() => {
 
 .message-item.user .message-content {
   background: var(--theme-card-bg);
-  color: #333;
+  color: var(--theme-text);
 }
 
 .message-item.assistant .message-content {
   background: var(--theme-card-bg);
-  color: #333;
+  color: var(--theme-text);
 }
 
 .message-item.tool .message-content {
-  background: #fdf6ec;
+  background: var(--theme-bg-light, #fdf6ec);
 }
 
 .message-fields {
   margin-top: 8px;
-  border: 1px solid #f0ece8;
+  border: 1px solid var(--theme-border, #f0ece8);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -396,9 +396,9 @@ onMounted(() => {
 .field-key {
   width: 180px;
   font-weight: 600;
-  color: #666;
+  color: var(--theme-text-secondary, #666);
   font-family: monospace;
-  background: #f8f6f4;
+  background: var(--theme-bg-muted, #f8f6f4);
 }
 
 .field-value {

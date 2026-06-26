@@ -132,7 +132,7 @@ onBeforeUnmount(() => {
 
 .log-container {
   flex: 1;
-  background: #1e1e1e;
+  background: var(--theme-card-bg, #1e1e1e);
   border-radius: 16px;
   overflow-y: auto;
   padding: 12px 16px;
@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 12px;
   line-height: 1.6;
-  color: #d4d4d4;
+  color: var(--theme-text, #d4d4d4);
   margin: 0;
 }
 
@@ -159,20 +159,20 @@ onBeforeUnmount(() => {
   white-space: pre-wrap;
   word-break: break-all;
   padding: 2px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--theme-border, rgba(255, 255, 255, 0.03));
 }
 
 .log-error {
-  color: #f44747;
+  color: var(--theme-error, #f44747);
   font-weight: 500;
 }
 
 .log-warn {
-  color: #cca700;
+  color: var(--theme-warning, #cca700);
 }
 
 .log-info {
-  color: #6a9955;
+  color: var(--theme-success, #6a9955);
 }
 
 /* 移动端适配 */

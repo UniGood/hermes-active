@@ -236,7 +236,7 @@ onMounted(() => {
 .platform-bar-wrap {
   flex: 1;
   height: 8px;
-  background: #f0f0f0;
+  background: var(--theme-bg-muted, #f0f0f0);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -251,7 +251,7 @@ onMounted(() => {
   min-width: 36px;
   text-align: right;
   font-size: 13px;
-  color: #666;
+  color: var(--theme-text-secondary, #666);
   font-weight: 500;
 }
 
@@ -259,7 +259,7 @@ onMounted(() => {
   min-width: 32px;
   text-align: right;
   font-size: 13px;
-  color: #999;
+  color: var(--theme-text-muted, #999);
 }
 
 .tag-assistant {
