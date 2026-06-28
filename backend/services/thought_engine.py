@@ -148,11 +148,16 @@ class ThoughtEngine:
         # 格式化记忆
         memories = "\n".join(context.memories) if context.memories else "暂无"
 
-        # 格式化时间（使用配置的时间格式）
+        # 格式化时间（使用配置的时间格式，支持 {weekday} 自定义标记）
         from datetime import datetime, timezone, timedelta
+        WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日']
         time_format = self.config.get("prompts", {}).get("time_format", "%Y-%m-%d %H:%M:%S")
         now = datetime.now(timezone(timedelta(hours=8)))
-        time_display = now.strftime(time_format)
+        weekday = WEEKDAY_NAMES[now.weekday()]
+        time_display = time_format.replace('{weekday}', weekday)
+        for fmt, val in [('%Y', now.year), ('%m', f'{now.month:02d}'), ('%d', f'{now.day:02d}'),
+                         ('%H', f'{now.hour:02d}'), ('%M', f'{now.minute:02d}'), ('%S', f'{now.second:02d}')]:
+            time_display = time_display.replace(str(fmt), str(val))
 
         # 格式化情绪
         dominant = context.emotion.get("dominant", "calm")

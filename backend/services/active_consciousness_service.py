@@ -1359,17 +1359,25 @@ async def evaluate_emotion_with_llm(
         ActiveSession(), "active_consciousness.prompts.time_format"
     ) or _DEFAULTS.get("active_consciousness.prompts.time_format", "%Y-%m-%d %H:%M:%S")
 
+    # 格式化时间（支持 {weekday} 自定义标记）
+    WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日']
+    weekday = WEEKDAY_NAMES[now.weekday()]
+    time_str = time_format.replace('{weekday}', weekday)
+    for fmt, val in [('%Y', now.year), ('%m', f'{now.month:02d}'), ('%d', f'{now.day:02d}'),
+                     ('%H', f'{now.hour:02d}'), ('%M', f'{now.minute:02d}'), ('%S', f'{now.second:02d}')]:
+        time_str = time_str.replace(str(fmt), str(val))
+
     # 计算沉默时长
     silence_minutes = longing.get('silence_minutes', 0)
 
     prompt = prompt_template.format(
-        time=now.strftime(time_format),
+        time=time_str,
         longing_score=longing.get('score', 0),
         longing_label=longing.get('label', '平静'),
         chat_heat=chat_heat.get('heat', 0),
         chat_label=chat_heat.get('label', '冷清'),
         silence_minutes=round(silence_minutes, 1) if silence_minutes else 0,
-        context=session_context or "无",
+        session_context=session_context or "无",
     )
 
     prompt = f"{prompt}\n\n{hindsight_context}"
