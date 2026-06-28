@@ -663,7 +663,8 @@ class MessageService:
 
         def _fmt(m):
             role = rmap.get(m.get("role", "unknown"), m.get("role", "unknown"))
-            ts = m.get("timestamp", "")
+            # 支持 time 和 timestamp 两个字段名
+            ts = m.get("timestamp") or m.get("time", "")
             try:
                 if isinstance(ts, (int, float)):
                     dt = datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=8)))
