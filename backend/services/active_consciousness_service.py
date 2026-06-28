@@ -1377,6 +1377,7 @@ async def evaluate_emotion_with_llm(
         chat_heat=chat_heat.get('heat', 0),
         chat_label=chat_heat.get('label', '冷清'),
         silence_minutes=round(silence_minutes, 1) if silence_minutes else 0,
+        context=session_context or "无",
         session_context=session_context or "无",
     )
 
