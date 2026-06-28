@@ -134,7 +134,8 @@ _DEFAULTS = {
     "active_consciousness.thought_llm.base_url": "",
     "active_consciousness.active.enabled": "true",
     "active_consciousness.active.heartbeat_interval": "600",
-    "active_consciousness.active.send_tag": "[凯莉主动发送]",
+    "active_consciousness.active.send_mark_enabled": "true",
+    "active_consciousness.active.send_tag": "凯莉",
     "active_consciousness.active.time_format": "%H:%M",
     "active_consciousness.active.no_send_after_user_msg_minutes": "5",
     "active_consciousness.active.no_send_while_heat_above": "1.0",
@@ -189,6 +190,9 @@ _DEFAULTS = {
     "active_consciousness.context.memory_enabled": "true",
     "active_consciousness.context.weather_enabled": "false",
 
+    # 提示词时间格式（用于 {time} 占位符）
+    "active_consciousness.prompts.time_format": "%Y-%m-%d %H:%M:%S",
+
     # 念头生成 - System Message（人设 + 对话 + 记忆 + 环境）
     "active_consciousness.prompts.thought_generation": """你是凯莉，曹凡的 AI 朋友。你们认识很久了，你了解他的生活习惯、工作状态、兴趣爱好。
 
@@ -207,9 +211,11 @@ _DEFAULTS = {
 
     # 念头生成 - User Message（任务指令 + Output Priming）
     "active_consciousness.prompts.thought_generation_instruction": """基于以上对话和你的记忆，想一个要对曹凡说的话。
-以"曹凡，"开头，直接说你想说的。
+以"{user_name}，"开头，直接说你想说的。
 注意：不要回复上面的对话内容，主动发起一个新的话题或想法。
-如果没想到什么，回复 SKIP。""",
+如果没想到什么，回复 SKIP。
+
+当前时间：{time}""",
 
     "active_consciousness.prompts.emotion_evaluation": """你是凯莉，请评估当前的情绪状态。
 
@@ -1310,15 +1316,16 @@ async def send_message_to_target(config: Dict[str, Any], thought: str, reasoning
 
     # 调用 MessageService 发送消息
     from services.message_service import MessageService
-    send_mark = config.get("active", {}).get("send_tag", "凯莉")
-    time_format = config.get("active", {}).get("time_format", "%H:%M")
+    send_mark_enabled = config.get("active", {}).get("send_mark_enabled", True)
+    send_mark = config.get("active", {}).get("send_tag", "凯莉") if send_mark_enabled else ""
+    time_format = config.get("active", {}).get("time_format", "%H:%M") if send_mark_enabled else ""
 
     result = await MessageService.send_message(
         session_id=chat_id,
         message=thought,
         platform=platform,
         write_to_db=True,
-        with_mark=True,
+        with_mark=send_mark_enabled,
         send_mark=send_mark,
         time_format=time_format,
         reasoning_content=reasoning_content
@@ -1347,11 +1354,16 @@ async def evaluate_emotion_with_llm(
         ActiveSession(), "active_consciousness.prompts.emotion_evaluation"
     ) or _DEFAULTS["active_consciousness.prompts.emotion_evaluation"]
 
+    # 从配置获取时间格式
+    time_format = ConfigService.get_config(
+        ActiveSession(), "active_consciousness.prompts.time_format"
+    ) or _DEFAULTS.get("active_consciousness.prompts.time_format", "%Y-%m-%d %H:%M:%S")
+
     # 计算沉默时长
     silence_minutes = longing.get('silence_minutes', 0)
 
     prompt = prompt_template.format(
-        time=now.strftime('%Y-%m-%d %H:%M %A'),
+        time=now.strftime(time_format),
         longing_score=longing.get('score', 0),
         longing_label=longing.get('label', '平静'),
         chat_heat=chat_heat.get('heat', 0),
@@ -1623,12 +1635,18 @@ async def run_heartbeat():
         context_bundle = await context_collector.collect(status)
         all_details["context_bundle"] = context_bundle.to_dict()
 
-        # 构建情绪评估用的 session_context（完整内容，不截断）
+        # 构建情绪评估用的 session_context（纯文本格式：[时间] 角色名: 内容）
+        from services.config_service import ConfigService
+        from services.message_service import MessageService
         context_config = config.get("context", {})
         conversation_limit = context_config.get("conversation_limit", 50)
-        session_context = "\n".join(
-            f"{m.get('role', '?')}: {m.get('content', '')}"
-            for m in context_bundle.conversations[-conversation_limit:]
+        user_name = ConfigService.get_config(ActiveSession(), "personalization.user_name") or "曹凡"
+        assistant_name = ConfigService.get_config(ActiveSession(), "personalization.assistant_name") or "凯莉"
+        role_map = {"user": user_name, "assistant": assistant_name}
+        session_context = MessageService.format_session_messages(
+            context_bundle.conversations[-conversation_limit:],
+            role_map=role_map,
+            time_format="%Y-%m-%d %H:%M:%S"
         ) if context_bundle.conversations else ""
         hindsight_context = "相关记忆:\n" + "\n".join(
             f"- {m}" for m in context_bundle.memories

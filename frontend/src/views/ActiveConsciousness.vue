@@ -16,7 +16,7 @@
               </template>
               <n-statistic label="今日心跳" :value="status.heartbeat.count" />
               <div style="margin-top: 4px; font-size: 11px; color: var(--theme-text-muted);">
-                上次：{{ formatTime(status.heartbeat.last_at) || '无' }}
+                上次：{{ formatTimeHMS(status.heartbeat.last_at) || '无' }}
               </div>
               <div style="margin-top: 4px; font-size: 11px; color: var(--theme-text-secondary);">
                 下次：{{ nextHeartbeatDisplay }}
@@ -312,14 +312,24 @@
             <n-form-item label="心跳间隔（秒）">
               <n-input-number v-model:value="config.active.heartbeat_interval" :min="60" :max="3600" />
             </n-form-item>
-            <n-form-item label="发送标记">
-              <n-input v-model:value="config.active.send_tag" placeholder="凯莉" />
-              <span class="form-item-hint">最终格式：[凯莉 20:16 星期五]</span>
+            <!-- 发送标记 -->
+            <n-divider>发送标记</n-divider>
+            <n-form-item label="启用发送标记">
+              <n-switch v-model:value="config.active.send_mark_enabled" />
+              <span class="form-item-hint">开启后发送的消息会带时间标记</span>
             </n-form-item>
-            <n-form-item label="时间格式">
-              <n-input v-model:value="config.active.time_format" placeholder="%H:%M" />
-              <span class="form-item-hint">strftime 格式，支持 {weekday} 占位符。例：%H:%M 星期{weekday}</span>
-            </n-form-item>
+            <template v-if="config.active.send_mark_enabled">
+              <n-form-item label="发送标记">
+                <n-input v-model:value="config.active.send_tag" placeholder="凯莉" />
+              </n-form-item>
+              <n-form-item label="时间格式">
+                <n-input v-model:value="config.active.time_format" placeholder="%H:%M" />
+                <span class="form-item-hint">strftime 格式，支持 {weekday} 占位符。例：%H:%M 星期{weekday}</span>
+              </n-form-item>
+              <n-form-item label="格式预览">
+                <n-tag type="info" size="large">{{ sendMarkPreview }}</n-tag>
+              </n-form-item>
+            </template>
 
             <!-- 决策阈值 -->
             <n-divider>决策阈值</n-divider>
@@ -468,6 +478,14 @@
           </n-alert>
         </n-card>
 
+        <!-- 🕐 提示词时间格式 -->
+        <n-card title="🕐 提示词时间格式" size="small" style="margin-bottom: 16px">
+          <div style="font-size: 12px; color: var(--theme-text-secondary); margin-bottom: 8px;">
+            配置提示词中 {time} 占位符的显示格式，影响情绪评估、念头生成等所有提示词
+          </div>
+          <TimeFormatSelector v-model="config.prompts.time_format" />
+        </n-card>
+
         <!-- 🎭 情绪评估 LLM -->
         <n-card title="🎭 情绪评估 LLM" size="small" style="margin-bottom: 16px">
           <n-form-item label="LLM 模式">
@@ -495,7 +513,7 @@
             <n-input v-model:value="config.prompts.emotion_evaluation" type="textarea" :rows="6" placeholder="输入情绪评估提示词模板" />
           </n-form-item>
           <div style="font-size: 11px; color: var(--theme-text-muted); margin-bottom: 8px;">
-            可用变量：{time} {longing_score} {longing_label} {chat_heat} {chat_label} {silence_minutes} {context}
+            可用变量：{time} {longing_score} {longing_label} {chat_heat} {chat_label} {silence_minutes} {session_context}
           </div>
           <n-button type="primary" @click="testEmotionLLM" :loading="testing.emotionLLM" size="small">
             测试情绪评估 LLM
@@ -560,7 +578,7 @@
             <n-input v-model:value="config.prompts.thought_generation_instruction" type="textarea" :rows="4" placeholder="输入念头生成 User 指令（任务指令 + output priming）" />
           </n-form-item>
           <div style="font-size: 11px; color: var(--theme-text-muted); margin-bottom: 8px;">
-            这是发给 LLM 的最后一条消息，控制 LLM 的行为模式。建议包含 output priming（如"以XXX开头"）和反复读指令。
+            可用变量：{time} {user_name}。这是发给 LLM 的最后一条消息，控制 LLM 的行为模式。
           </div>
           <n-button type="primary" @click="testThoughtLLM" :loading="testing.thoughtLLM" size="small">
             测试念头生成 LLM
@@ -1330,6 +1348,7 @@ import { useMessage, NButton, NTag } from 'naive-ui'
 import { HelpCircleOutline, CheckmarkCircle, CloseCircle, StatsChartOutline, ColorPaletteOutline, AnalyticsOutline, SendOutline } from '@vicons/ionicons5'
 import api from '../api/active_consciousness'
 import mainApi from '../api'
+import TimeFormatSelector from '../components/TimeFormatSelector.vue'
 
 const message = useMessage()
 const activeTab = ref('status')
@@ -1373,7 +1392,7 @@ const config = ref({
   llm: { mode: 'hermes', provider: 'openai', model: 'deepseek-chat', api_key: '', base_url: '' },
   emotion_llm: { mode: '', provider: '', model: '', api_key: '', base_url: '' },
   thought_llm: { mode: '', provider: '', model: '', api_key: '', base_url: '' },
-  active: { enabled: true, heartbeat_interval: 600, send_tag: '凯莉', time_format: '%H:%M', no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 3.0, no_send_while_vibe_below: 0.15, cooldown_minutes: 30 },
+  active: { enabled: true, heartbeat_interval: 600, send_mark_enabled: true, send_tag: '凯莉', time_format: '%H:%M', no_send_after_user_msg_minutes: 5, no_send_while_heat_above: 3.0, no_send_while_vibe_below: 0.15, cooldown_minutes: 30 },
   decision: { send_threshold: 0.35, memory_threshold: 0.05, max_per_hour: 2, max_per_day: 5 },
   thought: { retain_enabled: false, retain_threshold: 0.5 },
   thought_engine: {
@@ -1391,9 +1410,10 @@ const config = ref({
   hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', store: { bank_id: 'hermes-active' }, recall_limit: 5, reflect_enabled: true, timeout: 30 },
   notify: { platform: 'weixin', chat_id: '' },
   prompts: {
+    time_format: '%Y-%m-%d %H:%M:%S',
     thought_generation: '你是凯莉，曹凡的 AI 朋友。你们认识很久了，你了解他的生活习惯、工作状态、兴趣爱好。\n\n{persona}\n\n【最近对话】\n{session_context}\n\n【你记得的事情】\n{hindsight_context}\n\n【现在】\n{time}\n{emotion_display}\n{weather_display}',
-    thought_generation_instruction: '基于以上对话和你的记忆，想一个要对曹凡说的话。\n以"曹凡，"开头，直接说你想说的。\n注意：不要回复上面的对话内容，主动发起一个新的话题或想法。\n如果没想到什么，回复 SKIP。',
-    emotion_evaluation: '你是凯莉，请评估当前的情绪状态。\n\n当前状态：\n- 时间：{time}\n- 想念分数：{longing_score}（等级：{longing_label}）\n- 聊天热度：{chat_heat}（标签：{chat_label}）\n- 沉默时长：{silence_minutes} 分钟\n\n最近的对话：\n{context}\n\n请评估你当前的情绪状态，返回 JSON 格式：\n{{\n  "valence": 0.0-1.0（情感效价，0=消极，1=积极），\n  "arousal": 0.0-1.0（唤醒度，0=平静，1=激动），\n  "social_need": 0.0-1.0（社交需求，0=不需要，1=非常想），\n  "dominant": "calm/content/happy/longing/missing/yearning/anxious/bored/concerned"\n}}\n\n只返回 JSON，不要解释。'
+    thought_generation_instruction: '基于以上对话和你的记忆，想一个要对曹凡说的话。\n以"{user_name}，"开头，直接说你想说的。\n注意：不要回复上面的对话内容，主动发起一个新的话题或想法。\n如果没想到什么，回复 SKIP。\n\n当前时间：{time}',
+    emotion_evaluation: '你是凯莉，请评估当前的情绪状态。\n\n当前状态：\n- 时间：{time}\n- 想念分数：{longing_score}（等级：{longing_label}）\n- 聊天热度：{chat_heat}（标签：{chat_label}）\n- 沉默时长：{silence_minutes} 分钟\n\n最近的对话：\n{session_context}\n\n请评估你当前的情绪状态，返回 JSON 格式：\n{{\n  "valence": 0.0-1.0（情感效价，0=消极，1=积极），\n  "arousal": 0.0-1.0（唤醒度，0=平静，1=激动），\n  "social_need": 0.0-1.0（社交需求，0=不需要，1=非常想），\n  "dominant": "calm/content/happy/longing/missing/yearning/anxious/bored/concerned"\n}}\n\n只返回 JSON，不要解释。'
   },
   levels: {
     longing: '[0.0, 0, "calm"], [0.1, 1, "longing"], [0.3, 2, "missing"], [0.5, 3, "yearning"], [0.7, 4, "anxious"]',
@@ -1594,17 +1614,16 @@ const frequencyDayPercentage = computed(() => {
   return Math.min((sent / max) * 100, 100)
 })
 
-// 下次心跳显示
+// 下次心跳显示（时分秒）
 const nextHeartbeatDisplay = computed(() => {
   if (!status.value.heartbeat?.last_at) return '未知'
   const last = new Date(status.value.heartbeat?.last_at)
   const interval = (status.value.config?.active?.heartbeat_interval || 600) * 1000
   const next = new Date(last.getTime() + interval)
-  const diff = next.getTime() - Date.now()
-  if (diff <= 0) return '即将触发'
-  const minutes = Math.floor(diff / 60000)
-  const seconds = Math.floor((diff % 60000) / 1000)
-  return `${minutes}分${seconds}秒`
+  const hh = String(next.getHours()).padStart(2, '0')
+  const mm = String(next.getMinutes()).padStart(2, '0')
+  const ss = String(next.getSeconds()).padStart(2, '0')
+  return `${hh}:${mm}:${ss}`
 })
 
 // 保护机制状态
@@ -1624,6 +1643,20 @@ const heatProtected = computed(() => {
   const heat = status.value.chat_heat?.heat || 0
   const maxHeat = status.value.decision?.no_send_while_heat_above || 3.0
   return heat >= maxHeat
+})
+
+// 发送标记格式预览
+const sendMarkPreview = computed(() => {
+  const tag = config.value.active?.send_tag || '凯莉'
+  const fmt = config.value.active?.time_format || '%H:%M'
+  const now = new Date()
+  const weekdayMap = ['日', '一', '二', '三', '四', '五', '六']
+  let timeStr = fmt
+    .replace('%H', String(now.getHours()).padStart(2, '0'))
+    .replace('%M', String(now.getMinutes()).padStart(2, '0'))
+    .replace('%S', String(now.getSeconds()).padStart(2, '0'))
+    .replace('{weekday}', weekdayMap[now.getDay()])
+  return `[${tag} ${timeStr}]`
 })
 
 // VA 颜色
@@ -2188,6 +2221,23 @@ const formatTime = (isoStr) => {
   const mm = String(d.getMinutes()).padStart(2, '0')
   const ss = String(d.getSeconds()).padStart(2, '0')
   return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`
+}
+
+// 只返回时分秒
+const formatTimeHMS = (isoStr) => {
+  if (!isoStr) return ''
+  let d
+  if (typeof isoStr === 'number' || /^\d+(\.\d+)?$/.test(isoStr)) {
+    const ts = typeof isoStr === 'number' ? isoStr : parseFloat(isoStr)
+    d = new Date(ts < 1e12 ? ts * 1000 : ts)
+  } else {
+    d = new Date(isoStr)
+  }
+  if (isNaN(d.getTime())) return '-'
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+  return `${hh}:${mm}:${ss}`
 }
 
 const heartbeatColumns = [

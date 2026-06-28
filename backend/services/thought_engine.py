@@ -121,26 +121,38 @@ class ThoughtEngine:
             [{"role": "system", "content": ...}, {"role": "user", "content": ...}]
         """
         from services.active_consciousness_service import load_hermes_persona, _DEFAULTS
+        from services.config_service import ConfigService
+        from services.message_service import MessageService
+        from models.database import ActiveSession
 
         # 加载人设
         persona = load_hermes_persona()
 
-        # 格式化对话（直接使用 context.conversations，只做单条截断）
+        # 获取配置的名称
+        user_name = ConfigService.get_config(ActiveSession(), "personalization.user_name") or "曹凡"
+        assistant_name = ConfigService.get_config(ActiveSession(), "personalization.assistant_name") or "凯莉"
+        role_map = {"user": user_name, "assistant": assistant_name}
+
+        # 格式化对话（纯文本格式：[时间] 角色名: 内容，每条截断）
         max_chars = self.engine_config.get("prompt_max_chars", 300)
-        conversations_json = json.dumps(
-            [
-                {**m, "content": (m.get("content", "") or "")[:max_chars]}
-                for m in (context.conversations or [])
-            ],
-            ensure_ascii=False,
-            indent=2
-        )
+        truncated_msgs = [
+            {**m, "content": (m.get("content", "") or "")[:max_chars]}
+            for m in (context.conversations or [])
+        ]
+        session_context = MessageService.format_session_messages(
+            truncated_msgs,
+            role_map=role_map,
+            time_format="%Y-%m-%d %H:%M:%S"
+        ) if truncated_msgs else "暂无"
 
         # 格式化记忆
         memories = "\n".join(context.memories) if context.memories else "暂无"
 
-        # 格式化时间
-        time_display = context.time_context.get("time_display", "")
+        # 格式化时间（使用配置的时间格式）
+        from datetime import datetime, timezone, timedelta
+        time_format = self.config.get("prompts", {}).get("time_format", "%Y-%m-%d %H:%M:%S")
+        now = datetime.now(timezone(timedelta(hours=8)))
+        time_display = now.strftime(time_format)
 
         # 格式化情绪
         dominant = context.emotion.get("dominant", "calm")
@@ -159,20 +171,23 @@ class ThoughtEngine:
 
         system_content = system_template.format(
             persona=persona,
-            session_context=conversations_json,
-            conversations_json=conversations_json,
+            session_context=session_context,
             hindsight_context=memories,
-            memories=memories,
             time=time_display,
-            time_display=time_display,
             emotion_display=emotion_display,
             weather_display=weather_display,
         )
 
         # 从配置读取 user message 模板（任务指令 + output priming）
-        user_content = self.config.get("prompts", {}).get("thought_generation_instruction") \
+        user_template = self.config.get("prompts", {}).get("thought_generation_instruction") \
             or _DEFAULTS.get("active_consciousness.prompts.thought_generation_instruction") \
             or "基于以上对话和你的记忆，想一个要对曹凡说的话。直接说，不想说就回 SKIP。"
+
+        # user message 也支持 {time} 替换
+        user_content = user_template.format(
+            time=time_display,
+            user_name=user_name,
+        )
 
         return [
             {"role": "system", "content": system_content},

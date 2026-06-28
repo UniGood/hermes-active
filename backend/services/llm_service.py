@@ -89,7 +89,7 @@ class LLMService:
         prompt: str,
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
-        max_tokens: int = 200
+        max_tokens: Optional[int] = None
     ) -> Dict[str, Any]:
         """调用 LLM 生成消息"""
         start_time = time.time()
@@ -102,12 +102,15 @@ class LLMService:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
 
-            response = await client.chat.completions.create(
+            call_kwargs = dict(
                 model=model,
                 messages=messages,
                 temperature=temperature,
-                max_tokens=max_tokens
             )
+            if max_tokens is not None:
+                call_kwargs["max_tokens"] = max_tokens
+
+            response = await client.chat.completions.create(**call_kwargs)
 
             content = response.choices[0].message.content.strip()
 
