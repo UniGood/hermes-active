@@ -666,10 +666,22 @@ class MessageService:
             # 支持 time 和 timestamp 两个字段名
             ts = m.get("timestamp") or m.get("time", "")
             try:
+                # 尝试转换为数字（支持字符串格式的时间戳）
+                ts_num = None
                 if isinstance(ts, (int, float)):
-                    dt = datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=8)))
+                    ts_num = float(ts)
+                elif isinstance(ts, str):
+                    try:
+                        ts_num = float(ts)
+                    except ValueError:
+                        pass
+
+                if ts_num is not None:
+                    # 数字时间戳
+                    dt = datetime.fromtimestamp(ts_num, tz=timezone(timedelta(hours=8)))
                     time_part = dt.strftime(time_format)
                 elif isinstance(ts, str) and len(ts) >= 16:
+                    # ISO 格式字符串
                     time_part = ts[:19].replace("T", " ")
                 else:
                     time_part = ""
