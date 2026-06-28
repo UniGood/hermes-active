@@ -1570,11 +1570,12 @@ const intensityColor = computed(() => {
   return '#d03050'
 })
 
-// 心跳健康状态：上次心跳在5分钟内=绿，否则红
+// 心跳健康状态：上次心跳在间隔时间内=绿，否则红
 const heartbeatHealthy = computed(() => {
   if (!status.value.heartbeat?.last_at) return false
   const last = new Date(status.value.heartbeat?.last_at)
-  return (Date.now() - last.getTime()) < 5 * 60 * 1000
+  const interval = (status.value.decision?.heartbeat_interval || 600) * 1000
+  return (Date.now() - last.getTime()) < interval
 })
 
 // 决策配置
@@ -1618,7 +1619,7 @@ const frequencyDayPercentage = computed(() => {
 const nextHeartbeatDisplay = computed(() => {
   if (!status.value.heartbeat?.last_at) return '未知'
   const last = new Date(status.value.heartbeat?.last_at)
-  const interval = (status.value.config?.active?.heartbeat_interval || 600) * 1000
+  const interval = (status.value.decision?.heartbeat_interval || 600) * 1000
   const next = new Date(last.getTime() + interval)
   const hh = String(next.getHours()).padStart(2, '0')
   const mm = String(next.getMinutes()).padStart(2, '0')
