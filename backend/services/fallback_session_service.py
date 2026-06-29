@@ -111,6 +111,34 @@ class FallbackSessionService:
         return FallbackSessionService._create_via_session_store(platform, user_id)
 
     @staticmethod
+    def find_latest_session_id(
+        platform: str, user_id: str
+    ) -> Optional[str]:
+        """只读查找：返回最近的 session_id，用于读取上下文。
+
+        不检查过期，不关闭旧 session，不创建新 session。
+        消息数据不随 session 结束而删除，所以 ended 的 session 也能读。
+        """
+        try:
+            from models.database import state_engine
+            from sqlalchemy import text
+
+            with state_engine.connect() as conn:
+                result = conn.execute(
+                    text(
+                        "SELECT id FROM sessions "
+                        "WHERE source = :source AND user_id = :user_id "
+                        "ORDER BY started_at DESC LIMIT 1"
+                    ),
+                    {"source": platform, "user_id": user_id},
+                )
+                row = result.first()
+                return row[0] if row else None
+        except Exception as e:
+            logger.warning("Failed to find latest session: %s", e)
+            return None
+
+    @staticmethod
     def _find_active_session(
         platform: str, user_id: str
     ) -> Optional[Dict[str, Any]]:

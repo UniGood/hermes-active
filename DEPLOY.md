@@ -39,7 +39,7 @@ mkdir -p ~/.hermes/hermes-active/data
 
 ### 5. 启动服务
 
-**启动后端（端口 8080）：**
+**启动后端（端口 18720）：**
 
 ```bash
 cd ~/.hermes/hermes-active/backend
@@ -56,7 +56,7 @@ npm run dev -- --host 0.0.0.0
 ### 6. 访问系统
 
 - **前端地址**：`http://<服务器IP>:5173`
-- **后端地址**：`http://<服务器IP>:8080`
+- **后端地址**：`http://<服务器IP>:18720`
 - **默认账号**：`admin` / `admin`
 
 ---
@@ -167,7 +167,7 @@ sudo systemctl status hermes-active-frontend
 ```bash
 # 开放端口
 sudo ufw allow 5173/tcp  # 前端
-sudo ufw allow 8080/tcp  # 后端
+sudo ufw allow 18720/tcp  # 后端
 
 # 重载防火墙
 sudo ufw reload
@@ -233,7 +233,7 @@ sudo ufw reload
 
 ## API 文档
 
-后端启动后访问：`http://<服务器IP>:8080/docs`
+后端启动后访问：`http://<服务器IP>:18720/docs`
 
 ### 主要 API
 

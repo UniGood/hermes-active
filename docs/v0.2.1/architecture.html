@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hermes-active 主动意识运行架构图</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #020617;
+    color: #e2e8f0;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 40px 20px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    color: #22d3ee;
+    margin-bottom: 8px;
+  }
+
+  .header .subtitle {
+    font-size: 14px;
+    color: #94a3b8;
+  }
+
+  .diagram-container {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 40px;
+    overflow-x: auto;
+  }
+
+  .section-title {
+    font-size: 18px;
+    color: #34d399;
+    margin: 30px 0 15px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  .section-title:first-child {
+    margin-top: 0;
+  }
+
+  /* Flow diagram styles */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 0;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .flow-box {
+    background: rgba(8, 51, 68, 0.4);
+    border: 1.5px solid #22d3ee;
+    border-radius: 8px;
+    padding: 12px 20px;
+    min-width: 180px;
+    text-align: center;
+  }
+
+  .flow-box.backend {
+    background: rgba(6, 78, 59, 0.4);
+    border-color: #34d399;
+  }
+
+  .flow-box.database {
+    background: rgba(76, 29, 149, 0.4);
+    border-color: #a78bfa;
+  }
+
+  .flow-box.external {
+    background: rgba(30, 41, 59, 0.5);
+    border-color: #94a3b8;
+  }
+
+  .flow-box.decision {
+    background: rgba(120, 53, 15, 0.3);
+    border-color: #fbbf24;
+  }
+
+  .flow-box .label {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .flow-box .desc {
+    font-size: 10px;
+    color: #94a3b8;
+  }
+
+  .arrow {
+    color: #475569;
+    font-size: 20px;
+  }
+
+  .arrow-down {
+    text-align: center;
+    color: #475569;
+    font-size: 20px;
+  }
+
+  /* Data flow table */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 12px;
+  }
+
+  .data-table th {
+    background: #1e293b;
+    color: #22d3ee;
+    padding: 10px 15px;
+    text-align: left;
+    border: 1px solid #334155;
+  }
+
+  .data-table td {
+    padding: 10px 15px;
+    border: 1px solid #1e293b;
+  }
+
+  .data-table tr:nth-child(even) {
+    background: rgba(15, 23, 42, 0.5);
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    padding: 15px;
+    background: #0f172a;
+    border-radius: 8px;
+    border: 1px solid #1e293b;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+  }
+
+  .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid;
+  }
+
+  .legend-color.frontend { background: rgba(8, 51, 68, 0.4); border-color: #22d3ee; }
+  .legend-color.backend { background: rgba(6, 78, 59, 0.4); border-color: #34d399; }
+  .legend-color.database { background: rgba(76, 29, 149, 0.4); border-color: #a78bfa; }
+  .legend-color.external { background: rgba(30, 41, 59, 0.5); border-color: #94a3b8; }
+  .legend-color.decision { background: rgba(120, 53, 15, 0.3); border-color: #fbbf24; }
+
+  /* Summary cards */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 40px;
+  }
+
+  .card {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .card-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  .card-dot.cyan { background: #22d3ee; }
+  .card-dot.emerald { background: #34d399; }
+  .card-dot.violet { background: #a78bfa; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .card h3 {
+    font-size: 14px;
+    color: #e2e8f0;
+  }
+
+  .card ul {
+    list-style: none;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  .card li {
+    margin-bottom: 8px;
+    padding-left: 15px;
+    position: relative;
+  }
+
+  .card li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #475569;
+  }
+
+  .highlight {
+    color: #22d3ee;
+    font-weight: 700;
+  }
+
+  .tag {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.1);
+    color: #22d3ee;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin: 2px;
+  }
+
+  .tag.green {
+    background: rgba(52, 211, 153, 0.1);
+    color: #34d399;
+  }
+
+  .tag.purple {
+    background: rgba(167, 139, 250, 0.1);
+    color: #a78bfa;
+  }
+
+  .tag.yellow {
+    background: rgba(251, 191, 36, 0.1);
+    color: #fbbf24;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🧠 hermes-active 主动意识运行架构</h1>
+  <div class="subtitle">v0.2 心跳 → 感知 → 念头 → 决策 → 发消息</div>
+</div>
+
+<!-- ========== 1. 整体架构 ========== -->
+<div class="diagram-container">
+  <div class="section-title">1. 整体架构 — 组件关系</div>
+
+  <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 1000px; margin: 0 auto; display: block;">
+    <!-- Background Grid -->
+    <defs>
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+      </pattern>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#475569"/>
+      </marker>
+      <marker id="arrowhead-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee"/>
+      </marker>
+      <marker id="arrowhead-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#34d399"/>
+      </marker>
+    </defs>
+    <rect width="1000" height="600" fill="url(#grid)"/>
+
+    <!-- Scheduler Box -->
+    <rect x="50" y="50" width="200" height="80" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect x="50" y="50" width="200" height="80" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+    <text x="150" y="80" text-anchor="middle" fill="#22d3ee" font-size="12" font-weight="700">APScheduler</text>
+    <text x="150" y="100" text-anchor="middle" fill="#94a3b8" font-size="10">每 N 秒触发心跳</text>
+    <text x="150" y="115" text-anchor="middle" fill="#64748b" font-size="8">默认 600s（10分钟）</text>
+
+    <!-- Arrow: Scheduler → Heartbeat -->
+    <line x1="250" y1="90" x2="330" y2="90" stroke="#475569" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+    <!-- Heartbeat Engine Box -->
+    <rect x="330" y="30" width="300" height="120" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect x="330" y="30" width="300" height="120" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+    <text x="480" y="55" text-anchor="middle" fill="#34d399" font-size="12" font-weight="700">💓 心跳引擎 run_heartbeat()</text>
+    <text x="480" y="80" text-anchor="middle" fill="#94a3b8" font-size="10">1. 检查配置是否启用</text>
+    <text x="480" y="95" text-anchor="middle" fill="#94a3b8" font-size="10">2. 计算当前状态（想念/热度/情绪）</text>
+    <text x="480" y="110" text-anchor="middle" fill="#94a3b8" font-size="10">3. 评估情绪值（规则+LLM）</text>
+    <text x="480" y="125" text-anchor="middle" fill="#94a3b8" font-size="10">4. 决策 → 生成想法 → 发送</text>
+    <text x="480" y="140" text-anchor="middle" fill="#94a3b8" font-size="10">5. 记录心跳日志</text>
+
+    <!-- Arrow: Heartbeat → State DB -->
+    <line x1="400" y1="150" x2="200" y2="230" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+    <text x="280" y="185" fill="#a78bfa" font-size="9">查 state.db</text>
+
+    <!-- Arrow: Heartbeat → Active DB -->
+    <line x1="560" y1="150" x2="750" y2="230" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+    <text x="680" y="185" fill="#a78bfa" font-size="9">读写 active.db</text>
+
+    <!-- State DB Box -->
+    <rect x="80" y="230" width="240" height="100" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+    <rect x="80" y="230" width="240" height="100" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="200" y="255" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="700">📦 state.db（只读）</text>
+    <text x="200" y="280" text-anchor="middle" fill="#94a3b8" font-size="10">sessions — 会话表</text>
+    <text x="200" y="295" text-anchor="middle" fill="#94a3b8" font-size="10">messages — 消息表</text>
+    <text x="200" y="310" text-anchor="middle" fill="#94a3b8" font-size="10">（由 hermes-agent 维护）</text>
+    <text x="200" y="325" text-anchor="middle" fill="#ef4444" font-size="8">⚠️ 绝对禁止写入</text>
+
+    <!-- Active DB Box -->
+    <rect x="630" y="230" width="280" height="100" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+    <rect x="630" y="230" width="280" height="100" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="770" y="255" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="700">💾 active.db（读写）</text>
+    <text x="770" y="280" text-anchor="middle" fill="#94a3b8" font-size="10">configs — 配置表</text>
+    <text x="770" y="295" text-anchor="middle" fill="#94a3b8" font-size="10">active_heartbeat_logs — 心跳日志</text>
+    <text x="770" y="310" text-anchor="middle" fill="#94a3b8" font-size="10">active_thought_logs — 念头日志</text>
+    <text x="770" y="325" text-anchor="middle" fill="#34d399" font-size="8">✅ 所有写操作都在这里</text>
+
+    <!-- Arrow: Heartbeat → Hindsight -->
+    <line x1="480" y1="150" x2="480" y2="400" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+    <text x="490" y="380" fill="#94a3b8" font-size="9">recall / reflect</text>
+
+    <!-- Hindsight Box -->
+    <rect x="380" y="400" width="200" height="70" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1.5"/>
+    <rect x="380" y="400" width="200" height="70" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="480" y="425" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="700">🧠 Hindsight</text>
+    <text x="480" y="445" text-anchor="middle" fill="#64748b" font-size="10">recall — 语义检索记忆</text>
+    <text x="480" y="460" text-anchor="middle" fill="#64748b" font-size="10">reflect — 综合分析记忆</text>
+
+    <!-- Arrow: Heartbeat → LLM -->
+    <line x1="630" y1="90" x2="730" y2="90" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+    <text x="680" y="80" fill="#94a3b8" font-size="9">生成想法</text>
+
+    <!-- LLM Box -->
+    <rect x="730" y="50" width="220" height="80" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1.5"/>
+    <rect x="730" y="50" width="220" height="80" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="840" y="75" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="700">🤖 LLM</text>
+    <text x="840" y="95" text-anchor="middle" fill="#64748b" font-size="10">hermes 模式 / 自定义模式</text>
+    <text x="840" y="115" text-anchor="middle" fill="#64748b" font-size="10">生成自然想法 + 情绪评估</text>
+
+    <!-- Arrow: Heartbeat → MessageService -->
+    <line x1="630" y1="150" x2="840" y2="200" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+    <!-- MessageService Box -->
+    <rect x="730" y="200" width="220" height="60" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+    <rect x="730" y="200" width="220" height="60" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="840" y="225" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="700">📤 MessageService</text>
+    <text x="840" y="245" text-anchor="middle" fill="#94a3b8" font-size="10">发送消息到目标平台</text>
+
+    <!-- Arrow: MessageService → Platform -->
+    <line x1="840" y1="260" x2="840" y2="320" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+    <!-- Platform Box -->
+    <rect x="730" y="320" width="220" height="60" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1.5"/>
+    <rect x="730" y="320" width="220" height="60" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="840" y="345" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="700">💬 目标平台</text>
+    <text x="840" y="365" text-anchor="middle" fill="#64748b" font-size="10">微信 / 飞书 / Telegram</text>
+
+    <!-- Frontend Box -->
+    <rect x="50" y="400" width="240" height="70" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect x="50" y="400" width="240" height="70" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+    <text x="170" y="425" text-anchor="middle" fill="#22d3ee" font-size="12" font-weight="700">🖥️ Vue 3 前端</text>
+    <text x="170" y="445" text-anchor="middle" fill="#94a3b8" font-size="10">配置管理 / 状态查看 / 日志浏览</text>
+    <text x="170" y="460" text-anchor="middle" fill="#64748b" font-size="10">http://localhost:5173</text>
+
+    <!-- Arrow: Frontend → Active DB (via API) -->
+    <line x1="290" y1="435" x2="630" y2="300" stroke="#22d3ee" stroke-width="1" stroke-dasharray="4,4" marker-end="url(#arrowhead-cyan)"/>
+    <text x="430" y="370" fill="#22d3ee" font-size="8">FastAPI 路由</text>
+  </svg>
+</div>
+
+<!-- ========== 2. 心跳流程详解 ========== -->
+<div class="diagram-container">
+  <div class="section-title">2. 心跳流程详解 — run_heartbeat()</div>
+
+  <svg viewBox="0 0 1000 900" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 1000px; margin: 0 auto; display: block;">
+    <defs>
+      <pattern id="grid2" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+      </pattern>
+      <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#475569"/>
+      </marker>
+      <marker id="arr-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#34d399"/>
+      </marker>
+      <marker id="arr-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444"/>
+      </marker>
+    </defs>
+    <rect width="1000" height="900" fill="url(#grid2)"/>
+
+    <!-- Step 1: Check Config -->
+    <rect x="350" y="20" width="300" height="50" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect x="350" y="20" width="300" height="50" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+    <text x="500" y="42" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="700">Step 1: 检查配置</text>
+    <text x="500" y="58" text-anchor="middle" fill="#94a3b8" font-size="9">enabled=true? active.enabled=true?</text>
+
+    <!-- Arrow down -->
+    <line x1="500" y1="70" x2="500" y2="100" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Step 2: Get Status -->
+    <rect x="300" y="100" width="400" height="80" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect x="300" y="100" width="400" height="80" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+    <text x="500" y="122" text-anchor="middle" fill="#34d399" font-size="11" font-weight="700">Step 2: 计算当前状态 get_status()</text>
+    <text x="500" y="142" text-anchor="middle" fill="#94a3b8" font-size="9">查 state.db → 想念分数（距上次用户消息多久）</text>
+    <text x="500" y="157" text-anchor="middle" fill="#94a3b8" font-size="9">查 state.db → 聊天热度（最近1小时消息数）</text>
+    <text x="500" y="172" text-anchor="middle" fill="#94a3b8" font-size="9">查 configs  → 情绪值（emotional_intensity）</text>
+
+    <!-- Arrow down -->
+    <line x1="500" y1="180" x2="500" y2="210" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Step 2.5: Extract Context -->
+    <rect x="250" y="210" width="500" height="70" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+    <rect x="250" y="210" width="500" height="70" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="500" y="232" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="700">Step 2.5: 提取上下文</text>
+    <text x="500" y="252" text-anchor="middle" fill="#94a3b8" font-size="9">extract_session_context() → 最近对话（最多15条）</text>
+    <text x="500" y="267" text-anchor="middle" fill="#94a3b8" font-size="9">call_hindsight_recall() → 相关记忆（最多5条）</text>
+
+    <!-- Arrow down -->
+    <line x1="500" y1="280" x2="500" y2="310" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Step 3: Evaluate Emotion -->
+    <rect x="250" y="310" width="500" height="80" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+    <rect x="250" y="310" width="500" height="80" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="500" y="332" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="700">Step 3: 评估情绪值 evaluate_emotional_intensity()</text>
+    <text x="500" y="352" text-anchor="middle" fill="#94a3b8" font-size="9">规则引擎：关键词匹配（想你/开心/难过...）→ rule_score</text>
+    <text x="500" y="367" text-anchor="middle" fill="#94a3b8" font-size="9">LLM 评估：传入上下文 → llm_score</text>
+    <text x="500" y="382" text-anchor="middle" fill="#94a3b8" font-size="9">最终分数 = max(rule_score, llm_score) → 写入 configs</text>
+
+    <!-- Arrow down -->
+    <line x1="500" y1="390" x2="500" y2="420" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Step 4: Decision -->
+    <rect x="300" y="420" width="400" height="100" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1.5"/>
+    <rect x="300" y="420" width="400" height="100" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+    <text x="500" y="442" text-anchor="middle" fill="#fb7185" font-size="11" font-weight="700">Step 4: 决策 make_decision()</text>
+    <text x="500" y="462" text-anchor="middle" fill="#94a3b8" font-size="9">检查：每日上限(5) / 每小时上限(2) / 冷却期(30min)</text>
+    <text x="500" y="477" text-anchor="middle" fill="#94a3b8" font-size="9">检查：用户消息窗口（10分钟内有消息→跳过）</text>
+    <text x="500" y="497" text-anchor="middle" fill="#94a3b8" font-size="9">条件：情绪值>0.6→auto_send | 想念>3→gap_send</text>
+    <text x="500" y="512" text-anchor="middle" fill="#94a3b8" font-size="9">       空闲>30min+情绪>0.3→idle_send | 空闲>60min→long_idle</text>
+
+    <!-- Decision branches -->
+    <!-- Skip branch -->
+    <line x1="350" y1="520" x2="200" y2="570" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-red)"/>
+    <rect x="100" y="570" width="200" height="40" rx="6" fill="#0f172a" stroke="#ef4444" stroke-width="1.5"/>
+    <rect x="100" y="570" width="200" height="40" rx="6" fill="rgba(239, 68, 68, 0.1)" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="200" y="590" text-anchor="middle" fill="#ef4444" font-size="10" font-weight="700">❌ skip（跳过）</text>
+    <text x="200" y="605" text-anchor="middle" fill="#94a3b8" font-size="8">记录日志 → 结束</text>
+
+    <!-- Send branch -->
+    <line x1="650" y1="520" x2="800" y2="570" stroke="#34d399" stroke-width="1.5" marker-end="url(#arr-green)"/>
+    <rect x="700" y="570" width="200" height="40" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect x="700" y="570" width="200" height="40" rx="6" fill="rgba(52, 211, 153, 0.1)" stroke="#34d399" stroke-width="1.5"/>
+    <text x="800" y="590" text-anchor="middle" fill="#34d399" font-size="10" font-weight="700">✅ auto_send / gap_send ...</text>
+    <text x="800" y="605" text-anchor="middle" fill="#94a3b8" font-size="8">进入生成流程 ↓</text>
+
+    <!-- Step 5: Generate Thought -->
+    <rect x="600" y="630" width="400" height="100" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect x="600" y="630" width="400" height="100" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+    <text x="800" y="652" text-anchor="middle" fill="#34d399" font-size="11" font-weight="700">Step 5: 生成想法 generate_thought()</text>
+    <text x="800" y="672" text-anchor="middle" fill="#94a3b8" font-size="9">① 提取 session 上下文（最近对话）</text>
+    <text x="800" y="687" text-anchor="middle" fill="#94a3b8" font-size="9">② Hindsight recall + reflect（记忆）</text>
+    <text x="800" y="702" text-anchor="middle" fill="#94a3b8" font-size="9">③ LLM 生成自然想法（1-2句话）</text>
+    <text x="800" y="720" text-anchor="middle" fill="#94a3b8" font-size="9">④ 评估想法情绪值 → 更新 configs</text>
+
+    <!-- Arrow down -->
+    <line x1="800" y1="730" x2="800" y2="760" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Step 6: Send Message -->
+    <rect x="650" y="760" width="300" height="50" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+    <rect x="650" y="760" width="300" height="50" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="800" y="782" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="700">Step 6: 发送消息 send_message()</text>
+    <text x="800" y="800" text-anchor="middle" fill="#94a3b8" font-size="9">MessageService → 微信/飞书</text>
+
+    <!-- Arrow down -->
+    <line x1="800" y1="810" x2="800" y2="840" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Step 7: Log -->
+    <rect x="650" y="840" width="300" height="40" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+    <rect x="650" y="840" width="300" height="40" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="800" y="860" text-anchor="middle" fill="#a78bfa" font-size="10" font-weight="700">Step 7: 记录日志 → active.db</text>
+    <text x="800" y="875" text-anchor="middle" fill="#94a3b8" font-size="8">active_heartbeat_logs + active_thought_logs</text>
+  </svg>
+</div>
+
+<!-- ========== 3. 数据流 ========== -->
+<div class="diagram-container">
+  <div class="section-title">3. 数据流 — 谁读谁写</div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>数据源</th>
+        <th>读取方</th>
+        <th>写入方</th>
+        <th>内容</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag purple">state.db</span> sessions</td>
+        <td>hermes-active（查活跃session）</td>
+        <td>hermes-agent / Gateway</td>
+        <td>会话信息（platform, user_id, ended_at）</td>
+      </tr>
+      <tr>
+        <td><span class="tag purple">state.db</span> messages</td>
+        <td>hermes-active（查最近消息、统计发送数）</td>
+        <td>hermes-agent / hermes-active</td>
+        <td>消息内容（role, content, timestamp）</td>
+      </tr>
+      <tr>
+        <td><span class="tag purple">active.db</span> configs</td>
+        <td>hermes-active（读配置、读情绪值）</td>
+        <td>hermes-active（写配置、写情绪值）</td>
+        <td>所有配置项 + 运行时状态（emotional_intensity）</td>
+      </tr>
+      <tr>
+        <td><span class="tag purple">active.db</span> active_heartbeat_logs</td>
+        <td>前端（展示心跳历史）</td>
+        <td>hermes-active（run_heartbeat）</td>
+        <td>心跳执行记录（时长、情绪、决策、详情）</td>
+      </tr>
+      <tr>
+        <td><span class="tag purple">active.db</span> active_thought_logs</td>
+        <td>前端（展示念头历史）</td>
+        <td>hermes-active（generate_thought）</td>
+        <td>念头记录（内容、类型、强度、决策）</td>
+      </tr>
+      <tr>
+        <td><span class="tag">Hindsight</span></td>
+        <td>hermes-active（recall/reflect）</td>
+        <td>hermes-agent（对话时自动retain）</td>
+        <td>长期记忆（语义检索 + 综合分析）</td>
+      </tr>
+      <tr>
+        <td><span class="tag">LLM</span></td>
+        <td>hermes-active（生成想法、评估情绪）</td>
+        <td>—</td>
+        <td>生成自然语言 + 情绪评分</td>
+      </tr>
+      <tr>
+        <td><span class="tag green">微信/飞书</span></td>
+        <td>—</td>
+        <td>hermes-active（MessageService）</td>
+        <td>主动发送的消息</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ========== 4. 配置项 ========== -->
+<div class="diagram-container">
+  <div class="section-title">4. 配置项 — 所有阈值可配置</div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>配置 key</th>
+        <th>默认值</th>
+        <th>说明</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag">active_consciousness.enabled</span></td>
+        <td>false</td>
+        <td>总开关</td>
+      </tr>
+      <tr>
+        <td><span class="tag">active_consciousness.active.heartbeat_interval</span></td>
+        <td>600</td>
+        <td>心跳间隔（秒）</td>
+      </tr>
+      <tr>
+        <td><span class="tag">active_consciousness.active.cooldown_minutes</span></td>
+        <td>30</td>
+        <td>发送冷却期（分钟）</td>
+      </tr>
+      <tr>
+        <td><span class="tag">active_consciousness.active.no_send_after_user_msg_minutes</span></td>
+        <td>10</td>
+        <td>用户消息后多久不发送</td>
+      </tr>
+      <tr>
+        <td><span class="tag">active_consciousness.decision.send_threshold</span></td>
+        <td>0.6</td>
+        <td>情绪值阈值（超过则发送）</td>
+      </tr>
+      <tr>
+        <td><span class="tag">active_consciousness.decision.max_per_hour</span></td>
+        <td>2</td>
+        <td>每小时最大发送数</td>
+      </tr>
+      <tr>
+        <td><span class="tag">active_consciousness.decision.max_per_day</span></td>
+        <td>5</td>
+        <td>每日最大发送数</td>
+      </tr>
+      <tr>
+        <td><span class="tag">active_consciousness.decision.longing_gap_threshold</span></td>
+        <td>3</td>
+        <td>想念等级阈值（超过则gap_send）</td>
+      </tr>
+      <tr>
+        <td><span class="tag">active_consciousness.session.sources</span></td>
+        <td>["weixin"]</td>
+        <td>监听的消息来源</td>
+      </tr>
+      <tr>
+        <td><span class="tag">active_consciousness.hindsight.enabled</span></td>
+        <td>true</td>
+        <td>是否启用 Hindsight 记忆</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ========== 5. 关键逻辑 ========== -->
+<div class="diagram-container">
+  <div class="section-title">5. 关键逻辑 — 想念分数 & 情绪值</div>
+
+  <svg viewBox="0 0 1000 350" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 1000px; margin: 0 auto; display: block;">
+    <defs>
+      <pattern id="grid3" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+      </pattern>
+    </defs>
+    <rect width="1000" height="350" fill="url(#grid3)"/>
+
+    <!-- Longing Score -->
+    <rect x="50" y="30" width="430" height="140" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect x="50" y="30" width="430" height="140" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+    <text x="265" y="55" text-anchor="middle" fill="#22d3ee" font-size="12" font-weight="700">📊 想念分数（longing_score）</text>
+    <text x="265" y="80" text-anchor="middle" fill="#94a3b8" font-size="10">计算公式：gap_minutes / 300（5小时=1.0）</text>
+    <text x="265" y="100" text-anchor="middle" fill="#94a3b8" font-size="10">等级：0.0=calm | 0.1=longing | 0.3=missing</text>
+    <text x="265" y="115" text-anchor="middle" fill="#94a3b8" font-size="10">      0.5=yearning | 0.7=anxious</text>
+    <text x="265" y="140" text-anchor="middle" fill="#64748b" font-size="9">数据来源：state.db messages MAX(timestamp) WHERE role='user'</text>
+    <text x="265" y="160" text-anchor="middle" fill="#64748b" font-size="9">更新时机：每次心跳实时计算（不存储）</text>
+
+    <!-- Emotional Intensity -->
+    <rect x="520" y="30" width="430" height="140" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+    <rect x="520" y="30" width="430" height="140" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="735" y="55" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="700">🎭 情绪值（emotional_intensity）</text>
+    <text x="735" y="80" text-anchor="middle" fill="#94a3b8" font-size="10">规则引擎：关键词匹配 + 状态加权 → rule_score</text>
+    <text x="735" y="100" text-anchor="middle" fill="#94a3b8" font-size="10">LLM 评估：传入上下文 → llm_score</text>
+    <text x="735" y="115" text-anchor="middle" fill="#94a3b8" font-size="10">最终值 = max(rule_score, llm_score)</text>
+    <text x="735" y="140" text-anchor="middle" fill="#64748b" font-size="9">存储位置：configs 表 active_consciousness.current.emotional_intensity</text>
+    <text x="735" y="160" text-anchor="middle" fill="#64748b" font-size="9">更新时机：每次心跳（即使决策是skip也更新！）</text>
+
+    <!-- Chat Heat -->
+    <rect x="50" y="200" width="430" height="120" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect x="50" y="200" width="430" height="120" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+    <text x="265" y="225" text-anchor="middle" fill="#34d399" font-size="12" font-weight="700">🔥 聊天热度（chat_heat）</text>
+    <text x="265" y="250" text-anchor="middle" fill="#94a3b8" font-size="10">计算公式：最近1小时用户消息数 / 1小时</text>
+    <text x="265" y="270" text-anchor="middle" fill="#94a3b8" font-size="10">等级：0.0=cold | 0.5=warm | 1.0=hot | 3.0=fire</text>
+    <text x="265" y="300" text-anchor="middle" fill="#64748b" font-size="9">数据来源：state.db messages COUNT(*) WHERE role='user' AND timestamp > -1h</text>
+
+    <!-- Decision Formula -->
+    <rect x="520" y="200" width="430" height="120" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1.5"/>
+    <rect x="520" y="200" width="430" height="120" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+    <text x="735" y="225" text-anchor="middle" fill="#fb7185" font-size="12" font-weight="700">⚡ 决策逻辑（make_decision）</text>
+    <text x="735" y="250" text-anchor="middle" fill="#94a3b8" font-size="10">① 检查上限：today >= max_per_day → skip</text>
+    <text x="735" y="265" text-anchor="middle" fill="#94a3b8" font-size="10">② 检查冷却：last_sent < cooldown → skip</text>
+    <text x="735" y="280" text-anchor="middle" fill="#94a3b8" font-size="10">③ 检查窗口：user_msg < 10min → skip</text>
+    <text x="735" y="300" text-anchor="middle" fill="#94a3b8" font-size="10">④ 条件匹配：情绪>0.6→auto | 想念>3→gap</text>
+    <text x="735" y="315" text-anchor="middle" fill="#94a3b8" font-size="10">            空闲>30min→idle | 空闲>60min→long_idle</text>
+  </svg>
+</div>
+
+<!-- ========== 6. v0.2.1 改进点 ========== -->
+<div class="diagram-container">
+  <div class="section-title">6. v0.2.1 改进点 — 待实现</div>
+
+  <svg viewBox="0 0 1000 400" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 1000px; margin: 0 auto; display: block;">
+    <defs>
+      <pattern id="grid4" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+      </pattern>
+    </defs>
+    <rect width="1000" height="400" fill="url(#grid4)"/>
+
+    <!-- Current (v0.2) -->
+    <rect x="50" y="30" width="400" height="350" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+    <text x="250" y="55" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="700">v0.2 现状</text>
+    <text x="250" y="85" text-anchor="middle" fill="#64748b" font-size="10">❌ 单一 emotional_intensity（0-1）</text>
+    <text x="250" y="105" text-anchor="middle" fill="#64748b" font-size="10">❌ 情绪每次重新评估（无惯性）</text>
+    <text x="250" y="125" text-anchor="middle" fill="#64748b" font-size="10">❌ 决策只有阈值判断（>0.6发）</text>
+    <text x="250" y="145" text-anchor="middle" fill="#64748b" font-size="10">❌ 念头无类型分类</text>
+    <text x="250" y="165" text-anchor="middle" fill="#64748b" font-size="10">❌ 无时间窗口感知</text>
+    <text x="250" y="185" text-anchor="middle" fill="#64748b" font-size="10">❌ 念头不存入 Hindsight</text>
+    <text x="250" y="205" text-anchor="middle" fill="#64748b" font-size="10">❌ 无延迟发送队列</text>
+
+    <!-- Arrow -->
+    <text x="500" y="200" text-anchor="middle" fill="#34d399" font-size="24">→</text>
+
+    <!-- Target (v0.2.1) -->
+    <rect x="550" y="30" width="400" height="350" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect x="550" y="30" width="400" height="350" rx="6" fill="rgba(6, 78, 59, 0.2)" stroke="#34d399" stroke-width="1.5"/>
+    <text x="750" y="55" text-anchor="middle" fill="#34d399" font-size="12" font-weight="700">v0.2.1 目标</text>
+    <text x="750" y="85" text-anchor="middle" fill="#34d399" font-size="10">✅ VA 三维度（valence/arousal/dominant）</text>
+    <text x="750" y="105" text-anchor="middle" fill="#34d399" font-size="10">✅ 情绪跨心跳持久化 + 时间自然演化</text>
+    <text x="750" y="125" text-anchor="middle" fill="#34d399" font-size="10">✅ 多维度评分（时间×强度×空白×频率）</text>
+    <text x="750" y="145" text-anchor="middle" fill="#34d399" font-size="10">✅ 念头 6 种类型（时间/空白/关联/回忆/情绪/环境）</text>
+    <text x="750" y="165" text-anchor="middle" fill="#34d399" font-size="10">✅ 时间窗口权重（深夜0.3 / 早晚1.0）</text>
+    <text x="750" y="185" text-anchor="middle" fill="#34d399" font-size="10">✅ 高强度念头自动 retain 到 Hindsight</text>
+    <text x="750" y="205" text-anchor="middle" fill="#34d399" font-size="10">✅ score 0.3-0.6 延迟队列，下次重新评估</text>
+    <text x="750" y="235" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="700">核心公式（新增）：</text>
+    <text x="750" y="260" text-anchor="middle" fill="#fbbf24" font-size="10">score = intensity × time_fitness × silence × frequency</text>
+    <text x="750" y="285" text-anchor="middle" fill="#fbbf24" font-size="10">> 0.6 → 发送 | > 0.3 → 延迟 | > 0.1 → 记忆 | ≤ 0.1 → 丢弃</text>
+  </svg>
+</div>
+
+<!-- ========== Legend ========== -->
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-color frontend"></div>
+    <span>前端 / 调度器</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color backend"></div>
+    <span>后端服务</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color database"></div>
+    <span>数据库</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color external"></div>
+    <span>外部服务</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color decision"></div>
+    <span>决策 / 消息</span>
+  </div>
+</div>
+
+<!-- ========== Summary Cards ========== -->
+<div class="cards">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-dot cyan"></div>
+      <h3>心跳闭环</h3>
+    </div>
+    <ul>
+      <li>APScheduler 按间隔触发</li>
+      <li>查 state.db 计算想念/热度</li>
+      <li>评估情绪值（规则+LLM）</li>
+      <li>决策是否发送</li>
+      <li>生成想法 → 发送 → 记录日志</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-dot emerald"></div>
+      <h3>数据隔离</h3>
+    </div>
+    <ul>
+      <li><span class="highlight">state.db</span> — 只读，hermes-agent 维护</li>
+      <li><span class="highlight">active.db</span> — 读写，hermes-active 维护</li>
+      <li>情绪值存在 configs 表（运行时状态）</li>
+      <li>日志存在 active_*_logs 表</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-dot violet"></div>
+      <h3>v0.2.1 核心改进</h3>
+    </div>
+    <ul>
+      <li>VA 情绪模型替代单一 intensity</li>
+      <li>情绪跨心跳持久化 + 自然演化</li>
+      <li>多维度决策公式（时间窗口）</li>
+      <li>念头分类 + 存入 Hindsight</li>
+      <li>延迟发送队列</li>
+    </ul>
+  </div>
+</div>
+
+<div style="text-align: center; margin-top: 40px; color: #475569; font-size: 11px;">
+  hermes-active v0.2 运行架构图 — 生成于 2026-06-15
+</div>
+
+</body>
+</html>

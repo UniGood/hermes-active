@@ -65,6 +65,35 @@ def init_active_db():
     except Exception:
         pass  # 列已存在则忽略
 
+    # 自动迁移：给 active_thought_logs 表增加 details 列（如果不存在）
+    migrate_thought_logs_table()
+
+
+def migrate_thought_logs_table():
+    """给 active_thought_logs 表添加缺失列（如果不存在）"""
+    import logging
+    logger = logging.getLogger("hermes.database")
+
+    try:
+        with active_engine.connect() as conn:
+            # 检查所有列是否存在
+            result = conn.execute(text("PRAGMA table_info(active_thought_logs)"))
+            columns = [row[1] for row in result.fetchall()]
+
+            # 迁移 1：details 列
+            if "details" not in columns:
+                conn.execute(text("ALTER TABLE active_thought_logs ADD COLUMN details TEXT"))
+                conn.commit()
+                logger.info("已添加 details 列到 active_thought_logs 表")
+
+            # 迁移 2：hindsight_stored 列（是否真的存进了 Hindsight）
+            if "hindsight_stored" not in columns:
+                conn.execute(text("ALTER TABLE active_thought_logs ADD COLUMN hindsight_stored BOOLEAN DEFAULT 0"))
+                conn.commit()
+                logger.info("已添加 hindsight_stored 列到 active_thought_logs 表")
+    except Exception as e:
+        logger.warning("迁移 active_thought_logs 表失败: %s", e)
+
 
 def get_state_metadata():
     """获取 state.db 元数据（只读映射）"""

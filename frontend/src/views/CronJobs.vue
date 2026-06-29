@@ -120,10 +120,15 @@
               v-model:value="formData.user_prompt"
               type="textarea"
               :autosize="{ minRows: 3, maxRows: 8 }"
-              placeholder="生成提示词，支持 {context} 占位符"
+              placeholder="生成提示词，支持占位符"
             />
-            <div style="font-size: 12px; color: #999">
-              支持 {context} 占位符，运行时替换为实际上下文
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+              <span style="font-size: 12px; color: var(--theme-text-muted);">插入：</span>
+              <n-tag v-for="ph in placeholderOptions" :key="ph.value" size="small"
+                :bordered="false" style="cursor: pointer;"
+                @click="insertPlaceholder(ph.value)">
+                {{ ph.label }}
+              </n-tag>
             </div>
             <n-button size="small" @click="fillDefaultUserPrompt" style="margin-top: 4px">
               填充默认用户提示词
@@ -141,7 +146,10 @@
               <n-tag v-if="contextConfig.hindsight_reflect_enabled" size="small" type="warning">
                 Reflect: {{ contextConfig.hindsight_reflect_query || '已启用' }}
               </n-tag>
-              <n-tag v-if="contextConfig.session_enabled && !contextConfig.hindsight_recall_enabled && !contextConfig.hindsight_reflect_enabled" size="small">
+              <n-tag v-if="contextConfig.weather_enabled" size="small" type="error">
+                天气：{{ weatherDaysLabel }}
+              </n-tag>
+              <n-tag v-if="contextConfig.session_enabled && !contextConfig.hindsight_recall_enabled && !contextConfig.hindsight_reflect_enabled && !contextConfig.weather_enabled" size="small">
                 仅 Session 上下文
               </n-tag>
             </div>
@@ -229,6 +237,43 @@
           </n-space>
         </n-form-item>
 
+        <!-- 天气感知 -->
+        <n-divider title-placement="left">天气感知</n-divider>
+        <n-form-item label="高德地图天气">
+          <n-space vertical style="width: 100%">
+            <n-space align="center">
+              <n-switch v-model:value="contextConfig.weather_enabled" />
+              <span style="font-size: 13px; color: #666">启用天气上下文（复用配置管理中的高德 API Key）</span>
+            </n-space>
+            <n-text v-if="contextConfig.weather_enabled" depth="3" style="font-size: 12px">
+              当前城市的天气会作为上下文通过 {weather} 占位符注入
+            </n-text>
+            <template v-if="contextConfig.weather_enabled">
+              <n-space align="center">
+                <span style="font-size: 13px; color: #666">预报天数：</span>
+                <n-radio-group v-model:value="contextConfig.weather_days">
+                  <n-radio :value="0">今天</n-radio>
+                  <n-radio :value="2">两天</n-radio>
+                  <n-radio :value="3">三天</n-radio>
+                  <n-radio :value="4">四天</n-radio>
+                </n-radio-group>
+                <n-text depth="3" style="font-size: 12px">高德 API 实测最多支持 4 天</n-text>
+              </n-space>
+            </template>
+          </n-space>
+        </n-form-item>
+
+        <!-- 时间格式 -->
+        <n-divider title-placement="left">时间格式</n-divider>
+        <n-form-item label="{time} 占位符">
+          <n-space vertical style="width: 100%">
+            <TimeFormatSelector v-model="contextConfig.time_format" />
+            <n-text depth="3" style="font-size: 12px">
+              在提示词中使用 {time} 插入当前时间
+            </n-text>
+          </n-space>
+        </n-form-item>
+
         <!-- 跳过执行参数 -->
         <n-divider title-placement="left">跳过执行参数</n-divider>
         <n-form-item label="聊天冷却时间">
@@ -260,6 +305,10 @@
             {{ formData.use_llm ? '大模型生成消息' : '直接发送固定消息' }}
           </span>
         </n-form-item>
+        <n-form-item v-if="formData.use_llm" label="Max Tokens">
+          <n-input-number v-model:value="formData.max_tokens" :min="0" :max="8192" :step="100" style="width: 180px" />
+          <span style="margin-left: 8px; color: #999; font-size: 13px">0 = 不限制</span>
+        </n-form-item>
         <n-form-item v-if="!formData.use_llm" label="固定消息">
           <n-input v-model:value="formData.fixed_message" type="textarea" :autosize="{ minRows: 2, maxRows: 6 }" placeholder="输入固定发送的消息内容" />
         </n-form-item>
@@ -276,17 +325,7 @@
             <n-input v-model:value="formData.send_mark" placeholder="凯莉" style="max-width: 300px" />
           </n-form-item>
           <n-form-item label="时间格式">
-            <div class="time-format-selector">
-              <div
-                v-for="opt in timeFormatOptions" :key="opt.value"
-                class="time-format-chip"
-                :class="{ active: formData.time_format === opt.value }"
-                @click="formData.time_format = opt.value"
-              >
-                <span class="chip-label">{{ opt.label }}</span>
-                <span class="chip-preview">{{ formatWithOption(opt.value) }}</span>
-              </div>
-            </div>
+            <TimeFormatSelector v-model="formData.time_format" />
           </n-form-item>
           <n-form-item label="预览">
             <div class="mark-preview" v-if="testMessageForPreview">
@@ -320,7 +359,7 @@
             v-model:value="defaultPromptsData.user_prompt"
             type="textarea"
             :autosize="{ minRows: 5, maxRows: 15 }"
-            placeholder="用户提示词模板，支持 {context} 占位符"
+            placeholder="用户提示词模板，支持 {session} {memory} {weather} {time} 占位符"
           />
         </n-form-item>
         <n-form-item label="拼接 soul.md">
@@ -448,11 +487,27 @@
           </n-descriptions-item>
         </n-descriptions>
 
+        <!-- 基本详情（_minimal 兜底 details 时显示，仅有 message/error/task_type 等基础字段） -->
+        <n-alert v-if="logDetailData._minimal && !logDetailData.llm_request && !logDetailData.context && !logDetailData.send_result" type="info" style="margin-bottom: 16px;">
+          <div style="font-size: 13px;">
+            <div><strong>任务类型：</strong>{{ logDetailData.task_type }}</div>
+            <div v-if="logDetailData.summary"><strong>说明：</strong>{{ logDetailData.summary }}</div>
+            <div v-if="logDetailData.error"><strong>错误：</strong>{{ logDetailData.error }}</div>
+            <div v-if="logDetailData.failure_stage"><strong>失败阶段：</strong>{{ logDetailData.failure_stage }}</div>
+            <div v-if="logDetailData.duration"><strong>耗时：</strong>{{ logDetailData.duration }}s</div>
+            <div v-if="logDetailData.session_id"><strong>Session：</strong><span style="font-family: monospace; font-size: 12px;">{{ logDetailData.session_id }}</span></div>
+            <div v-if="logDetailData.platform"><strong>平台：</strong>{{ logDetailData.platform }}</div>
+            <div style="margin-top: 6px; font-size: 12px; color: #999;">
+              该日志为简化记录，未包含 LLM 请求/响应/上下文等详情
+            </div>
+          </div>
+        </n-alert>
+
         <!-- 上下文 -->
         <n-divider v-if="logDetailData.context" title-placement="left">上下文</n-divider>
         <div v-if="logDetailData.context" style="margin-bottom: 16px;">
           <n-tag type="info" size="small">Session 消息 ({{ logDetailData.context.session_count }}条)</n-tag>
-          <div v-if="logDetailData.context.session_messages && logDetailData.context.session_messages.length" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px; margin-top: 4px;">
+          <div v-if="logDetailData.context.session_messages && logDetailData.context.session_messages.length" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--theme-border); border-radius: 4px; padding: 8px; margin-top: 4px;">
             <div v-for="(msg, idx) in logDetailData.context.session_messages" :key="idx" style="margin-bottom: 4px; font-size: 12px;">
               <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="tiny">{{ msg.role }}</n-tag>
               <span style="margin-left: 4px;">{{ msg.content }}</span>
@@ -565,9 +620,9 @@
 
 <script setup>
 import { ref, watch, onMounted, computed, h } from 'vue'
-
 import { useMessage, useDialog, NButton } from 'naive-ui'
 import api from '../api'
+import TimeFormatSelector from '../components/TimeFormatSelector.vue'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -582,6 +637,20 @@ const showNextRuns = ref(false)
 const defaultPrompt = ref('')
 const soulMdContent = ref('')
 const sessionMode = ref('latest')
+
+// 占位符选项
+const placeholderOptions = [
+  { label: '{session}', value: '{session}', desc: '最近对话' },
+  { label: '{memory}', value: '{memory}', desc: '记忆反思' },
+  { label: '{weather}', value: '{weather}', desc: '天气感知' },
+  { label: '{time}', value: '{time}', desc: '当前时间' },
+]
+
+function insertPlaceholder(placeholder) {
+  // 简单追加到 user_prompt 末尾
+  const cur = formData.value.user_prompt || ''
+  formData.value.user_prompt = cur + placeholder
+}
 
 // 默认提示词配置
 const showDefaultPrompts = ref(false)
@@ -611,8 +680,19 @@ const logDetailData = ref(null)
 
 function viewLogDetail(log) {
   const details = typeof log.details === 'string' ? JSON.parse(log.details) : (log.details || {})
+  // 兜底：历史日志 details 为 NULL 时构造一个最简 details，确保弹窗能展示基本信息
+  const baseDetails = details._minimal || details.llm_request || details.context || details.send_result
+    ? details
+    : {
+        ...details,
+        _minimal: true,
+        task_type: log.task_type,
+        summary: log.message,
+        error: log.error,
+        duration: log.duration,
+      }
   logDetailData.value = {
-    ...details,
+    ...baseDetails,
     _status: log.status,
     _message: log.message,
     _error: log.error,
@@ -689,7 +769,8 @@ const formData = ref({
   time_format: '%H:%M 星期{weekday}',
   cooldown_enabled: false,
   cooldown_minutes: 10,
-  fixed_message: ''
+  fixed_message: '',
+  max_tokens: 0
 })
 
 // 上下文配置
@@ -701,7 +782,10 @@ const contextConfig = ref({
   hindsight_recall_query: '',
   hindsight_recall_limit: 10,
   hindsight_reflect_enabled: false,
-  hindsight_reflect_query: ''
+  hindsight_reflect_query: '',
+  weather_enabled: false,
+  weather_days: 0,
+  time_format: '%H:%M 星期{weekday}'
 })
 
 // 监听平台变化，重新加载 session 列表
@@ -716,6 +800,15 @@ watch(sessionMode, (newMode) => {
   if (newMode === 'latest') {
     formData.value.session_id = null
   }
+})
+
+// 天气预报天数显示
+const weatherDaysLabel = computed(() => {
+  const v = Number(contextConfig.value.weather_days)
+  if (v === 2) return '今+明'
+  if (v === 3) return '今+明+后'
+  if (v === 4) return '今+明+后+大后'
+  return '今天实况'
 })
 
 function formatTime(ts) {
@@ -845,7 +938,8 @@ function openCreate() {
     hindsight_recall_query: '',
     hindsight_recall_limit: 10,
     hindsight_reflect_enabled: false,
-    hindsight_reflect_query: ''
+    hindsight_reflect_query: '',
+    weather_enabled: false
   }
   sessionMode.value = 'latest'
   cronParseResult.value = null
@@ -962,7 +1056,8 @@ function editJob(job) {
       time_format: job.time_format || '',
       cooldown_enabled: job.cooldown_enabled || false,
       cooldown_minutes: job.cooldown_minutes || 10,
-      fixed_message: job.fixed_message || ''
+      fixed_message: job.fixed_message || '',
+      max_tokens: job.max_tokens || 0
     }
   } else {
     // 兼容旧的单一 prompt 字段
@@ -983,7 +1078,8 @@ function editJob(job) {
       mark_format: job.mark_format || '[凯莉主动发送] {timestamp}: {content}',
       send_mark: job.send_mark || '',
       time_format: job.time_format || '',
-      fixed_message: job.fixed_message || ''
+      fixed_message: job.fixed_message || '',
+      max_tokens: job.max_tokens || 0
     }
   }
   sessionMode.value = job.session_id ? 'fixed' : 'latest'
@@ -999,11 +1095,9 @@ async function viewJobLogs(job) {
   showJobLogs.value = true
   jobLogsPage.value = 1
   try {
-    const data = await api.get('/task-logs', { params: { task_type: 'cron_run', job_name: job.name, page_size: 100 } })
-    // 前端按任务名称过滤
-    jobLogs.value = (data.items || []).filter(log => 
-      log.message && log.message.includes(job.name)
-    )
+    // 用 job_id 精确查询，改名不影响日志
+    const data = await api.get('/task-logs', { params: { task_type: 'cron_run', job_id: job.id, page_size: 100 } })
+    jobLogs.value = data.items || []
   } catch (e) {
     message.error('加载日志失败')
     jobLogs.value = []
@@ -1124,6 +1218,13 @@ function buildPromptWithContext(userPrompt, config) {
   if (config.hindsight_reflect_enabled && config.hindsight_reflect_query) {
     parts.push(`reflect_query=${encodeURIComponent(config.hindsight_reflect_query)}`)
   }
+  parts.push(`weather=${config.weather_enabled ? 'true' : 'false'}`)
+  if (config.weather_enabled) {
+    parts.push(`weather_days=${Number(config.weather_days) || 0}`)
+  }
+  if (config.time_format) {
+    parts.push(`time_format=${encodeURIComponent(config.time_format)}`)
+  }
   const ctxLine = `${CTX_MARKER_START}${parts.join(';')}${CTX_MARKER_END}`
   return `${ctxLine}\n${userPrompt || ''}`
 }
@@ -1137,7 +1238,10 @@ function parseContextFromPrompt(rawPrompt) {
     hindsight_recall_query: '',
     hindsight_recall_limit: 10,
     hindsight_reflect_enabled: false,
-    hindsight_reflect_query: ''
+    hindsight_reflect_query: '',
+    weather_enabled: false,
+    weather_days: 0,
+    time_format: '%H:%M 星期{weekday}'
   }
 
   if (!rawPrompt || !rawPrompt.startsWith(CTX_MARKER_START)) {
@@ -1182,6 +1286,15 @@ function parseContextFromPrompt(rawPrompt) {
       case 'reflect_query':
         config.hindsight_reflect_query = decodeURIComponent(value)
         break
+      case 'weather':
+        config.weather_enabled = value === 'true'
+        break
+      case 'weather_days':
+        config.weather_days = parseInt(value) || 0
+        break
+      case 'time_format':
+        config.time_format = decodeURIComponent(value)
+        break
     }
   }
 
@@ -1189,9 +1302,12 @@ function parseContextFromPrompt(rawPrompt) {
 }
 
 onMounted(() => {
-  loadJobs()
-  loadDefaultPrompt()
-  loadSoulMd()
+  // 并行加载，提高页面切换速度
+  Promise.all([
+    loadJobs(),
+    loadDefaultPrompt(),
+    loadSoulMd()
+  ])
 })
 </script>
 
@@ -1208,7 +1324,7 @@ onMounted(() => {
 }
 
 .job-card {
-  background: #fff;
+  background: var(--theme-card-bg);
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
@@ -1216,7 +1332,7 @@ onMounted(() => {
 }
 
 .job-card:hover {
-  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.12);
+  box-shadow: 0 4px 20px rgba(var(--theme-primary-rgb), 0.12);
 }
 
 .job-header {
@@ -1229,7 +1345,7 @@ onMounted(() => {
 .job-name {
   font-size: 16px;
   font-weight: 500;
-  color: #2d2d2d;
+  color: var(--theme-text);
 }
 
 .job-meta {
@@ -1248,14 +1364,14 @@ onMounted(() => {
 }
 
 .cron-parse-result {
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(var(--theme-primary-rgb), 0.06);
   padding: 8px 12px;
   border-radius: 12px;
   font-size: 13px;
 }
 
 .cron-freq {
-  color: #ff9a9e;
+  color: var(--theme-primary);
   font-weight: 500;
   margin-bottom: 8px;
 }
@@ -1336,11 +1452,11 @@ onMounted(() => {
 }
 
 .context-msg-role.user {
-  color: #ff9a9e;
+  color: #4a90d9;
 }
 
 .context-msg-role.assistant {
-  color: #f6d365;
+  color: #ff9a9e;
 }
 
 .context-msg-content {
@@ -1369,24 +1485,24 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 6px 12px;
-  border: 1px solid #e0e0e6;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  background: #fff;
+  background: var(--theme-card-bg);
   min-width: 80px;
   min-height: 48px;
 }
 
 .time-format-chip:hover {
-  border-color: #ff9a9e;
-  background: rgba(255, 154, 158, 0.06);
+  border-color: var(--theme-primary);
+  background: var(--theme-tag-bg);
 }
 
 .time-format-chip.active {
-  border-color: #ff9a9e;
-  background: rgba(255, 154, 158, 0.1);
-  box-shadow: 0 0 0 1px #ff9a9e;
+  border-color: var(--theme-primary);
+  background: var(--theme-tag-bg);
+  box-shadow: 0 0 0 1px var(--theme-primary);
 }
 
 .chip-label {
@@ -1396,7 +1512,7 @@ onMounted(() => {
 }
 
 .time-format-chip.active .chip-label {
-  color: #ff9a9e;
+  color: var(--theme-primary);
   font-weight: 500;
 }
 
@@ -1498,10 +1614,10 @@ onMounted(() => {
   .log-pagination {
     position: sticky;
     bottom: 0;
-    background: #fff;
+    background: var(--theme-card-bg);
     padding: 12px 0;
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 20px));
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--theme-border);
     z-index: 10;
   }
 
@@ -1534,10 +1650,10 @@ onMounted(() => {
     bottom: 0;
     left: 0;
     right: 0;
-    background: #fff;
+    background: var(--theme-card-bg);
     padding: 12px 16px;
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--theme-border);
     z-index: 100;
     box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
   }

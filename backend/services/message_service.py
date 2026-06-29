@@ -5,6 +5,7 @@ import sys
 import os
 import time
 import asyncio
+import logging
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -13,6 +14,8 @@ from sqlalchemy import text
 
 from models.database import get_state_metadata, state_engine, ActiveSession
 from models.active import TaskLog
+
+logger = logging.getLogger("hermes.message")
 
 # 加载 hermes 环境
 sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
@@ -113,27 +116,6 @@ async def _send_to_feishu(chat_id: str, message: str) -> Dict[str, Any]:
         return {"success": False, "message": f"飞书发送异常: {str(e)}"}
 
 
-def _write_to_state_db(session_id: str, content: str) -> bool:
-    """写入消息到 state.db"""
-    try:
-        metadata = get_state_metadata()
-        if 'messages' not in metadata.tables:
-            return False
-        messages_table = metadata.tables['messages']
-        with state_engine.connect() as conn:
-            conn.execute(messages_table.insert().values(
-                session_id=session_id,
-                role="assistant",
-                content=content,
-                timestamp=time.time(),
-                finish_reason="stop",
-                active=1
-            ))
-            conn.commit()
-        return True
-    except Exception:
-        return False
-
 
 class MessageService:
     """消息服务类"""
@@ -143,9 +125,11 @@ class MessageService:
         db: Session,
         session_id: str,
         page: int = 1,
-        page_size: int = 50
+        page_size: int = 50,
+        exclude_tool: bool = False
     ) -> Dict[str, Any]:
         """获取消息列表"""
+        from sqlalchemy import and_, or_
         metadata = get_state_metadata()
 
         if 'messages' not in metadata.tables:
@@ -153,15 +137,30 @@ class MessageService:
 
         messages_table = metadata.tables['messages']
 
+        base_condition = messages_table.c.session_id == session_id
+
+        if exclude_tool:
+            # DB 层过滤 tool 消息 + 空 assistant 消息
+            tool_filter = and_(
+                base_condition,
+                messages_table.c.role != 'tool',
+                or_(
+                    messages_table.c.role != 'assistant',
+                    and_(messages_table.c.content != None, messages_table.c.content != '')
+                )
+            )
+        else:
+            tool_filter = base_condition
+
         # 获取总数
-        count_query = text(f"SELECT COUNT(*) FROM messages WHERE session_id = :session_id")
+        count_query = text(f"SELECT COUNT(*) FROM messages WHERE session_id = :session_id" + (" AND role != 'tool'" if exclude_tool else ""))
         with state_engine.connect() as conn:
             total = conn.execute(count_query, {"session_id": session_id}).scalar()
 
         # 分页查询
         query = (
             messages_table.select()
-            .where(messages_table.c.session_id == session_id)
+            .where(tool_filter)
             .order_by(messages_table.c.timestamp.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
@@ -172,6 +171,23 @@ class MessageService:
             items = [dict(row._mapping) for row in result]
 
         return {"total": total, "items": items}
+
+    @staticmethod
+    def delete_message(message_id: int) -> bool:
+        """删除单条消息"""
+        metadata = get_state_metadata()
+        if 'messages' not in metadata.tables:
+            return False
+        messages_table = metadata.tables['messages']
+        try:
+            with state_engine.connect() as conn:
+                result = conn.execute(
+                    messages_table.delete().where(messages_table.c.id == message_id)
+                )
+                conn.commit()
+            return result.rowcount > 0
+        except Exception:
+            return False
 
     @staticmethod
     def get_recent_messages(limit: int = 50) -> Dict[str, Any]:
@@ -245,7 +261,9 @@ class MessageService:
         with_mark: bool = False,
         mark_format: str = DEFAULT_MARK_FORMAT,
         send_mark: str = DEFAULT_SEND_MARK,
-        time_format: str = DEFAULT_TIME_FORMAT
+        time_format: str = DEFAULT_TIME_FORMAT,
+        reasoning_content: Optional[str] = None,
+        token_count: Optional[int] = None,
     ) -> Dict[str, Any]:
         """发送消息到微信并写入 state.db
 
@@ -258,6 +276,8 @@ class MessageService:
             mark_format: 标记格式模板（向后兼容），支持 {timestamp} 和 {content} 占位符
             send_mark: 发送标记前缀（如 [凯莉主动发送]）
             time_format: 时间格式（strftime 格式，支持 {weekday} 占位符）
+            reasoning_content: 推理内容（可选，写入 reasoning_content 字段）
+            token_count: token 数量（可选，写入 token_count 字段）
         """
         start_time = time.time()
         try:
@@ -269,7 +289,8 @@ class MessageService:
                     status="failed",
                     message=f"发送消息到 session {session_id}",
                     error="sessions 表不存在",
-                    duration=round(time.time() - start_time, 2)
+                    duration=round(time.time() - start_time, 2),
+                    details={"session_id": session_id, "platform": platform, "failure_stage": "session_table_missing"}
                 )
                 return {"success": False, "message": "sessions 表不存在"}
 
@@ -285,7 +306,8 @@ class MessageService:
                     status="failed",
                     message=f"发送消息到 session {session_id}",
                     error=f"Session {session_id} 不存在",
-                    duration=round(time.time() - start_time, 2)
+                    duration=round(time.time() - start_time, 2),
+                    details={"session_id": session_id, "platform": platform, "failure_stage": "session_not_found"}
                 )
                 return {"success": False, "message": f"Session {session_id} 不存在"}
 
@@ -299,9 +321,10 @@ class MessageService:
             elif platform == "feishu" and user_id:
                 send_result = await _send_to_feishu(user_id, message)
 
-            # 2. 写入 state.db（带标记或不带标记）
+            # 2. 只有发送成功才写入 state.db，避免污染 messages 表和后续 agent loop
             db_content = message
-            if write_to_db:
+            sent_ok = send_result and send_result.get("success")
+            if write_to_db and sent_ok:
                 if send_mark:
                     now = datetime.now()
                     time_str = time_format.replace("{weekday}", weekday_name(now)) if time_format else ""
@@ -310,7 +333,23 @@ class MessageService:
                         db_content = f"[{send_mark} {time_str}]: {message}"
                     else:
                         db_content = f"[{send_mark}]: {message}"
-                _write_to_state_db(session_id, db_content)
+                
+                # 使用 SessionDB 写入（统一方式）
+                from services.state_db import get_state_db
+                db = get_state_db()
+                db.append_message(
+                    session_id=session_id,
+                    role="assistant",
+                    content=db_content,
+                    reasoning_content=reasoning_content,
+                    token_count=token_count,
+                    finish_reason="stop",
+                )
+            elif write_to_db and not sent_ok:
+                logger.warning(
+                    "send failed for session %s, skipping state.db write. platform=%s, reason=%s",
+                    session_id, platform, (send_result or {}).get("message") or "no_result"
+                )
 
             duration = round(time.time() - start_time, 2)
 
@@ -319,7 +358,8 @@ class MessageService:
                     task_type="send_message",
                     status="success",
                     message=f"消息已发送到 {platform}，session: {session_id}",
-                    duration=duration
+                    duration=duration,
+                    details={"session_id": session_id, "platform": platform, "send_result": send_result, "write_to_db": write_to_db, "with_mark": bool(send_mark)}
                 )
                 return {
                     "success": True,
@@ -336,7 +376,8 @@ class MessageService:
                     status="failed",
                     message=f"发送消息到 {platform}，session: {session_id}",
                     error=send_result.get("message", "发送失败"),
-                    duration=duration
+                    duration=duration,
+                    details={"session_id": session_id, "platform": platform, "send_result": send_result, "failure_stage": "send"}
                 )
                 return {
                     "success": False,
@@ -354,7 +395,8 @@ class MessageService:
                     task_type="send_message",
                     status=status,
                     message=f"{msg}，session: {session_id}",
-                    duration=duration
+                    duration=duration,
+                    details={"session_id": session_id, "platform": platform, "write_to_db": write_to_db, "with_mark": bool(send_mark)}
                 )
                 return {
                     "success": write_to_db,
@@ -372,7 +414,8 @@ class MessageService:
                 status="failed",
                 message=f"发送消息到 session {session_id}",
                 error=str(e),
-                duration=duration
+                duration=duration,
+                details={"session_id": session_id, "platform": platform, "failure_stage": "exception", "exception_type": type(e).__name__}
             )
             return {"success": False, "message": f"消息发送失败: {str(e)}"}
 
@@ -407,8 +450,8 @@ class MessageService:
                 )
 
                 system_prompt = prompts_config.get("system", "")
-                generation_template = prompts_config.get("generation", "{context}")
-                user_prompt = generation_template.replace("{context}", context_text)
+                generation_template = prompts_config.get("generation", "{session}")
+                user_prompt = generation_template.replace("{session}", context_text)
 
                 llm_result = await LLMService.generate_message(
                     llm_config=llm_config,
@@ -424,7 +467,13 @@ class MessageService:
                         task_type="generate",
                         status="success",
                         message=f"LLM 生成消息成功，session: {session_id}",
-                        duration=round(time.time() - start_time, 2)
+                        duration=round(time.time() - start_time, 2),
+                        details={
+                            "session_id": session_id,
+                            "llm_request": {"model": llm_config.get("model",""), "temperature": 0.7, "max_tokens": 200},
+                            "llm_response": {"content": final_message[:500]},
+                            "use_llm": use_llm
+                        }
                     )
                 else:
                     MessageService.create_task_log(
@@ -432,7 +481,12 @@ class MessageService:
                         status="failed",
                         message=f"LLM 生成消息失败，session: {session_id}",
                         error=llm_result.get("message", "未知错误"),
-                        duration=round(time.time() - start_time, 2)
+                        duration=round(time.time() - start_time, 2),
+                        details={
+                            "session_id": session_id,
+                            "llm_request": {"model": llm_config.get("model",""), "temperature": 0.7, "max_tokens": 200},
+                            "failure_stage": "llm_generate"
+                        }
                     )
                     return {
                         "success": False,
@@ -457,7 +511,13 @@ class MessageService:
                     task_type="send_proactive",
                     status="success",
                     message=f"主动消息发送成功，session: {session_id}",
-                    duration=duration
+                    duration=duration,
+                    details={
+                        "session_id": session_id,
+                        "use_llm": use_llm,
+                        "generated_message": final_message if use_llm else None,
+                        "send_result": send_result
+                    }
                 )
                 return {
                     "success": True,
@@ -473,7 +533,14 @@ class MessageService:
                     status="failed",
                     message=f"主动消息发送失败，session: {session_id}",
                     error=send_result.get("message", "未知错误"),
-                    duration=duration
+                    duration=duration,
+                    details={
+                        "session_id": session_id,
+                        "use_llm": use_llm,
+                        "generated_message": final_message if use_llm else None,
+                        "send_result": send_result,
+                        "failure_stage": "send"
+                    }
                 )
                 return send_result
 
@@ -484,7 +551,13 @@ class MessageService:
                 status="failed",
                 message=f"主动消息发送异常，session: {session_id}",
                 error=str(e),
-                duration=duration
+                duration=duration,
+                details={
+                    "session_id": session_id,
+                    "use_llm": use_llm,
+                    "failure_stage": "exception",
+                    "exception_type": type(e).__name__
+                }
             )
             return {"success": False, "message": f"主动消息发送失败: {str(e)}"}
 
@@ -528,6 +601,100 @@ class MessageService:
         return list(reversed(items))
 
     @staticmethod
+    def get_recent_messages_by_platform(platform: str = "weixin", limit: int = 20, include_tool: bool = False) -> List[Dict[str, Any]]:
+        """按平台跨 session 获取最近消息（不限制 session_id）
+
+        Args:
+            platform: 平台来源（weixin/feishu/cli 等）
+            limit: 读取消息条数
+            include_tool: 是否包含 tool 角色的消息
+        """
+        from sqlalchemy import and_, or_
+        metadata = get_state_metadata()
+        if 'messages' not in metadata.tables:
+            return []
+
+        messages_table = metadata.tables['messages']
+        sessions_table = metadata.tables['sessions']
+
+        # JOIN sessions 表按 source 过滤
+        query = (
+            messages_table.select()
+            .join(sessions_table, messages_table.c.session_id == sessions_table.c.id)
+            .where(sessions_table.c.source == platform)
+        )
+
+        if not include_tool:
+            query = query.where(and_(
+                messages_table.c.role != 'tool',
+                or_(
+                    messages_table.c.role != 'assistant',
+                    and_(messages_table.c.content != None, messages_table.c.content != '')
+                )
+            ))
+
+        query = query.order_by(messages_table.c.timestamp.desc()).limit(limit)
+
+        with state_engine.connect() as conn:
+            result = conn.execute(query)
+            items = [dict(row._mapping) for row in result]
+
+        return list(reversed(items))
+
+    @staticmethod
+    def format_session_messages(
+        msgs: List[Dict[str, Any]],
+        role_map: Dict[str, str] = None,
+        time_format: str = "%Y-%m-%d %H:%M"
+    ) -> str:
+        """将消息列表格式化为带时间+角色名的文本（通用方法）
+
+        Args:
+            msgs: 消息列表（get_recent_messages_by_platform 的返回值）
+            role_map: 角色名映射，如 {"user": "曹凡", "assistant": "凯莉"}
+                     为 None 时使用原始 role 名
+            time_format: 时间格式字符串，默认 "%Y-%m-%d %H:%M"
+        Returns:
+            格式化后的多行文本，每行格式: [2026-06-26 13:43] 角色名: 内容
+        """
+        from datetime import datetime, timezone, timedelta
+        default_map = {"tool": "工具", "system": "系统"}
+        rmap = {**default_map, **(role_map or {})}
+
+        def _fmt(m):
+            role = rmap.get(m.get("role", "unknown"), m.get("role", "unknown"))
+            # 支持 time 和 timestamp 两个字段名
+            ts = m.get("timestamp") or m.get("time", "")
+            try:
+                # 尝试转换为数字（支持字符串格式的时间戳）
+                ts_num = None
+                if isinstance(ts, (int, float)):
+                    ts_num = float(ts)
+                elif isinstance(ts, str):
+                    try:
+                        ts_num = float(ts)
+                    except ValueError:
+                        pass
+
+                if ts_num is not None:
+                    # 数字时间戳
+                    dt = datetime.fromtimestamp(ts_num, tz=timezone(timedelta(hours=8)))
+                    time_part = dt.strftime(time_format)
+                elif isinstance(ts, str) and len(ts) >= 16:
+                    # ISO 格式字符串
+                    time_part = ts[:19].replace("T", " ")
+                else:
+                    time_part = ""
+            except Exception:
+                time_part = ""
+            content = (m.get("content", "") or "").strip()
+            if time_part:
+                return f"[{time_part}] {role}: {content}"
+            return f"{role}: {content}"
+
+        return "\n".join(_fmt(m) for m in msgs)
+
+    @staticmethod
     def create_task_log(
         task_type: str,
         status: str,
@@ -536,7 +703,21 @@ class MessageService:
         duration: float = None,
         details: dict = None
     ):
-        """创建任务日志"""
+        """创建任务日志
+
+        details 必须传 dict（即使只有基本信息）。未传会 raise 强制开发修复。
+        统一 details 结构由调用方构造，create_task_log 只负责落库。
+        """
+        if details is None:
+            # 严格模式：避免某些调用方忘记构造 details 导致日志详情丢失。
+            # 临时兜底：把基本信息打成 dict（不能 raise，因为有些路径是动态拼 details 前 fail）
+            details = {
+                "_minimal": True,
+                "task_type": task_type,
+                "summary": message,
+                "error": error,
+                "duration": duration,
+            }
         import json as _json
         db = ActiveSession()
         try:
@@ -546,7 +727,7 @@ class MessageService:
                 message=message,
                 error=error,
                 duration=duration,
-                details=_json.dumps(details, ensure_ascii=False) if details else None
+                details=_json.dumps(details, ensure_ascii=False)
             )
             db.add(log)
             db.commit()

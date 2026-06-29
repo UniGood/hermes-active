@@ -37,6 +37,16 @@ const routes = [
         component: () => import('../views/Config.vue')
       },
       {
+        path: 'passive-consciousness',
+        name: 'PassiveConsciousness',
+        component: () => import('../views/PassiveConsciousness.vue')
+      },
+      {
+        path: 'active-consciousness',
+        name: 'ActiveConsciousness',
+        component: () => import('../views/ActiveConsciousness.vue')
+      },
+      {
         path: 'cron-jobs',
         name: 'CronJobs',
         component: () => import('../views/CronJobs.vue')
@@ -55,6 +65,11 @@ const routes = [
         path: 'test',
         name: 'Test',
         component: () => import('../views/Test.vue')
+      },
+      {
+        path: 'key-test',
+        name: 'ApiKeyTest',
+        component: () => import('../views/ApiKeyTest.vue')
       }
     ]
   }

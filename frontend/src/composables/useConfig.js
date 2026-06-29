@@ -12,8 +12,10 @@ export function useConfig() {
   async function loadConfig() {
     if (loaded) return
     try {
-      const userName = await api.get('/config/get/user_name').catch(() => null)
-      const assistantName = await api.get('/config/get/assistant_name').catch(() => null)
+      const [userName, assistantName] = await Promise.all([
+        api.get('/config/get/user_name').catch(() => null),
+        api.get('/config/get/assistant_name').catch(() => null)
+      ])
       if (userName?.value) config.value.user_name = userName.value
       if (assistantName?.value) config.value.assistant_name = assistantName.value
       loaded = true

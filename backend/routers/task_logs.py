@@ -22,6 +22,7 @@ async def get_task_logs(
     status: Optional[str] = None,
     message: Optional[str] = None,
     job_name: Optional[str] = None,
+    job_id: Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
@@ -35,7 +36,11 @@ async def get_task_logs(
         query = query.filter(TaskLog.status == status)
     if message:
         query = query.filter(TaskLog.message.like(f"%{message}%"))
-    if job_name:
+    if job_id:
+        # 从 details JSON 中按 job_id 精确匹配
+        query = query.filter(TaskLog.details.like(f'%"job_id": "{job_id}"%'))
+    elif job_name:
+        # 兼容旧的按名称模糊匹配
         query = query.filter(TaskLog.message.like(f"%{job_name}%"))
 
     # 获取总数

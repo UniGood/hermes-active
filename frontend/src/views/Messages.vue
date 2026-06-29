@@ -237,9 +237,12 @@ function scrollToBottom() {
   }
 }
 
-onMounted(async () => {
-  await loadConfig()
-  await loadRecentMessages()
+onMounted(() => {
+  // 并行加载，提高页面切换速度
+  Promise.all([
+    loadConfig(),
+    loadRecentMessages()
+  ])
 })
 
 async function loadRecentMessages() {
@@ -282,7 +285,7 @@ async function loadRecentMessages() {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: #fff;
+  background: var(--theme-card-bg);
   border-radius: 16px;
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
@@ -290,14 +293,14 @@ async function loadRecentMessages() {
 }
 
 .search-result-item:hover {
-  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.15);
+  box-shadow: 0 4px 20px rgba(var(--theme-primary-rgb), 0.15);
   transform: translateY(-2px);
 }
 
 .result-content {
   flex: 1;
   font-size: 13px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -309,7 +312,7 @@ async function loadRecentMessages() {
 }
 
 .session-detail-card {
-  background: #fff;
+  background: var(--theme-card-bg);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
@@ -330,7 +333,7 @@ async function loadRecentMessages() {
 }
 
 .detail-info strong {
-  color: #2d2d2d;
+  color: var(--theme-text);
 }
 
 .message-list {
@@ -341,7 +344,7 @@ async function loadRecentMessages() {
 
 .message-item {
   padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--theme-border);
 }
 
 .message-item:last-child {
@@ -369,12 +372,12 @@ async function loadRecentMessages() {
 .message-content {
   font-size: 14px;
   line-height: 1.6;
-  color: #2d2d2d;
+  color: var(--theme-text);
   word-break: break-word;
 }
 
 .message-item.highlighted {
-  background: rgba(255, 154, 158, 0.05);
+  background: rgba(var(--theme-primary-rgb), 0.05);
   border-radius: 8px;
   padding: 12px 8px;
 }

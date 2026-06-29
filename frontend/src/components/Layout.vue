@@ -73,7 +73,10 @@ import {
   FlaskOutline,
   LogOutOutline,
   TerminalOutline,
-  MenuOutline
+  MenuOutline,
+  BulbOutline,
+  HeartOutline,
+  KeyOutline
 } from '@vicons/ionicons5'
 
 const router = useRouter()
@@ -128,12 +131,14 @@ const menuItems = [
   { path: '/', label: '监控面板', icon: markRaw(HomeOutline) },
   { path: '/sessions', label: '会话管理', icon: markRaw(PersonOutline) },
   { path: '/messages', label: '消息管理', icon: markRaw(ChatbubblesOutline) },
+  { path: '/passive-consciousness', label: '被动意识', icon: markRaw(BulbOutline) },
+  { path: '/active-consciousness', label: '主动意识', icon: markRaw(HeartOutline) },
   { path: '/config', label: '配置管理', icon: markRaw(SettingsOutline) },
   { path: '/cron-jobs', label: '定时任务', icon: markRaw(TimeOutline) },
   { path: '/task-logs', label: '任务日志', icon: markRaw(DocumentTextOutline) },
-  { path: '/system-logs', label: '系统日志', icon: markRaw(TerminalOutline,
-  MenuOutline) },
-  { path: '/test', label: '测试工具', icon: markRaw(FlaskOutline) }
+  { path: '/system-logs', label: '系统日志', icon: markRaw(TerminalOutline) },
+  { path: '/test', label: '测试工具', icon: markRaw(FlaskOutline) },
+  { path: '/key-test', label: 'Key测试', icon: markRaw(KeyOutline) }
 ]
 
 function isActive(path) {
@@ -159,13 +164,13 @@ watch(() => route.path, () => {
 .layout {
   display: flex;
   min-height: 100vh;
-  background: #faf9f7;
+  background: var(--theme-bg, #f5f7fa);
 }
 
 /* ========== PC 端侧边栏 ========== */
 .sidebar {
   width: 220px;
-  background: var(--theme-bg, #faf9f7);
+  background: var(--theme-bg, #f5f7fa);
   border-right: 1px solid #f0ece8;
   display: flex;
   flex-direction: column;
@@ -207,7 +212,7 @@ watch(() => route.path, () => {
 .sidebar-title {
   font-size: 16px;
   font-weight: 600;
-  color: #2d2d2d;
+  color: var(--theme-text);
 }
 
 .sidebar-nav {
@@ -224,20 +229,20 @@ watch(() => route.path, () => {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
   text-decoration: none;
   transition: all 0.2s;
 }
 
 .nav-item:hover {
-  background: rgba(255, 154, 158, 0.08);
-  color: #2d2d2d;
+  background: rgba(var(--theme-primary-rgb), 0.08);
+  color: var(--theme-text);
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, var(--theme-primary, #ff9a9e), var(--theme-accent, #f6d365));
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
   color: #fff;
-  box-shadow: 0 2px 12px rgba(255, 154, 158, 0.3);
+  box-shadow: 0 2px 12px rgba(var(--theme-primary-rgb), 0.3);
 }
 
 .nav-label {
@@ -246,17 +251,17 @@ watch(() => route.path, () => {
 
 .sidebar-footer {
   padding: 12px 8px;
-  border-top: 1px solid #f0ece8;
+  border-top: 1px solid var(--theme-border);
 }
 
 .sidebar-footer .n-button {
   border-radius: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .sidebar-footer .n-button:hover {
-  color: var(--theme-primary, #ff9a9e);
-  background: rgba(255, 154, 158, 0.06);
+  color: var(--theme-primary);
+  background: rgba(var(--theme-primary-rgb), 0.06);
 }
 
 /* ========== 主内容区 ========== */
@@ -280,7 +285,7 @@ watch(() => route.path, () => {
   justify-content: space-between;
   padding: 0 12px;
   height: 56px;
-  background: var(--theme-primary, #ff9a9e);
+  background: var(--theme-primary);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
@@ -314,7 +319,7 @@ watch(() => route.path, () => {
     z-index: 1001;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
-    background: var(--theme-bg, #faf9f7);
+    background: var(--theme-bg, #f5f7fa);
   }
 
   .sidebar:not(.collapsed) {
@@ -341,6 +346,12 @@ watch(() => route.path, () => {
   .main-area {
     margin-left: 0;
     margin-top: 56px;
+  }
+  .page-content {
+    padding: 12px 8px;
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 }
 </style>

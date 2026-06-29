@@ -43,11 +43,19 @@ class LLMService:
         return AsyncOpenAI(api_key=api_key, base_url=base_url)
 
     @staticmethod
+    async def _close_client(client: AsyncOpenAI) -> None:
+        """安全关闭 AsyncOpenAI 客户端，释放底层 httpx/aiohttp 连接"""
+        try:
+            await client.close()
+        except Exception:
+            pass  # 忽略关闭异常
+
+    @staticmethod
     async def test_connection(llm_config: Dict[str, Any]) -> Dict[str, Any]:
         """测试 LLM 连通性"""
         start_time = time.time()
+        client = LLMService._get_client(llm_config)
         try:
-            client = LLMService._get_client(llm_config)
             model = llm_config.get("model", "gpt-3.5-turbo")
 
             response = await client.chat.completions.create(
@@ -72,6 +80,8 @@ class LLMService:
                 "message": f"LLM 连通性测试失败: {str(e)}",
                 "duration": duration
             }
+        finally:
+            await LLMService._close_client(client)
 
     @staticmethod
     async def generate_message(
@@ -79,12 +89,12 @@ class LLMService:
         prompt: str,
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
-        max_tokens: int = 200
+        max_tokens: Optional[int] = None
     ) -> Dict[str, Any]:
         """调用 LLM 生成消息"""
         start_time = time.time()
+        client = LLMService._get_client(llm_config)
         try:
-            client = LLMService._get_client(llm_config)
             model = llm_config.get("model", "gpt-3.5-turbo")
 
             messages = []
@@ -92,19 +102,28 @@ class LLMService:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
 
-            response = await client.chat.completions.create(
+            call_kwargs = dict(
                 model=model,
                 messages=messages,
                 temperature=temperature,
-                max_tokens=max_tokens
             )
+            if max_tokens is not None:
+                call_kwargs["max_tokens"] = max_tokens
+
+            response = await client.chat.completions.create(**call_kwargs)
 
             content = response.choices[0].message.content.strip()
+
+            # 提取 reasoning_content（部分模型如 DeepSeek 支持）
+            msg = response.choices[0].message
+            reasoning_content = getattr(msg, 'reasoning_content', None) or getattr(msg, 'reasoning', None)
+
             duration = round(time.time() - start_time, 2)
 
             return {
                 "success": True,
                 "content": content,
+                "reasoning_content": reasoning_content,
                 "model": model,
                 "duration": duration
             }
@@ -118,6 +137,8 @@ class LLMService:
                 "message": f"LLM 调用失败: {str(e)}",
                 "duration": duration
             }
+        finally:
+            await LLMService._close_client(client)
 
     @staticmethod
     def get_providers() -> list:

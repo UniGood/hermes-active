@@ -6,8 +6,8 @@
         v-model:value="searchText"
         placeholder="搜索会话（标题/ID）..."
         clearable
-        @clear="loadSessions"
-        @keyup.enter="loadSessions"
+        @clear="onSearch"
+        @keyup.enter="onSearch"
       >
         <template #prefix>
           <n-icon><SearchOutline /></n-icon>
@@ -18,14 +18,14 @@
         :options="platformOptions"
         placeholder="平台"
         style="width: 100px"
-        @update:value="loadSessions"
+        @update:value="onFilterChange"
       />
       <n-select
         v-model:value="statusFilter"
         :options="statusOptions"
         placeholder="状态"
         style="width: 120px"
-        @update:value="loadSessions"
+        @update:value="onFilterChange"
       />
     </div>
 
@@ -105,6 +105,36 @@ const statusOptions = [
   { label: '已结束', value: 'ended' }
 ]
 
+// 从 localStorage 恢复查询条件
+function restoreFilters() {
+  try {
+    const saved = localStorage.getItem('sessions_filters')
+    if (saved) {
+      const filters = JSON.parse(saved)
+      if (filters.searchText !== undefined) searchText.value = filters.searchText
+      if (filters.platformFilter !== undefined) platformFilter.value = filters.platformFilter
+      if (filters.statusFilter !== undefined) statusFilter.value = filters.statusFilter
+      if (filters.currentPage !== undefined) currentPage.value = filters.currentPage
+    }
+  } catch (e) {
+    // 忽略解析错误
+  }
+}
+
+// 保存查询条件到 localStorage
+function saveFilters() {
+  try {
+    localStorage.setItem('sessions_filters', JSON.stringify({
+      searchText: searchText.value,
+      platformFilter: platformFilter.value,
+      statusFilter: statusFilter.value,
+      currentPage: currentPage.value
+    }))
+  } catch (e) {
+    // 忽略存储错误
+  }
+}
+
 function formatTime(ts) {
   if (!ts) return ''
   const d = new Date(ts * 1000)
@@ -159,7 +189,22 @@ async function loadSessions() {
   }
 }
 
-onMounted(loadSessions)
+function onSearch() {
+  currentPage.value = 1
+  saveFilters()
+  loadSessions()
+}
+
+function onFilterChange() {
+  currentPage.value = 1
+  saveFilters()
+  loadSessions()
+}
+
+onMounted(() => {
+  restoreFilters()
+  loadSessions()
+})
 </script>
 
 <style scoped>
@@ -182,7 +227,7 @@ onMounted(loadSessions)
 }
 
 .session-card {
-  background: #fff;
+  background: var(--theme-card-bg);
   border-radius: 16px;
   padding: 16px;
   cursor: pointer;
@@ -191,7 +236,7 @@ onMounted(loadSessions)
 }
 
 .session-card:hover {
-  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.15);
+  box-shadow: 0 4px 20px rgba(var(--theme-primary-rgb), 0.15);
   transform: translateY(-2px);
 }
 
@@ -214,19 +259,19 @@ onMounted(loadSessions)
 
 .session-time {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .session-title {
   font-size: 16px;
   font-weight: 500;
-  color: #2d2d2d;
+  color: var(--theme-text);
   margin-bottom: 8px;
 }
 
 .session-id {
   font-size: 11px;
-  color: #bbb;
+  color: var(--theme-text-muted);
   font-family: monospace;
   margin-bottom: 4px;
 }
@@ -235,16 +280,16 @@ onMounted(loadSessions)
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .status-active {
-  color: #a8e6cf;
+  color: var(--theme-status-active);
   font-weight: 500;
 }
 
 .status-ended {
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .pagination {

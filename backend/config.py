@@ -49,8 +49,16 @@ DEFAULT_PROMPTS = {
 - 基于最近的对话内容，自然地延续话题或发起新话题
 - 语气像真人朋友，不要太正式
 - 1-2 句话即可，不要太长""",
-    "generation": """最近的对话历史：
-{context}
+    "generation": """最近的对话：
+{session}
+
+相关记忆：
+{memory}
+
+天气：
+{weather}
+
+当前时间：{time}
 
 请生成一条主动消息："""
 }

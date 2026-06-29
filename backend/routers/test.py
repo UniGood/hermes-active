@@ -34,7 +34,8 @@ async def test_full_flow(
             status="failed",
             message="完整流程测试失败",
             error=f"未找到 {request.platform} 平台的用户 ID",
-            duration=round(time.time() - start_time, 2)
+            duration=round(time.time() - start_time, 2),
+            details={"platform": request.platform, "failure_stage": "no_user_id"}
         )
         return SuccessResponse(message=f"未找到 {request.platform} 用户 ID，测试失败")
     from services.fallback_session_service import FallbackSessionService
@@ -45,7 +46,8 @@ async def test_full_flow(
             status="failed",
             message="完整流程测试失败",
             error=f"未找到 {request.platform} 平台的 session",
-            duration=round(time.time() - start_time, 2)
+            duration=round(time.time() - start_time, 2),
+            details={"platform": request.platform, "failure_stage": "no_session"}
         )
         return SuccessResponse(message="未找到 session，测试失败")
 
@@ -54,6 +56,7 @@ async def test_full_flow(
 
     # 3. 生成消息
     message = "测试消息"
+    reasoning_content = None
     if request.use_llm:
         llm_config = ConfigService.get_llm_config(db)
         prompts_config = ConfigService.get_prompts_config(db)
@@ -64,8 +67,8 @@ async def test_full_flow(
         )
 
         system_prompt = prompts_config.get("system", "")
-        generation_template = prompts_config.get("generation", "{context}")
-        user_prompt = generation_template.replace("{context}", context_text)
+        generation_template = prompts_config.get("generation", "{session}")
+        user_prompt = generation_template.replace("{session}", context_text)
 
         llm_result = await LLMService.generate_message(
             llm_config=llm_config,
@@ -77,13 +80,15 @@ async def test_full_flow(
 
         if llm_result.get("success"):
             message = llm_result["content"]
+            reasoning_content = llm_result.get("reasoning_content")
         else:
             MessageService.create_task_log(
                 task_type="test_flow",
                 status="failed",
                 message="完整流程测试失败（LLM 生成）",
                 error=llm_result.get("message", "LLM 生成失败"),
-                duration=round(time.time() - start_time, 2)
+                duration=round(time.time() - start_time, 2),
+                details={"platform": request.platform, "use_llm": True, "failure_stage": "llm_generate"}
             )
             return SuccessResponse(message=f"LLM 生成消息失败: {llm_result.get('message')}")
 
@@ -91,7 +96,8 @@ async def test_full_flow(
     send_result = await MessageService.send_message(
         session_id=session["id"],
         message=message,
-        platform=request.platform
+        platform=request.platform,
+        reasoning_content=reasoning_content
     )
 
     duration = round(time.time() - start_time, 2)
@@ -102,7 +108,14 @@ async def test_full_flow(
             task_type="test_flow",
             status="success",
             message=f"完整流程测试成功，session: {session['id']}，消息数: {len(context)}",
-            duration=duration
+            duration=duration,
+            details={
+                "session_id": session["id"],
+                "platform": request.platform,
+                "context_count": len(context),
+                "generated_message": message[:500],
+                "send_result": send_result
+            }
         )
         return SuccessResponse(
             message=f"完整流程测试成功，session: {session['id']}，消息数: {len(context)}"
@@ -113,6 +126,12 @@ async def test_full_flow(
             status="failed",
             message="完整流程测试失败（发送消息）",
             error=send_result.get("message", "发送失败"),
-            duration=duration
+            duration=duration,
+            details={
+                "session_id": session["id"],
+                "platform": request.platform,
+                "send_result": send_result,
+                "failure_stage": "send"
+            }
         )
         return SuccessResponse(message=f"消息发送失败: {send_result.get('message')}")

@@ -1,0 +1,11 @@
+# gateway/run.py 改动（GatewayRunner.__init__ 中，约第 1939 行）
+#
+# 原始代码：
+#         from tools.process_registry import process_registry
+#         self.session_store = SessionStore(
+#
+# 改为：
+#         from tools.process_registry import process_registry
+#         from gateway.extensions.session_fallback import install_fallback
+#         _SessionStore = install_fallback(SessionStore)
+#         self.session_store = _SessionStore(

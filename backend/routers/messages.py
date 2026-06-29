@@ -25,6 +25,7 @@ class SendMessageRequest(BaseModel):
     mark_format: str = DEFAULT_MARK_FORMAT
     send_mark: str = DEFAULT_SEND_MARK
     time_format: str = DEFAULT_TIME_FORMAT
+    reasoning_content: Optional[str] = None
 
 
 class SendProactiveRequest(BaseModel):
@@ -86,12 +87,26 @@ async def get_messages(
     session_id: str,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
+    exclude_tool: bool = Query(False),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
     """获取消息列表"""
-    result = MessageService.get_messages(db, session_id, page, page_size)
+    result = MessageService.get_messages(db, session_id, page, page_size, exclude_tool=exclude_tool)
     return result
+
+
+@router.delete("/{message_id}")
+async def delete_message(
+    message_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """删除单条消息"""
+    success = MessageService.delete_message(message_id)
+    if success:
+        return {"success": True, "message": "消息已删除"}
+    else:
+        raise HTTPException(status_code=404, detail="消息不存在或删除失败")
 
 
 @router.post("/generate")
@@ -133,8 +148,8 @@ async def generate_message(
             if soul_content:
                 system_prompt = system_prompt + "\n\n" + soul_content if system_prompt else soul_content
 
-        generation_template = request.user_prompt if request.user_prompt is not None else prompts_config.get("generation", "{context}")
-        user_prompt = generation_template.replace("{context}", context_text)
+        generation_template = request.user_prompt if request.user_prompt is not None else prompts_config.get("generation", "{session}")
+        user_prompt = generation_template.replace("{session}", context_text)
 
         if llm_config.get("mode") == "hermes":
             # 使用 hermes 的 LLM
@@ -158,7 +173,13 @@ async def generate_message(
                 task_type="generate",
                 status="success",
                 message=f"生成消息成功（hermes），session: {request.session_id}，来源: {context_source}",
-                duration=duration
+                duration=duration,
+                details={
+                    "session_id": request.session_id,
+                    "source": "hermes",
+                    "context_source": context_source,
+                    "llm_response": {"content": content[:500]}
+                }
             )
             return {"success": True, "message": content, "source": "hermes", "context_source": context_source}
         else:
@@ -179,7 +200,14 @@ async def generate_message(
                     task_type="generate",
                     status="success",
                     message=f"生成消息成功（custom），session: {request.session_id}，来源: {context_source}",
-                    duration=duration
+                    duration=duration,
+                    details={
+                        "session_id": request.session_id,
+                        "source": "custom",
+                        "context_source": context_source,
+                        "llm_request": {"model": llm_config.get("model",""), "temperature": 0.7, "max_tokens": 200},
+                        "llm_response": {"content": result.get("content","")[:500]}
+                    }
                 )
                 return {"success": True, "message": result["content"], "source": "custom", "context_source": context_source}
             else:
@@ -189,7 +217,14 @@ async def generate_message(
                     status="failed",
                     message=f"生成消息失败，session: {request.session_id}",
                     error=result.get("message", "生成失败"),
-                    duration=duration
+                    duration=duration,
+                    details={
+                        "session_id": request.session_id,
+                        "source": "custom",
+                        "context_source": context_source,
+                        "llm_request": {"model": llm_config.get("model",""), "temperature": 0.7, "max_tokens": 200},
+                        "failure_stage": "llm_generate"
+                    }
                 )
                 raise HTTPException(status_code=500, detail=result.get("message", "生成失败"))
     except HTTPException:
@@ -201,7 +236,12 @@ async def generate_message(
             status="failed",
             message=f"生成消息异常，session: {request.session_id}",
             error=str(e),
-            duration=duration
+            duration=duration,
+            details={
+                "session_id": request.session_id,
+                "failure_stage": "exception",
+                "exception_type": type(e).__name__
+            }
         )
         raise HTTPException(status_code=500, detail=f"LLM 调用失败: {str(e)}")
 
@@ -220,7 +260,8 @@ async def send_message(
         with_mark=request.with_mark,
         mark_format=request.mark_format,
         send_mark=request.send_mark,
-        time_format=request.time_format
+        time_format=request.time_format,
+        reasoning_content=request.reasoning_content
     )
     if result.get("success"):
         return {"success": True, "message": result.get("message", "发送成功"), "detail": result}
@@ -291,8 +332,8 @@ async def preview_prompt(
         if soul_md:
             system_prompt = system_prompt + "\n\n" + soul_md if system_prompt else soul_md
 
-    user_prompt_template = request.user_prompt if request.user_prompt is not None else prompts_config.get("generation", "{context}")
-    user_prompt_final = user_prompt_template.replace("{context}", context_content)
+    user_prompt_template = request.user_prompt if request.user_prompt is not None else prompts_config.get("generation", "{session}")
+    user_prompt_final = user_prompt_template.replace("{session}", context_content)
 
     return {
         "system_prompt": system_prompt,

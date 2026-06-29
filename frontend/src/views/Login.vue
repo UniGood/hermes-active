@@ -14,7 +14,7 @@
           <img v-if="avatarUrl" :src="avatarUrl" class="avatar-img" />
           <span v-else class="logo-text">K</span>
         </div>
-        <h1>凯莉的控制台</h1>
+        <h1>{{ globalConfig.assistant_name }}的控制台</h1>
         <p class="welcome-text">{{ welcomeText }}</p>
       </div>
 
@@ -59,7 +59,7 @@
         </n-button>
       </n-form>
 
-      <div class="login-footer">v0.1.0 · by 凯莉</div>
+      <div class="login-footer">v0.1.0 · by {{ globalConfig.assistant_name }}</div>
     </div>
   </div>
 </template>
@@ -70,11 +70,13 @@ import { useRouter } from 'vue-router'
 import { useMessage, NIcon } from 'naive-ui'
 import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '../store/auth'
+import { useConfig } from '../composables/useConfig'
 import api from '../api'
 
 const router = useRouter()
 const message = useMessage()
 const authStore = useAuthStore()
+const { config: globalConfig, loadConfig } = useConfig()
 
 const formRef = ref(null)
 const loading = ref(false)
@@ -142,7 +144,7 @@ async function handleLogin() {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, var(--theme-primary, #ff9a9e) 0%, var(--theme-secondary, #fecfef) 50%, var(--theme-secondary, #fecfef) 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 50%, var(--theme-secondary) 100%);
   padding: 16px;
   position: relative;
   overflow: hidden;
@@ -214,7 +216,7 @@ async function handleLogin() {
   width: 80px;
   height: 80px;
   margin: 0 auto 16px;
-  background: linear-gradient(135deg, var(--theme-primary, #ff9a9e), var(--theme-secondary, #fecfef));
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -223,7 +225,7 @@ async function handleLogin() {
   font-weight: 800;
   color: #fff;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(255, 154, 158, 0.3);
+  box-shadow: 0 8px 24px rgba(var(--theme-primary-rgb), 0.3);
 }
 
 .avatar-img {
@@ -236,7 +238,7 @@ async function handleLogin() {
   margin: 0 0 4px;
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--theme-text);
 }
 
 .login-header p {
@@ -246,7 +248,7 @@ async function handleLogin() {
 }
 
 .welcome-text {
-  color: var(--theme-primary, #ff9a9e);
+  color: var(--theme-primary);
   font-weight: 500;
 }
 
@@ -260,7 +262,7 @@ async function handleLogin() {
   font-size: 16px;
   font-weight: 600;
   border-radius: 24px;
-  background: linear-gradient(135deg, var(--theme-primary, #ff9a9e), var(--theme-accent, #f6d365));
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
   border: none;
   letter-spacing: 2px;
 }

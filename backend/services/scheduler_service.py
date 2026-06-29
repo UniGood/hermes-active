@@ -2,7 +2,6 @@
 调度器服务 - 使用 APScheduler 管理定时任务
 """
 import logging
-import asyncio
 import aiohttp
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -16,12 +15,154 @@ from services.llm_service import LLMService
 
 logger = logging.getLogger("hermes.scheduler")
 
-HINDSIGHT_BASE_URL = "http://localhost:8888/v1/default/banks/hermes"
+
+def _log_run(
+    job_id: str,
+    job_name: str,
+    status: str,
+    message: str,
+    duration: float = None,
+    error: str = None,
+    session_id: str = None,
+    platform: str = None,
+    extra: dict = None
+) -> None:
+    """统一写入 cron_run 任务日志（保证 details 完整）
+
+    Args:
+        job_id, job_name: 任务标识
+        status: success / failed / skipped
+        message: 简要说明
+        duration: 耗时秒
+        error: 错误信息
+        session_id, platform: 上下文
+        extra: 额外 details（如 llm_request/llm_response/context/send_result/skip_reason）
+    """
+    details = {
+        "job_id": job_id,
+        "job_name": job_name,
+        "session_id": session_id,
+        "platform": platform,
+    }
+    if duration is not None:
+        details["duration"] = duration
+    if error:
+        details["error"] = error
+    if extra:
+        details.update(extra)
+    MessageService.create_task_log(
+        task_type="cron_run",
+        status=status,
+        message=message,
+        error=error,
+        duration=duration,
+        details=details,
+    )
+
+# Hindsight 配置已移至 configs 表
+
+
+def _get_weather_config() -> dict:
+    """从数据库读取高德天气配置（与配置管理共享）"""
+    db = ActiveSession()
+    try:
+        amap_key = ConfigService.get_config(db, "active_consciousness.weather.amap_key") or ""
+        adcode = ConfigService.get_config(db, "active_consciousness.weather.adcode") or "370100"
+        enabled = ConfigService.get_config(db, "active_consciousness.weather.enabled") == "true"
+        cache_ttl = int(ConfigService.get_config(db, "active_consciousness.weather.cache_ttl") or "3600")
+        temp_threshold = float(ConfigService.get_config(db, "active_consciousness.weather.temp_change_threshold") or "5.0")
+        return {
+            "enabled": enabled,
+            "amap_key": amap_key,
+            "adcode": adcode,
+            "cache_ttl": cache_ttl,
+            "temp_threshold": temp_threshold,
+        }
+    finally:
+        db.close()
+
+
+async def fetch_weather_for_context(forecast_days: int = 0) -> str:
+    """调用 WeatherService 获取天气，返回格式化文本（用于上下文拼接）
+
+    Args:
+        forecast_days: 0=仅今天实况；1-3=今天+未来 N 天预报
+
+    返回空字符串表示不启用、配置缺失或调用失败。
+    """
+    cfg = _get_weather_config()
+    if not cfg["enabled"] or not cfg["amap_key"]:
+        return ""
+    try:
+        from services.weather_service import WeatherService
+        service = WeatherService()
+        result = await service.get_weather(
+            amap_key=cfg["amap_key"],
+            adcode=cfg["adcode"],
+            cache_ttl=cfg["cache_ttl"],
+            temp_threshold=cfg["temp_threshold"],
+            forecast_days=forecast_days,
+        )
+        if not result.get("success"):
+            return ""
+
+        city = result.get("city") or ""
+        current = result.get("current") or {}
+        forecast = result.get("forecast") or []
+
+        lines: list[str] = []
+        # 今天实况（仅当 forecast_days==0 时单独打印；>=1 时由 forecast 列表中的第一项承载）
+        if forecast_days == 0 and current:
+            weather = current.get("weather") or "未知"
+            temp = current.get("temp") or "?"
+            humidity = current.get("humidity") or ""
+            winddirection = current.get("winddirection") or ""
+            head = f"{city}今日天气：{weather}，白天温度{temp}℃" if city else f"今日天气：{weather}，白天温度{temp}℃"
+            extras = []
+            if humidity:
+                extras.append(f"湿度{humidity}%")
+            if winddirection:
+                extras.append(f"{winddirection}风")
+            if extras:
+                head += "，" + "，".join(extras)
+            lines.append(head)
+
+        # 预报（仅当 forecast_days>=1 且有数据）
+        if forecast_days >= 1 and forecast:
+            week_map = {"1": "周一", "2": "周二", "3": "周三", "4": "周四", "5": "周五", "6": "周六", "7": "周日"}
+            # 头部加上城市
+            header = f"{city}预报：" if city else "预报："
+            lines.append(header)
+            for idx, day in enumerate(forecast):
+                date = day.get("date") or ""
+                week = week_map.get(str(day.get("week", "")), "")
+                dw = day.get("dayweather") or "?"
+                nw = day.get("nightweather") or "?"
+                dt = day.get("daytemp") or "?"
+                nt = day.get("nighttemp") or "?"
+                prefix = "今天" if idx == 0 else f"{date}" + (f" {week}" if week else "")
+                lines.append(f"  {prefix}：白天{dw} {dt}℃ / 夜间{nw} {nt}℃")
+
+        return "\n".join(lines)
+    except Exception as e:
+        logger.warning("定时任务获取天气失败: %s", e)
+        return ""
+
+
+def _get_hindsight_base_url() -> str:
+    """从数据库读取 Hindsight base_url"""
+    db = ActiveSession()
+    try:
+        url = ConfigService.get_config(db, "active_consciousness.hindsight.base_url")
+        return url or "http://localhost:8888"
+    finally:
+        db.close()
 
 
 async def call_hindsight_recall(query: str, limit: int = 10) -> list:
     """调用 Hindsight Recall API 获取相关记忆"""
-    url = f"{HINDSIGHT_BASE_URL}/memories/recall"
+    base_url = _get_hindsight_base_url()
+    url = f"{base_url}/v1/default/banks/hermes/memories/recall"
     payload = {"query": query, "limit": limit}
     try:
         async with aiohttp.ClientSession() as session:
@@ -42,7 +183,8 @@ async def call_hindsight_recall(query: str, limit: int = 10) -> list:
 
 async def call_hindsight_reflect(query: str) -> str:
     """调用 Hindsight Reflect API 获取综合分析"""
-    url = f"{HINDSIGHT_BASE_URL}/reflect"
+    base_url = _get_hindsight_base_url()
+    url = f"{base_url}/v1/default/banks/hermes/reflect"
     payload = {"query": query}
     try:
         async with aiohttp.ClientSession() as session:
@@ -68,9 +210,9 @@ scheduler = AsyncIOScheduler(timezone="Asia/Shanghai")
 async def run_cron_job(job_id: str):
     """执行定时任务"""
     db = ActiveSession()
+    target_job = None  # 提前初始化，让 except 块能安全访问
     try:
         jobs = ConfigService.get_cron_jobs(db)
-        target_job = None
         for job in jobs:
             if job["id"] == job_id:
                 target_job = job
@@ -99,12 +241,13 @@ async def run_cron_job(job_id: str):
             user_id = SessionService.get_weixin_user_id()
             if not user_id:
                 logger.error(f"任务 {target_job['name']} 未找到微信用户 ID (sessions.json 中无 weixin dm session)")
-                MessageService.create_task_log(
-                    task_type="cron_run",
+                _log_run(
+                    job_id=job_id,
+                    job_name=target_job["name"],
                     status="failed",
                     message=f"任务 {target_job['name']} 运行失败",
+                    duration=round(datetime.now().timestamp() - start_time, 2),
                     error="未找到微信用户 ID（sessions.json 中无 weixin dm session）",
-                    duration=round(datetime.now().timestamp() - start_time, 2)
                 )
                 return
 
@@ -119,12 +262,14 @@ async def run_cron_job(job_id: str):
 
         if not session:
             logger.error(f"任务 {target_job['name']} 未找到可用 session (平台: {platform})")
-            MessageService.create_task_log(
-                task_type="cron_run",
+            _log_run(
+                job_id=job_id,
+                job_name=target_job["name"],
                 status="failed",
                 message=f"任务 {target_job['name']} 运行失败",
+                duration=round(datetime.now().timestamp() - start_time, 2),
                 error=f"未找到可用 session (平台: {platform})",
-                duration=round(datetime.now().timestamp() - start_time, 2)
+                platform=platform,
             )
             return
 
@@ -153,7 +298,7 @@ async def run_cron_job(job_id: str):
 
             # 解析用户提示词中的上下文配置
             ctx_config, user_prompt_clean = _parse_context_config(user_prompt_text or "")
-            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{context}")
+            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{session}\n{memory}\n{weather}\n当前时间：{time}")
         elif raw_prompt and "|||" in raw_prompt:
             # 兼容旧的 ||| 分隔格式
             parts = raw_prompt.split("|||", 1)
@@ -168,31 +313,50 @@ async def run_cron_job(job_id: str):
                     prompt_text = prompt_text + "\n\n" + soul_content if prompt_text else soul_content
 
             ctx_config, user_prompt_clean = _parse_context_config(user_prompt_raw)
-            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{context}")
+            user_prompt_final = user_prompt_clean or prompts_config.get("generation", "{session}\n{memory}\n{weather}\n当前时间：{time}")
         else:
             # 兼容旧的单一 prompt 字段
             ctx_config, user_prompt_text = _parse_context_config(raw_prompt)
             prompt_text = user_prompt_text or prompts_config.get("system", "")
-            user_prompt_final = prompts_config.get("generation", "{context}")
+            user_prompt_final = prompts_config.get("generation", "{session}\n{memory}\n{weather}\n当前时间：{time}")
 
-        # 获取上下文 - 拼接 Session、Hindsight Recall、Hindsight Reflect
-        context_parts = []
+        # 获取上下文 - 支持独立占位符：{session} {memory} {weather} {time}
+        # 获取上下文数据
 
-        # 1. Session 上下文
+        # 0. 当前时间占位符
+        from datetime import timezone, timedelta
+        tz_bj = timezone(timedelta(hours=8))
+        now_bj = datetime.now(tz_bj)
+        time_format = ctx_config.get("time_format", "%Y-%m-%d %H:%M:%S")
+        if time_format:
+            WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日']
+            weekday = WEEKDAY_NAMES[now_bj.weekday()]
+            time_str = time_format.replace('{weekday}', weekday)
+            for fmt, val in [('%Y', now_bj.year), ('%m', f'{now_bj.month:02d}'), ('%d', f'{now_bj.day:02d}'),
+                             ('%H', f'{now_bj.hour:02d}'), ('%M', f'{now_bj.minute:02d}'), ('%S', f'{now_bj.second:02d}')]:
+                time_str = time_str.replace(str(fmt), str(val))
+        else:
+            time_str = now_bj.strftime('%Y-%m-%d %H:%M:%S')
+
+        # 1. Session 上下文（按平台跨 session 获取，不限制单个 session）
         context_msgs = []
+        session_text = ""
         session_enabled = ctx_config.get("session_enabled", True)
         if session_enabled:
             context_limit = ctx_config.get("session_limit", 20)
             include_tool = ctx_config.get("include_tool", False)
-            context_msgs = MessageService.get_session_context_raw(sid, limit=context_limit, include_tool=include_tool)
+            context_msgs = MessageService.get_recent_messages_by_platform(
+                platform=platform, limit=context_limit, include_tool=include_tool
+            )
             if context_msgs:
-                session_text = "\n".join(
-                    f"{m.get('role', 'unknown')}: {m.get('content', '')}"
-                    for m in context_msgs
-                )
-                context_parts.append(f"=== 最近对话 ===\n{session_text}")
+                # 读取角色名配置
+                user_name = ConfigService.get_config(db, "user_name") or "曹凡"
+                assistant_name = ConfigService.get_config(db, "assistant_name") or "凯莉"
+                role_map = {"user": user_name, "assistant": assistant_name}
+                session_text = MessageService.format_session_messages(context_msgs, role_map)
 
-        # 2. Hindsight Recall
+        # 2. Hindsight 记忆（Recall + Reflect 合并）
+        memory_parts = []
         recall_enabled = ctx_config.get("hindsight_recall_enabled", False)
         recall_query = ctx_config.get("hindsight_recall_query", "")
         if recall_enabled and recall_query:
@@ -200,18 +364,35 @@ async def run_cron_job(job_id: str):
             recall_results = await call_hindsight_recall(recall_query, recall_limit)
             if recall_results:
                 recall_text = "\n".join(f"- {r.get('text', '')}" for r in recall_results)
-                context_parts.append(f"=== 相关记忆 ===\n{recall_text}")
+                memory_parts.append(f"=== 相关记忆 ===\n{recall_text}")
 
-        # 3. Hindsight Reflect
         reflect_enabled = ctx_config.get("hindsight_reflect_enabled", False)
         reflect_query = ctx_config.get("hindsight_reflect_query", "")
         if reflect_enabled and reflect_query:
             reflect_result = await call_hindsight_reflect(reflect_query)
             if reflect_result:
-                context_parts.append(f"=== 综合分析 ===\n{reflect_result}")
+                memory_parts.append(f"=== 综合分析 ===\n{reflect_result}")
 
-        context_text = "\n\n".join(context_parts)
-        user_prompt = user_prompt_final.replace("{context}", context_text)
+        memory_text = "\n\n".join(memory_parts)
+
+        # 3. 天气感知
+        weather_text = ""
+        if ctx_config.get("weather_enabled", False):
+            raw_days = ctx_config.get("weather_days", 0)
+            try:
+                wd = int(raw_days)
+            except (ValueError, TypeError):
+                wd = 0
+            if wd not in (0, 2, 3, 4):
+                wd = 0
+            weather_text = await fetch_weather_for_context(forecast_days=wd) or ""
+
+        # 替换所有占位符
+        user_prompt = user_prompt_final
+        user_prompt = user_prompt.replace("{session}", session_text or "（无对话记录）")
+        user_prompt = user_prompt.replace("{memory}", memory_text or "（无相关记忆）")
+        user_prompt = user_prompt.replace("{weather}", weather_text or "（无天气信息）")
+        user_prompt = user_prompt.replace("{time}", time_str)
 
         # 冷却时间检查
         cooldown_enabled = target_job.get("cooldown_enabled", False)
@@ -232,13 +413,16 @@ async def run_cron_job(job_id: str):
                 if elapsed < cooldown_minutes:
                     reason = f"用户最后发言距今 {elapsed:.1f} 分钟，不足冷却时间 {cooldown_minutes} 分钟"
                     logger.info(f"任务 {target_job['name']} 跳过执行: {reason}")
-                    MessageService.create_task_log(
-                        task_type="cron_run",
+                    _log_run(
+                        job_id=job_id,
+                        job_name=target_job["name"],
                         status="skipped",
                         message=f"任务 {target_job['name']} 跳过执行",
-                        error=reason,
                         duration=round(datetime.now().timestamp() - start_time, 2),
-                        details={"skip_reason": reason, "cooldown_minutes": cooldown_minutes, "elapsed_minutes": round(elapsed, 1)}
+                        error=reason,
+                        platform=platform,
+                        session_id=sid,
+                        extra={"skip_reason": reason, "cooldown_minutes": cooldown_minutes, "elapsed_minutes": round(elapsed, 1)}
                     )
                     return
 
@@ -251,6 +435,7 @@ async def run_cron_job(job_id: str):
         time_format = target_job.get("time_format", "%H:%M 星期{weekday}")
 
         generated_message = ""
+        reasoning_content = None  # 推理内容（LLM 返回后提取）
 
         # 收集执行详情
         details = {
@@ -261,7 +446,12 @@ async def run_cron_job(job_id: str):
             "context": {
                 "session_count": len(context_msgs) if session_enabled and context_msgs else 0,
                 "session_messages": [{"role": m.get("role", ""), "content": m.get("content", "")[:200]} for m in (context_msgs or [])[-10:]],
-                "context_text": context_text[:2000],
+                "session_text": (session_text or "")[:2000],
+                "memory_text": (memory_text or "")[:2000],
+                "weather_text": (weather_text or "")[:500],
+                "time_str": time_str,
+                "weather_enabled": ctx_config.get("weather_enabled", False),
+                "weather_days": ctx_config.get("weather_days", 0),
             }
         }
 
@@ -269,6 +459,9 @@ async def run_cron_job(job_id: str):
         if use_llm:
             import time as _time
             llm_start = _time.time()
+
+            # 读取 max_tokens 配置（0=不限制）
+            max_tokens = int(target_job.get("max_tokens", 0) or 0)
 
             # 判断 LLM 模式：hermes 用 call_llm，自定义用 LLMService
             if llm_config.get("mode") == "hermes":
@@ -278,23 +471,28 @@ async def run_cron_job(job_id: str):
                     _sys.path.insert(0, str(_Path.home() / '.hermes' / 'hermes-agent'))
                     from agent.auxiliary_client import call_llm
 
-                    response = call_llm(
+                    llm_kwargs = dict(
                         task="title_generation",
                         messages=[
                             {"role": "system", "content": prompt_text},
                             {"role": "user", "content": user_prompt}
                         ],
                         temperature=0.7,
-                        max_tokens=200,
                     )
-                    generated_message = response.choices[0].message.content.strip()
+                    if max_tokens > 0:
+                        llm_kwargs["max_tokens"] = max_tokens
+                    response = call_llm(**llm_kwargs,
+                    )
+                    msg = response.choices[0].message
+                    generated_message = msg.content.strip()
+                    reasoning_content = getattr(msg, 'reasoning_content', None) or getattr(msg, 'reasoning', None)
                     llm_duration = round(_time.time() - llm_start, 2)
 
                     details["llm_request"] = {
                         "mode": "hermes",
                         "model": getattr(response, 'model', 'default'),
                         "temperature": 0.7,
-                        "max_tokens": 200,
+                        "max_tokens": max_tokens,
                         "system_prompt": prompt_text,
                         "user_prompt": user_prompt,
                     }
@@ -307,30 +505,35 @@ async def run_cron_job(job_id: str):
                     details["llm_request"] = {"mode": "hermes", "system_prompt": prompt_text, "user_prompt": user_prompt}
                     details["llm_response"] = {"error": str(e), "duration": llm_duration}
                     logger.error(f"任务 {target_job['name']} LLM 调用失败: {e}")
-                    MessageService.create_task_log(
-                        task_type="cron_run",
+                    _log_run(
+                        job_id=job_id,
+                        job_name=target_job["name"],
                         status="failed",
                         message=f"任务 {target_job['name']} LLM 调用失败",
-                        error=str(e),
                         duration=round(datetime.now().timestamp() - start_time, 2),
-                        details=details
+                        error=str(e),
+                        platform=platform,
+                        session_id=sid,
+                        extra={"llm_request": details.get("llm_request"), "llm_response": details.get("llm_response"), "failure_stage": "llm_call"}
                     )
                     return
             else:
-                llm_result = await LLMService.generate_message(
+                llm_kwargs_custom = dict(
                     llm_config=llm_config,
                     prompt=user_prompt,
                     system_prompt=prompt_text,
                     temperature=0.7,
-                    max_tokens=200
                 )
+                if max_tokens > 0:
+                    llm_kwargs_custom["max_tokens"] = max_tokens
+                llm_result = await LLMService.generate_message(**llm_kwargs_custom)
                 llm_duration = round(_time.time() - llm_start, 2)
 
                 details["llm_request"] = {
                     "mode": "custom",
                     "model": llm_config.get("model", ""),
                     "temperature": 0.7,
-                    "max_tokens": 200,
+                    "max_tokens": max_tokens,
                     "system_prompt": prompt_text,
                     "user_prompt": user_prompt,
                 }
@@ -338,17 +541,21 @@ async def run_cron_job(job_id: str):
                 if not llm_result.get("success"):
                     details["llm_response"] = {"error": llm_result.get("message", ""), "duration": llm_duration}
                     logger.error(f"任务 {target_job['name']} LLM 生成失败: {llm_result.get('message')}")
-                    MessageService.create_task_log(
-                        task_type="cron_run",
+                    _log_run(
+                        job_id=job_id,
+                        job_name=target_job["name"],
                         status="failed",
                         message=f"任务 {target_job['name']} LLM 生成失败",
-                        error=llm_result.get("message", "未知错误"),
                         duration=round(datetime.now().timestamp() - start_time, 2),
-                        details=details
+                        error=llm_result.get("message", "未知错误"),
+                        platform=platform,
+                        session_id=sid,
+                        extra={"llm_request": details.get("llm_request"), "llm_response": details.get("llm_response"), "failure_stage": "llm_generate"}
                     )
                     return
 
                 generated_message = llm_result["content"]
+                reasoning_content = llm_result.get("reasoning_content")
                 details["llm_response"] = {"content": generated_message, "duration": llm_duration}
         else:
             generated_message = prompt_text
@@ -362,7 +569,8 @@ async def run_cron_job(job_id: str):
             with_mark=with_mark,
             mark_format=mark_format,
             send_mark=send_mark,
-            time_format=time_format
+            time_format=time_format,
+            reasoning_content=reasoning_content,
         )
 
         details["send_result"] = {
@@ -389,33 +597,42 @@ async def run_cron_job(job_id: str):
 
         if send_result.get("success"):
             logger.info(f"任务 {target_job['name']} 运行成功，耗时 {duration}s")
-            MessageService.create_task_log(
-                task_type="cron_run",
+            _log_run(
+                job_id=job_id,
+                job_name=target_job["name"],
                 status="success",
                 message=f"任务 {target_job['name']} 运行成功，session: {sid}",
                 duration=duration,
-                details=details
+                platform=platform,
+                session_id=sid,
+                extra=details,  # 完整 details（context/llm_request/llm_response/send_result）
             )
         else:
             logger.error(f"任务 {target_job['name']} 发送失败: {send_result.get('message')}")
-            MessageService.create_task_log(
-                task_type="cron_run",
+            _log_run(
+                job_id=job_id,
+                job_name=target_job["name"],
                 status="failed",
                 message=f"任务 {target_job['name']} 发送失败",
-                error=send_result.get("message", "未知错误"),
                 duration=duration,
-                details=details
+                error=send_result.get("message", "未知错误"),
+                platform=platform,
+                session_id=sid,
+                # 把完整 details（含 context/llm_request/llm_response）都塞进去
+                extra={**details, "failure_stage": "send"},
             )
 
     except Exception as e:
         logger.exception(f"任务 {job_id} 运行异常: {e}")
-        MessageService.create_task_log(
-            task_type="cron_run",
+        job_name = target_job.get("name", job_id) if target_job else job_id
+        _log_run(
+            job_id=job_id,
+            job_name=job_name,
             status="failed",
-            message=f"任务运行异常",
-            error=str(e),
+            message=f"任务 {job_name} 运行异常",
             duration=0,
-            details=locals().get('details')
+            error=str(e),
+            extra={"failure_stage": "exception", "exception_type": type(e).__name__}
         )
     finally:
         db.close()
@@ -454,6 +671,9 @@ def _parse_context_config(raw_prompt: str) -> tuple:
         "hindsight_recall_limit": 10,
         "hindsight_reflect_enabled": False,
         "hindsight_reflect_query": "",
+        "weather_enabled": False,
+        "weather_days": 0,
+        "time_format": "%Y-%m-%d %H:%M:%S",
     }
 
     if not raw_prompt or not raw_prompt.startswith(CTX_MARKER_START):
@@ -487,6 +707,20 @@ def _parse_context_config(raw_prompt: str) -> tuple:
             config["hindsight_reflect_enabled"] = value == "true"
         elif key == "reflect_query":
             config["hindsight_reflect_query"] = urllib.parse.unquote(value)
+        elif key == "weather":
+            config["weather_enabled"] = value == "true"
+        elif key == "weather_days":
+            try:
+                v = int(value)
+                # 合法值: 0=今天实况，2=今+明，3=今+明+后，4=今+明+后+大后（API 实测最多返回 4 天）
+                if v in (0, 2, 3, 4):
+                    config["weather_days"] = v
+                else:
+                    config["weather_days"] = 0
+            except (ValueError, TypeError):
+                config["weather_days"] = 0
+        elif key == "time_format":
+            config["time_format"] = urllib.parse.unquote(value)
 
     return config, user_prompt
 

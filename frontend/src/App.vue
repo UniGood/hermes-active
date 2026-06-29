@@ -11,14 +11,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, provide } from 'vue'
 import api from './api'
 
 const themeOverrides = ref({
   common: {
-    primaryColor: '#ff9a9e',
-    primaryColorHover: '#ffb3b6',
-    primaryColorPressed: '#e8838a',
+    primaryColor: '#4a90d9',
+    primaryColorHover: '#6ba3e0',
+    primaryColorPressed: '#3a7cc9',
     borderRadius: '12px',
     borderRadiusSmall: '8px'
   },
@@ -39,54 +39,122 @@ const themeOverrides = ref({
 })
 
 const THEME_MAP = {
-  kelly: { primary: '#ff9a9e', hover: '#ffb3b6', pressed: '#e8838a', secondary: '#fecfef', accent: '#f6d365' },
-  elegant: { primary: '#a0c4e8', hover: '#b5d4f0', pressed: '#8ab4d8', secondary: '#e8e8e8', accent: '#c0c0c0' },
-  dark: { primary: '#4fc3f7', hover: '#72d0fa', pressed: '#3ab0e0', secondary: '#2d2d2d', accent: '#4fc3f7' }
+  kelly: {
+    primary: '#ff9a9e', hover: '#ffb3b6', pressed: '#e8838a',
+    secondary: '#fecfef', accent: '#f6d365',
+    bg: '#faf9f7', text: '#2d2d2d', cardBg: '#ffffff',
+    headerBg: '#ff9a9e', sidebarBg: '#fff0f3',
+    tagBg: '#fff0f3', tagBorder: '#ffd0d6',
+    borderColor: '#ffe0e6',
+    shadowColor: 'rgba(255, 154, 158, 0.15)',
+    primaryRgb: '255, 154, 158',
+    textPrimary: '#333', textSecondary: '#666', textMuted: '#999',
+    success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
+    borderLight: '#f0ece8',
+    userMsgBg: '#fff0f3', assistantMsgBg: '#fff3e0',
+    statusActive: '#a8e6cf',
+    bgMuted: '#f8f6f4', bgLight: '#fafafa', textHint: '#aaa', errorLight: '#e53935'
+  },
+  elegant: {
+    primary: '#4a90d9', hover: '#6ba3e0', pressed: '#3a7cc9',
+    secondary: '#e8eef5', accent: '#8bb4e0',
+    bg: '#f5f7fa', text: '#2d2d2d', cardBg: '#ffffff',
+    headerBg: '#4a90d9', sidebarBg: '#e8eef5',
+    tagBg: '#e8f0fe', tagBorder: '#b0c8e8',
+    borderColor: '#d0d7de',
+    shadowColor: 'rgba(74, 144, 217, 0.12)',
+    primaryRgb: '74, 144, 217',
+    textPrimary: '#333', textSecondary: '#666', textMuted: '#999',
+    success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
+    borderLight: '#f0ece8',
+    userMsgBg: '#e3f2fd', assistantMsgBg: '#fff3e0',
+    statusActive: '#a8e6cf',
+    bgMuted: '#f8f6f4', bgLight: '#fafafa', textHint: '#aaa', errorLight: '#e53935'
+  }
 }
 
 function applyTheme(themeId) {
-  const t = THEME_MAP[themeId] || THEME_MAP.kelly
+  const t = THEME_MAP[themeId] || THEME_MAP.elegant
+  
+  // Naive UI 主题（必须用具体颜色值，不能用 CSS 变量）
   themeOverrides.value.common.primaryColor = t.primary
   themeOverrides.value.common.primaryColorHover = t.hover
   themeOverrides.value.common.primaryColorPressed = t.pressed
-
+  
   const root = document.documentElement
+  
+  // 核心颜色
   root.style.setProperty('--theme-primary', t.primary)
   root.style.setProperty('--theme-primary-hover', t.hover)
   root.style.setProperty('--theme-primary-pressed', t.pressed)
-  root.style.setProperty('--theme-secondary', t.secondary || '#fecfef')
-  root.style.setProperty('--theme-accent', t.accent || '#f6d365')
+  root.style.setProperty('--theme-secondary', t.secondary)
+  root.style.setProperty('--theme-accent', t.accent)
+  
+  // 背景和文字
+  root.style.setProperty('--theme-bg', t.bg)
+  root.style.setProperty('--theme-text', t.text)
+  root.style.setProperty('--theme-card-bg', t.cardBg)
+  
+  // 组件背景
+  root.style.setProperty('--theme-header-bg', t.headerBg)
+  root.style.setProperty('--theme-sidebar-bg', t.sidebarBg)
+  
+  // Tag 样式
+  root.style.setProperty('--theme-tag-bg', t.tagBg)
+  root.style.setProperty('--theme-tag-border', t.tagBorder)
+  
+  // 边框和阴影
+  root.style.setProperty('--theme-border', t.borderColor)
+  root.style.setProperty('--theme-shadow', t.shadowColor)
+  root.style.setProperty('--theme-border-light', t.borderLight)
 
-  if (themeId === 'dark') {
-    root.style.setProperty('--theme-bg', '#1a1a2e')
-    root.style.setProperty('--theme-text', '#e0e0e0')
-    root.style.setProperty('--theme-card-bg', '#16213e')
-    document.body.style.background = '#1a1a2e'
-    document.body.style.color = '#e0e0e0'
-  } else if (themeId === 'elegant') {
-    root.style.setProperty('--theme-bg', '#f5f7fa')
-    root.style.setProperty('--theme-text', '#2d2d2d')
-    root.style.setProperty('--theme-card-bg', '#ffffff')
-    document.body.style.background = '#f5f7fa'
-    document.body.style.color = '#2d2d2d'
-  } else {
-    root.style.setProperty('--theme-bg', '#faf9f7')
-    root.style.setProperty('--theme-text', '#2d2d2d')
-    root.style.setProperty('--theme-card-bg', '#ffffff')
-    document.body.style.background = '#faf9f7'
-    document.body.style.color = '#2d2d2d'
-  }
+  // 文字层级
+  root.style.setProperty('--theme-text-primary', t.textPrimary)
+  root.style.setProperty('--theme-text-secondary', t.textSecondary)
+  root.style.setProperty('--theme-text-muted', t.textMuted)
+
+  // 语义颜色
+  root.style.setProperty('--theme-success', t.success)
+  root.style.setProperty('--theme-error', t.error)
+  root.style.setProperty('--theme-info', t.info)
+  root.style.setProperty('--theme-warning', t.warning)
+
+  // 聊天消息背景
+  root.style.setProperty('--theme-user-msg-bg', t.userMsgBg)
+  root.style.setProperty('--theme-assistant-msg-bg', t.assistantMsgBg)
+
+  // 状态颜色
+  root.style.setProperty('--theme-status-active', t.statusActive)
+
+  // 背景色调
+  root.style.setProperty('--theme-bg-muted', t.bgMuted)
+  root.style.setProperty('--theme-bg-light', t.bgLight)
+  root.style.setProperty('--theme-text-hint', t.textHint)
+  root.style.setProperty('--theme-error-light', t.errorLight)
+
+  // RGB 版本（用于 rgba()）
+  root.style.setProperty('--theme-primary-rgb', t.primaryRgb)
+  
+  // body 样式
+  document.body.style.background = t.bg
+  document.body.style.color = t.text
 }
 
-onMounted(async () => {
-  try {
-    const data = await api.get('/config/get/theme').catch(() => null)
+// provide 主题相关函数给子组件使用
+provide('applyTheme', applyTheme)
+provide('THEME_MAP', THEME_MAP)
+
+onMounted(() => {
+  // 读取保存的主题配置
+  api.get('/config/get/theme').then(data => {
     if (data?.value) {
       applyTheme(data.value)
+    } else {
+      applyTheme('elegant')
     }
-  } catch (e) {
-    // 使用默认主题
-  }
+  }).catch(() => {
+    applyTheme('elegant')
+  })
 })
 </script>
 
@@ -100,7 +168,7 @@ onMounted(async () => {
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   color: var(--theme-text, #2d2d2d);
-  background: var(--theme-bg, #faf9f7);
+  background: var(--theme-bg, #f5f7fa);
   overflow-x: hidden;
 }
 

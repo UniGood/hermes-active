@@ -63,7 +63,7 @@
                 读取上下文
               </n-button>
               <n-input-number v-model:value="contextLimit" :min="1" :max="50" style="width: 100px" />
-              <span style="color: #999; font-size: 13px">条消息</span>
+              <span style="color: var(--theme-text-muted); font-size: 13px">条消息</span>
               <n-checkbox v-model:checked="includeTool">获取tool上下文</n-checkbox>
             </n-space>
             <div v-if="contextMessages.length > 0" class="context-preview">
@@ -85,7 +85,7 @@
               <n-space align="center">
                 <n-input v-model:value="recallQuery" placeholder="输入搜索关键词" style="width: 300px" />
                 <n-input-number v-model:value="recallLimit" :min="1" :max="50" style="width: 100px" />
-                <span style="color: #999; font-size: 13px">条</span>
+                <span style="color: var(--theme-text-muted); font-size: 13px">条</span>
                 <n-button @click="doRecall" :loading="loadingRecall" type="primary">Recall</n-button>
               </n-space>
               <div v-if="recallResults.length > 0" class="recall-results">
@@ -113,7 +113,7 @@
               <n-space align="center">
                 <n-input v-model:value="reflectQuery" placeholder="输入问题/查询" style="width: 300px" />
                 <n-input-number v-model:value="reflectLimit" :min="1" :max="50" style="width: 100px" />
-                <span style="color: #999; font-size: 13px">条记忆</span>
+                <span style="color: var(--theme-text-muted); font-size: 13px">条记忆</span>
                 <n-button @click="doReflect" :loading="loadingReflect" type="primary">Reflect</n-button>
               </n-space>
               <div v-if="reflectResult" class="reflect-result">
@@ -153,7 +153,7 @@
               :autosize="{ minRows: 2, maxRows: 6 }"
               placeholder="用户提示词模板，支持 {context} 占位符"
             />
-            <div style="font-size: 12px; color: #999; margin-top: 4px">
+            <div style="font-size: 12px; color: var(--theme-text-muted); margin-top: 4px">
               支持 {context} 占位符，运行时替换为实际上下文
             </div>
           </div>
@@ -746,7 +746,7 @@ onMounted(() => {
 
 .select-label {
   min-width: 80px;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 14px;
 }
 
@@ -761,7 +761,7 @@ onMounted(() => {
   gap: 12px;
   margin-top: 8px;
   padding: 12px;
-  background: #f8f6f4;
+  background: var(--theme-bg-muted);
   border-radius: 12px;
 }
 
@@ -773,12 +773,12 @@ onMounted(() => {
 
 .info-item .label {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .info-item .value {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   word-break: break-all;
 }
 
@@ -790,14 +790,14 @@ onMounted(() => {
   margin-top: 12px;
   max-height: 300px;
   overflow-y: auto;
-  background: #f8f6f4;
+  background: var(--theme-bg-muted);
   border-radius: 12px;
   padding: 12px;
 }
 
 .context-header {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
   margin-bottom: 8px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
@@ -814,15 +814,15 @@ onMounted(() => {
 }
 
 .context-role.user {
-  color: #ff9a9e;
+  color: var(--theme-primary);
 }
 
 .context-role.assistant {
-  color: #f6d365;
+  color: var(--theme-accent);
 }
 
 .context-content {
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .recall-results {
@@ -833,7 +833,7 @@ onMounted(() => {
 
 .recall-header {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
   margin-bottom: 8px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
@@ -841,14 +841,14 @@ onMounted(() => {
 
 .recall-item {
   padding: 12px;
-  background: #f8f6f4;
+  background: var(--theme-bg-muted);
   border-radius: 12px;
   margin-bottom: 8px;
 }
 
 .recall-text {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   line-height: 1.6;
   margin-bottom: 8px;
 }
@@ -862,25 +862,25 @@ onMounted(() => {
 
 .recall-entities {
   font-size: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .reflect-result {
   margin-top: 12px;
   padding: 16px;
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(var(--theme-primary-rgb), 0.06);
   border-radius: 12px;
 }
 
 .reflect-label {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
   margin-bottom: 8px;
 }
 
 .reflect-content {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   line-height: 1.8;
   white-space: pre-wrap;
 }
@@ -890,7 +890,7 @@ onMounted(() => {
 }
 
 .mark-format-section {
-  background: #f8f6f4;
+  background: var(--theme-bg-muted);
   padding: 12px;
   border-radius: 12px;
   margin-top: 8px;
@@ -898,22 +898,22 @@ onMounted(() => {
 
 .mark-format-label {
   font-size: 13px;
-  color: #666;
+  color: var(--theme-text-secondary);
   margin-bottom: 8px;
 }
 
 .mark-format-hint {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
   margin-top: 6px;
 }
 
 .mark-format-preview {
   font-size: 12px;
-  color: #ff9a9e;
+  color: var(--theme-primary);
   margin-top: 6px;
   padding: 6px 8px;
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(var(--theme-primary-rgb), 0.06);
   border-radius: 8px;
   word-break: break-all;
 }
@@ -921,19 +921,19 @@ onMounted(() => {
 .generated-message {
   margin-top: 12px;
   padding: 12px;
-  background: rgba(255, 154, 158, 0.06);
+  background: rgba(var(--theme-primary-rgb), 0.06);
   border-radius: 12px;
 }
 
 .generated-label {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
   margin-bottom: 4px;
 }
 
 .generated-content {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   line-height: 1.6;
 }
 
@@ -946,29 +946,29 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--theme-border-light);
   font-size: 13px;
 }
 
 .log-item.success {
-  color: #a8e6cf;
+  color: var(--theme-status-active);
 }
 
 .log-item.error {
-  color: #ff9a9e;
+  color: var(--theme-primary);
 }
 
 .log-item.info {
-  color: #f6d365;
+  color: var(--theme-accent);
 }
 
 .log-time {
-  color: #999;
+  color: var(--theme-text-muted);
   flex-shrink: 0;
 }
 
 .prompt-config-area {
-  background: #f8f6f4;
+  background: var(--theme-bg-muted);
   padding: 12px;
   border-radius: 12px;
 }
@@ -983,7 +983,7 @@ onMounted(() => {
 
 .prompt-config-label {
   font-size: 13px;
-  color: #666;
+  color: var(--theme-text-secondary);
   margin-bottom: 4px;
   font-weight: 500;
 }
@@ -1002,7 +1002,7 @@ onMounted(() => {
 
 .prompt-label {
   font-size: 13px;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-weight: 500;
 }
 
@@ -1020,50 +1020,50 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 6px 12px;
-  border: 1px solid #e0e0e6;
+  border: 1px solid var(--theme-border-light);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  background: #fff;
+  background: var(--theme-card-bg);
   min-width: 80px;
   min-height: 48px;
 }
 
 .time-format-chip:hover {
-  border-color: #ff9a9e;
-  background: rgba(255, 154, 158, 0.06);
+  border-color: var(--theme-primary);
+  background: rgba(var(--theme-primary-rgb), 0.06);
 }
 
 .time-format-chip.active {
-  border-color: #ff9a9e;
-  background: rgba(255, 154, 158, 0.1);
-  box-shadow: 0 0 0 1px #ff9a9e;
+  border-color: var(--theme-primary);
+  background: rgba(var(--theme-primary-rgb), 0.1);
+  box-shadow: 0 0 0 1px var(--theme-primary);
 }
 
 .chip-label {
   font-size: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
   margin-bottom: 2px;
 }
 
 .time-format-chip.active .chip-label {
-  color: #ff9a9e;
+  color: var(--theme-primary);
   font-weight: 500;
 }
 
 .chip-preview {
   font-size: 13px;
-  color: #333;
+  color: var(--theme-text-primary);
   font-family: monospace;
 }
 
 .mark-format-preview {
   margin-top: 8px;
   padding: 6px 10px;
-  background: #f8f6f4;
+  background: var(--theme-bg-muted);
   border-radius: 10px;
   font-size: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-family: monospace;
   word-break: break-all;
 }

@@ -120,11 +120,11 @@ class ConfigService:
             {
                 "name": "轻松聊天",
                 "system": "你是曹凡的好朋友，想和他轻松地聊聊天。语气随意自然，像真人朋友一样。",
-                "generation": "最近的对话：\n{context}\n\n发起一个轻松的话题："
+                "generation": "最近的对话：\n{session}\n\n相关记忆：\n{memory}\n\n天气：\n{weather}\n\n当前时间：{time}\n\n发起一个轻松的话题："
             },
             {
                 "name": "关心问候",
                 "system": "你是关心曹凡的朋友，想问候他的近况。语气温暖真诚。",
-                "generation": "最近的对话：\n{context}\n\n生成一条关心的问候："
+                "generation": "最近的对话：\n{session}\n\n相关记忆：\n{memory}\n\n天气：\n{weather}\n\n当前时间：{time}\n\n生成一条关心的问候："
             }
         ]

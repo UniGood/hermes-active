@@ -77,7 +77,17 @@
                 </n-tag>
                 <span class="message-id">ID: {{ msg.id }}</span>
               </div>
-              <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
+              <div class="message-header-right">
+                <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
+                <n-popconfirm @positive-click="handleDeleteMessage(msg)">
+                  <template #trigger>
+                    <n-button text type="error" size="small" class="delete-btn">
+                      删除
+                    </n-button>
+                  </template>
+                  确定删除这条消息？ID: {{ msg.id }}
+                </n-popconfirm>
+              </div>
             </div>
 
             <!-- 消息内容 -->
@@ -133,14 +143,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { SearchOutline } from '@vicons/ionicons5'
+import { useMessage } from 'naive-ui'
 import api from '../api'
+import { messagesApi } from '../api'
 import { useConfig } from '../composables/useConfig'
 
 const route = useRoute()
 const router = useRouter()
+const message = useMessage()
 const { config, loadConfig } = useConfig()
 const loading = ref(false)
 const session = ref(null)
@@ -152,12 +165,7 @@ const searchText = ref('')
 const filteredMessages = computed(() => {
   let result = messages.value
 
-  // 过滤 tool 消息
-  if (!showToolMessages.value) {
-    result = result.filter(msg => msg.role !== 'tool')
-  }
-
-  // 关键词搜索
+  // 关键词搜索（前端只做搜索过滤，tool 过滤已交给后端）
   if (searchText.value) {
     const keyword = searchText.value.toLowerCase()
     result = result.filter(msg => {
@@ -169,6 +177,11 @@ const filteredMessages = computed(() => {
   }
 
   return result
+})
+
+// 切换"显示工具消息"时重新从后端拉数据
+watch(showToolMessages, () => {
+  loadMessages()
 })
 
 function formatTime(ts) {
@@ -219,7 +232,13 @@ async function loadMessages() {
   const sessionId = route.params.id
   loading.value = true
   try {
-    const data = await api.get(`/messages/${sessionId}`, { params: { page: 1, page_size: 200 } })
+    const data = await api.get(`/messages/${sessionId}`, {
+      params: {
+        page: 1,
+        page_size: 200,
+        exclude_tool: !showToolMessages.value
+      }
+    })
     messages.value = data.items || []
   } catch (e) {
     console.error('加载消息失败:', e)
@@ -228,10 +247,24 @@ async function loadMessages() {
   }
 }
 
+async function handleDeleteMessage(msg) {
+  try {
+    await messagesApi.deleteMessage(msg.id)
+    messages.value = messages.value.filter(m => m.id !== msg.id)
+    message.success('消息已删除')
+  } catch (e) {
+    console.error('删除消息失败:', e)
+    message.error('删除失败')
+  }
+}
+
 onMounted(() => {
-  loadConfig()
-  loadSession()
-  loadMessages()
+  // 并行加载，提高页面切换速度
+  Promise.all([
+    loadConfig(),
+    loadSession(),
+    loadMessages()
+  ])
 })
 </script>
 
@@ -260,7 +293,7 @@ onMounted(() => {
 
 .info-item .value {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   word-break: break-all;
 }
 
@@ -299,6 +332,12 @@ onMounted(() => {
   gap: 8px;
 }
 
+.message-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .message-id {
   font-size: 11px;
   color: #999;
@@ -310,36 +349,45 @@ onMounted(() => {
   color: #999;
 }
 
+.delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.message-item:hover .delete-btn {
+  opacity: 1;
+}
+
 .message-content {
   font-size: 14px;
-  color: #2d2d2d;
+  color: var(--theme-text);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
   padding: 8px 12px;
-  background: #f8f6f4;
+  background: var(--theme-bg-muted, #f8f6f4);
   border-radius: 12px;
   max-height: 300px;
   overflow-y: auto;
 }
 
 .message-item.user .message-content {
-  background: #fff;
-  color: #333;
+  background: var(--theme-card-bg);
+  color: var(--theme-text);
 }
 
 .message-item.assistant .message-content {
-  background: #fff;
-  color: #333;
+  background: var(--theme-card-bg);
+  color: var(--theme-text);
 }
 
 .message-item.tool .message-content {
-  background: #fdf6ec;
+  background: var(--theme-bg-light, #fdf6ec);
 }
 
 .message-fields {
   margin-top: 8px;
-  border: 1px solid #f0ece8;
+  border: 1px solid var(--theme-border, #f0ece8);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -351,9 +399,9 @@ onMounted(() => {
 .field-key {
   width: 180px;
   font-weight: 600;
-  color: #666;
+  color: var(--theme-text-secondary, #666);
   font-family: monospace;
-  background: #f8f6f4;
+  background: var(--theme-bg-muted, #f8f6f4);
 }
 
 .field-value {
