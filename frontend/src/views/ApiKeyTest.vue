@@ -101,7 +101,7 @@ const STORAGE_KEY = 'kelly-api-test-config'
 
 const config = ref({
   baseUrl: 'https://xlapis.com/v1',
-  apiKey: 'sk-ttrZ5NrqnB6yxRVKnHNYokOFXrI4mTix1JKj1sbefu7lB45T',
+  apiKey: 'sk-xxxxxxxxxx',
   model: 'deepseek-v4-pro',
   systemPrompt: 'You are a helpful assistant.'
 })
