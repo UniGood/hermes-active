@@ -6,7 +6,7 @@
   <!-- INFOGRAPHIC PLACEHOLDER: Hero Banner -->
   <!-- Replace the line below with your generated infographic -->
   <!-- Recommended: architecture overview diagram showing the three modules -->
-  <img src="docs/images/hero-banner.png" alt="Hermes Active — Proactive Session System" width="800">
+  <img src="docs/images/hero-banner.jpg" alt="Hermes Active — Proactive Session System" width="800">
 </p>
 
 <h1 align="center">Hermes Active</h1>
@@ -50,7 +50,7 @@
 <p align="center">
   <!-- INFOGRAPHIC PLACEHOLDER: Problem Statement -->
   <!-- Show the problem: isolated cron sessions vs. context-aware proactive messages -->
-  <img src="docs/images/problem-statement.png" alt="The Problem: Isolated Cron Sessions" width="700">
+  <img src="docs/images/problem-statement.jpg" alt="The Problem: Isolated Cron Sessions" width="700">
 </p>
 
 ### The Problem
@@ -81,7 +81,7 @@ Hermes Active introduces a **persistent proactive session system** that:
 <p align="center">
   <!-- INFOGRAPHIC PLACEHOLDER: Architecture Diagram -->
   <!-- Show the high-level architecture: Frontend + Backend + Hermes Agent + Hindsight -->
-  <img src="docs/images/architecture-overview.png" alt="System Architecture" width="800">
+  <img src="docs/images/hero-banner.jpg" alt="System Architecture" width="800">
 </p>
 
 ```
@@ -147,7 +147,7 @@ Hermes Active integrates with Hermes Agent through **public interfaces only** �
 <p align="center">
   <!-- INFOGRAPHIC PLACEHOLDER: Three Modules Overview -->
   <!-- Show the three modules side by side with their key features -->
-  <img src="docs/images/three-modules.png" alt="Three Core Modules" width="800">
+  <img src="docs/images/three-modules.jpg" alt="Three Core Modules" width="800">
 </p>
 
 ### Module 1: Scheduled Tasks (v0.1.x)
@@ -201,7 +201,7 @@ The "heartbeat" system — the AI assistant periodically evaluates its emotional
 <p align="center">
   <!-- INFOGRAPHIC PLACEHOLDER: Active Consciousness Flow -->
   <!-- Show the heartbeat cycle: Decision → Thought Generation → Protection Check → Action -->
-  <img src="docs/images/active-consciousness-flow.png" alt="Active Consciousness Heartbeat Flow" width="800">
+  <img src="docs/images/active-consciousness-flow.jpg" alt="Active Consciousness Heartbeat Flow" width="800">
 </p>
 
 #### Heartbeat Cycle
@@ -287,7 +287,7 @@ passive_consciousness.passive.inject_thought: true
 <p align="center">
   <!-- INFOGRAPHIC PLACEHOLDER: Active Consciousness Detailed Architecture -->
   <!-- Show the detailed internal architecture of the active consciousness system -->
-  <img src="docs/images/active-consciousness-detail.png" alt="Active Consciousness Detailed Architecture" width="800">
+  <img src="docs/images/active-consciousness-detail.jpg" alt="Active Consciousness Detailed Architecture" width="800">
 </p>
 
 ### Emotion System — VA Model
@@ -596,7 +596,7 @@ hermes-active/
 <p align="center">
   <!-- INFOGRAPHIC PLACEHOLDER: Deployment Diagram -->
   <!-- Show the deployment topology: server, services, ports -->
-  <img src="docs/images/deployment-diagram.png" alt="Deployment Topology" width="700">
+  <img src="docs/images/deployment-diagram.jpg" alt="Deployment Topology" width="700">
 </p>
 
 ### Prerequisites
@@ -915,7 +915,7 @@ MIT License — See [LICENSE](LICENSE) for details.
 <p align="center">
   <!-- INFOGRAPHIC PLACEHOLDER: Footer -->
   <!-- Optional: project logo or tagline image -->
-  <img src="docs/images/footer-banner.png" alt="Hermes Active" width="400">
+  <img src="docs/images/footer-banner.jpg" alt="Hermes Active" width="400">
 </p>
 
 <p align="center">

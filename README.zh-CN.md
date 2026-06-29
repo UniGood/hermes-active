@@ -5,7 +5,7 @@
 <p align="center">
   <!-- 信息图占位符：主视觉横幅 -->
   <!-- 替换为你的信息图，建议展示三个模块的架构总览 -->
-  <img src="docs/images/hero-banner.png" alt="Hermes Active — 主动会话系统" width="800">
+  <img src="docs/images/hero-banner.jpg" alt="Hermes Active — 主动会话系统" width="800">
 </p>
 
 <h1 align="center">Hermes Active</h1>
@@ -49,7 +49,7 @@
 <p align="center">
   <!-- 信息图占位符：问题说明 -->
   <!-- 展示问题：隔离的 cron session vs 有上下文的主动消息 -->
-  <img src="docs/images/problem-statement.png" alt="问题：隔离的 Cron Session" width="700">
+  <img src="docs/images/problem-statement.jpg" alt="问题：隔离的 Cron Session" width="700">
 </p>
 
 ### 问题所在
@@ -80,7 +80,7 @@ Hermes Active 引入了一套**持久化主动会话系统**：
 <p align="center">
   <!-- 信息图占位符：架构图 -->
   <!-- 展示高层架构：前端 + 后端 + Hermes Agent + Hindsight -->
-  <img src="docs/images/architecture-overview.png" alt="系统架构" width="800">
+  <img src="docs/images/hero-banner.jpg" alt="系统架构" width="800">
 </p>
 
 ```
@@ -145,7 +145,7 @@ Hermes Active 仅通过**公共接口**与 Hermes Agent 集成 — 无需修改�
 <p align="center">
   <!-- 信息图占位符：三个模块概览 -->
   <!-- 并排展示三个模块及其核心特性 -->
-  <img src="docs/images/three-modules.png" alt="三大核心模块" width="800">
+  <img src="docs/images/three-modules.jpg" alt="三大核心模块" width="800">
 </p>
 
 ### 模块一：定时任务 (v0.1.x)
@@ -199,7 +199,7 @@ Hermes Active 定时任务：
 <p align="center">
   <!-- 信息图占位符：主动意识流程 -->
   <!-- 展示心跳循环：决策 → 念头生成 → 保护检查 → 执行动作 -->
-  <img src="docs/images/active-consciousness-flow.png" alt="主动意识心跳流程" width="800">
+  <img src="docs/images/active-consciousness-flow.jpg" alt="主动意识心跳流程" width="800">
 </p>
 
 #### 心跳执行周期
@@ -285,7 +285,7 @@ passive_consciousness.passive.inject_thought: true    # 注入念头
 <p align="center">
   <!-- 信息图占位符：主动意识详细架构 -->
   <!-- 展示主动意识系统的内部详细架构 -->
-  <img src="docs/images/active-consciousness-detail.png" alt="主动意识详细架构" width="800">
+  <img src="docs/images/active-consciousness-detail.jpg" alt="主动意识详细架构" width="800">
 </p>
 
 ### 情绪系统 — VA 模型
@@ -582,7 +582,7 @@ hermes-active/
 <p align="center">
   <!-- 信息图占位符：部署拓扑图 -->
   <!-- 展示部署拓扑：服务器、服务、端口 -->
-  <img src="docs/images/deployment-diagram.png" alt="部署拓扑" width="700">
+  <img src="docs/images/deployment-diagram.jpg" alt="部署拓扑" width="700">
 </p>
 
 ### 前置条件
@@ -901,7 +901,7 @@ MIT 许可证 — 详见 [LICENSE](LICENSE)。
 <p align="center">
   <!-- 信息图占位符：页脚 -->
   <!-- 可选：项目 Logo 或标语图片 -->
-  <img src="docs/images/footer-banner.png" alt="Hermes Active" width="400">
+  <img src="docs/images/footer-banner.jpg" alt="Hermes Active" width="400">
 </p>
 
 <p align="center">
