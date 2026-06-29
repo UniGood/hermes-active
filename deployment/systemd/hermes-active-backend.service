@@ -1,0 +1,14 @@
+[Unit]
+Description=Hermes Active Backend (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/.hermes/hermes-active/backend
+ExecStart=/home/ubuntu/.hermes/hermes-agent/venv/bin/python main.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
