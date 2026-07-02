@@ -76,7 +76,8 @@ import {
   MenuOutline,
   BulbOutline,
   HeartOutline,
-  KeyOutline
+  KeyOutline,
+  SparklesOutline
 } from '@vicons/ionicons5'
 
 const router = useRouter()
@@ -133,6 +134,7 @@ const menuItems = [
   { path: '/messages', label: '消息管理', icon: markRaw(ChatbubblesOutline) },
   { path: '/passive-consciousness', label: '被动意识', icon: markRaw(BulbOutline) },
   { path: '/active-consciousness', label: '主动意识', icon: markRaw(HeartOutline) },
+  { path: '/free-consciousness', label: '自由意识', icon: markRaw(SparklesOutline) },
   { path: '/config', label: '配置管理', icon: markRaw(SettingsOutline) },
   { path: '/cron-jobs', label: '定时任务', icon: markRaw(TimeOutline) },
   { path: '/task-logs', label: '任务日志', icon: markRaw(DocumentTextOutline) },
