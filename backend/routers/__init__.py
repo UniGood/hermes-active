@@ -14,6 +14,7 @@ from .hindsight import router as hindsight_router
 from .system_logs import router as system_logs_router
 from . import passive_consciousness
 from . import active_consciousness
+from . import free_consciousness
 
 __all__ = [
     "auth_router",
@@ -28,5 +29,6 @@ __all__ = [
     "hindsight_router",
     "system_logs_router",
     "passive_consciousness",
-    "active_consciousness"
+    "active_consciousness",
+    "free_consciousness"
 ]

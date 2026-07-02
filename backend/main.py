@@ -41,6 +41,7 @@ from models.database import init_active_db, ActiveSession
 from services.auth_service import AuthService
 from services.scheduler_service import start_scheduler, stop_scheduler
 from services.active_consciousness_service import start_heartbeat_scheduler, stop_heartbeat_scheduler, close_hindsight_client, schedule_log_cleanup, stop_log_cleanup_scheduler
+from services.free_consciousness_service import start_fc_scheduler, stop_fc_scheduler
 from routers import (
     auth_router,
     sessions_router,
@@ -54,7 +55,8 @@ from routers import (
     hindsight_router,
     system_logs_router,
     passive_consciousness,
-    active_consciousness
+    active_consciousness,
+    free_consciousness
 )
 
 
@@ -83,8 +85,15 @@ async def lifespan(app: FastAPI):
     print("正在启动日志清理调度器...")
     schedule_log_cleanup()
 
+    # 启动自由意识调度器
+    print("正在启动自由意识调度器...")
+    start_fc_scheduler()
+
     print("后端服务启动完成")
     yield
+
+    # 停止自由意识调度器
+    stop_fc_scheduler()
 
     # 关闭 Hindsight 客户端（释放 aiohttp 连接）
     await close_hindsight_client()
@@ -130,6 +139,7 @@ app.include_router(hindsight_router)
 app.include_router(system_logs_router)
 app.include_router(passive_consciousness.router)
 app.include_router(active_consciousness.router)
+app.include_router(free_consciousness.router)
 
 
 @app.get("/health")
