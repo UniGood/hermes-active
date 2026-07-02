@@ -32,7 +32,8 @@ _DEFAULTS = {
     "free_consciousness.recent_rounds": "3",
     "free_consciousness.mid_rounds": "17",
     "free_consciousness.sediment_compress_interval": "10",
-    "free_consciousness.include_context": "false",
+    "free_consciousness.include_context": "true",
+    "free_consciousness.context_limit": "20",
     "free_consciousness.persona": "",
     "free_consciousness.store_to_hindsight": "false",
     "free_consciousness.prompts.system": "你正在进行自由沉思。这是你的内在思考空间，你可以在这里探索任何想法、回忆、感受、创意、问题。没有任务压力，没有用户等待，只有你自己安静地思考。\n{persona}\n\n以下是你之前的思考记录：\n{chain_text}",
@@ -574,12 +575,13 @@ def parse_llm_output(response_text: str) -> dict:
 
 # ── 实时上下文 ──
 
-async def collect_realtime_context() -> str:
-    """收集实时上下文（时间 + 情绪状态）"""
+async def collect_realtime_context(config: dict) -> str:
+    """收集实时上下文（时间 + 情绪 + 最近对话）"""
     parts = []
     now = datetime.now().strftime("%Y年%m月%d日 %H:%M:%S")
     parts.append(f"当前时间：{now}")
 
+    # 情绪状态
     try:
         from services.active_consciousness_service import get_emotion_state
         emotion = get_emotion_state()
@@ -587,7 +589,29 @@ async def collect_realtime_context() -> str:
     except Exception:
         pass
 
-    return "\n".join(parts)
+    # 最近对话
+    try:
+        from services.message_service import MessageService
+        from services.config_service import ConfigService
+        from models.database import ActiveSession
+
+        context_limit = config.get("context_limit", 20)
+        db = ActiveSession()
+        user_name = ConfigService.get_config(db, "personalization.user_name") or "曹凡"
+        assistant_name = ConfigService.get_config(db, "personalization.assistant_name") or "凯莉"
+        db.close()
+
+        msgs = MessageService.get_recent_messages_by_platform(
+            platform="weixin", limit=context_limit, include_tool=False
+        )
+        if msgs:
+            role_map = {"user": user_name, "assistant": assistant_name}
+            chat_text = MessageService.format_session_messages(msgs, role_map=role_map)
+            parts.append(f"最近的对话：\n{chat_text}")
+    except Exception as e:
+        logger.warning("获取对话上下文失败: %s", e)
+
+    return "\n\n".join(parts)
 
 
 # ── 沉思主函数 ──
@@ -615,7 +639,7 @@ async def run_contemplation():
         # 2. 可选：注入实时上下文
         context_type = "chain"
         if config.get("include_context"):
-            context_text = await collect_realtime_context()
+            context_text = await collect_realtime_context(config)
             chain_text = chain_text + "\n\n---\n当前世界的状态：\n" + context_text
             context_type = "chain+context"
 
