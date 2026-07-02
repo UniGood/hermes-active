@@ -134,6 +134,9 @@
           <n-form-item label="包含上下文">
             <n-switch v-model:value="config.include_context" />
           </n-form-item>
+          <n-form-item label="上下文消息条数">
+            <n-input-number v-model:value="config.context_limit" :min="5" :max="100" />
+          </n-form-item>
           <n-form-item label="存储到 Hindsight">
             <n-switch v-model:value="config.store_to_hindsight" />
           </n-form-item>
@@ -263,6 +266,7 @@ const config = reactive({
   mid_rounds: 3,
   sediment_compress_interval: 10,
   include_context: true,
+  context_limit: 20,
   store_to_hindsight: true,
   persona: '',
   prompts_system: '',
@@ -401,6 +405,7 @@ async function loadConfig() {
     config.mid_rounds = data.mid_rounds ?? 17
     config.sediment_compress_interval = data.sediment_compress_interval ?? 10
     config.include_context = data.include_context ?? false
+    config.context_limit = data.context_limit ?? 20
     config.store_to_hindsight = data.store_to_hindsight ?? false
     config.persona = data.persona || ''
     config.prompts_system = data.prompts?.system || ''
@@ -493,6 +498,7 @@ async function onSaveConfig() {
       mid_rounds: config.mid_rounds,
       sediment_compress_interval: config.sediment_compress_interval,
       include_context: config.include_context,
+      context_limit: config.context_limit,
       store_to_hindsight: config.store_to_hindsight,
       persona: config.persona,
       prompts: {

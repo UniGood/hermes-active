@@ -523,16 +523,16 @@ def build_thinking_chain(records: list, config: dict) -> str:
 
 # ── Prompt 构建 ──
 
-def build_contemplation_prompt(chain_text: str, config: dict) -> tuple:
+def build_contemplation_prompt(chain_text: str, config: dict, conversations: str = "") -> tuple:
     """构建沉思的 system_prompt 和 user_prompt"""
     persona = config.get("persona", "")
     persona_section = f"\n你的思考风格：{persona}" if persona else ""
 
-    # 从配置读取提示词模板，支持 {persona} 和 {chain_text} 占位符
+    # 从配置读取提示词模板，支持占位符
     system_template = config.get("prompts", {}).get("system", _DEFAULTS["free_consciousness.prompts.system"])
     user_template = config.get("prompts", {}).get("user", _DEFAULTS["free_consciousness.prompts.user"])
 
-    system_content = system_template.replace("{persona}", persona_section).replace("{chain_text}", chain_text)
+    system_content = system_template.replace("{persona}", persona_section).replace("{chain_text}", chain_text).replace("{conversations}", conversations or "（暂无对话记录）")
     user_content = user_template
 
     return system_content, user_content
@@ -636,15 +636,21 @@ async def run_contemplation():
         all_details["chain_rounds"] = len(chain_records)
         all_details["chain_preview"] = chain_text[:500]
 
-        # 2. 可选：注入实时上下文
+        # 2. 可选：获取对话上下文
+        conversations_text = ""
         context_type = "chain"
         if config.get("include_context"):
             context_text = await collect_realtime_context(config)
-            chain_text = chain_text + "\n\n---\n当前世界的状态：\n" + context_text
             context_type = "chain+context"
+            # 从 context_text 中提取对话部分
+            if "最近的对话：" in context_text:
+                parts = context_text.split("最近的对话：")
+                conversations_text = parts[1].strip()
+            else:
+                conversations_text = context_text
 
         # 3. 构建 prompt
-        system_prompt, user_prompt = build_contemplation_prompt(chain_text, config)
+        system_prompt, user_prompt = build_contemplation_prompt(chain_text, config, conversations_text)
         all_details["prompt_sent"] = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
