@@ -95,8 +95,8 @@ class FreeConsciousnessService:
                 d = d[part]
             # 类型转换
             final_key = parts[-1]
-            if value in ("true", "false"):
-                d[final_key] = value == "true"
+            if value.lower() in ("true", "false"):
+                d[final_key] = value.lower() == "true"
             else:
                 try:
                     d[final_key] = int(value)
@@ -116,7 +116,10 @@ class FreeConsciousnessService:
             if isinstance(value, dict):
                 result.update(FreeConsciousnessService._nested_to_flat(value, full_key + "."))
             elif value is not None:
-                result[full_key] = str(value)
+                if isinstance(value, bool):
+                    result[full_key] = str(value).lower()
+                else:
+                    result[full_key] = str(value)
         return result
 
     # ── 日志读写 ──
