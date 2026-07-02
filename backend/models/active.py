@@ -174,3 +174,63 @@ class HeartbeatLog(Base):
             "details": details,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
+
+
+class FreeConsciousnessLog(Base):
+    """自由意识沉思日志表"""
+    __tablename__ = "free_consciousness_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    round_number = Column(Integer, nullable=False, index=True)
+    thinking = Column(Text, nullable=False)
+    summary = Column(Text, nullable=True)
+    discovery = Column(Text, nullable=True)
+    thinking_tokens = Column(Integer, nullable=True)
+    chain_tokens = Column(Integer, nullable=True)
+    context_type = Column(String(20), default="chain")
+    llm_details = Column(Text, nullable=True)
+    parse_failed = Column(Boolean, default=False)
+    error = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")), index=True)
+
+    def to_dict(self):
+        details = self.llm_details
+        if details:
+            try:
+                details = json.loads(details)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return {
+            "id": self.id,
+            "round_number": self.round_number,
+            "thinking": self.thinking,
+            "summary": self.summary,
+            "discovery": self.discovery,
+            "thinking_tokens": self.thinking_tokens,
+            "chain_tokens": self.chain_tokens,
+            "context_type": self.context_type,
+            "llm_details": details,
+            "parse_failed": self.parse_failed,
+            "error": self.error,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class FreeConsciousnessSediment(Base):
+    """意识积淀表（单行）"""
+    __tablename__ = "free_consciousness_sediment"
+
+    id = Column(Integer, primary_key=True, default=1)
+    content = Column(Text, nullable=False)
+    source_rounds = Column(String(50), nullable=False)
+    source_count = Column(Integer, nullable=False)
+    compressed_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "content": self.content,
+            "source_rounds": self.source_rounds,
+            "source_count": self.source_count,
+            "compressed_at": self.compressed_at.isoformat() if self.compressed_at else None
+        }

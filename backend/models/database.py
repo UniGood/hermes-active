@@ -68,6 +68,15 @@ def init_active_db():
     # 自动迁移：给 active_thought_logs 表增加 details 列（如果不存在）
     migrate_thought_logs_table()
 
+    # 自由意识日志表索引（表由 Base.metadata.create_all 自动创建）
+    try:
+        with active_engine.connect() as conn:
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_fc_round ON free_consciousness_logs(round_number)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_fc_created ON free_consciousness_logs(created_at)"))
+            conn.commit()
+    except Exception as e:
+        print(f"创建自由意识索引失败: {e}")
+
 
 def migrate_thought_logs_table():
     """给 active_thought_logs 表添加缺失列（如果不存在）"""
