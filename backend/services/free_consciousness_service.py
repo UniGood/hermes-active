@@ -200,7 +200,7 @@ class FreeConsciousnessService:
                     "context_type": row.context_type,
                     "parse_failed": row.parse_failed,
                     "error": row.error,
-                    "created_at": row.created_at.isoformat() if row.created_at else None
+                    "created_at": row.created_at if isinstance(row.created_at, str) else (row.created_at.isoformat() if row.created_at else None)
                 })
 
             return {"items": items, "total": total, "page": page, "page_size": page_size}
@@ -235,7 +235,7 @@ class FreeConsciousnessService:
             "llm_details": details,
             "parse_failed": row.parse_failed,
             "error": row.error,
-            "created_at": row.created_at.isoformat() if row.created_at else None
+            "created_at": row.created_at if isinstance(row.created_at, str) else (row.created_at.isoformat() if row.created_at else None)
         }
 
     @staticmethod
@@ -280,7 +280,7 @@ class FreeConsciousnessService:
                 "round_number": latest.round_number,
                 "summary": latest.summary,
                 "discovery": latest.discovery,
-                "created_at": latest.created_at.isoformat() if latest.created_at else None
+                "created_at": latest.created_at if isinstance(latest.created_at, str) else (latest.created_at.isoformat() if latest.created_at else None)
             } if latest else None,
             "chain_tokens": chain_tokens,
             "interval_minutes": config.get("interval_minutes", 30),
