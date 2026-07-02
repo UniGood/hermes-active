@@ -137,8 +137,18 @@
           <n-form-item label="存储到 Hindsight">
             <n-switch v-model:value="config.store_to_hindsight" />
           </n-form-item>
-          <n-form-item label="Persona">
-            <n-input v-model:value="config.persona" type="textarea" :rows="4" placeholder="自定义 persona 描述" />
+          <n-form-item label="Persona（沉思风格）">
+            <n-input v-model:value="config.persona" type="textarea" :rows="2" placeholder="如：用第一人称自言自语，像一个安静的少女在深夜写日记" />
+          </n-form-item>
+        </n-card>
+
+        <!-- 提示词配置 -->
+        <n-card title="提示词配置" size="small" style="margin-top: 16px;">
+          <n-form-item label="System Prompt（支持 {persona} {chain_text} 占位符）">
+            <n-input v-model:value="config.prompts_system" type="textarea" :rows="6" placeholder="沉思的系统提示词" />
+          </n-form-item>
+          <n-form-item label="User Prompt">
+            <n-input v-model:value="config.prompts_user" type="textarea" :rows="4" placeholder="沉思的用户提示词" />
           </n-form-item>
           <n-button type="primary" @click="onSaveConfig" :loading="saving" style="margin-top: 8px;">
             保存配置
@@ -255,6 +265,8 @@ const config = reactive({
   include_context: true,
   store_to_hindsight: true,
   persona: '',
+  prompts_system: '',
+  prompts_user: '',
 })
 
 // Provider 选项
@@ -391,6 +403,8 @@ async function loadConfig() {
     config.include_context = data.include_context ?? false
     config.store_to_hindsight = data.store_to_hindsight ?? false
     config.persona = data.persona || ''
+    config.prompts_system = data.prompts?.system || ''
+    config.prompts_user = data.prompts?.user || ''
   } catch (e) {
     // 静默
   }
@@ -481,6 +495,10 @@ async function onSaveConfig() {
       include_context: config.include_context,
       store_to_hindsight: config.store_to_hindsight,
       persona: config.persona,
+      prompts: {
+        system: config.prompts_system,
+        user: config.prompts_user,
+      },
     }
     await api.saveConfig(payload)
     message.success('配置已保存')

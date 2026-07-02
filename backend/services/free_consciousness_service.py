@@ -35,6 +35,8 @@ _DEFAULTS = {
     "free_consciousness.include_context": "false",
     "free_consciousness.persona": "",
     "free_consciousness.store_to_hindsight": "false",
+    "free_consciousness.prompts.system": "你正在进行自由沉思。这是你的内在思考空间，你可以在这里探索任何想法、回忆、感受、创意、问题。没有任务压力，没有用户等待，只有你自己安静地思考。\n{persona}\n\n以下是你之前的思考记录：\n{chain_text}",
+    "free_consciousness.prompts.user": "请从上一轮思考的地方继续，自由地想任何你想想的事情。\n如果你有新的发现或洞察，请特别标注。\n\n请严格按以下 JSON 格式输出（不要输出其他内容）：\n{{\n  \"thinking\": \"你的完整思考过程...\",\n  \"summary\": \"本轮思考的一句话摘要（30字以内）\",\n  \"discovery\": \"本轮关键发现（如果没有新发现则为 null）\"\n}}",
 }
 
 
@@ -520,26 +522,17 @@ def build_thinking_chain(records: list, config: dict) -> str:
 
 # ── Prompt 构建 ──
 
-def build_contemplation_prompt(chain_text: str, config: dict) -> list:
-    """构建沉思的 messages 列表"""
+def build_contemplation_prompt(chain_text: str, config: dict) -> tuple:
+    """构建沉思的 system_prompt 和 user_prompt"""
     persona = config.get("persona", "")
     persona_section = f"\n你的思考风格：{persona}" if persona else ""
 
-    system_content = f"""你正在进行自由沉思。这是你的内在思考空间，你可以在这里探索任何想法、
-回忆、感受、创意、问题。没有任务压力，没有用户等待，只有你自己安静地思考。{persona_section}
+    # 从配置读取提示词模板，支持 {persona} 和 {chain_text} 占位符
+    system_template = config.get("prompts", {}).get("system", _DEFAULTS["free_consciousness.prompts.system"])
+    user_template = config.get("prompts", {}).get("user", _DEFAULTS["free_consciousness.prompts.user"])
 
-以下是你之前的思考记录：
-{chain_text}"""
-
-    user_content = """请从上一轮思考的地方继续，自由地想任何你想想的事情。
-如果你有新的发现或洞察，请特别标注。
-
-请严格按以下 JSON 格式输出（不要输出其他内容）：
-{{
-  "thinking": "你的完整思考过程...",
-  "summary": "本轮思考的一句话摘要（30字以内）",
-  "discovery": "本轮关键发现（如果没有新发现则为 null）"
-}}"""
+    system_content = system_template.replace("{persona}", persona_section).replace("{chain_text}", chain_text)
+    user_content = user_template
 
     return system_content, user_content
 
