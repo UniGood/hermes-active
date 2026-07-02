@@ -392,7 +392,7 @@ async def compress_sediment(records_to_compress: list, config: dict):
 
     try:
         llm_config = get_effective_llm_config(config)
-        response = await call_llm([{"role": "user", "content": prompt}], llm_config)
+        response = await call_llm(None, prompt, llm_config)
         content = response.get("content", "").strip()
         if not content:
             logger.warning("意识积淀压缩返回空，跳过更新")
@@ -450,12 +450,13 @@ def get_effective_llm_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return fallback  # 自由意识只有一套 LLM
 
 
-async def call_llm(messages: list, llm_config: dict) -> dict:
+async def call_llm(system_prompt: Optional[str], user_prompt: str, llm_config: dict) -> dict:
     """调用 LLM，返回 {content, reasoning_content, details}"""
     from services.llm_service import LLMService
     result = await LLMService.generate_message(
-        messages=messages,
         llm_config=llm_config,
+        prompt=user_prompt,
+        system_prompt=system_prompt,
         max_tokens=llm_config.get("max_tokens"),
         temperature=llm_config.get("temperature", 0.8)
     )
@@ -540,10 +541,7 @@ def build_contemplation_prompt(chain_text: str, config: dict) -> list:
   "discovery": "本轮关键发现（如果没有新发现则为 null）"
 }}"""
 
-    return [
-        {"role": "system", "content": system_content},
-        {"role": "user", "content": user_content}
-    ]
+    return system_content, user_content
 
 
 # ── LLM 输出解析 ──
@@ -629,14 +627,17 @@ async def run_contemplation():
             context_type = "chain+context"
 
         # 3. 构建 prompt
-        messages = build_contemplation_prompt(chain_text, config)
-        all_details["prompt_sent"] = messages
-        all_details["chain_tokens"] = sum(len(m["content"]) // 2 for m in messages)
+        system_prompt, user_prompt = build_contemplation_prompt(chain_text, config)
+        all_details["prompt_sent"] = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        all_details["chain_tokens"] = (len(system_prompt) + len(user_prompt)) // 2
 
         # 4. 请求 LLM
         llm_config = get_effective_llm_config(config)
-        response = await call_llm(messages, llm_config)
-        all_details["llm_details"] = response.get("details", {})
+        response = await call_llm(system_prompt, user_prompt, llm_config)
+        all_details["llm_details"] = response
 
         response_text = response.get("content", "")
         reasoning_content = response.get("reasoning_content")
@@ -698,7 +699,7 @@ async def test_llm_connection(config: dict) -> dict:
         llm_config = get_effective_llm_config(config)
         if not llm_config.get("api_key") and not llm_config.get("mode"):
             return {"success": False, "message": "未配置 LLM API Key"}
-        response = await call_llm([{"role": "user", "content": "Hi"}], llm_config)
+        response = await call_llm(None, "Hi", llm_config)
         duration = round(_time.time() - start, 2)
         content = response.get("content", "")
         if content:
