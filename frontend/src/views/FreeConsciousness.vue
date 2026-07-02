@@ -307,8 +307,7 @@ const logColumns = [
     ellipsis: { tooltip: true },
     render: (row) => {
       if (row.discovery) {
-        const short = row.discovery.length > 20 ? row.discovery.substring(0, 20) + '...' : row.discovery
-        return h(NTag, { type: 'success', size: 'small' }, { default: () => short })
+        return h('span', { style: 'max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle;' }, row.discovery)
       }
       return '—'
     },
