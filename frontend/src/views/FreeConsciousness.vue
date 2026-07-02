@@ -166,16 +166,49 @@
       <template v-if="logDetail">
         <n-tabs type="line" animated>
           <n-tab-pane name="thinking" tab="思考过程">
-            <n-code :code="logDetail.thinking || '（无）'" language="text" word-wrap />
+            <div style="white-space: pre-wrap; line-height: 1.8; font-size: 14px; padding: 8px 0;">{{ logDetail.thinking || '（无）' }}</div>
           </n-tab-pane>
-          <n-tab-pane name="summary" tab="摘要">
-            <div style="white-space: pre-wrap;">{{ logDetail.summary || '（无）' }}</div>
-          </n-tab-pane>
-          <n-tab-pane name="discovery" tab="发现">
-            <div style="white-space: pre-wrap;">{{ logDetail.discovery || '（无）' }}</div>
+          <n-tab-pane name="summary" tab="摘要 & 发现">
+            <div style="margin-bottom: 12px;">
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--theme-text-secondary);">摘要</div>
+              <div style="white-space: pre-wrap; line-height: 1.6;">{{ logDetail.summary || '（无）' }}</div>
+            </div>
+            <n-divider />
+            <div>
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--theme-text-secondary);">发现</div>
+              <div style="white-space: pre-wrap; line-height: 1.6;">{{ logDetail.discovery || '（无）' }}</div>
+            </div>
           </n-tab-pane>
           <n-tab-pane name="llm" tab="LLM 详情">
-            <n-code :code="JSON.stringify(logDetail.llm_details || {}, null, 2)" language="json" word-wrap />
+            <template v-if="logDetail.llm_details">
+              <!-- 基本信息 -->
+              <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
+                <n-descriptions-item label="模型">{{ logDetail.llm_details.model || '—' }}</n-descriptions-item>
+                <n-descriptions-item label="耗时">{{ logDetail.llm_details.duration ? logDetail.llm_details.duration + 's' : '—' }}</n-descriptions-item>
+                <n-descriptions-item label="成功">{{ logDetail.llm_details.success ? '是' : '否' }}</n-descriptions-item>
+                <n-descriptions-item label="消息">{{ logDetail.llm_details.message || '—' }}</n-descriptions-item>
+              </n-descriptions>
+              <!-- Prompt -->
+              <div v-if="logDetail.llm_details.prompt_sent" style="margin-bottom: 12px;">
+                <div style="font-weight: 600; margin-bottom: 4px;">Prompt</div>
+                <n-collapse>
+                  <n-collapse-item v-for="(msg, i) in logDetail.llm_details.prompt_sent" :key="i" :title="msg.role" :name="i">
+                    <n-code :code="msg.content" language="text" word-wrap style="font-size: 12px;" />
+                  </n-collapse-item>
+                </n-collapse>
+              </div>
+              <!-- LLM 原始返回 -->
+              <div v-if="logDetail.llm_details.response_raw" style="margin-bottom: 12px;">
+                <div style="font-weight: 600; margin-bottom: 4px;">LLM 原始返回</div>
+                <n-code :code="logDetail.llm_details.response_raw" language="text" word-wrap style="font-size: 12px;" />
+              </div>
+              <!-- 推理过程 -->
+              <div v-if="logDetail.llm_details.reasoning_content">
+                <div style="font-weight: 600; margin-bottom: 4px;">推理过程</div>
+                <n-code :code="logDetail.llm_details.reasoning_content" language="text" word-wrap style="font-size: 12px;" />
+              </div>
+            </template>
+            <div v-else style="color: var(--theme-text-muted);">无 LLM 详情</div>
           </n-tab-pane>
         </n-tabs>
       </template>
@@ -198,11 +231,13 @@ const isMobile = computed(() => window.innerWidth <= 768)
 // 状态
 const status = reactive({
   enabled: false,
+  running: false,
   total_rounds: 0,
   last_run_at: null,
   next_run_at: null,
   chain_tokens: 0,
   sediment_info: '',
+  interval_minutes: 30,
 })
 
 // 配置
@@ -254,30 +289,35 @@ const logPagination = computed(() => ({
 // 日志表格列
 const logColumns = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '轮次', key: 'round', width: 70 },
+  { title: '轮次', key: 'round_number', width: 70 },
   {
     title: '摘要',
     key: 'summary',
     ellipsis: { tooltip: true },
-    width: 200,
-    render: (row) => row.summary || '—',
+    width: 180,
+    render: (row) => {
+      const s = row.summary || '—'
+      return h('span', { style: 'max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle;' }, s)
+    },
   },
   {
     title: '发现',
     key: 'discovery',
-    width: 140,
+    width: 160,
+    ellipsis: { tooltip: true },
     render: (row) => {
       if (row.discovery) {
-        return h(NTag, { type: 'success', size: 'small' }, { default: () => row.discovery.substring(0, 30) + (row.discovery.length > 30 ? '...' : '') })
+        const short = row.discovery.length > 20 ? row.discovery.substring(0, 20) + '...' : row.discovery
+        return h(NTag, { type: 'success', size: 'small' }, { default: () => short })
       }
       return '—'
     },
   },
-  { title: 'Token 数', key: 'tokens', width: 90 },
+  { title: 'Token', key: 'thinking_tokens', width: 70 },
   {
     title: '时间',
     key: 'created_at',
-    width: 160,
+    width: 140,
     render: (row) => formatTime(row.created_at),
   },
   {
@@ -311,7 +351,25 @@ function formatTime(t) {
 async function loadStatus() {
   try {
     const data = await api.getStatus()
-    Object.assign(status, data)
+    status.enabled = data.enabled ?? false
+    status.running = data.running ?? false
+    status.total_rounds = data.total_rounds ?? 0
+    status.chain_tokens = data.chain_tokens ?? 0
+    status.interval_minutes = data.interval_minutes ?? 30
+    // latest_round 映射
+    status.last_run_at = data.latest_round?.created_at || null
+    // 计算下次沉思时间
+    if (data.latest_round?.created_at) {
+      const last = new Date(data.latest_round.created_at)
+      last.setMinutes(last.getMinutes() + (data.interval_minutes || 30))
+      status.next_run_at = last.toISOString()
+    }
+    // 积淀信息
+    if (data.sediment) {
+      status.sediment_info = `覆盖第 ${data.sediment.source_rounds} 轮，${data.sediment.source_count} 轮压缩`
+    } else {
+      status.sediment_info = ''
+    }
   } catch (e) {
     // 静默
   }
@@ -320,7 +378,20 @@ async function loadStatus() {
 async function loadConfig() {
   try {
     const data = await api.getConfig()
-    Object.assign(config, data)
+    // 后端返回嵌套结构 {llm: {provider, model, ...}}，前端用扁平 key
+    config.llm_provider = data.llm?.provider || ''
+    config.llm_model = data.llm?.model || ''
+    config.llm_api_key = data.llm?.api_key || ''
+    config.llm_base_url = data.llm?.base_url || ''
+    config.llm_max_tokens = data.llm?.max_tokens ?? 2000
+    config.llm_temperature = data.llm?.temperature ?? 0.8
+    config.interval_minutes = data.interval_minutes ?? 30
+    config.recent_rounds = data.recent_rounds ?? 3
+    config.mid_rounds = data.mid_rounds ?? 17
+    config.sediment_compress_interval = data.sediment_compress_interval ?? 10
+    config.include_context = data.include_context ?? false
+    config.store_to_hindsight = data.store_to_hindsight ?? false
+    config.persona = data.persona || ''
   } catch (e) {
     // 静默
   }
@@ -393,7 +464,26 @@ async function onTestLlm() {
 async function onSaveConfig() {
   saving.value = true
   try {
-    await api.saveConfig(config)
+    // 前端用扁平 key，后端需要嵌套结构
+    const payload = {
+      llm: {
+        mode: 'custom',
+        provider: config.llm_provider,
+        model: config.llm_model,
+        api_key: config.llm_api_key,
+        base_url: config.llm_base_url,
+        max_tokens: config.llm_max_tokens,
+        temperature: config.llm_temperature,
+      },
+      interval_minutes: config.interval_minutes,
+      recent_rounds: config.recent_rounds,
+      mid_rounds: config.mid_rounds,
+      sediment_compress_interval: config.sediment_compress_interval,
+      include_context: config.include_context,
+      store_to_hindsight: config.store_to_hindsight,
+      persona: config.persona,
+    }
+    await api.saveConfig(payload)
     message.success('配置已保存')
   } catch (e) {
     message.error('保存失败')
