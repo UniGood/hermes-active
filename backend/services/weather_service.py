@@ -42,29 +42,31 @@ class WeatherService:
         if not weather_config.get("enabled"):
             return None
 
+        # 检查缓存（在锁内）
         with cls._cache_lock:
-            # 检查缓存是否有效
             if not force_refresh and cls._is_cache_valid(weather_config):
                 return cls._cache
 
-            # 缓存过期，从 API 获取
-            provider = weather_config.get("provider", "qweather")
-            city = weather_config.get("city", "北京")
+        # 缓存过期，从 API 获取（在锁外执行 I/O）
+        provider = weather_config.get("provider", "qweather")
+        city = weather_config.get("city", "北京")
 
-            try:
-                if provider == "amap":
-                    data = cls._fetch_amap(weather_config, city)
-                else:
-                    data = cls._fetch_qweather(weather_config, city)
+        try:
+            if provider == "amap":
+                data = cls._fetch_amap(weather_config, city)
+            else:
+                data = cls._fetch_qweather(weather_config, city)
 
-                # 更新缓存
+            # 更新缓存（在锁内）
+            with cls._cache_lock:
                 cls._cache = data
                 cls._cache_time = datetime.now()
-                return data
+            return data
 
-            except Exception as e:
-                logger.error("获取天气失败: %s", e)
-                # 失败时返回旧缓存（如果有）
+        except Exception as e:
+            logger.error("获取天气失败: %s", e)
+            # 失败时返回旧缓存（如果有）
+            with cls._cache_lock:
                 return cls._cache
 
     @classmethod
@@ -92,11 +94,12 @@ class WeatherService:
         config = PassiveConsciousnessService.get_config()
         weather_config = config.get("weather", {})
 
-        return {
-            "has_cache": cls._cache is not None,
-            "cache_time": cls._cache_time.isoformat() if cls._cache_time else None,
-            "is_valid": cls._is_cache_valid(weather_config),
-        }
+        with cls._cache_lock:
+            return {
+                "has_cache": cls._cache is not None,
+                "cache_time": cls._cache_time.isoformat() if cls._cache_time else None,
+                "is_valid": cls._is_cache_valid(weather_config),
+            }
 
     @classmethod
     def _http_get(cls, url: str, timeout: int = 10) -> dict:
