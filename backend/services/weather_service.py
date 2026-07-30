@@ -467,8 +467,14 @@ class WeatherService:
 
     async def _http_get(self, url: str, timeout: int = 10) -> Dict:
         """发送 HTTP GET 请求"""
+        import gzip
         req = urllib.request.Request(url, method="GET")
         req.add_header("User-Agent", "hermes-passive-consciousness/1.0")
+        req.add_header("Accept-Encoding", "gzip, deflate")
 
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            data = resp.read()
+            # 检查是否是 gzip 压缩
+            if data[:2] == b'\x1f\x8b':  # gzip magic number
+                data = gzip.decompress(data)
+            return json.loads(data.decode("utf-8"))
