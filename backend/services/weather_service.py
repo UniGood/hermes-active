@@ -128,6 +128,23 @@ class WeatherService:
 
         return weather
 
+    def get_weather_sync(self, **kwargs) -> Dict:
+        """同步版本的 get_weather，用于非异步上下文（如 get_status）"""
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            # 已有事件循环在运行，用线程池执行
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(asyncio.run, self.get_weather(**kwargs))
+                return future.result(timeout=30)
+        else:
+            return asyncio.run(self.get_weather(**kwargs))
+
     def _detect_weather_change(
         self,
         old_weather: Dict,
@@ -467,14 +484,18 @@ class WeatherService:
 
     async def _http_get(self, url: str, timeout: int = 10) -> Dict:
         """发送 HTTP GET 请求"""
+        import io
         import gzip
+
         req = urllib.request.Request(url, method="GET")
         req.add_header("User-Agent", "hermes-passive-consciousness/1.0")
-        req.add_header("Accept-Encoding", "gzip, deflate")
 
         with urllib.request.urlopen(req, timeout=timeout) as resp:
+            # 检查 Content-Encoding 头
+            encoding = resp.headers.get('Content-Encoding', '')
             data = resp.read()
-            # 检查是否是 gzip 压缩
-            if data[:2] == b'\x1f\x8b':  # gzip magic number
+
+            if encoding == 'gzip' or data[:2] == b'\x1f\x8b':
                 data = gzip.decompress(data)
+
             return json.loads(data.decode("utf-8"))

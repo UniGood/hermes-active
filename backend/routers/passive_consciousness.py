@@ -134,96 +134,42 @@ async def test_hindsight_reflect():
 async def test_weather():
     """测试天气 API（支持高德和和风天气）"""
     try:
+        from services.weather_service import WeatherService
+
         config = PassiveConsciousnessService.get_config()
         weather_config = config.get("weather", {})
 
         if not weather_config.get("enabled"):
             return {"success": False, "error": "天气感知未启用"}
 
-        provider = weather_config.get("provider", "amap")
+        # 使用 WeatherService 获取天气（强制刷新缓存）
+        service = WeatherService()
+        result = await service.get_weather(
+            amap_key=weather_config.get("amap_key", ""),
+            adcode=weather_config.get("adcode", "370100"),
+            cache_ttl=0,  # 不使用缓存
+            provider=weather_config.get("provider", "amap"),
+            city=weather_config.get("city", ""),
+            qweather_key=weather_config.get("qweather_key", ""),
+            qweather_geo_url=weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
+            qweather_weather_url=weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
+        )
 
-        if provider == "qweather":
-            # 和风天气测试
-            api_key = weather_config.get("qweather_key", "")
-            if not api_key:
-                return {"success": False, "error": "和风天气 API Key 未配置"}
-
-            city = weather_config.get("city", "北京")
-            geo_url = weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup")
-            weather_url = weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now")
-
-            # 查询城市 ID
-            city_id = await _get_qweather_city_id(geo_url, api_key, city)
-
-            # 获取实时天气
-            params = urllib.parse.urlencode({
-                "location": city_id,
-                "key": api_key,
-            })
-            url = f"{weather_url}?{params}"
-
-            req = urllib.request.Request(url, method="GET")
-            req.add_header("User-Agent", "hermes-passive-consciousness/1.0")
-
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-
-            if data.get("code") != "200":
-                return {"success": False, "error": f"和风天气 API 返回错误: {data.get('code', '未知')}"}
-
-            now = data.get("now", {})
+        if result.get("success"):
+            current = result.get("current", {})
             return {
                 "success": True,
                 "data": {
-                    "city": city,
-                    "weather": now.get("text", ""),
-                    "temperature": now.get("temp", ""),
-                    "humidity": now.get("humidity", ""),
-                    "winddirection": now.get("windDir", ""),
-                    "reporttime": now.get("obsTime", ""),
+                    "city": result.get("city", ""),
+                    "weather": current.get("weather", ""),
+                    "temperature": current.get("temp", ""),
+                    "humidity": current.get("humidity", ""),
+                    "winddirection": current.get("winddirection", ""),
+                    "reporttime": "",
                 }
             }
         else:
-            # 高德天气测试
-            api_key = weather_config.get("amap_key", "")
-            if not api_key:
-                return {"success": False, "error": "高德 API Key 未配置"}
-
-            adcode = weather_config.get("adcode", "370100")
-
-            # 直接调用高德 API，绕过缓存
-            params = urllib.parse.urlencode({
-                "city": adcode,
-                "key": api_key,
-                "extensions": "base",
-            })
-            url = f"https://restapi.amap.com/v3/weather/weatherInfo?{params}"
-
-            req = urllib.request.Request(url, method="GET")
-            req.add_header("User-Agent", "hermes-passive-consciousness/1.0")
-
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-
-            if data.get("status") != "1":
-                return {"success": False, "error": f"高德 API 返回错误: {data.get('info', '未知')}"}
-
-            lives = data.get("lives", [])
-            if not lives:
-                return {"success": False, "error": "高德 API 返回空数据"}
-
-            live = lives[0]
-            return {
-                "success": True,
-                "data": {
-                    "city": live.get("city", ""),
-                    "weather": live.get("weather", ""),
-                    "temperature": live.get("temperature", ""),
-                    "humidity": live.get("humidity", ""),
-                    "winddirection": live.get("winddirection", ""),
-                    "reporttime": live.get("reporttime", ""),
-                }
-            }
+            return {"success": False, "error": result.get("error", "未知错误")}
     except Exception as e:
         logger.error("测试天气失败: %s", e)
         return {"success": False, "error": str(e)}
