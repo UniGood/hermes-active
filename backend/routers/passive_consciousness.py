@@ -132,7 +132,7 @@ async def test_hindsight_reflect():
 
 @router.post("/test/weather")
 async def test_weather():
-    """测试高德天气 API（直接调用，不依赖插件）"""
+    """测试天气 API（支持高德和和风天气）"""
     try:
         config = PassiveConsciousnessService.get_config()
         weather_config = config.get("weather", {})
@@ -140,48 +140,139 @@ async def test_weather():
         if not weather_config.get("enabled"):
             return {"success": False, "error": "天气感知未启用"}
 
-        api_key = weather_config.get("amap_key", "")
-        if not api_key:
-            return {"success": False, "error": "高德 API Key 未配置"}
+        provider = weather_config.get("provider", "amap")
 
-        adcode = weather_config.get("adcode", "370100")
+        if provider == "qweather":
+            # 和风天气测试
+            api_key = weather_config.get("qweather_key", "")
+            if not api_key:
+                return {"success": False, "error": "和风天气 API Key 未配置"}
 
-        # 直接调用高德 API，绕过缓存
-        params = urllib.parse.urlencode({
-            "city": adcode,
-            "key": api_key,
-            "extensions": "base",
-        })
-        url = f"https://restapi.amap.com/v3/weather/weatherInfo?{params}"
+            city = weather_config.get("city", "北京")
+            geo_url = weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup")
+            weather_url = weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now")
 
-        req = urllib.request.Request(url, method="GET")
-        req.add_header("User-Agent", "hermes-passive-consciousness/1.0")
+            # 查询城市 ID
+            city_id = await _get_qweather_city_id(geo_url, api_key, city)
 
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+            # 获取实时天气
+            params = urllib.parse.urlencode({
+                "location": city_id,
+                "key": api_key,
+            })
+            url = f"{weather_url}?{params}"
 
-        if data.get("status") != "1":
-            return {"success": False, "error": f"高德 API 返回错误: {data.get('info', '未知')}"}
+            req = urllib.request.Request(url, method="GET")
+            req.add_header("User-Agent", "hermes-passive-consciousness/1.0")
 
-        lives = data.get("lives", [])
-        if not lives:
-            return {"success": False, "error": "高德 API 返回空数据"}
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
 
-        live = lives[0]
-        return {
-            "success": True,
-            "data": {
-                "city": live.get("city", ""),
-                "weather": live.get("weather", ""),
-                "temperature": live.get("temperature", ""),
-                "humidity": live.get("humidity", ""),
-                "winddirection": live.get("winddirection", ""),
-                "reporttime": live.get("reporttime", ""),
+            if data.get("code") != "200":
+                return {"success": False, "error": f"和风天气 API 返回错误: {data.get('code', '未知')}"}
+
+            now = data.get("now", {})
+            return {
+                "success": True,
+                "data": {
+                    "city": city,
+                    "weather": now.get("text", ""),
+                    "temperature": now.get("temp", ""),
+                    "humidity": now.get("humidity", ""),
+                    "winddirection": now.get("windDir", ""),
+                    "reporttime": now.get("obsTime", ""),
+                }
             }
-        }
+        else:
+            # 高德天气测试
+            api_key = weather_config.get("amap_key", "")
+            if not api_key:
+                return {"success": False, "error": "高德 API Key 未配置"}
+
+            adcode = weather_config.get("adcode", "370100")
+
+            # 直接调用高德 API，绕过缓存
+            params = urllib.parse.urlencode({
+                "city": adcode,
+                "key": api_key,
+                "extensions": "base",
+            })
+            url = f"https://restapi.amap.com/v3/weather/weatherInfo?{params}"
+
+            req = urllib.request.Request(url, method="GET")
+            req.add_header("User-Agent", "hermes-passive-consciousness/1.0")
+
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+
+            if data.get("status") != "1":
+                return {"success": False, "error": f"高德 API 返回错误: {data.get('info', '未知')}"}
+
+            lives = data.get("lives", [])
+            if not lives:
+                return {"success": False, "error": "高德 API 返回空数据"}
+
+            live = lives[0]
+            return {
+                "success": True,
+                "data": {
+                    "city": live.get("city", ""),
+                    "weather": live.get("weather", ""),
+                    "temperature": live.get("temperature", ""),
+                    "humidity": live.get("humidity", ""),
+                    "winddirection": live.get("winddirection", ""),
+                    "reporttime": live.get("reporttime", ""),
+                }
+            }
     except Exception as e:
         logger.error("测试天气失败: %s", e)
         return {"success": False, "error": str(e)}
+
+
+async def _get_qweather_city_id(geo_url: str, api_key: str, city: str) -> str:
+    """查询和风天气城市 ID"""
+    # 常用城市 ID 映射
+    CITY_IDS = {
+        "beijing": "101010100", "北京": "101010100",
+        "shanghai": "101020100", "上海": "101020100",
+        "guangzhou": "101280101", "广州": "101280101",
+        "shenzhen": "101280601", "深圳": "101280601",
+        "jinan": "101120101", "济南": "101120101",
+        "qingdao": "101120201", "青岛": "101120201",
+        "dalian": "101070201", "大连": "101070201",
+        "xiamen": "101230201", "厦门": "101230201",
+        "kunming": "101290101", "昆明": "101290101",
+        "hefei": "101220101", "合肥": "101220101",
+        "fuzhou": "101230101", "福州": "101230101",
+        "harbin": "101050101", "哈尔滨": "101050101",
+        "nanning": "101300101", "南宁": "101300101",
+        "nanchang": "101240101", "南昌": "101240101",
+        "guiyang": "101260101", "贵阳": "101260101",
+    }
+
+    city_key = city.lower().strip()
+    city_id = CITY_IDS.get(city_key)
+
+    if city_id:
+        return city_id
+
+    # 调用 GeoAPI 查询
+    params = urllib.parse.urlencode({
+        "location": city,
+        "key": api_key,
+    })
+    url = f"{geo_url}?{params}"
+
+    req = urllib.request.Request(url, method="GET")
+    req.add_header("User-Agent", "hermes-passive-consciousness/1.0")
+
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+
+    if data.get("code") == "200" and data.get("location"):
+        return data["location"][0]["id"]
+
+    raise ValueError(f"未找到城市: {city}")
 
 
 @router.post("/test/longing")
