@@ -148,7 +148,6 @@ async def test_llm_connect():
             from agent.auxiliary_client import call_llm
 
             response = call_llm(
-                task='title_generation',
                 messages=[{"role": "user", "content": test_prompt}],
                 temperature=0.1,
                 max_tokens=50,
@@ -209,7 +208,7 @@ async def _test_llm_connection(llm_config: dict, label: str) -> dict:
             sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
             from agent.auxiliary_client import call_llm
             response = await asyncio.to_thread(
-                call_llm, task='title_generation',
+                call_llm,
                 messages=[{"role": "user", "content": test_prompt}],
                 temperature=0.1,
             )

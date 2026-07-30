@@ -278,6 +278,8 @@ class SessionService:
         latest_entry = None
         latest_time = None
         for key, entry in sessions.items():
+            if not isinstance(entry, dict):
+                continue
             if (entry.get('platform') == 'weixin'
                 and entry.get('chat_type') == 'dm'):
                 updated_at = entry.get('updated_at')
@@ -304,6 +306,8 @@ class SessionService:
         latest_entry = None
         latest_time = None
         for key, entry in sessions.items():
+            if not isinstance(entry, dict):
+                continue
             if (entry.get('platform') == platform
                 and entry.get('chat_type') == 'dm'):
                 updated_at = entry.get('updated_at')

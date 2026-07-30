@@ -3,6 +3,7 @@
 """
 from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
+from sqlalchemy.pool import NullPool
 from contextlib import contextmanager
 
 from config import STATE_DB_PATH, ACTIVE_DB_PATH, DATA_DIR
@@ -11,9 +12,12 @@ from config import STATE_DB_PATH, ACTIVE_DB_PATH, DATA_DIR
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # active.db 引擎（读写）
+# 使用 NullPool 防止连接泄漏堆积：每次 connect() 新建连接，用完立即关闭。
+# SQLite 单文件数据库不适合连接池复用，池化反而增加泄漏风险。
 active_engine = create_engine(
     f"sqlite:///{ACTIVE_DB_PATH}",
     connect_args={"check_same_thread": False},
+    poolclass=NullPool,
     echo=False
 )
 
@@ -21,6 +25,7 @@ active_engine = create_engine(
 state_engine = create_engine(
     f"sqlite:///{STATE_DB_PATH}",
     connect_args={"check_same_thread": False},
+    poolclass=NullPool,
     echo=False
 )
 

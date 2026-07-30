@@ -293,7 +293,7 @@ class FreeConsciousnessService:
             "sediment": {
                 "source_rounds": sediment.source_rounds,
                 "source_count": sediment.source_count,
-                "compressed_at": sediment.compressed_at.isoformat() if sediment.compressed_at else None
+                "compressed_at": sediment.compressed_at if isinstance(sediment.compressed_at, str) else (sediment.compressed_at.isoformat() if sediment.compressed_at else None)
             } if sediment else None,
         }
 
@@ -367,7 +367,7 @@ def load_sediment() -> Optional[Dict]:
             "content": row.content,
             "source_rounds": row.source_rounds,
             "source_count": row.source_count,
-            "compressed_at": row.compressed_at.isoformat() if row.compressed_at else None
+            "compressed_at": row.compressed_at if isinstance(row.compressed_at, str) else (row.compressed_at.isoformat() if row.compressed_at else None)
         }
     return None
 

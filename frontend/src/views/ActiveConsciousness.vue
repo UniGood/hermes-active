@@ -272,7 +272,13 @@
               <n-button size="small" quaternary @click="heartbeatDate = null; heartbeatIdFilter = null; saveFilters(); loadHeartbeats(1)">全部</n-button>
             </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
-              <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="1030" remote />
+              <n-data-table :columns="heartbeatColumns" :data="heartbeats.items" :pagination="heartbeatPagination" @update:page="loadHeartbeats" :scroll-x="1030" remote v-model:checked-row-keys="heartbeatCheckedKeys" :row-key="row => row.id" />
+              <n-popconfirm v-if="heartbeatCheckedKeys.length" @positive-click="batchDeleteHeartbeats" positive-text="删除" negative-text="取消">
+                <template #trigger>
+                  <n-button size="small" type="error" style="margin-top: 8px;">批量删除 ({{ heartbeatCheckedKeys.length }})</n-button>
+                </template>
+                确认删除选中的 {{ heartbeatCheckedKeys.length }} 条心跳及其关联念头？
+              </n-popconfirm>
             </div>
           </n-tab-pane>
           <n-tab-pane name="thoughts" tab="念头日志" style="overflow: visible;">
@@ -289,7 +295,13 @@
               <n-button size="small" quaternary @click="thoughtDate = null; thoughtIdFilter = null; thoughtHeartbeatIdFilter = null; saveFilters(); loadThoughts(1)">全部</n-button>
             </div>
             <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
-              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="1250" remote :loading="thoughtsLoading" />
+              <n-data-table :columns="thoughtColumns" :data="thoughts.items" :pagination="thoughtPagination" @update:page="loadThoughts" :scroll-x="1250" remote :loading="thoughtsLoading" v-model:checked-row-keys="thoughtCheckedKeys" :row-key="row => row.id" />
+              <n-popconfirm v-if="thoughtCheckedKeys.length" @positive-click="batchDeleteThoughts" positive-text="删除" negative-text="取消">
+                <template #trigger>
+                  <n-button size="small" type="error" style="margin-top: 8px;">批量删除 ({{ thoughtCheckedKeys.length }})</n-button>
+                </template>
+                确认删除选中的 {{ thoughtCheckedKeys.length }} 条念头？
+              </n-popconfirm>
             </div>
           </n-tab-pane>
         </n-tabs>
@@ -1344,7 +1356,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, h } from 'vue'
-import { useMessage, NButton, NTag } from 'naive-ui'
+import { useMessage, NButton, NTag, NSpace, NPopconfirm } from 'naive-ui'
 import { HelpCircleOutline, CheckmarkCircle, CloseCircle, StatsChartOutline, ColorPaletteOutline, AnalyticsOutline, SendOutline } from '@vicons/ionicons5'
 import api from '../api/active_consciousness'
 import mainApi from '../api'
@@ -1442,8 +1454,10 @@ const thoughtsLoading = ref(false)
 const heartbeatsLoading = ref(false)
 const heartbeatDate = ref(Date.now())
 const heartbeatIdFilter = ref(null)
+const heartbeatCheckedKeys = ref([])
 const thoughtDate = ref(Date.now())
 const thoughtIdFilter = ref(null)
+const thoughtCheckedKeys = ref([])
 const thoughtHeartbeatIdFilter = ref(null)
 
 // 从 localStorage 恢复查询条件
@@ -1461,6 +1475,9 @@ function restoreFilters() {
   } catch (e) {
     // 忽略解析错误
   }
+  // 没有保存的日期或恢复为 null 时，默认今天
+  if (!heartbeatDate.value) heartbeatDate.value = Date.now()
+  if (!thoughtDate.value) thoughtDate.value = Date.now()
 }
 
 // 保存查询条件到 localStorage
@@ -2147,6 +2164,7 @@ function getHindsightTagType(tag) {
 
 // 表格列定义
 const thoughtColumns = [
+  { type: 'selection' },
   {
     title: '操作',
     key: 'actions',
@@ -2242,16 +2260,25 @@ const formatTimeHMS = (isoStr) => {
 }
 
 const heartbeatColumns = [
+  { type: 'selection' },
   {
     title: '操作',
     key: 'actions',
-    width: 70,
+    width: 120,
     render(row) {
-      return h(
-        NButton,
-        { size: 'small', type: 'info', onClick: () => showHeartbeatDetails(row) },
-        { default: () => '详情' }
-      )
+      return h(NSpace, { size: 'small' }, {
+        default: () => [
+          h(NButton, { size: 'small', type: 'info', onClick: () => showHeartbeatDetails(row) }, { default: () => '详情' }),
+          h(NPopconfirm, {
+            onPositiveClick: () => deleteHeartbeat(row.id),
+            positiveText: '删除',
+            negativeText: '取消'
+          }, {
+            trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => '删除' }),
+            default: () => `删除心跳 #${row.id} 及其关联念头？`
+          })
+        ]
+      })
     }
   },
   { title: 'ID', key: 'id', width: 70 },
@@ -2370,6 +2397,48 @@ const loadHeartbeats = async (page = 1, dateVal) => {
   } catch (e) {
     message.error('加载心跳日志失败')
   }
+}
+
+const deleteHeartbeat = async (heartbeatId) => {
+  try {
+    await api.deleteHeartbeat(heartbeatId)
+    message.success(`已删除心跳 #${heartbeatId} 及关联念头`)
+    await loadHeartbeats(heartbeatPagination.value.page)
+  } catch (e) {
+    message.error('删除失败')
+  }
+}
+
+const batchDeleteHeartbeats = async () => {
+  const ids = [...heartbeatCheckedKeys.value]
+  if (!ids.length) return
+  let ok = 0, fail = 0
+  for (const id of ids) {
+    try {
+      await api.deleteHeartbeat(id)
+      ok++
+    } catch { fail++ }
+  }
+  heartbeatCheckedKeys.value = []
+  if (ok) message.success(`已删除 ${ok} 条心跳及关联念头`)
+  if (fail) message.error(`${fail} 条删除失败`)
+  await loadHeartbeats(heartbeatPagination.value.page)
+}
+
+const batchDeleteThoughts = async () => {
+  const ids = [...thoughtCheckedKeys.value]
+  if (!ids.length) return
+  let ok = 0, fail = 0
+  for (const id of ids) {
+    try {
+      await api.deleteThought(id)
+      ok++
+    } catch { fail++ }
+  }
+  thoughtCheckedKeys.value = []
+  if (ok) message.success(`已删除 ${ok} 条念头`)
+  if (fail) message.error(`${fail} 条删除失败`)
+  await loadThoughts(1)
 }
 
 // 保存配置

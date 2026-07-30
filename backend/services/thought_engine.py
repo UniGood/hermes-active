@@ -128,9 +128,13 @@ class ThoughtEngine:
         # 加载人设
         persona = load_hermes_persona()
 
-        # 获取配置的名称
-        user_name = ConfigService.get_config(ActiveSession(), "personalization.user_name") or "曹凡"
-        assistant_name = ConfigService.get_config(ActiveSession(), "personalization.assistant_name") or "凯莉"
+        # 获取配置的名称（复用同一个 session，用完关闭）
+        _name_db = ActiveSession()
+        try:
+            user_name = ConfigService.get_config(_name_db, "personalization.user_name") or "曹凡"
+            assistant_name = ConfigService.get_config(_name_db, "personalization.assistant_name") or "凯莉"
+        finally:
+            _name_db.close()
         role_map = {"user": user_name, "assistant": assistant_name}
 
         # 格式化对话（纯文本格式：[时间] 角色名: 内容，每条截断）
@@ -234,7 +238,6 @@ class ThoughtEngine:
                 from agent.auxiliary_client import call_llm, extract_content_or_reasoning
 
                 call_kwargs = dict(
-                    task='title_generation',
                     messages=messages,
                     temperature=temperature,
                 )

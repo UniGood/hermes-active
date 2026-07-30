@@ -1048,12 +1048,17 @@ class ActiveConsciousnessService:
 
     @staticmethod
     def delete_heartbeat(heartbeat_id: int) -> bool:
-        """删除心跳日志"""
+        """级联删除心跳日志及其关联的念头"""
         db = ActiveSession()
         try:
             with active_engine.connect() as conn:
+                # 先删关联的念头
+                result = conn.execute(text("DELETE FROM active_thought_logs WHERE heartbeat_id = :id"), {"id": heartbeat_id})
+                thought_count = result.rowcount
+                # 再删心跳
                 conn.execute(text("DELETE FROM active_heartbeat_logs WHERE id = :id"), {"id": heartbeat_id})
                 conn.commit()
+            logger.info("已删除心跳 #%s 及 %d 条关联念头", heartbeat_id, thought_count)
             return True
         except Exception as e:
             logger.error("删除心跳日志失败: %s", e)
@@ -1349,15 +1354,19 @@ async def evaluate_emotion_with_llm(
     longing = status.get("longing", {})
     chat_heat = status.get("chat_heat", {})
 
-    # 从配置获取提示词模板
-    prompt_template = ConfigService.get_config(
-        ActiveSession(), "active_consciousness.prompts.emotion_evaluation"
-    ) or _DEFAULTS["active_consciousness.prompts.emotion_evaluation"]
+    # 从配置获取提示词模板和时间格式（复用同一个 session，用完关闭）
+    _cfg_db = ActiveSession()
+    try:
+        prompt_template = ConfigService.get_config(
+            _cfg_db, "active_consciousness.prompts.emotion_evaluation"
+        ) or _DEFAULTS["active_consciousness.prompts.emotion_evaluation"]
 
-    # 从配置获取时间格式
-    time_format = ConfigService.get_config(
-        ActiveSession(), "active_consciousness.prompts.time_format"
-    ) or _DEFAULTS.get("active_consciousness.prompts.time_format", "%Y-%m-%d %H:%M:%S")
+        # 从配置获取时间格式
+        time_format = ConfigService.get_config(
+            _cfg_db, "active_consciousness.prompts.time_format"
+        ) or _DEFAULTS.get("active_consciousness.prompts.time_format", "%Y-%m-%d %H:%M:%S")
+    finally:
+        _cfg_db.close()
 
     # 格式化时间（支持 {weekday} 自定义标记）
     WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日']
@@ -1399,7 +1408,6 @@ async def evaluate_emotion_with_llm(
 
             response = await asyncio.to_thread(
                 call_llm,
-                task='title_generation',
                 messages=[{"role": "user", "content": p}],
                 temperature=0.7,
                 max_tokens=200,
@@ -1648,8 +1656,12 @@ async def run_heartbeat():
         from services.message_service import MessageService
         context_config = config.get("context", {})
         conversation_limit = context_config.get("conversation_limit", 50)
-        user_name = ConfigService.get_config(ActiveSession(), "personalization.user_name") or "曹凡"
-        assistant_name = ConfigService.get_config(ActiveSession(), "personalization.assistant_name") or "凯莉"
+        _name_db = ActiveSession()
+        try:
+            user_name = ConfigService.get_config(_name_db, "personalization.user_name") or "曹凡"
+            assistant_name = ConfigService.get_config(_name_db, "personalization.assistant_name") or "凯莉"
+        finally:
+            _name_db.close()
         role_map = {"user": user_name, "assistant": assistant_name}
         session_context = MessageService.format_session_messages(
             context_bundle.conversations[-conversation_limit:],

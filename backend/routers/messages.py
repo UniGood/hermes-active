@@ -159,7 +159,6 @@ async def generate_message(
             from agent.auxiliary_client import call_llm
 
             response = call_llm(
-                task="title_generation",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}

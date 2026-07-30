@@ -472,7 +472,6 @@ async def run_cron_job(job_id: str):
                     from agent.auxiliary_client import call_llm
 
                     llm_kwargs = dict(
-                        task="title_generation",
                         messages=[
                             {"role": "system", "content": prompt_text},
                             {"role": "user", "content": user_prompt}
@@ -483,7 +482,11 @@ async def run_cron_job(job_id: str):
                         llm_kwargs["max_tokens"] = max_tokens
                     response = call_llm(**llm_kwargs,
                     )
+                    if not response or not getattr(response, 'choices', None):
+                        raise RuntimeError(f"LLM 返回空响应 (response={response})")
                     msg = response.choices[0].message
+                    if msg is None:
+                        raise RuntimeError("LLM 返回 choices[0].message 为 None")
                     generated_message = msg.content.strip()
                     reasoning_content = getattr(msg, 'reasoning_content', None) or getattr(msg, 'reasoning', None)
                     llm_duration = round(_time.time() - llm_start, 2)
