@@ -46,4 +46,12 @@ export default {
   testFull() {
     return http.get('/passive-consciousness/test/full')
   },
+
+  // 天气 API
+  getWeather() {
+    return http.get('/passive-consciousness/weather')
+  },
+  clearWeatherCache() {
+    return http.post('/passive-consciousness/weather/clear-cache')
+  },
 }
