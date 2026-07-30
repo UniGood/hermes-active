@@ -1,6 +1,7 @@
 """
 被动意识数据模型 - 用户消息时注入上下文
 """
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
@@ -125,3 +126,51 @@ class SuccessResponse(BaseModel):
     """成功响应"""
     success: bool = True
     message: str = "操作成功"
+
+
+# ============ 天气数据 ============
+
+@dataclass
+class ForecastDay:
+    """天气预报（单日）"""
+    date: str               # 日期 (YYYY-MM-DD)
+    weather: str            # 天气状况
+    weather_code: str       # 天气代码
+    temp_min: int           # 最低温度 (°C)
+    temp_max: int           # 最高温度 (°C)
+    wind_dir: str           # 风向
+    wind_scale: str         # 风力等级
+
+
+@dataclass
+class WeatherData:
+    """天气数据"""
+    # 基础天气
+    city: str               # 城市名
+    weather: str            # 天气状况（晴/多云/雨）
+    weather_code: str       # 天气代码
+    temperature: int        # 当前温度 (°C)
+    humidity: int           # 湿度 (%)
+    feels_like: int         # 体感温度 (°C)
+    pressure: int           # 气压 (hPa)
+    visibility: int         # 能见度 (km)
+
+    # 风力信息
+    wind_dir: str           # 风向（北风/南风/...）
+    wind_scale: str         # 风力等级（3-4级）
+    wind_speed: float       # 风速 (km/h)
+
+    # 生活指数
+    uv_index: int           # 紫外线指数 (0-11+)
+    uv_desc: str            # 紫外线描述（最弱/弱/中等/强/很强）
+    dressing: str           # 穿衣建议
+    comfort: str            # 舒适度指数
+    cold_risk: str          # 感冒风险
+
+    # 天气预报（未来3天）
+    forecast: List[ForecastDay] = field(default_factory=list)
+
+    # 元数据
+    updated_at: Optional[datetime] = None  # 数据更新时间
+    provider: str = ""           # 数据来源（amap/qweather）
+    raw_data: dict = field(default_factory=dict)  # 原始 API 响应（调试用）
