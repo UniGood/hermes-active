@@ -167,6 +167,23 @@
               <n-progress :percentage="status.emotional_intensity.intensity * 100" :color="intensityColor" style="margin-top: 8px" />
             </n-card>
           </n-grid-item>
+          <n-grid-item>
+            <n-card title="🌤 天气">
+              <template v-if="status.weather">
+                <n-statistic :value="status.weather.temperature" :suffix="'°C'">
+                  <template #prefix>
+                    <n-tag size="small">{{ status.weather.weather }}</n-tag>
+                  </template>
+                </n-statistic>
+                <n-space vertical size="small" style="margin-top: 8px">
+                  <n-text>💨 {{ status.weather.wind_dir }}</n-text>
+                  <n-text>💧 湿度 {{ status.weather.humidity }}%</n-text>
+                  <n-text>📍 {{ status.weather.city }}</n-text>
+                </n-space>
+              </template>
+              <n-text v-else type="secondary">天气感知未启用</n-text>
+            </n-card>
+          </n-grid-item>
         </n-grid>
       </n-tab-pane>
 
@@ -277,10 +294,15 @@
 
           <!-- 🌤 天气感知 -->
           <n-grid-item>
-            <n-card title="🌤 天气感知（高德 API）" size="small">
-              <n-button @click="runTest('weather')" :loading="testing.weather" size="small" style="margin-bottom: 12px">
-                测试
-              </n-button>
+            <n-card title="🌤 天气感知" size="small">
+              <n-space style="margin-bottom: 12px">
+                <n-button @click="runTest('weather')" :loading="testing.weather" size="small">
+                  测试
+                </n-button>
+                <n-button @click="clearWeatherCache" size="small" secondary>
+                  清除缓存
+                </n-button>
+              </n-space>
               <n-alert v-if="testResults.weather?.error" type="error" style="margin-bottom: 8px">
                 {{ testResults.weather.error }}
               </n-alert>
@@ -419,7 +441,8 @@ const status = ref({
   enabled: false,
   longing: { score: 0, level: 0, label: 'calm', last_user_msg_at: null, last_self_msg_at: null },
   chat_heat: { heat: 0, label: 'cold', recent_count: 0, recent_hours: 0, recent_user_msg_at: null },
-  emotional_intensity: { intensity: 0, label: '工作' }
+  emotional_intensity: { intensity: 0, label: '工作' },
+  weather: null
 })
 
 // 聊天记录
@@ -564,6 +587,16 @@ const runTest = async (name) => {
     message.error(`${name} 测试失败: ${e.message}`)
   } finally {
     testing.value[name] = false
+  }
+}
+
+// 清除天气缓存
+const clearWeatherCache = async () => {
+  try {
+    await api.clearWeatherCache()
+    message.success('天气缓存已清除')
+  } catch (e) {
+    message.error('清除缓存失败: ' + e.message)
   }
 }
 
