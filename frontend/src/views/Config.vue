@@ -139,53 +139,96 @@
 
       <!-- Tab 4: 天气配置 -->
       <n-tab-pane name="weather" tab="天气配置">
-        <n-card title="高德地图天气配置" style="margin-bottom: 16px">
-          <n-form label-placement="left" label-width="100">
-            <n-form-item label="启用天气">
+        <n-card title="天气感知配置" style="margin-bottom: 16px">
+          <n-form label-placement="left" label-width="120">
+            <n-form-item label="启用天气感知">
               <n-switch v-model:value="weatherConfig.enabled" />
             </n-form-item>
 
             <template v-if="weatherConfig.enabled">
-              <n-form-item label="高德 API Key">
-                <n-input
-                  v-model:value="weatherConfig.amap_key"
-                  placeholder="输入高德开放平台 Key"
-                />
+              <n-form-item label="天气服务">
+                <n-radio-group v-model:value="weatherConfig.provider">
+                  <n-radio value="qweather">和风天气</n-radio>
+                  <n-radio value="amap">高德地图</n-radio>
+                </n-radio-group>
               </n-form-item>
 
-              <n-form-item label="城市编码">
+              <n-form-item label="城市">
                 <n-input
-                  v-model:value="weatherConfig.adcode"
-                  placeholder="如：370100（济南）"
+                  v-model:value="weatherConfig.city"
+                  placeholder="如：北京、济南、上海"
                 />
                 <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  高德城市编码，可在高德开放平台查询
+                  城市名称（中文或英文）
                 </span>
               </n-form-item>
 
-              <n-form-item label="缓存时长（秒）">
+              <n-form-item label="缓存时长（小时）">
                 <n-input-number
-                  v-model:value="weatherConfig.cache_ttl"
-                  :min="60" :max="86400" :step="60"
+                  v-model:value="weatherConfig.cache_hours"
+                  :min="1" :max="24" :step="1"
                 />
               </n-form-item>
 
-              <n-form-item label="温度变化阈值（°C）">
-                <n-input-number
-                  v-model:value="weatherConfig.temp_change_threshold"
-                  :min="1" :max="20" :step="1"
-                />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  温度变化超过此值时触发天气变化检测
-                </span>
-              </n-form-item>
+              <!-- 高德地图配置 -->
+              <template v-if="weatherConfig.provider === 'amap'">
+                <n-divider>高德地图配置</n-divider>
+                <n-form-item label="高德 API Key">
+                  <n-input
+                    v-model:value="weatherConfig.amap_key"
+                    placeholder="输入高德开放平台 Key"
+                    show-password-on="click"
+                    type="password"
+                  />
+                </n-form-item>
+                <n-form-item label="城市编码">
+                  <n-input
+                    v-model:value="weatherConfig.adcode"
+                    placeholder="如：370100（济南）"
+                  />
+                  <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                    高德城市编码，可在高德开放平台查询
+                  </span>
+                </n-form-item>
+              </template>
+
+              <!-- 和风天气配置 -->
+              <template v-if="weatherConfig.provider === 'qweather'">
+                <n-divider>和风天气配置</n-divider>
+                <n-form-item label="和风 API Key">
+                  <n-input
+                    v-model:value="weatherConfig.qweather_key"
+                    placeholder="输入和风天气 API Key"
+                    show-password-on="click"
+                    type="password"
+                  />
+                </n-form-item>
+                <n-form-item label="GeoAPI URL">
+                  <n-input
+                    v-model:value="weatherConfig.qweather_geo_url"
+                    placeholder="https://geoapi.qweather.com/v2/city/lookup"
+                  />
+                  <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                    城市查询 API
+                  </span>
+                </n-form-item>
+                <n-form-item label="天气 API URL">
+                  <n-input
+                    v-model:value="weatherConfig.qweather_weather_url"
+                    placeholder="https://devapi.qweather.com/v7/weather/now"
+                  />
+                  <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                    实时天气 API
+                  </span>
+                </n-form-item>
+              </template>
             </template>
 
             <n-form-item>
               <div class="form-actions">
                 <n-space>
                   <n-button type="primary" @click="saveWeatherConfig" :loading="savingWeather">保存</n-button>
-                  <n-button @click="testWeather" :loading="testingWeather" v-if="weatherConfig.amap_key">测试天气</n-button>
+                  <n-button @click="testWeather" :loading="testingWeather">测试天气</n-button>
                 </n-space>
               </div>
             </n-form-item>
@@ -242,10 +285,16 @@ const hindsightConfig = ref({
 
 const weatherConfig = ref({
   enabled: false,
+  provider: 'qweather',
+  city: '北京',
+  cache_hours: 4,
   amap_key: '',
   adcode: '370100',
   cache_ttl: 3600,
-  temp_change_threshold: 5.0
+  temp_change_threshold: 5.0,
+  qweather_key: '',
+  qweather_geo_url: 'https://geoapi.qweather.com/v2/city/lookup',
+  qweather_weather_url: 'https://devapi.qweather.com/v7/weather/now'
 })
 
 const passwordForm = ref({

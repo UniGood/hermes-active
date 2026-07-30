@@ -216,28 +216,23 @@ async def get_weather_config(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
-    """获取天气配置"""
-    import json
+    """获取天气配置（支持高德和和风天气）"""
     import logging
     logger = logging.getLogger("hermes.config")
 
-    config_str = ConfigService.get_config(db, "active_consciousness.weather")
-    if config_str:
-        try:
-            return json.loads(config_str) if isinstance(config_str, str) else config_str
-        except json.JSONDecodeError:
-            pass
-
-    # 从扁平 key 构建
-    enabled_value = ConfigService.get_config(db, "active_consciousness.weather.enabled")
-    logger.info("读取天气配置: enabled=%s", enabled_value)
-
+    # 从 passive_consciousness.weather.* 读取配置
     result = {
-        "enabled": enabled_value == "true",
-        "amap_key": ConfigService.get_config(db, "active_consciousness.weather.amap_key") or "",
+        "enabled": ConfigService.get_config(db, "passive_consciousness.weather.enabled") == "true",
+        "provider": ConfigService.get_config(db, "passive_consciousness.weather.provider") or "qweather",
+        "city": ConfigService.get_config(db, "passive_consciousness.weather.city") or "北京",
+        "cache_hours": int(ConfigService.get_config(db, "passive_consciousness.weather.cache_hours") or "4"),
+        "amap_key": ConfigService.get_config(db, "passive_consciousness.weather.amap_key") or "",
         "adcode": ConfigService.get_config(db, "active_consciousness.weather.adcode") or "370100",
         "cache_ttl": int(ConfigService.get_config(db, "active_consciousness.weather.cache_ttl") or "3600"),
-        "temp_change_threshold": float(ConfigService.get_config(db, "active_consciousness.weather.temp_change_threshold") or "5.0")
+        "temp_change_threshold": float(ConfigService.get_config(db, "active_consciousness.weather.temp_change_threshold") or "5.0"),
+        "qweather_key": ConfigService.get_config(db, "passive_consciousness.weather.qweather_key") or "",
+        "qweather_geo_url": ConfigService.get_config(db, "passive_consciousness.weather.qweather_geo_url") or "https://geoapi.qweather.com/v2/city/lookup",
+        "qweather_weather_url": ConfigService.get_config(db, "passive_consciousness.weather.qweather_weather_url") or "https://devapi.qweather.com/v7/weather/now",
     }
     logger.info("返回天气配置: %s", result)
     return result
@@ -249,22 +244,32 @@ async def update_weather_config(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
-    """更新天气配置"""
+    """更新天气配置（支持高德和和风天气）"""
     import logging
     logger = logging.getLogger("hermes.config")
     logger.info("收到天气配置更新请求: %s", weather_config)
 
     # 验证配置
-    if weather_config.get("enabled") and not weather_config.get("amap_key"):
-        raise HTTPException(status_code=400, detail="启用天气功能时必须配置高德 API Key")
+    provider = weather_config.get("provider", "qweather")
+    if weather_config.get("enabled"):
+        if provider == "qweather" and not weather_config.get("qweather_key"):
+            raise HTTPException(status_code=400, detail="启用和风天气时必须配置 API Key")
+        elif provider == "amap" and not weather_config.get("amap_key"):
+            raise HTTPException(status_code=400, detail="启用高德天气时必须配置 API Key")
 
-    # 保存为扁平 key（与 active_consciousness 共享）
+    # 保存配置
     flat_keys = {
-        "enabled": "active_consciousness.weather.enabled",
-        "amap_key": "active_consciousness.weather.amap_key",
+        "enabled": "passive_consciousness.weather.enabled",
+        "provider": "passive_consciousness.weather.provider",
+        "city": "passive_consciousness.weather.city",
+        "cache_hours": "passive_consciousness.weather.cache_hours",
+        "amap_key": "passive_consciousness.weather.amap_key",
         "adcode": "active_consciousness.weather.adcode",
         "cache_ttl": "active_consciousness.weather.cache_ttl",
         "temp_change_threshold": "active_consciousness.weather.temp_change_threshold",
+        "qweather_key": "passive_consciousness.weather.qweather_key",
+        "qweather_geo_url": "passive_consciousness.weather.qweather_geo_url",
+        "qweather_weather_url": "passive_consciousness.weather.qweather_weather_url",
     }
     for field, config_key in flat_keys.items():
         if field in weather_config:
