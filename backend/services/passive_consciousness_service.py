@@ -44,9 +44,13 @@ _DEFAULTS = {
     "passive_consciousness.hindsight.recall_limit": "5",
     "passive_consciousness.hindsight.reflect_enabled": "true",
     "passive_consciousness.weather.enabled": "false",
-    "passive_consciousness.weather.adcode": "370100",
+    "passive_consciousness.weather.provider": "qweather",
+    "passive_consciousness.weather.city": "北京",
+    "passive_consciousness.weather.cache_hours": "4",
     "passive_consciousness.weather.amap_key": "",
-    "passive_consciousness.weather.cache_ttl": "600",
+    "passive_consciousness.weather.qweather_key": "",
+    "passive_consciousness.weather.qweather_geo_url": "https://geoapi.qweather.com/v2/city/lookup",
+    "passive_consciousness.weather.qweather_weather_url": "https://devapi.qweather.com/v7/weather/now",
 }
 
 # 想念等级
