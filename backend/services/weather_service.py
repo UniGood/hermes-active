@@ -48,14 +48,14 @@ class WeatherService:
                 return cls._cache
 
             # 缓存过期，从 API 获取
-            adcode = weather_config.get("adcode", "370100")
-            amap_key = weather_config.get("amap_key", "")
+            provider = weather_config.get("provider", "qweather")
+            city = weather_config.get("city", "北京")
 
             try:
-                if amap_key:
-                    data = cls._fetch_amap(weather_config, adcode)
+                if provider == "amap":
+                    data = cls._fetch_amap(weather_config, city)
                 else:
-                    data = cls._fetch_qweather(weather_config, adcode)
+                    data = cls._fetch_qweather(weather_config, city)
 
                 # 更新缓存
                 cls._cache = data
@@ -73,9 +73,9 @@ class WeatherService:
         if cls._cache is None or cls._cache_time is None:
             return False
 
-        cache_ttl = int(weather_config.get("cache_ttl", 600))
+        cache_hours = weather_config.get("cache_hours", 4)
         elapsed = datetime.now() - cls._cache_time
-        return elapsed < timedelta(seconds=cache_ttl)
+        return elapsed < timedelta(hours=cache_hours)
 
     @classmethod
     def clear_cache(cls):
@@ -108,11 +108,11 @@ class WeatherService:
             return json.loads(resp.read().decode("utf-8"))
 
     @classmethod
-    def _fetch_amap(cls, config: dict, adcode: str) -> WeatherData:
+    def _fetch_amap(cls, config: dict, city: str) -> WeatherData:
         """从高德地图获取天气数据"""
         raise NotImplementedError("高德地图 API 将在下一步实现")
 
     @classmethod
-    def _fetch_qweather(cls, config: dict, adcode: str) -> WeatherData:
+    def _fetch_qweather(cls, config: dict, city: str) -> WeatherData:
         """从和风天气获取天气数据"""
         raise NotImplementedError("和风天气 API 将在下一步实现")
