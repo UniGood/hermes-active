@@ -288,19 +288,37 @@ async def test_weather(
     """测试天气 API"""
     from services.weather_service import WeatherService
 
-    # 从扁平 key 读取配置
+    # 读取配置（支持新旧配置）
     amap_key = ConfigService.get_config(db, "active_consciousness.weather.amap_key") or ""
     adcode = ConfigService.get_config(db, "active_consciousness.weather.adcode") or "370100"
 
-    if not amap_key:
-        return {"success": False, "error": "未配置高德 API Key"}
+    # 新配置
+    provider = ConfigService.get_config(db, "passive_consciousness.weather.provider") or "amap"
+    city = ConfigService.get_config(db, "passive_consciousness.weather.city") or ""
+    qweather_key = ConfigService.get_config(db, "passive_consciousness.weather.qweather_key") or ""
+    qweather_geo_url = ConfigService.get_config(db, "passive_consciousness.weather.qweather_geo_url") or "https://geoapi.qweather.com/v2/city/lookup"
+    qweather_weather_url = ConfigService.get_config(db, "passive_consciousness.weather.qweather_weather_url") or "https://devapi.qweather.com/v7/weather/now"
+
+    # 检查是否有有效的 API Key
+    if provider == "qweather":
+        if not qweather_key:
+            return {"success": False, "error": "未配置和风天气 API Key"}
+    else:
+        if not amap_key:
+            return {"success": False, "error": "未配置高德 API Key"}
 
     service = WeatherService()
     result = await service.get_weather(
         amap_key=amap_key,
         adcode=adcode,
         cache_ttl=0,  # 测试时不使用缓存
-        temp_threshold=5.0
+        temp_threshold=5.0,
+        # 新增参数
+        provider=provider,
+        city=city,
+        qweather_key=qweather_key,
+        qweather_geo_url=qweather_geo_url,
+        qweather_weather_url=qweather_weather_url,
     )
 
     # 转换为前端期望的格式

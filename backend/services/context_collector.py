@@ -255,13 +255,19 @@ class ContextCollector:
         
         try:
             from services.weather_service import WeatherService
-            
+
             weather_service = WeatherService()
             weather_info = await weather_service.get_weather(
                 amap_key=self.weather_config.get("amap_key", ""),
                 adcode=self.weather_config.get("adcode", "370100"),
                 cache_ttl=int(self.weather_config.get("cache_ttl", 3600)),
-                temp_threshold=float(self.weather_config.get("temp_change_threshold", 5.0))
+                temp_threshold=float(self.weather_config.get("temp_change_threshold", 5.0)),
+                # 新增参数
+                provider=self.weather_config.get("provider", "amap"),
+                city=self.weather_config.get("city", ""),
+                qweather_key=self.weather_config.get("qweather_key", ""),
+                qweather_geo_url=self.weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
+                qweather_weather_url=self.weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
             )
             
             if weather_info.get("success"):

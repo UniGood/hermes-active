@@ -63,20 +63,43 @@ def _log_run(
 
 
 def _get_weather_config() -> dict:
-    """从数据库读取高德天气配置（与配置管理共享）"""
+    """从数据库读取天气配置（支持高德和和风天气）"""
     db = ActiveSession()
     try:
+        # 旧配置（向后兼容）
         amap_key = ConfigService.get_config(db, "active_consciousness.weather.amap_key") or ""
         adcode = ConfigService.get_config(db, "active_consciousness.weather.adcode") or "370100"
         enabled = ConfigService.get_config(db, "active_consciousness.weather.enabled") == "true"
         cache_ttl = int(ConfigService.get_config(db, "active_consciousness.weather.cache_ttl") or "3600")
         temp_threshold = float(ConfigService.get_config(db, "active_consciousness.weather.temp_change_threshold") or "5.0")
+
+        # 新配置（支持和风天气）
+        provider = ConfigService.get_config(db, "passive_consciousness.weather.provider") or "amap"
+        city = ConfigService.get_config(db, "passive_consciousness.weather.city") or ""
+        cache_hours = int(ConfigService.get_config(db, "passive_consciousness.weather.cache_hours") or "4")
+        qweather_key = ConfigService.get_config(db, "passive_consciousness.weather.qweather_key") or ""
+        qweather_geo_url = ConfigService.get_config(db, "passive_consciousness.weather.qweather_geo_url") or "https://geoapi.qweather.com/v2/city/lookup"
+        qweather_weather_url = ConfigService.get_config(db, "passive_consciousness.weather.qweather_weather_url") or "https://devapi.qweather.com/v7/weather/now"
+
+        # 如果新配置启用，使用新配置
+        new_enabled = ConfigService.get_config(db, "passive_consciousness.weather.enabled") == "true"
+        if new_enabled:
+            enabled = True
+            # 将 cache_hours 转换为 cache_ttl（秒）
+            cache_ttl = cache_hours * 3600
+
         return {
             "enabled": enabled,
             "amap_key": amap_key,
             "adcode": adcode,
             "cache_ttl": cache_ttl,
             "temp_threshold": temp_threshold,
+            # 新配置
+            "provider": provider,
+            "city": city,
+            "qweather_key": qweather_key,
+            "qweather_geo_url": qweather_geo_url,
+            "qweather_weather_url": qweather_weather_url,
         }
     finally:
         db.close()
@@ -91,8 +114,16 @@ async def fetch_weather_for_context(forecast_days: int = 0) -> str:
     返回空字符串表示不启用、配置缺失或调用失败。
     """
     cfg = _get_weather_config()
-    if not cfg["enabled"] or not cfg["amap_key"]:
+    if not cfg["enabled"]:
         return ""
+
+    # 检查是否有有效的 API Key
+    provider = cfg.get("provider", "amap")
+    if provider == "qweather" and not cfg.get("qweather_key"):
+        return ""
+    elif provider != "qweather" and not cfg["amap_key"]:
+        return ""
+
     try:
         from services.weather_service import WeatherService
         service = WeatherService()
@@ -102,6 +133,12 @@ async def fetch_weather_for_context(forecast_days: int = 0) -> str:
             cache_ttl=cfg["cache_ttl"],
             temp_threshold=cfg["temp_threshold"],
             forecast_days=forecast_days,
+            # 新增参数
+            provider=provider,
+            city=cfg.get("city", ""),
+            qweather_key=cfg.get("qweather_key", ""),
+            qweather_geo_url=cfg.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
+            qweather_weather_url=cfg.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
         )
         if not result.get("success"):
             return ""
