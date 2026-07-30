@@ -248,7 +248,15 @@ class PassiveConsciousnessService:
 
                     weather_service = WeatherService()
                     # 使用同步方式调用异步方法
-                    loop = asyncio.new_event_loop()
+                    try:
+                        loop = asyncio.get_event_loop()
+                        if loop.is_closed():
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                    except RuntimeError:
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+
                     try:
                         weather_result = loop.run_until_complete(
                             weather_service.get_weather(
@@ -262,8 +270,22 @@ class PassiveConsciousnessService:
                                 qweather_weather_url=weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
                             )
                         )
-                    finally:
-                        loop.close()
+                    except Exception:
+                        # 如果事件循环有问题，创建新的
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        weather_result = loop.run_until_complete(
+                            weather_service.get_weather(
+                                amap_key=weather_config.get("amap_key", ""),
+                                adcode=weather_config.get("adcode", "370100"),
+                                cache_ttl=int(weather_config.get("cache_hours", 4)) * 3600,
+                                provider=weather_config.get("provider", "qweather"),
+                                city=weather_config.get("city", ""),
+                                qweather_key=weather_config.get("qweather_key", ""),
+                                qweather_geo_url=weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
+                                qweather_weather_url=weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
+                            )
+                        )
 
                     if weather_result and weather_result.get("success"):
                         current = weather_result.get("current", {})
