@@ -4,6 +4,7 @@
 import json
 import logging
 import threading
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta
 from typing import Optional
@@ -113,7 +114,72 @@ class WeatherService:
     @classmethod
     def _fetch_amap(cls, config: dict, city: str) -> WeatherData:
         """从高德地图获取天气数据"""
-        raise NotImplementedError("高德地图 API 将在下一步实现")
+        api_key = config.get("amap_key", "")
+        if not api_key:
+            raise ValueError("高德 API Key 未配置")
+
+        # 1. 获取实时天气
+        now_params = urllib.parse.urlencode({
+            "city": city,
+            "key": api_key,
+            "extensions": "base",
+            "output": "JSON",
+        })
+        now_url = f"https://restapi.amap.com/v3/weather/weatherInfo?{now_params}"
+        now_data = cls._http_get(now_url)
+
+        # 2. 获取天气预报（extensions=all）
+        forecast_params = urllib.parse.urlencode({
+            "city": city,
+            "key": api_key,
+            "extensions": "all",
+            "output": "JSON",
+        })
+        forecast_url = f"https://restapi.amap.com/v3/weather/weatherInfo?{forecast_params}"
+        forecast_data = cls._http_get(forecast_url)
+
+        # 3. 组装数据
+        lives = now_data.get("lives", [])
+        if not lives:
+            raise ValueError(f"高德 API 返回空数据: {now_data}")
+
+        live = lives[0]
+        forecasts_list = forecast_data.get("forecasts", [])
+        forecasts = forecasts_list[0].get("casts", []) if forecasts_list else []
+
+        return WeatherData(
+            city=live.get("city", city),
+            weather=live.get("weather", ""),
+            weather_code=live.get("weathercode", ""),
+            temperature=int(live.get("temperature", 0)),
+            humidity=int(live.get("humidity", 0)),
+            feels_like=int(live.get("temperature", 0)),  # 高德无体感温度
+            pressure=0,  # 高德无气压
+            visibility=0,  # 高德无能见度
+            wind_dir=live.get("winddirection", ""),
+            wind_scale=live.get("windpower", ""),
+            wind_speed=0,  # 高德无风速
+            uv_index=0,  # 高德无紫外线
+            uv_desc="",
+            dressing="",
+            comfort="",
+            cold_risk="",
+            forecast=[
+                ForecastDay(
+                    date=f.get("date", ""),
+                    weather=f.get("dayweather", ""),
+                    weather_code="",
+                    temp_min=int(f.get("nighttemp", 0)),
+                    temp_max=int(f.get("daytemp", 0)),
+                    wind_dir=f.get("daywind", ""),
+                    wind_scale=f.get("daypower", ""),
+                )
+                for f in forecasts
+            ],
+            updated_at=datetime.now(),
+            provider="amap",
+            raw_data={"now": now_data, "forecast": forecast_data},
+        )
 
     @classmethod
     def _fetch_qweather(cls, config: dict, city: str) -> WeatherData:
