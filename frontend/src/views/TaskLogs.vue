@@ -5,7 +5,7 @@
       <n-select
         v-model:value="statusFilter"
         :options="statusOptions"
-        placeholder="状态"
+        :placeholder="t('task-logs.taskLogs.statusPlaceholder')"
         clearable
         style="width: 120px"
         @update:value="loadLogs"
@@ -13,12 +13,12 @@
       <n-select
         v-model:value="typeFilter"
         :options="typeOptions"
-        placeholder="类型"
+        :placeholder="t('task-logs.taskLogs.typePlaceholder')"
         clearable
         style="width: 160px"
         @update:value="loadLogs"
       />
-      <n-button @click="loadLogs" size="small">刷新</n-button>
+      <n-button @click="loadLogs" size="small">{{ t('task-logs.taskLogs.refresh') }}</n-button>
     </div>
 
     <!-- 日志列表 -->
@@ -33,10 +33,10 @@
           <div class="log-message" v-if="log.message">{{ log.message }}</div>
           <div class="log-error" v-if="log.error">{{ log.error }}</div>
           <div class="log-meta">
-            <span v-if="log.duration">耗时: {{ log.duration.toFixed(2) }}s</span>
+            <span v-if="log.duration">{{ t('task-logs.taskLogs.duration', { time: log.duration.toFixed(2) }) }}</span>
           </div>
         </div>
-        <n-empty v-if="!loading && logs.length === 0" description="暂无任务日志" />
+        <n-empty v-if="!loading && logs.length === 0" :description="t('task-logs.taskLogs.noLogs')" />
       </div>
     </n-spin>
 
@@ -52,8 +52,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '../api'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const logs = ref([])
@@ -63,29 +66,29 @@ const total = ref(0)
 const statusFilter = ref(null)
 const typeFilter = ref(null)
 
-const statusOptions = [
-  { label: '成功', value: 'success' },
-  { label: '失败', value: 'failed' }
-]
+const statusOptions = computed(() => [
+  { label: t('task-logs.taskLogs.statusOptions.success'), value: 'success' },
+  { label: t('task-logs.taskLogs.statusOptions.failed'), value: 'failed' }
+])
 
-const typeOptions = [
-  { label: '发送消息', value: 'send_message' },
-  { label: 'LLM 生成', value: 'generate' },
-  { label: '主动消息', value: 'send_proactive' },
-  { label: '定时任务', value: 'cron_run' },
-  { label: '上下文读取', value: 'test_context' }
-]
+const typeOptions = computed(() => [
+  { label: t('task-logs.taskLogs.typeOptions.send_message'), value: 'send_message' },
+  { label: t('task-logs.taskLogs.typeOptions.generate'), value: 'generate' },
+  { label: t('task-logs.taskLogs.typeOptions.send_proactive'), value: 'send_proactive' },
+  { label: t('task-logs.taskLogs.typeOptions.cron_run'), value: 'cron_run' },
+  { label: t('task-logs.taskLogs.typeOptions.test_context'), value: 'test_context' }
+])
 
-const typeLabelMap = {
-  send_message: '发送消息',
-  generate: 'LLM 生成',
-  send_proactive: '主动消息',
-  cron_run: '定时任务',
-  test_context: '上下文读取'
-}
+const typeLabelMap = computed(() => ({
+  send_message: t('task-logs.taskLogs.typeOptions.send_message'),
+  generate: t('task-logs.taskLogs.typeOptions.generate'),
+  send_proactive: t('task-logs.taskLogs.typeOptions.send_proactive'),
+  cron_run: t('task-logs.taskLogs.typeOptions.cron_run'),
+  test_context: t('task-logs.taskLogs.typeOptions.test_context')
+}))
 
 function getTypeLabel(type) {
-  return typeLabelMap[type] || type
+  return typeLabelMap.value[type] || type
 }
 
 function formatTime(ts) {
