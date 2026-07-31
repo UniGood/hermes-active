@@ -143,6 +143,24 @@
                 <n-input v-model:value="config.weather.qweather_weather_url" placeholder="https://devapi.qweather.com/v7/weather/now" />
               </n-form-item>
             </template>
+
+            <!-- 模板配置 -->
+            <n-divider>模板配置</n-divider>
+            <n-form-item label="当前模板">
+              <n-select
+                v-model:value="config.templates.active_id"
+                :options="templateOptions"
+                placeholder="选择模板"
+              />
+            </n-form-item>
+            <n-space>
+              <n-button @click="openTemplateEditor()" size="small">
+                新建模板
+              </n-button>
+              <n-button @click="openTemplateEditor(config.templates.active_id)" size="small" :disabled="!config.templates.active_id">
+                编辑当前模板
+              </n-button>
+            </n-space>
           </template>
 
           <n-button type="primary" @click="saveConfig" :loading="saving" style="margin-top: 16px">
@@ -430,6 +448,73 @@
         </n-grid>
       </n-tab-pane>
     </n-tabs>
+
+    <!-- 模板编辑器弹窗 -->
+    <n-modal v-model:show="showTemplateEditor" preset="card" title="模板编辑器" style="width: 90vw; max-width: 1200px;">
+      <n-grid :cols="2" :x-gap="16">
+        <!-- 左侧：编辑器 -->
+        <n-grid-item>
+          <n-card title="模板内容" size="small">
+            <n-form-item label="模板 ID" v-if="templateEditor.isNew">
+              <n-input v-model:value="templateEditor.id" placeholder="my-template" />
+            </n-form-item>
+            <n-form-item label="模板名称">
+              <n-input v-model:value="templateEditor.name" placeholder="我的模板" />
+            </n-form-item>
+            <n-form-item label="描述">
+              <n-input v-model:value="templateEditor.description" placeholder="模板描述（可选）" />
+            </n-form-item>
+            <n-form-item label="模板内容">
+              <n-input
+                v-model:value="templateEditor.content"
+                type="textarea"
+                :rows="16"
+                placeholder="输入 Jinja2 模板内容"
+                style="font-family: monospace"
+              />
+            </n-form-item>
+            <n-space>
+              <n-button type="primary" @click="saveTemplate" :loading="templateEditor.saving">
+                保存
+              </n-button>
+              <n-button @click="previewTemplate" :loading="templateEditor.previewing">
+                预览
+              </n-button>
+              <n-button
+                type="error"
+                @click="deleteTemplate"
+                :loading="templateEditor.deleting"
+                v-if="!templateEditor.isNew && templateEditor.id !== 'default'"
+              >
+                删除
+              </n-button>
+            </n-space>
+          </n-card>
+        </n-grid-item>
+
+        <!-- 右侧：预览 + 变量参考 -->
+        <n-grid-item>
+          <n-card title="预览结果" size="small" style="margin-bottom: 16px">
+            <n-code
+              :code="templateEditor.preview || '（点击预览按钮查看渲染结果）'"
+              language="text"
+              word-wrap
+            />
+          </n-card>
+          <n-card title="可用变量" size="small">
+            <n-list bordered size="small">
+              <n-list-item v-for="v in templateVariables" :key="v.name">
+                <n-space align="center">
+                  <n-tag size="small" type="info">{{ v.name }}</n-tag>
+                  <n-text depth="3" style="font-size: 12px">{{ v.type }}</n-text>
+                  <n-text>{{ v.description }}</n-text>
+                </n-space>
+              </n-list-item>
+            </n-list>
+          </n-card>
+        </n-grid-item>
+      </n-grid>
+    </n-modal>
   </div>
 </template>
 
@@ -451,7 +536,8 @@ const config = ref({
   session: { sources: ['weixin'], time_range_hours: 24, max_messages_per_session: 15, filter_tool_messages: true },
   hindsight: { enabled: true, recall_limit: 5, reflect_enabled: true },
   weather: { enabled: false, provider: 'qweather', city: '北京', cache_hours: 4, amap_key: '', qweather_key: '', qweather_geo_url: 'https://geoapi.qweather.com/v2/city/lookup', qweather_weather_url: 'https://devapi.qweather.com/v7/weather/now' },
-  platforms: { enabled: false, whitelist: ['weixin'] }
+  platforms: { enabled: false, whitelist: ['weixin'] },
+  templates: { list: [], active_id: 'default' }
 })
 
 // 状态
@@ -610,6 +696,36 @@ const fullTestResult = ref(null)
 // 上下文测试结果
 const contextResult = ref(null)
 
+// ============ 模板相关 ============
+
+// 模板列表
+const templates = ref([])
+
+// 模板选项（用于下拉框）
+const templateOptions = computed(() => {
+  return templates.value.map(t => ({
+    label: t.name + (t.is_default ? ' (默认)' : ''),
+    value: t.id
+  }))
+})
+
+// 模板编辑器状态
+const showTemplateEditor = ref(false)
+const templateEditor = ref({
+  isNew: false,
+  id: '',
+  name: '',
+  description: '',
+  content: '',
+  preview: '',
+  saving: false,
+  previewing: false,
+  deleting: false
+})
+
+// 模板变量列表
+const templateVariables = ref([])
+
 // 单项测试 API 映射
 const testApiMap = {
   longing: () => api.testLonging(),
@@ -687,13 +803,167 @@ const runContextTest = async () => {
   }
 }
 
+// ============ 模板方法 ============
+
+// 加载模板列表
+const loadTemplates = async () => {
+  try {
+    const resp = await api.getTemplates()
+    if (resp.success && resp.data) {
+      templates.value = resp.data
+    }
+  } catch (e) {
+    console.error('加载模板列表失败:', e)
+  }
+}
+
+// 加载模板变量列表
+const loadTemplateVariables = async () => {
+  try {
+    const resp = await api.getTemplateVariables()
+    if (resp.success && resp.data) {
+      templateVariables.value = resp.data
+    }
+  } catch (e) {
+    console.error('加载模板变量失败:', e)
+  }
+}
+
+// 打开模板编辑器
+const openTemplateEditor = async (templateId) => {
+  if (templateId) {
+    // 编辑现有模板
+    try {
+      const resp = await api.getTemplate(templateId)
+      if (resp.success && resp.data) {
+        templateEditor.value = {
+          isNew: false,
+          id: resp.data.id,
+          name: resp.data.name,
+          description: resp.data.description || '',
+          content: resp.data.content,
+          preview: '',
+          saving: false,
+          previewing: false,
+          deleting: false
+        }
+      }
+    } catch (e) {
+      message.error('加载模板失败: ' + e.message)
+      return
+    }
+  } else {
+    // 新建模板
+    templateEditor.value = {
+      isNew: true,
+      id: '',
+      name: '',
+      description: '',
+      content: '',
+      preview: '',
+      saving: false,
+      previewing: false,
+      deleting: false
+    }
+  }
+  showTemplateEditor.value = true
+}
+
+// 预览模板
+const previewTemplate = async () => {
+  templateEditor.value.previewing = true
+  try {
+    if (templateEditor.value.isNew) {
+      // 新模板直接用内容预览
+      const resp = await api.previewTemplate('default', {})
+      // 对于新模板，我们先保存再预览，或者直接用 mock 渲染
+      // 简单处理：提示用户先保存
+      message.info('请先保存模板后再预览')
+      return
+    }
+    const resp = await api.previewTemplate(templateEditor.value.id)
+    if (resp.success && resp.data) {
+      templateEditor.value.preview = resp.data.preview
+    }
+  } catch (e) {
+    message.error('预览失败: ' + e.message)
+  } finally {
+    templateEditor.value.previewing = false
+  }
+}
+
+// 保存模板
+const saveTemplate = async () => {
+  // 验证
+  if (!templateEditor.value.name) {
+    message.error('请输入模板名称')
+    return
+  }
+  if (!templateEditor.value.content) {
+    message.error('请输入模板内容')
+    return
+  }
+  if (templateEditor.value.isNew && !templateEditor.value.id) {
+    message.error('请输入模板 ID')
+    return
+  }
+
+  templateEditor.value.saving = true
+  try {
+    const templateData = {
+      name: templateEditor.value.name,
+      description: templateEditor.value.description,
+      content: templateEditor.value.content
+    }
+
+    if (templateEditor.value.isNew) {
+      templateData.id = templateEditor.value.id
+      await api.createTemplate(templateData)
+      message.success('模板已创建')
+    } else {
+      await api.updateTemplate(templateEditor.value.id, templateData)
+      message.success('模板已更新')
+    }
+
+    // 重新加载模板列表
+    await loadTemplates()
+    showTemplateEditor.value = false
+  } catch (e) {
+    message.error('保存失败: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    templateEditor.value.saving = false
+  }
+}
+
+// 删除模板
+const deleteTemplate = async () => {
+  if (templateEditor.value.id === 'default') {
+    message.error('不能删除默认模板')
+    return
+  }
+
+  templateEditor.value.deleting = true
+  try {
+    await api.deleteTemplate(templateEditor.value.id)
+    message.success('模板已删除')
+    await loadTemplates()
+    showTemplateEditor.value = false
+  } catch (e) {
+    message.error('删除失败: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    templateEditor.value.deleting = false
+  }
+}
+
 // 初始化
 onMounted(async () => {
   await Promise.all([
     loadConfig(),
     loadStatus(),
     loadChats(),
-    loadPlatforms()
+    loadPlatforms(),
+    loadTemplates(),
+    loadTemplateVariables()
   ])
 })
 </script>

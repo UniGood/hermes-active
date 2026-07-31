@@ -59,4 +59,27 @@ export default {
   clearWeatherCache() {
     return http.post('/passive-consciousness/weather/clear-cache')
   },
+
+  // 模板 API
+  getTemplates() {
+    return http.get('/passive-consciousness/templates')
+  },
+  getTemplate(id) {
+    return http.get(`/passive-consciousness/templates/${id}`)
+  },
+  createTemplate(template) {
+    return http.post('/passive-consciousness/templates', template)
+  },
+  updateTemplate(id, template) {
+    return http.put(`/passive-consciousness/templates/${id}`, template)
+  },
+  deleteTemplate(id) {
+    return http.delete(`/passive-consciousness/templates/${id}`)
+  },
+  previewTemplate(id, data = {}) {
+    return http.post(`/passive-consciousness/templates/${id}/preview`, data)
+  },
+  getTemplateVariables() {
+    return http.get('/passive-consciousness/templates/variables')
+  },
 }
