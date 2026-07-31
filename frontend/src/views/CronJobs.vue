@@ -3,10 +3,10 @@
     <!-- 创建任务按钮 -->
     <n-space style="margin-bottom: 16px">
       <n-button type="primary" @click="openCreate">
-        + 创建任务
+        {{ t('cron-jobs.cronJobs.createJob') }}
       </n-button>
       <n-button @click="openDefaultPrompts">
-        默认提示词配置
+        {{ t('cron-jobs.cronJobs.defaultPrompts') }}
       </n-button>
     </n-space>
 
@@ -19,44 +19,44 @@
             <n-switch :value="job.enabled" @update:value="toggleJob(job)" />
           </div>
           <div class="job-meta">
-            <span>调度: {{ job.schedule }}</span>
-            <span>平台: {{ job.platform || 'weixin' }}</span>
-            <span v-if="job.session_id">指定 Session: {{ job.session_id }}</span>
-            <span v-else>获取方式: 最新活跃</span>
-            <span>LLM: {{ job.use_llm ? '是' : '否' }}</span>
-            <span>写入DB: {{ job.write_to_db ? '是' : '否' }}</span>
-            <span>带标记: {{ job.with_mark ? '是' : '否' }}</span>
+            <span>{{ t('cron-jobs.cronJobs.scheduleInfo', { schedule: job.schedule }) }}</span>
+            <span>{{ t('cron-jobs.cronJobs.platformInfo', { platform: job.platform || 'weixin' }) }}</span>
+            <span v-if="job.session_id">{{ t('cron-jobs.cronJobs.sessionInfo', { sessionId: job.session_id }) }}</span>
+            <span v-else>{{ t('cron-jobs.cronJobs.sessionModeLatestInfo') }}</span>
+            <span>{{ t('cron-jobs.cronJobs.llmInfo', { value: job.use_llm ? t('cron-jobs.cronJobs.yes') : t('cron-jobs.cronJobs.no') }) }}</span>
+            <span>{{ t('cron-jobs.cronJobs.writeToDbInfo', { value: job.write_to_db ? t('cron-jobs.cronJobs.yes') : t('cron-jobs.cronJobs.no') }) }}</span>
+            <span>{{ t('cron-jobs.cronJobs.withMarkInfo', { value: job.with_mark ? t('cron-jobs.cronJobs.yes') : t('cron-jobs.cronJobs.no') }) }}</span>
           </div>
           <div class="job-meta" v-if="job.last_run_at">
-            <span>上次运行: {{ formatTime(job.last_run_at) }}</span>
+            <span>{{ t('cron-jobs.cronJobs.lastRun', { time: formatTime(job.last_run_at) }) }}</span>
           </div>
           <div class="job-actions">
-            <n-button size="small" type="success" @click="runJob(job)" :loading="job.running">运行</n-button>
-            <n-button size="small" @click="editJob(job)">编辑</n-button>
-            <n-button size="small" type="error" @click="deleteJob(job)">删除</n-button>
-            <n-button size="small" @click="viewJobLogs(job)">日志</n-button>
+            <n-button size="small" type="success" @click="runJob(job)" :loading="job.running">{{ t('cron-jobs.cronJobs.actions.run') }}</n-button>
+            <n-button size="small" @click="editJob(job)">{{ t('cron-jobs.cronJobs.actions.edit') }}</n-button>
+            <n-button size="small" type="error" @click="deleteJob(job)">{{ t('cron-jobs.cronJobs.actions.delete') }}</n-button>
+            <n-button size="small" @click="viewJobLogs(job)">{{ t('cron-jobs.cronJobs.actions.logs') }}</n-button>
           </div>
         </div>
-        <n-empty v-if="!loading && jobs.length === 0" description="暂无定时任务" />
+        <n-empty v-if="!loading && jobs.length === 0" :description="t('cron-jobs.cronJobs.noJobs')" />
       </div>
     </n-spin>
 
     <!-- 创建/编辑任务弹窗 -->
-    <n-modal v-model:show="showCreate" preset="card" :title="editingJob ? '编辑任务' : '创建任务'" fullscreen>
+    <n-modal v-model:show="showCreate" preset="card" :title="editingJob ? t('cron-jobs.cronJobs.editJob') : t('cron-jobs.cronJobs.createJobTitle')" fullscreen>
       <n-form label-placement="left" label-width="120">
-        <n-form-item label="任务名称">
-          <n-input v-model:value="formData.name" placeholder="主动消息" />
+        <n-form-item :label="t('cron-jobs.cronJobs.form.name')">
+          <n-input v-model:value="formData.name" :placeholder="t('cron-jobs.cronJobs.form.namePlaceholder')" />
         </n-form-item>
-        <n-form-item label="调度表达式">
-          <n-input v-model:value="formData.schedule" placeholder="0,20,40 6-23 * * *" @update:value="parseCron" />
+        <n-form-item :label="t('cron-jobs.cronJobs.form.schedule')">
+          <n-input v-model:value="formData.schedule" :placeholder="t('cron-jobs.cronJobs.form.schedulePlaceholder')" @update:value="parseCron" />
         </n-form-item>
         <n-form-item label=" " v-if="cronParseResult">
           <div class="cron-parse-result">
-            <div class="cron-freq">频率: {{ cronParseResult.frequency }}</div>
+            <div class="cron-freq">{{ t('cron-jobs.cronJobs.form.frequency') }}: {{ cronParseResult.frequency }}</div>
             <div class="cron-next-runs" v-if="cronParseResult.next_runs && cronParseResult.next_runs.length">
               <div class="cron-next-title" @click="showNextRuns = !showNextRuns" style="cursor: pointer; user-select: none;">
-                未来运行时间：
-                <span style="font-size: 12px; color: #999;">{{ showNextRuns ? '▼ 收起' : '▶ 展开' }}</span>
+                {{ t('cron-jobs.cronJobs.form.nextRunTimes') }}
+                <span style="font-size: 12px; color: #999;">{{ showNextRuns ? t('cron-jobs.cronJobs.form.collapse') : t('cron-jobs.cronJobs.form.expand') }}</span>
               </div>
               <template v-if="showNextRuns">
                 <div v-for="(run, idx) in cronParseResult.next_runs" :key="idx" class="cron-next-item">
@@ -66,64 +66,64 @@
             </div>
           </div>
         </n-form-item>
-        <n-form-item label="目标平台">
+        <n-form-item :label="t('cron-jobs.cronJobs.form.platform')">
           <n-select
             v-model:value="formData.platform"
             :options="platformOptions"
-            placeholder="选择平台"
+            :placeholder="t('cron-jobs.cronJobs.form.platformPlaceholder')"
           />
         </n-form-item>
-        <n-form-item label="Session 获取方式">
+        <n-form-item :label="t('cron-jobs.cronJobs.form.sessionMode')">
           <n-radio-group v-model:value="sessionMode">
             <n-space vertical>
-              <n-radio value="latest">每次获取最新活跃 Session</n-radio>
-              <n-radio value="fixed">指定 Session</n-radio>
+              <n-radio value="latest">{{ t('cron-jobs.cronJobs.form.sessionModeLatest') }}</n-radio>
+              <n-radio value="fixed">{{ t('cron-jobs.cronJobs.form.sessionModeFixed') }}</n-radio>
             </n-space>
           </n-radio-group>
         </n-form-item>
-        <n-form-item label="指定 Session" v-if="sessionMode === 'fixed'">
+        <n-form-item :label="t('cron-jobs.cronJobs.form.sessionId')" v-if="sessionMode === 'fixed'">
           <n-select
             v-model:value="formData.session_id"
             :options="sessionOptions"
-            placeholder="选择 session"
+            :placeholder="t('cron-jobs.cronJobs.form.sessionIdPlaceholder')"
             filterable
           />
         </n-form-item>
         <!-- 系统提示词 -->
-        <n-divider title-placement="left">提示词配置</n-divider>
-        <n-form-item label="系统提示词">
+        <n-divider title-placement="left">{{ t('cron-jobs.cronJobs.form.promptConfig') }}</n-divider>
+        <n-form-item :label="t('cron-jobs.cronJobs.form.systemPrompt')">
           <n-space vertical style="width: 100%">
             <n-input
               v-model:value="formData.system_prompt"
               type="textarea"
               :autosize="{ minRows: 3, maxRows: 8 }"
-              placeholder="系统提示词，定义 AI 的角色和行为规则"
+              :placeholder="t('cron-jobs.cronJobs.form.systemPromptPlaceholder')"
             />
             <n-space align="center">
               <n-checkbox v-model:checked="formData.append_soul_md">
-                拼接 soul.md
+                {{ t('cron-jobs.cronJobs.form.appendSoulMd') }}
               </n-checkbox>
               <span style="font-size: 12px; color: #999">
-                {{ formData.append_soul_md ? '将在系统提示词后追加 SOUL.md 内容' : '不追加 SOUL.md' }}
+                {{ formData.append_soul_md ? t('cron-jobs.cronJobs.form.appendSoulMdHint') : t('cron-jobs.cronJobs.form.noAppendSoulMd') }}
               </span>
             </n-space>
             <n-button size="small" @click="fillDefaultSystemPrompt" style="margin-top: 4px">
-              填充默认系统提示词
+              {{ t('cron-jobs.cronJobs.form.fillDefaultSystemPrompt') }}
             </n-button>
           </n-space>
         </n-form-item>
 
         <!-- 用户提示词 -->
-        <n-form-item label="用户提示词">
+        <n-form-item :label="t('cron-jobs.cronJobs.form.userPrompt')">
           <n-space vertical style="width: 100%">
             <n-input
               v-model:value="formData.user_prompt"
               type="textarea"
               :autosize="{ minRows: 3, maxRows: 8 }"
-              placeholder="生成提示词，支持占位符"
+              :placeholder="t('cron-jobs.cronJobs.form.userPromptPlaceholder')"
             />
             <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-              <span style="font-size: 12px; color: var(--theme-text-muted);">插入：</span>
+              <span style="font-size: 12px; color: var(--theme-text-muted);">{{ t('cron-jobs.cronJobs.form.insertPlaceholder') }}</span>
               <n-tag v-for="ph in placeholderOptions" :key="ph.value" size="small"
                 :bordered="false" style="cursor: pointer;"
                 @click="insertPlaceholder(ph.value)">
@@ -131,43 +131,43 @@
               </n-tag>
             </div>
             <n-button size="small" @click="fillDefaultUserPrompt" style="margin-top: 4px">
-              填充默认用户提示词
+              {{ t('cron-jobs.cronJobs.form.fillDefaultUserPrompt') }}
             </n-button>
             <!-- 上下文配置状态 -->
             <div class="context-status">
-              <span class="context-status-label">当前上下文配置：</span>
+              <span class="context-status-label">{{ t('cron-jobs.cronJobs.form.currentContextConfig') }}</span>
               <n-tag v-if="contextConfig.session_enabled" size="small" type="info">
-                Session: {{ contextConfig.session_limit }} 条{{ contextConfig.include_tool ? ' (含tool)' : '' }}
+                Session: {{ contextConfig.session_limit }} {{ t('cron-jobs.cronJobs.form.count').replace('：', '') }}{{ contextConfig.include_tool ? ' (含tool)' : '' }}
               </n-tag>
-              <n-tag v-else size="small">无 Session 上下文</n-tag>
+              <n-tag v-else size="small">{{ t('cron-jobs.cronJobs.form.onlySessionContext') }}</n-tag>
               <n-tag v-if="contextConfig.hindsight_recall_enabled" size="small" type="success">
-                Recall: {{ contextConfig.hindsight_recall_query || '已启用' }}
+                Recall: {{ contextConfig.hindsight_recall_query || t('cron-jobs.cronJobs.messages.enabled') }}
               </n-tag>
               <n-tag v-if="contextConfig.hindsight_reflect_enabled" size="small" type="warning">
-                Reflect: {{ contextConfig.hindsight_reflect_query || '已启用' }}
+                Reflect: {{ contextConfig.hindsight_reflect_query || t('cron-jobs.cronJobs.messages.enabled') }}
               </n-tag>
               <n-tag v-if="contextConfig.weather_enabled" size="small" type="error">
-                天气：{{ weatherDaysLabel }}
+                {{ t('cron-jobs.cronJobs.form.weather') }}：{{ weatherDaysLabel }}
               </n-tag>
               <n-tag v-if="contextConfig.session_enabled && !contextConfig.hindsight_recall_enabled && !contextConfig.hindsight_reflect_enabled && !contextConfig.weather_enabled" size="small">
-                仅 Session 上下文
+                {{ t('cron-jobs.cronJobs.form.onlySessionContext') }}
               </n-tag>
             </div>
           </n-space>
         </n-form-item>
 
         <!-- 上下文配置 -->
-        <n-divider title-placement="left">上下文配置</n-divider>
-        <n-form-item label="Session 上下文">
+        <n-divider title-placement="left">{{ t('cron-jobs.cronJobs.form.contextConfig') }}</n-divider>
+        <n-form-item :label="t('cron-jobs.cronJobs.form.sessionContext')">
           <n-space vertical style="width: 100%">
             <n-space align="center">
               <n-checkbox v-model:checked="contextConfig.session_enabled">
-                获取 Session 上下文
+                {{ t('cron-jobs.cronJobs.form.getSessionContext') }}
               </n-checkbox>
             </n-space>
             <template v-if="contextConfig.session_enabled">
               <n-space align="center">
-                <span style="font-size: 13px; color: #666">读取条数：</span>
+                <span style="font-size: 13px; color: #666">{{ t('cron-jobs.cronJobs.form.readCount') }}</span>
                 <n-input-number
                   v-model:value="contextConfig.session_limit"
                   :min="1"
@@ -178,10 +178,10 @@
               </n-space>
               <n-space align="center">
                 <n-checkbox v-model:checked="contextConfig.include_tool">
-                  获取 tool 上下文
+                  {{ t('cron-jobs.cronJobs.form.includeToolContext') }}
                 </n-checkbox>
                 <span style="font-size: 12px; color: #999">
-                  {{ contextConfig.include_tool ? '包含 tool 角色消息' : '不包含 tool 角色消息' }}
+                  {{ contextConfig.include_tool ? t('cron-jobs.cronJobs.form.includeToolHint') : t('cron-jobs.cronJobs.form.excludeToolHint') }}
                 </span>
               </n-space>
             </template>
@@ -189,23 +189,23 @@
         </n-form-item>
 
         <!-- 记忆反思 -->
-        <n-divider title-placement="left">记忆反思</n-divider>
-        <n-form-item label="Recall 检索">
+        <n-divider title-placement="left">{{ t('cron-jobs.cronJobs.form.recall') }}</n-divider>
+        <n-form-item :label="t('cron-jobs.cronJobs.form.recallRetrieval')">
           <n-space vertical style="width: 100%">
             <n-space align="center">
               <n-switch v-model:value="contextConfig.hindsight_recall_enabled" />
-              <span style="font-size: 13px; color: #666">启用 Recall 记忆检索</span>
+              <span style="font-size: 13px; color: #666">{{ t('cron-jobs.cronJobs.form.enableRecall') }}</span>
             </n-space>
             <template v-if="contextConfig.hindsight_recall_enabled">
               <n-space align="center">
-                <span style="font-size: 13px; color: #666">关键词：</span>
+                <span style="font-size: 13px; color: #666">{{ t('cron-jobs.cronJobs.form.keyword') }}</span>
                 <n-input
                   v-model:value="contextConfig.hindsight_recall_query"
-                  placeholder="搜索关键词"
+                  :placeholder="t('cron-jobs.cronJobs.form.searchKeyword')"
                   size="small"
                   style="width: 300px"
                 />
-                <span style="font-size: 13px; color: #666">数量：</span>
+                <span style="font-size: 13px; color: #666">{{ t('cron-jobs.cronJobs.form.count') }}</span>
                 <n-input-number
                   v-model:value="contextConfig.hindsight_recall_limit"
                   :min="1"
@@ -217,18 +217,18 @@
             </template>
           </n-space>
         </n-form-item>
-        <n-form-item label="Reflect 分析">
+        <n-form-item :label="t('cron-jobs.cronJobs.form.reflectAnalysis')">
           <n-space vertical style="width: 100%">
             <n-space align="center">
               <n-switch v-model:value="contextConfig.hindsight_reflect_enabled" />
-              <span style="font-size: 13px; color: #666">启用 Reflect 综合分析</span>
+              <span style="font-size: 13px; color: #666">{{ t('cron-jobs.cronJobs.form.enableReflect') }}</span>
             </n-space>
             <template v-if="contextConfig.hindsight_reflect_enabled">
               <n-space align="center">
-                <span style="font-size: 13px; color: #666">问题：</span>
+                <span style="font-size: 13px; color: #666">{{ t('cron-jobs.cronJobs.form.question') }}</span>
                 <n-input
                   v-model:value="contextConfig.hindsight_reflect_query"
-                  placeholder="要分析的问题"
+                  :placeholder="t('cron-jobs.cronJobs.form.analysisQuestion')"
                   size="small"
                   style="width: 400px"
                 />
@@ -238,49 +238,49 @@
         </n-form-item>
 
         <!-- 天气感知 -->
-        <n-divider title-placement="left">天气感知</n-divider>
-        <n-form-item label="高德地图天气">
+        <n-divider title-placement="left">{{ t('cron-jobs.cronJobs.form.weather') }}</n-divider>
+        <n-form-item :label="t('cron-jobs.cronJobs.form.amapWeather')">
           <n-space vertical style="width: 100%">
             <n-space align="center">
               <n-switch v-model:value="contextConfig.weather_enabled" />
-              <span style="font-size: 13px; color: #666">启用天气上下文（复用配置管理中的高德 API Key）</span>
+              <span style="font-size: 13px; color: #666">{{ t('cron-jobs.cronJobs.form.enableWeather') }}</span>
             </n-space>
             <n-text v-if="contextConfig.weather_enabled" depth="3" style="font-size: 12px">
-              当前城市的天气会作为上下文通过 {weather} 占位符注入
+              {{ t('cron-jobs.cronJobs.form.weatherInjectionHint') }}
             </n-text>
             <template v-if="contextConfig.weather_enabled">
               <n-space align="center">
-                <span style="font-size: 13px; color: #666">预报天数：</span>
+                <span style="font-size: 13px; color: #666">{{ t('cron-jobs.cronJobs.form.forecastDays') }}</span>
                 <n-radio-group v-model:value="contextConfig.weather_days">
-                  <n-radio :value="0">今天</n-radio>
-                  <n-radio :value="2">两天</n-radio>
-                  <n-radio :value="3">三天</n-radio>
-                  <n-radio :value="4">四天</n-radio>
+                  <n-radio :value="0">{{ t('cron-jobs.cronJobs.form.today') }}</n-radio>
+                  <n-radio :value="2">{{ t('cron-jobs.cronJobs.form.twoDays') }}</n-radio>
+                  <n-radio :value="3">{{ t('cron-jobs.cronJobs.form.threeDays') }}</n-radio>
+                  <n-radio :value="4">{{ t('cron-jobs.cronJobs.form.fourDays') }}</n-radio>
                 </n-radio-group>
-                <n-text depth="3" style="font-size: 12px">高德 API 实测最多支持 4 天</n-text>
+                <n-text depth="3" style="font-size: 12px">{{ t('cron-jobs.cronJobs.form.amapMaxDays') }}</n-text>
               </n-space>
             </template>
           </n-space>
         </n-form-item>
 
         <!-- 时间格式 -->
-        <n-divider title-placement="left">时间格式</n-divider>
-        <n-form-item label="{time} 占位符">
+        <n-divider title-placement="left">{{ t('cron-jobs.cronJobs.form.timeFormat') }}</n-divider>
+        <n-form-item label="{time}">
           <n-space vertical style="width: 100%">
             <TimeFormatSelector v-model="contextConfig.time_format" />
             <n-text depth="3" style="font-size: 12px">
-              在提示词中使用 {time} 插入当前时间
+              {{ t('cron-jobs.cronJobs.form.insertCurrentTime') }}
             </n-text>
           </n-space>
         </n-form-item>
 
         <!-- 跳过执行参数 -->
-        <n-divider title-placement="left">跳过执行参数</n-divider>
-        <n-form-item label="聊天冷却时间">
+        <n-divider title-placement="left">{{ t('cron-jobs.cronJobs.form.skipParams') }}</n-divider>
+        <n-form-item :label="t('cron-jobs.cronJobs.form.chatCooldown')">
           <n-space vertical style="width: 100%">
             <n-space align="center">
               <n-checkbox v-model:checked="formData.cooldown_enabled">
-                启用聊天冷却
+                {{ t('cron-jobs.cronJobs.form.enableCooldown') }}
               </n-checkbox>
               <n-input-number
                 v-model:value="formData.cooldown_minutes"
@@ -290,44 +290,44 @@
                 style="width: 120px"
                 :disabled="!formData.cooldown_enabled"
               />
-              <span style="font-size: 13px; color: #666">分钟</span>
+              <span style="font-size: 13px; color: #666">{{ t('cron-jobs.cronJobs.form.minutes') }}</span>
             </n-space>
             <div style="font-size: 12px; color: #999; margin-top: 4px;">
-              如果当前会话最后一条用户消息距今不足设定时间，则跳过本次执行（不调用LLM），避免在用户正在聊天时发送重复消息。
+              {{ t('cron-jobs.cronJobs.form.cooldownHint') }}
             </div>
           </n-space>
         </n-form-item>
         <!-- 发送消息 -->
-        <n-divider title-placement="left">发送消息</n-divider>
-        <n-form-item label="使用 LLM">
+        <n-divider title-placement="left">{{ t('cron-jobs.cronJobs.form.sendMessage') }}</n-divider>
+        <n-form-item :label="t('cron-jobs.cronJobs.form.useLlm')">
           <n-switch v-model:value="formData.use_llm" />
           <span style="margin-left: 8px; color: #999; font-size: 13px">
-            {{ formData.use_llm ? '大模型生成消息' : '直接发送固定消息' }}
+            {{ formData.use_llm ? t('cron-jobs.cronJobs.form.llmGenerate') : t('cron-jobs.cronJobs.form.directSend') }}
           </span>
         </n-form-item>
         <n-form-item v-if="formData.use_llm" label="Max Tokens">
           <n-input-number v-model:value="formData.max_tokens" :min="0" :max="8192" :step="100" style="width: 180px" />
-          <span style="margin-left: 8px; color: #999; font-size: 13px">0 = 不限制</span>
+          <span style="margin-left: 8px; color: #999; font-size: 13px">{{ t('cron-jobs.cronJobs.form.noLimit') }}</span>
         </n-form-item>
-        <n-form-item v-if="!formData.use_llm" label="固定消息">
-          <n-input v-model:value="formData.fixed_message" type="textarea" :autosize="{ minRows: 2, maxRows: 6 }" placeholder="输入固定发送的消息内容" />
+        <n-form-item v-if="!formData.use_llm" :label="t('cron-jobs.cronJobs.form.fixedMessage')">
+          <n-input v-model:value="formData.fixed_message" type="textarea" :autosize="{ minRows: 2, maxRows: 6 }" :placeholder="t('cron-jobs.cronJobs.form.fixedMessagePlaceholder')" />
         </n-form-item>
-        <n-form-item label="写入 DB">
+        <n-form-item :label="t('cron-jobs.cronJobs.form.writeToDb')">
           <n-switch v-model:value="formData.write_to_db" />
           <span style="margin-left: 8px; color: #999; font-size: 13px">
-            {{ formData.write_to_db ? '消息写入 session 数据库' : '仅发送不写入' }}
+            {{ formData.write_to_db ? t('cron-jobs.cronJobs.form.writeToDbHint') : t('cron-jobs.cronJobs.form.sendOnly') }}
           </span>
         </n-form-item>
 
         <div v-if="formData.write_to_db">
-          <n-divider title-placement="left">消息标记</n-divider>
-          <n-form-item label="发送标记">
+          <n-divider title-placement="left">{{ t('cron-jobs.cronJobs.form.messageMark') }}</n-divider>
+          <n-form-item :label="t('cron-jobs.cronJobs.form.sendMark')">
             <n-input v-model:value="formData.send_mark" placeholder="凯莉" style="max-width: 300px" />
           </n-form-item>
-          <n-form-item label="时间格式">
+          <n-form-item :label="t('cron-jobs.cronJobs.form.timeFormat')">
             <TimeFormatSelector v-model="formData.time_format" />
           </n-form-item>
-          <n-form-item label="预览">
+          <n-form-item :label="t('cron-jobs.cronJobs.form.preview')">
             <div class="mark-preview" v-if="testMessageForPreview">
               <template v-if="formData.send_mark || formData.time_format">[<template v-if="formData.send_mark">{{ formData.send_mark }}</template><template v-if="formData.time_format"> {{ formatWithOption(formData.time_format) }}</template>]: </template>{{ testMessageForPreview }}
             </div>
@@ -336,46 +336,46 @@
       </n-form>
       <template #action>
         <n-space>
-          <n-button @click="showCreate = false">取消</n-button>
-          <n-button @click="previewPrompt" :loading="previewing">预览提示词</n-button>
-          <n-button type="primary" @click="saveJob" :loading="saving">保存</n-button>
+          <n-button @click="showCreate = false">{{ t('common.common.cancel') }}</n-button>
+          <n-button @click="previewPrompt" :loading="previewing">{{ t('cron-jobs.cronJobs.logDetail.previewPrompt') }}</n-button>
+          <n-button type="primary" @click="saveJob" :loading="saving">{{ t('common.common.save') }}</n-button>
         </n-space>
       </template>
     </n-modal>
 
     <!-- 默认提示词配置弹窗 -->
-    <n-modal v-model:show="showDefaultPrompts" preset="card" title="默认提示词配置" fullscreen>
+    <n-modal v-model:show="showDefaultPrompts" preset="card" :title="t('cron-jobs.cronJobs.defaultPrompts.title')" fullscreen>
       <n-form label-placement="left" label-width="120">
-        <n-form-item label="默认系统提示词">
+        <n-form-item :label="t('cron-jobs.cronJobs.defaultPrompts.systemPrompt')">
           <n-input
             v-model:value="defaultPromptsData.system_prompt"
             type="textarea"
             :autosize="{ minRows: 5, maxRows: 15 }"
-            placeholder="系统提示词，定义 AI 的角色和行为规则"
+            :placeholder="t('cron-jobs.cronJobs.defaultPrompts.systemPromptPlaceholder')"
           />
         </n-form-item>
-        <n-form-item label="默认用户提示词">
+        <n-form-item :label="t('cron-jobs.cronJobs.defaultPrompts.userPrompt')">
           <n-input
             v-model:value="defaultPromptsData.user_prompt"
             type="textarea"
             :autosize="{ minRows: 5, maxRows: 15 }"
-            placeholder="用户提示词模板，支持 {session} {memory} {weather} {time} 占位符"
+            :placeholder="t('cron-jobs.cronJobs.defaultPrompts.userPromptPlaceholder')"
           />
         </n-form-item>
-        <n-form-item label="拼接 soul.md">
+        <n-form-item :label="t('cron-jobs.cronJobs.defaultPrompts.appendSoulMd')">
           <n-checkbox v-model:checked="defaultPromptsData.append_soul_md">
-            创建新任务时默认拼接 soul.md
+            {{ t('cron-jobs.cronJobs.defaultPrompts.appendSoulMdDefault') }}
           </n-checkbox>
         </n-form-item>
         <n-form-item label=" ">
           <n-button @click="previewDefaultPrompt" :loading="previewingDefault">
-            预览完整提示词
+            {{ t('cron-jobs.cronJobs.defaultPrompts.previewFullPrompt') }}
           </n-button>
         </n-form-item>
         <!-- 预览结果 -->
         <template v-if="defaultPromptPreview">
-          <n-divider title-placement="left">预览结果</n-divider>
-          <n-form-item label="系统提示词（最终版）">
+          <n-divider title-placement="left">{{ t('cron-jobs.cronJobs.defaultPrompts.previewResult') }}</n-divider>
+          <n-form-item :label="t('cron-jobs.cronJobs.defaultPrompts.systemPromptFinal')">
             <n-input
               :value="defaultPromptPreview.system_prompt"
               type="textarea"
@@ -383,7 +383,7 @@
               readonly
             />
           </n-form-item>
-          <n-form-item label="用户提示词">
+          <n-form-item :label="t('cron-jobs.cronJobs.form.userPrompt')">
             <n-input
               :value="defaultPromptPreview.user_prompt"
               type="textarea"
@@ -391,7 +391,7 @@
               readonly
             />
           </n-form-item>
-          <n-form-item label="soul.md 内容" v-if="defaultPromptPreview.soul_md">
+          <n-form-item :label="t('cron-jobs.cronJobs.defaultPrompts.soulMdContent')" v-if="defaultPromptPreview.soul_md">
             <n-input
               :value="defaultPromptPreview.soul_md"
               type="textarea"
@@ -403,14 +403,14 @@
       </n-form>
       <template #action>
         <n-space>
-          <n-button @click="showDefaultPrompts = false">取消</n-button>
-          <n-button type="primary" @click="saveDefaultPrompts" :loading="savingDefaultPrompts">保存</n-button>
+          <n-button @click="showDefaultPrompts = false">{{ t('common.common.cancel') }}</n-button>
+          <n-button type="primary" @click="saveDefaultPrompts" :loading="savingDefaultPrompts">{{ t('common.common.save') }}</n-button>
         </n-space>
       </template>
     </n-modal>
 
     <!-- 日志弹窗 -->
-    <n-modal v-model:show="showJobLogs" preset="card" :title="`日志 - ${jobLogsName}`" fullscreen>
+    <n-modal v-model:show="showJobLogs" preset="card" :title="t('cron-jobs.cronJobs.logDetail.logTitle', { name: jobLogsName })" fullscreen>
       <n-spin :show="jobLogsLoading">
         <n-data-table
           v-if="jobLogs.length > 0"
@@ -419,70 +419,70 @@
           :bordered="false"
           size="small"
         />
-        <n-empty v-else description="暂无日志" />
+        <n-empty v-else :description="t('cron-jobs.cronJobs.logDetail.noLogs')" />
         <div v-if="jobLogsTotalPages > 1" class="log-pagination">
           <n-pagination v-model:page="jobLogsPage" :page-count="jobLogsTotalPages" :page-slot="5" />
-          <span class="log-total">共 {{ jobLogs.length }} 条</span>
+          <span class="log-total">{{ t('cron-jobs.cronJobs.logDetail.logTotal', { count: jobLogs.length }) }}</span>
         </div>
       </n-spin>
     </n-modal>
 
     <!-- 日志详情弹窗 -->
-    <n-modal v-model:show="showLogDetail" preset="card" title="运行详情" fullscreen>
+    <n-modal v-model:show="showLogDetail" preset="card" :title="t('cron-jobs.cronJobs.logDetail.title')" fullscreen>
       <div v-if="logDetailData">
         <!-- 执行概要 -->
         <n-descriptions bordered :column="2" size="small" style="margin-bottom: 16px">
-          <n-descriptions-item label="状态">
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.status')">
             <n-tag :type="logDetailData._status === 'success' ? 'success' : logDetailData._status === 'skipped' ? 'warning' : 'error'" size="small">
-              {{ logDetailData._status === 'success' ? '✅ 成功' : logDetailData._status === 'skipped' ? '⏭️ 跳过' : '❌ 失败' }}
+              {{ logDetailData._status === 'success' ? t('cron-jobs.cronJobs.logDetail.success') : logDetailData._status === 'skipped' ? t('cron-jobs.cronJobs.logDetail.skipped') : t('cron-jobs.cronJobs.logDetail.failed') }}
             </n-tag>
           </n-descriptions-item>
-          <n-descriptions-item label="耗时">{{ logDetailData._duration ? logDetailData._duration.toFixed(1) + 's' : '-' }}</n-descriptions-item>
-          <n-descriptions-item label="时间">{{ formatTime(logDetailData._created_at) }}</n-descriptions-item>
-          <n-descriptions-item label="任务">{{ logDetailData.job_name || '-' }}</n-descriptions-item>
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.duration')">{{ logDetailData._duration ? logDetailData._duration.toFixed(1) + 's' : '-' }}</n-descriptions-item>
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.time')">{{ formatTime(logDetailData._created_at) }}</n-descriptions-item>
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.task')">{{ logDetailData.job_name || '-' }}</n-descriptions-item>
           <n-descriptions-item label="Session" :span="2" v-if="logDetailData.session_id">
             <span style="font-family: monospace; font-size: 12px;">{{ logDetailData.session_id }}</span>
           </n-descriptions-item>
-          <n-descriptions-item label="平台">{{ logDetailData.platform || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="消息" :span="2" v-if="logDetailData._message">{{ logDetailData._message }}</n-descriptions-item>
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.platform')">{{ logDetailData.platform || '-' }}</n-descriptions-item>
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.message')" :span="2" v-if="logDetailData._message">{{ logDetailData._message }}</n-descriptions-item>
         </n-descriptions>
 
         <!-- 错误信息 -->
-        <n-alert v-if="logDetailData._error" type="error" style="margin-bottom: 16px;" :title="'错误信息'">
+        <n-alert v-if="logDetailData._error" type="error" style="margin-bottom: 16px;" :title="t('cron-jobs.cronJobs.logDetail.errorInfo')">
           <pre style="white-space: pre-wrap; font-size: 13px; color: #d03050;">{{ logDetailData._error }}</pre>
         </n-alert>
 
         <!-- 跳过原因 -->
-        <n-alert v-if="logDetailData.skip_reason" type="warning" style="margin-bottom: 16px;" title="跳过原因">
+        <n-alert v-if="logDetailData.skip_reason" type="warning" style="margin-bottom: 16px;" :title="t('cron-jobs.cronJobs.logDetail.skipReason')">
           <div style="font-size: 13px;">
             {{ logDetailData.skip_reason }}
-            <span v-if="logDetailData.cooldown_minutes">（冷却时间: {{ logDetailData.cooldown_minutes }}分钟，已过 {{ logDetailData.elapsed_minutes }}分钟）</span>
+            <span v-if="logDetailData.cooldown_minutes">{{ t('cron-jobs.cronJobs.logDetail.cooldownInfo', { cooldown: logDetailData.cooldown_minutes, elapsed: logDetailData.elapsed_minutes }) }}</span>
           </div>
         </n-alert>
 
         <!-- LLM 请求 -->
-        <n-divider v-if="logDetailData.llm_request" title-placement="left">LLM 请求</n-divider>
+        <n-divider v-if="logDetailData.llm_request" title-placement="left">{{ t('cron-jobs.cronJobs.logDetail.llmRequest') }}</n-divider>
         <n-descriptions v-if="logDetailData.llm_request" bordered :column="2" size="small" style="margin-bottom: 16px">
-          <n-descriptions-item label="模式">{{ logDetailData.llm_request.mode }}</n-descriptions-item>
-          <n-descriptions-item label="模型">{{ logDetailData.llm_request.model }}</n-descriptions-item>
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.mode')">{{ logDetailData.llm_request.mode }}</n-descriptions-item>
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.model')">{{ logDetailData.llm_request.model }}</n-descriptions-item>
           <n-descriptions-item label="Temperature">{{ logDetailData.llm_request.temperature }}</n-descriptions-item>
           <n-descriptions-item label="Max Tokens">{{ logDetailData.llm_request.max_tokens }}</n-descriptions-item>
-          <n-descriptions-item label="系统提示词" :span="2">
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.systemPrompt')" :span="2">
             <pre style="white-space: pre-wrap; max-height: 200px; overflow-y: auto; font-size: 12px;">{{ logDetailData.llm_request.system_prompt }}</pre>
           </n-descriptions-item>
-          <n-descriptions-item label="用户提示词" :span="2">
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.userPrompt')" :span="2">
             <pre style="white-space: pre-wrap; max-height: 200px; overflow-y: auto; font-size: 12px;">{{ logDetailData.llm_request.user_prompt }}</pre>
           </n-descriptions-item>
         </n-descriptions>
 
         <!-- LLM 返回 -->
-        <n-divider v-if="logDetailData.llm_response" title-placement="left">LLM 返回</n-divider>
+        <n-divider v-if="logDetailData.llm_response" title-placement="left">{{ t('cron-jobs.cronJobs.logDetail.llmRequest') }} {{ t('cron-jobs.cronJobs.logDetail.generatedContent') }}</n-divider>
         <n-descriptions v-if="logDetailData.llm_response" bordered :column="2" size="small" style="margin-bottom: 16px">
-          <n-descriptions-item label="生成内容" :span="2">
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.generatedContent')" :span="2">
             <pre style="white-space: pre-wrap; font-size: 12px;">{{ logDetailData.llm_response.content }}</pre>
           </n-descriptions-item>
-          <n-descriptions-item label="耗时">{{ logDetailData.llm_response.duration }}s</n-descriptions-item>
-          <n-descriptions-item v-if="logDetailData.llm_response.error" label="错误" :span="2">
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.duration')">{{ logDetailData.llm_response.duration }}s</n-descriptions-item>
+          <n-descriptions-item v-if="logDetailData.llm_response.error" :label="t('cron-jobs.cronJobs.logDetail.error')" :span="2">
             <pre style="white-space: pre-wrap; color: #d03050; font-size: 12px;">{{ logDetailData.llm_response.error }}</pre>
           </n-descriptions-item>
         </n-descriptions>
@@ -490,23 +490,23 @@
         <!-- 基本详情（_minimal 兜底 details 时显示，仅有 message/error/task_type 等基础字段） -->
         <n-alert v-if="logDetailData._minimal && !logDetailData.llm_request && !logDetailData.context && !logDetailData.send_result" type="info" style="margin-bottom: 16px;">
           <div style="font-size: 13px;">
-            <div><strong>任务类型：</strong>{{ logDetailData.task_type }}</div>
-            <div v-if="logDetailData.summary"><strong>说明：</strong>{{ logDetailData.summary }}</div>
-            <div v-if="logDetailData.error"><strong>错误：</strong>{{ logDetailData.error }}</div>
-            <div v-if="logDetailData.failure_stage"><strong>失败阶段：</strong>{{ logDetailData.failure_stage }}</div>
-            <div v-if="logDetailData.duration"><strong>耗时：</strong>{{ logDetailData.duration }}s</div>
+            <div><strong>{{ t('cron-jobs.cronJobs.logDetail.taskType') }}</strong>{{ logDetailData.task_type }}</div>
+            <div v-if="logDetailData.summary"><strong>{{ t('cron-jobs.cronJobs.logDetail.description') }}</strong>{{ logDetailData.summary }}</div>
+            <div v-if="logDetailData.error"><strong>{{ t('cron-jobs.cronJobs.logDetail.error') }}：</strong>{{ logDetailData.error }}</div>
+            <div v-if="logDetailData.failure_stage"><strong>{{ t('cron-jobs.cronJobs.logDetail.failureStage') }}</strong>{{ logDetailData.failure_stage }}</div>
+            <div v-if="logDetailData.duration"><strong>{{ t('cron-jobs.cronJobs.logDetail.duration') }}：</strong>{{ logDetailData.duration }}s</div>
             <div v-if="logDetailData.session_id"><strong>Session：</strong><span style="font-family: monospace; font-size: 12px;">{{ logDetailData.session_id }}</span></div>
-            <div v-if="logDetailData.platform"><strong>平台：</strong>{{ logDetailData.platform }}</div>
+            <div v-if="logDetailData.platform"><strong>{{ t('cron-jobs.cronJobs.logDetail.platform') }}：</strong>{{ logDetailData.platform }}</div>
             <div style="margin-top: 6px; font-size: 12px; color: #999;">
-              该日志为简化记录，未包含 LLM 请求/响应/上下文等详情
+              {{ t('cron-jobs.cronJobs.logDetail.simplifiedLog') }}
             </div>
           </div>
         </n-alert>
 
         <!-- 上下文 -->
-        <n-divider v-if="logDetailData.context" title-placement="left">上下文</n-divider>
+        <n-divider v-if="logDetailData.context" title-placement="left">{{ t('cron-jobs.cronJobs.logDetail.context') }}</n-divider>
         <div v-if="logDetailData.context" style="margin-bottom: 16px;">
-          <n-tag type="info" size="small">Session 消息 ({{ logDetailData.context.session_count }}条)</n-tag>
+          <n-tag type="info" size="small">{{ t('cron-jobs.cronJobs.logDetail.sessionMessageCount', { count: logDetailData.context.session_count }) }}</n-tag>
           <div v-if="logDetailData.context.session_messages && logDetailData.context.session_messages.length" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--theme-border); border-radius: 4px; padding: 8px; margin-top: 4px;">
             <div v-for="(msg, idx) in logDetailData.context.session_messages" :key="idx" style="margin-bottom: 4px; font-size: 12px;">
               <n-tag :type="msg.role === 'user' ? 'info' : 'default'" :class="msg.role === 'assistant' ? 'tag-assistant' : ''" size="tiny">{{ msg.role }}</n-tag>
@@ -516,15 +516,15 @@
         </div>
 
         <!-- 发送结果 -->
-        <n-divider v-if="logDetailData.send_result" title-placement="left">发送结果</n-divider>
+        <n-divider v-if="logDetailData.send_result" title-placement="left">{{ t('cron-jobs.cronJobs.logDetail.sendResult') }}</n-divider>
         <n-descriptions v-if="logDetailData.send_result" bordered :column="2" size="small">
-          <n-descriptions-item label="状态">
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.status')">
             <n-tag :type="logDetailData.send_result.success ? 'success' : 'error'" size="small">
-              {{ logDetailData.send_result.success ? '✅ 成功' : '❌ 失败' }}
+              {{ logDetailData.send_result.success ? t('cron-jobs.cronJobs.logDetail.success') : t('cron-jobs.cronJobs.logDetail.failed') }}
             </n-tag>
           </n-descriptions-item>
-          <n-descriptions-item label="消息">{{ logDetailData.send_result.message || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="最终发送内容" :span="2">
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.message')">{{ logDetailData.send_result.message || '-' }}</n-descriptions-item>
+          <n-descriptions-item :label="t('cron-jobs.cronJobs.logDetail.finalMessage')" :span="2">
             <pre style="white-space: pre-wrap; font-size: 12px; max-height: 200px; overflow-y: auto;">{{ logDetailData.send_result.final_message }}</pre>
           </n-descriptions-item>
         </n-descriptions>
@@ -532,10 +532,10 @@
     </n-modal>
 
     <!-- 预览提示词弹窗 -->
-    <n-modal v-model:show="showPreview" preset="card" title="预览最终提示词" fullscreen>
+    <n-modal v-model:show="showPreview" preset="card" :title="t('cron-jobs.cronJobs.logDetail.previewPrompt')" fullscreen>
       <n-spin :show="previewing">
         <n-form label-placement="left" label-width="100">
-          <n-form-item label="系统提示词">
+          <n-form-item :label="t('cron-jobs.cronJobs.logDetail.systemPrompt')">
             <n-input
               :value="previewData.system_prompt"
               type="textarea"
@@ -543,7 +543,7 @@
               readonly
             />
           </n-form-item>
-          <n-form-item label="用户提示词">
+          <n-form-item :label="t('cron-jobs.cronJobs.logDetail.userPrompt')">
             <n-input
               :value="previewData.user_prompt"
               type="textarea"
@@ -559,19 +559,19 @@
               readonly
             />
           </n-form-item>
-          <n-form-item label="上下文摘要" v-if="previewData.context_summary">
+          <n-form-item :label="t('cron-jobs.cronJobs.logDetail.contextSummary')" v-if="previewData.context_summary">
             <n-tag type="info">{{ previewData.context_summary }}</n-tag>
           </n-form-item>
         </n-form>
 
         <!-- 实际上下文数据 -->
-        <n-divider title-placement="left" v-if="previewData.context_data">实际上下文</n-divider>
+        <n-divider title-placement="left" v-if="previewData.context_data">{{ t('cron-jobs.cronJobs.logDetail.actualContext') }}</n-divider>
         <div v-if="previewData.context_data" class="context-data-section">
           <!-- Session 消息 -->
           <div v-if="previewData.context_data.session_messages && previewData.context_data.session_messages.length > 0" class="context-block">
             <div class="context-block-title">
-              <n-tag type="info" size="small">Session 消息</n-tag>
-              <span class="context-count">{{ previewData.context_data.session_messages.length }} 条</span>
+              <n-tag type="info" size="small">{{ t('cron-jobs.cronJobs.logDetail.sessionMessages') }}</n-tag>
+              <span class="context-count">{{ previewData.context_data.session_messages.length }} {{ t('cron-jobs.cronJobs.form.count').replace('：', '') }}</span>
             </div>
             <div class="context-messages">
               <div v-for="(msg, idx) in previewData.context_data.session_messages" :key="idx" class="context-msg">
@@ -584,8 +584,8 @@
           <!-- Recall 结果 -->
           <div v-if="previewData.context_data.recall_results && previewData.context_data.recall_results.length > 0" class="context-block">
             <div class="context-block-title">
-              <n-tag type="success" size="small">Recall 记忆</n-tag>
-              <span class="context-count">{{ previewData.context_data.recall_results.length }} 条</span>
+              <n-tag type="success" size="small">{{ t('cron-jobs.cronJobs.logDetail.recallTag') }}</n-tag>
+              <span class="context-count">{{ previewData.context_data.recall_results.length }} {{ t('cron-jobs.cronJobs.form.count').replace('：', '') }}</span>
             </div>
             <div class="context-messages">
               <div v-for="(item, idx) in previewData.context_data.recall_results" :key="idx" class="context-msg recall">
@@ -597,7 +597,7 @@
           <!-- Reflect 结果 -->
           <div v-if="previewData.context_data.reflect_result" class="context-block">
             <div class="context-block-title">
-              <n-tag type="warning" size="small">Reflect 分析</n-tag>
+              <n-tag type="warning" size="small">{{ t('cron-jobs.cronJobs.logDetail.reflectTag') }}</n-tag>
             </div>
             <div class="context-messages">
               <div class="context-msg reflect">
@@ -609,7 +609,7 @@
           <!-- 无上下文 -->
           <n-empty
             v-if="!previewData.context_data.session_messages?.length && !previewData.context_data.recall_results?.length && !previewData.context_data.reflect_result"
-            description="无上下文数据"
+            :description="t('cron-jobs.cronJobs.logDetail.noContextData')"
             size="small"
           />
         </div>
@@ -621,9 +621,11 @@
 <script setup>
 import { ref, watch, onMounted, computed, h } from 'vue'
 import { useMessage, useDialog, NButton } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import api from '../api'
 import TimeFormatSelector from '../components/TimeFormatSelector.vue'
 
+const { t } = useI18n()
 const message = useMessage()
 const dialog = useDialog()
 const loading = ref(false)
@@ -701,14 +703,14 @@ function viewLogDetail(log) {
   }
   showLogDetail.value = true
 }
-const jobLogsColumns = [
-  { title: '详情', key: 'details', width: 70, render: (row) => row.details ? h(NButton, { size: 'tiny', onClick: () => viewLogDetail(row) }, { default: () => '详情' }) : '-' },
-  { title: '时间', key: 'created_at', width: 140, render: (row) => formatTime(row.created_at) },
-  { title: '状态', key: 'status', width: 80, render: (row) => row.status === 'success' ? '✅ 成功' : row.status === 'skipped' ? '⏭️ 跳过' : '❌ 失败' },
-  { title: '消息', key: 'message', width: 200, ellipsis: { tooltip: true } },
-  { title: '错误', key: 'error', width: 120, ellipsis: { tooltip: true }, render: (row) => row.error || '-' },
-  { title: '耗时', key: 'duration', width: 70, render: (row) => row.duration ? `${row.duration.toFixed(1)}s` : '-' }
-]
+const jobLogsColumns = computed(() => [
+  { title: t('cron-jobs.cronJobs.logDetail.details'), key: 'details', width: 70, render: (row) => row.details ? h(NButton, { size: 'tiny', onClick: () => viewLogDetail(row) }, { default: () => t('cron-jobs.cronJobs.logDetail.details') }) : '-' },
+  { title: t('cron-jobs.cronJobs.logDetail.time'), key: 'created_at', width: 140, render: (row) => formatTime(row.created_at) },
+  { title: t('cron-jobs.cronJobs.logDetail.status'), key: 'status', width: 80, render: (row) => row.status === 'success' ? t('cron-jobs.cronJobs.logDetail.success') : row.status === 'skipped' ? t('cron-jobs.cronJobs.logDetail.skipped') : t('cron-jobs.cronJobs.logDetail.failed') },
+  { title: t('cron-jobs.cronJobs.logDetail.message'), key: 'message', width: 200, ellipsis: { tooltip: true } },
+  { title: t('cron-jobs.cronJobs.logDetail.error'), key: 'error', width: 120, ellipsis: { tooltip: true }, render: (row) => row.error || '-' },
+  { title: t('cron-jobs.cronJobs.logDetail.duration'), key: 'duration', width: 70, render: (row) => row.duration ? `${row.duration.toFixed(1)}s` : '-' }
+])
 
 // 日志分页
 const jobLogsPage = ref(1)
@@ -719,11 +721,11 @@ const jobLogsPaged = computed(() => {
   return jobLogs.value.slice(start, start + jobLogsPageSize)
 })
 
-const platformOptions = [
-  { label: '微信', value: 'weixin' },
-  { label: '飞书', value: 'feishu' },
-  { label: 'CLI', value: 'cli' }
-]
+const platformOptions = computed(() => [
+  { label: t('cron-jobs.cronJobs.platforms.weixin'), value: 'weixin' },
+  { label: t('cron-jobs.cronJobs.platforms.feishu'), value: 'feishu' },
+  { label: t('cron-jobs.cronJobs.platforms.cli'), value: 'cli' }
+])
 
 const WEEKDAY_NAMES = ['一', '二', '三', '四', '五', '六', '日']
 
@@ -833,7 +835,7 @@ async function loadSessions(platform = 'weixin') {
   try {
     const data = await api.get('/cron/sessions', { params: { platform } })
     sessionOptions.value = (data.items || []).map(s => ({
-      label: `${s.title || s.id} (${s.message_count || 0} 条消息)`,
+      label: `${s.title || s.id} (${s.message_count || 0} ${t('cron-jobs.cronJobs.form.sessionMessagesLabel')})`,
       value: s.id
     }))
   } catch (e) {
@@ -864,12 +866,12 @@ async function fillDefaultSystemPrompt() {
     const data = await api.get('/config/prompts')
     if (data.system) {
       formData.value.system_prompt = data.system
-      message.success('已填充默认系统提示词')
+      message.success(t('cron-jobs.cronJobs.messages.fillSystemPromptSuccess'))
     } else {
-      message.warning('未配置默认系统提示词')
+      message.warning(t('cron-jobs.cronJobs.messages.noDefaultSystemPrompt'))
     }
   } catch (e) {
-    message.error('加载默认提示词失败')
+    message.error(t('cron-jobs.cronJobs.messages.loadDefaultPromptFailed'))
   }
 }
 
@@ -878,12 +880,12 @@ async function fillDefaultUserPrompt() {
     const data = await api.get('/config/prompts')
     if (data.generation) {
       formData.value.user_prompt = data.generation
-      message.success('已填充默认用户提示词')
+      message.success(t('cron-jobs.cronJobs.messages.fillUserPromptSuccess'))
     } else {
-      message.warning('未配置默认用户提示词')
+      message.warning(t('cron-jobs.cronJobs.messages.noDefaultUserPrompt'))
     }
   } catch (e) {
-    message.error('加载默认提示词失败')
+    message.error(t('cron-jobs.cronJobs.messages.loadDefaultPromptFailed'))
   }
 }
 
@@ -901,10 +903,10 @@ function parseCron() {
       if (result.success) {
         cronParseResult.value = result
       } else {
-        cronParseResult.value = { frequency: result.message || '解析失败', next_runs: [] }
+        cronParseResult.value = { frequency: result.message || t('cron-jobs.cronJobs.messages.parseFailed'), next_runs: [] }
       }
     } catch (e) {
-      cronParseResult.value = { frequency: '解析失败', next_runs: [] }
+      cronParseResult.value = { frequency: t('cron-jobs.cronJobs.messages.parseFailed'), next_runs: [] }
     }
   }, 500)
 }
@@ -969,7 +971,7 @@ async function loadDefaultPromptsForNewJob() {
 
 async function saveJob() {
   if (!formData.value.name || !formData.value.schedule) {
-    message.warning('请填写任务名称和调度表达式')
+    message.warning(t('cron-jobs.cronJobs.messages.fillNameAndSchedule'))
     return
   }
   saving.value = true
@@ -993,16 +995,16 @@ async function saveJob() {
 
     if (editingJob.value) {
       await api.put(`/cron/${editingJob.value.id}`, submitData)
-      message.success('任务已更新')
+      message.success(t('cron-jobs.cronJobs.messages.taskUpdated'))
     } else {
       await api.post('/cron', submitData)
-      message.success('任务已创建')
+      message.success(t('cron-jobs.cronJobs.messages.taskCreated'))
     }
     showCreate.value = false
     editingJob.value = null
     await loadJobs()
   } catch (e) {
-    message.error('保存失败: ' + (e?.detail || '未知错误'))
+    message.error(t('cron-jobs.cronJobs.messages.saveFailed') + ': ' + (e?.detail || ''))
   } finally {
     saving.value = false
   }
@@ -1011,10 +1013,10 @@ async function saveJob() {
 async function toggleJob(job) {
   try {
     await api.post(`/cron/${job.id}/toggle`)
-    message.success(job.enabled ? '任务已暂停' : '任务已恢复')
+    message.success(job.enabled ? t('cron-jobs.cronJobs.messages.taskPaused') : t('cron-jobs.cronJobs.messages.taskResumed'))
     await loadJobs()
   } catch (e) {
-    message.error('操作失败')
+    message.error(t('cron-jobs.cronJobs.messages.toggleFailed'))
   }
 }
 
@@ -1022,9 +1024,9 @@ async function runJob(job) {
   job.running = true
   try {
     await api.post(`/cron/${job.id}/run`)
-    message.success('任务已触发')
+    message.success(t('cron-jobs.cronJobs.messages.taskTriggered'))
   } catch (e) {
-    message.error('触发失败: ' + (e?.detail || '未知错误'))
+    message.error(t('cron-jobs.cronJobs.messages.triggerFailed') + ': ' + (e?.detail || ''))
   } finally {
     job.running = false
   }
@@ -1099,7 +1101,7 @@ async function viewJobLogs(job) {
     const data = await api.get('/task-logs', { params: { task_type: 'cron_run', job_id: job.id, page_size: 100 } })
     jobLogs.value = data.items || []
   } catch (e) {
-    message.error('加载日志失败')
+    message.error(t('cron-jobs.cronJobs.messages.loadLogsFailed'))
     jobLogs.value = []
   } finally {
     jobLogsLoading.value = false
@@ -1108,17 +1110,17 @@ async function viewJobLogs(job) {
 
 function deleteJob(job) {
   dialog.warning({
-    title: '确认删除',
-    content: `确定要删除任务 "${job.name}" 吗？`,
-    positiveText: '删除',
-    negativeText: '取消',
+    title: t('cron-jobs.cronJobs.confirmDelete'),
+    content: t('cron-jobs.cronJobs.confirmDeleteMessage', { name: job.name }),
+    positiveText: t('common.common.delete'),
+    negativeText: t('common.common.cancel'),
     onPositiveClick: async () => {
       try {
         await api.delete(`/cron/${job.id}`)
-        message.success('任务已删除')
+        message.success(t('cron-jobs.cronJobs.messages.taskDeleted'))
         await loadJobs()
       } catch (e) {
-        message.error('删除失败')
+        message.error(t('cron-jobs.cronJobs.messages.deleteFailed'))
       }
     }
   })
@@ -1137,7 +1139,7 @@ async function openDefaultPrompts() {
     defaultPromptPreview.value = null
     showDefaultPrompts.value = true
   } catch (e) {
-    message.error('加载默认提示词配置失败')
+    message.error(t('cron-jobs.cronJobs.messages.loadDefaultPromptConfigFailed'))
   }
 }
 
@@ -1148,12 +1150,12 @@ async function saveDefaultPrompts() {
       system: defaultPromptsData.value.system_prompt,
       generation: defaultPromptsData.value.user_prompt
     })
-    message.success('默认提示词配置已保存')
+    message.success(t('cron-jobs.cronJobs.messages.defaultPromptConfigSaved'))
     showDefaultPrompts.value = false
     // 重新加载默认提示词
     await loadDefaultPrompt()
   } catch (e) {
-    message.error('保存失败: ' + (e?.detail || '未知错误'))
+    message.error(t('cron-jobs.cronJobs.messages.saveFailed') + ': ' + (e?.detail || ''))
   } finally {
     savingDefaultPrompts.value = false
   }
@@ -1170,7 +1172,7 @@ async function previewDefaultPrompt() {
     })
     defaultPromptPreview.value = data
   } catch (e) {
-    message.error('预览失败: ' + (e?.detail || '未知错误'))
+    message.error(t('cron-jobs.cronJobs.messages.previewFailed') + ': ' + (e?.detail || ''))
   } finally {
     previewingDefault.value = false
   }
@@ -1193,7 +1195,7 @@ async function previewPrompt() {
     })
     previewData.value = data
   } catch (e) {
-    message.error('预览失败: ' + (e?.detail || '未知错误'))
+    message.error(t('cron-jobs.cronJobs.messages.previewFailed') + ': ' + (e?.detail || ''))
     showPreview.value = false
   } finally {
     previewing.value = false
