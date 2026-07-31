@@ -19,6 +19,7 @@ from models.passive_consciousness import (
     SuccessResponse, ChatRecord, TestResult
 )
 from models.database import ActiveSession, state_engine
+from services.config_service import ConfigService
 from services.passive_consciousness_service import PassiveConsciousnessService
 
 logger = logging.getLogger("hermes.passive_consciousness.router")
@@ -175,10 +176,22 @@ async def test_hindsight_reflect():
 
 
 def _get_weather_config() -> dict:
-    """从被动意识配置中提取天气配置并转换为 WeatherService.get_weather 所需的关键字参数"""
-    config = PassiveConsciousnessService.get_config()
-    weather_config = config.get("weather", {})
-    return weather_config
+    """从 weather.* 命名空间读取天气配置"""
+    db = ActiveSession()
+    try:
+        return {
+            "enabled": ConfigService.get_config(db, "weather.enabled") == "true",
+            "provider": ConfigService.get_config(db, "weather.provider") or "qweather",
+            "city": ConfigService.get_config(db, "weather.city") or "北京",
+            "cache_hours": int(ConfigService.get_config(db, "weather.cache_hours") or "4"),
+            "amap_key": ConfigService.get_config(db, "weather.amap_key") or "",
+            "adcode": ConfigService.get_config(db, "weather.adcode") or "370100",
+            "qweather_key": ConfigService.get_config(db, "weather.qweather_key") or "",
+            "qweather_geo_url": ConfigService.get_config(db, "weather.qweather_geo_url") or "https://geoapi.qweather.com/v2/city/lookup",
+            "qweather_weather_url": ConfigService.get_config(db, "weather.qweather_weather_url") or "https://devapi.qweather.com/v7/weather/now",
+        }
+    finally:
+        db.close()
 
 
 def _build_weather_kwargs(weather_config: dict, cache_ttl: int = None) -> dict:

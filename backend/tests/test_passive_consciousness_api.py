@@ -75,12 +75,20 @@ class TestPlatformAPI:
 class TestWeatherAPI:
     """天气 API 测试类"""
 
-    @patch("routers.passive_consciousness.PassiveConsciousnessService")
-    def test_get_weather_disabled(self, mock_service, client):
+    def _mock_config_get(self, config_map):
+        """创建 ConfigService.get_config 的 mock，根据 key 返回对应值"""
+        def side_effect(db, key):
+            return config_map.get(key)
+        return side_effect
+
+    @patch("routers.passive_consciousness.ActiveSession")
+    @patch("routers.passive_consciousness.ConfigService")
+    def test_get_weather_disabled(self, mock_config_service, mock_session, client):
         """测试天气未启用时获取天气"""
-        mock_service.get_config.return_value = {
-            "weather": {"enabled": False}
-        }
+        mock_session.return_value = MagicMock()
+        mock_config_service.get_config.side_effect = self._mock_config_get({
+            "weather.enabled": "false",
+        })
 
         response = client.get("/api/passive-consciousness/weather")
 
@@ -89,45 +97,51 @@ class TestWeatherAPI:
         assert data["success"] is False
         assert "未启用" in data["error"]
 
-    @patch("routers.passive_consciousness.PassiveConsciousnessService")
-    @patch("routers.passive_consciousness.WeatherService")
-    def test_get_weather_enabled(self, mock_weather_service, mock_service, client):
+    @patch("routers.passive_consciousness.ActiveSession")
+    @patch("routers.passive_consciousness.ConfigService")
+    @patch("services.weather_service.WeatherService")
+    def test_get_weather_enabled(self, mock_weather_service, mock_config_service, mock_session, client):
         """测试天气启用时获取天气"""
-        mock_service.get_config.return_value = {
-            "weather": {
-                "enabled": True,
-                "provider": "qweather",
-                "city": "北京",
-                "cache_hours": 4
-            }
-        }
+        mock_session.return_value = MagicMock()
+        mock_config_service.get_config.side_effect = self._mock_config_get({
+            "weather.enabled": "true",
+            "weather.provider": "qweather",
+            "weather.city": "北京",
+            "weather.cache_hours": "4",
+            "weather.amap_key": "",
+            "weather.adcode": "370100",
+            "weather.qweather_key": "test-key",
+            "weather.qweather_geo_url": "https://geoapi.qweather.com/v2/city/lookup",
+            "weather.qweather_weather_url": "https://devapi.qweather.com/v7/weather/now",
+        })
 
         mock_weather_instance = MagicMock()
-        mock_weather_instance.get_weather.return_value = {
+        mock_weather_instance.get_weather = AsyncMock(return_value={
             "success": True,
-            "data": {
-                "city": "北京",
+            "current": {
                 "weather": "晴",
-                "temperature": 28,
-                "humidity": 45
-            }
-        }
+                "temp": 28,
+                "humidity": 45,
+                "winddirection": "北"
+            },
+            "city": "北京",
+        })
         mock_weather_service.return_value = mock_weather_instance
 
         response = client.get("/api/passive-consciousness/weather")
 
         assert response.status_code == 200
 
-    @patch("routers.passive_consciousness.PassiveConsciousnessService")
-    def test_get_weather_status(self, mock_service, client):
+    @patch("routers.passive_consciousness.ActiveSession")
+    @patch("routers.passive_consciousness.ConfigService")
+    def test_get_weather_status(self, mock_config_service, mock_session, client):
         """测试获取天气服务状态"""
-        mock_service.get_config.return_value = {
-            "weather": {
-                "enabled": True,
-                "provider": "qweather",
-                "city": "北京"
-            }
-        }
+        mock_session.return_value = MagicMock()
+        mock_config_service.get_config.side_effect = self._mock_config_get({
+            "weather.enabled": "true",
+            "weather.provider": "qweather",
+            "weather.city": "北京",
+        })
 
         response = client.get("/api/passive-consciousness/weather/status")
 
