@@ -2,58 +2,71 @@
   <div class="config-page">
     <n-tabs v-model:value="activeTab" type="line" animated>
       <!-- Tab 1: 基础配置 -->
-      <n-tab-pane name="basic" tab="基础配置">
+      <n-tab-pane name="basic" :tab="t('config.config.tabs.basic')">
         <!-- 个性化设置 -->
-        <n-card title="个性化设置" style="margin-bottom: 16px">
+        <n-card :title="t('config.config.personalization.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="100">
-            <n-form-item label="用户名称">
+            <n-form-item :label="t('config.config.personalization.userName')">
               <n-input v-model:value="userConfig.user_name" placeholder="曹凡" />
             </n-form-item>
-            <n-form-item label="助手名称">
+            <n-form-item :label="t('config.config.personalization.assistantName')">
               <n-input v-model:value="userConfig.assistant_name" placeholder="凯莉" />
             </n-form-item>
             <n-form-item>
               <div class="form-actions">
-                <n-button type="primary" @click="saveUserConfig" :loading="savingUserConfig">保存</n-button>
+                <n-button type="primary" @click="saveUserConfig" :loading="savingUserConfig">{{ t('common.common.save') }}</n-button>
               </div>
             </n-form-item>
           </n-form>
         </n-card>
 
+        <!-- 语言设置 -->
+        <n-card :title="t('config.config.language.title')" style="margin-bottom: 16px">
+          <n-form label-placement="left" label-width="100">
+            <n-form-item :label="t('config.config.language.label')">
+              <n-select
+                v-model:value="currentLocale"
+                :options="localeOptions"
+                @update:value="changeLocale"
+              />
+            </n-form-item>
+          </n-form>
+        </n-card>
+
         <!-- 主题配置 -->
-        <n-card title="主题配置" style="margin-bottom: 16px">
+        <n-card :title="t('config.config.theme.title')" style="margin-bottom: 16px">
           <div class="theme-list">
             <div
-              v-for="t in themes" :key="t.id"
+              v-for="th in themes" :key="th.id"
               class="theme-item"
-              :class="{ active: currentTheme === t.id }"
-              @click="selectTheme(t.id)"
+              :class="{ active: currentTheme === th.id }"
+              @click="selectTheme(th.id)"
             >
               <div class="theme-preview">
-                <div class="theme-color" :style="{ background: t.color1 }"></div>
-                <div class="theme-color" :style="{ background: t.color2 }"></div>
+                <div class="theme-color" :style="{ background: th.color1 }"></div>
+                <div class="theme-color" :style="{ background: th.color2 }"></div>
               </div>
               <div class="theme-info">
-                <div class="theme-name">{{ t.name }}</div>
-                <div class="theme-desc">{{ t.desc }}</div>
+                <div class="theme-name">{{ th.name }}</div>
+                <div class="theme-desc">{{ th.desc }}</div>
               </div>
-              <n-tag v-if="currentTheme === t.id" type="success" size="small">当前</n-tag>
+              <n-tag v-if="currentTheme === th.id" type="success" size="small">{{ t('config.config.theme.current') }}</n-tag>
             </div>
           </div>
         </n-card>
 
         <!-- 修改密码 -->
-        <n-card title="修改密码" style="margin-bottom: 16px">
+        <n-card :title="t('config.config.password.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="80">
-            <n-form-item label="旧密码">
+            <n-form-item :label="t('config.config.password.oldPassword')">
               <n-input v-model:value="passwordForm.old_password" type="password" show-password-on="click" />
             </n-form-item>
-            <n-form-item label="新密码">
+            <n-form-item :label="t('config.config.password.newPassword')">
               <n-input v-model:value="passwordForm.new_password" type="password" show-password-on="click" />
             </n-form-item>
             <n-form-item>
               <div class="form-actions">
-                <n-button type="warning" @click="changePassword" :loading="changingPassword">修改密码</n-button>
+                <n-button type="warning" @click="changePassword" :loading="changingPassword">{{ t('config.config.password.submit') }}</n-button>
               </div>
             </n-form-item>
           </n-form>
@@ -61,27 +74,27 @@
       </n-tab-pane>
 
       <!-- Tab 2: LLM 配置 -->
-      <n-tab-pane name="llm" tab="LLM 配置">
-        <n-card title="LLM 配置" style="margin-bottom: 16px">
+      <n-tab-pane name="llm" :tab="t('config.config.tabs.llm')">
+        <n-card :title="t('config.config.llm.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="80">
-            <n-form-item label="模式">
+            <n-form-item :label="t('config.config.llm.mode')">
               <n-radio-group v-model:value="llmConfig.mode">
-                <n-radio value="hermes">使用 Hermes LLM</n-radio>
-                <n-radio value="custom">自定义配置</n-radio>
+                <n-radio value="hermes">{{ t('config.config.llm.hermes') }}</n-radio>
+                <n-radio value="custom">{{ t('config.config.llm.custom') }}</n-radio>
               </n-radio-group>
             </n-form-item>
 
             <template v-if="llmConfig.mode === 'custom'">
-              <n-form-item label="Provider">
+              <n-form-item :label="t('config.config.llm.provider')">
                 <n-input v-model:value="llmConfig.provider" placeholder="openai" />
               </n-form-item>
-              <n-form-item label="Model">
+              <n-form-item :label="t('config.config.llm.model')">
                 <n-input v-model:value="llmConfig.model" placeholder="gpt-4" />
               </n-form-item>
-              <n-form-item label="API Key">
-                <n-input v-model:value="llmConfig.api_key" placeholder="输入 API Key" />
+              <n-form-item :label="t('config.config.llm.apiKey')">
+                <n-input v-model:value="llmConfig.api_key" placeholder="API Key" />
               </n-form-item>
-              <n-form-item label="Base URL">
+              <n-form-item :label="t('config.config.llm.baseUrl')">
                 <n-input v-model:value="llmConfig.base_url" placeholder="https://api.openai.com/v1" />
               </n-form-item>
             </template>
@@ -89,8 +102,8 @@
             <n-form-item>
               <div class="form-actions">
                 <n-space>
-                  <n-button type="primary" @click="saveLLMConfig" :loading="saving">保存</n-button>
-                  <n-button @click="testLLM" :loading="testing" v-if="llmConfig.mode === 'custom'">测试连通性</n-button>
+                  <n-button type="primary" @click="saveLLMConfig" :loading="saving">{{ t('common.common.save') }}</n-button>
+                  <n-button @click="testLLM" :loading="testing" v-if="llmConfig.mode === 'custom'">{{ t('common.common.test') }}</n-button>
                 </n-space>
               </div>
             </n-form-item>
@@ -99,27 +112,27 @@
       </n-tab-pane>
 
       <!-- Tab 3: Hindsight 配置 -->
-      <n-tab-pane name="hindsight" tab="Hindsight 配置">
-        <n-card title="Hindsight 记忆配置" style="margin-bottom: 16px">
+      <n-tab-pane name="hindsight" :tab="t('config.config.tabs.hindsight')">
+        <n-card :title="t('config.config.hindsight.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="100">
-            <n-form-item label="启用 Hindsight">
+            <n-form-item :label="t('config.config.hindsight.enable')">
               <n-switch v-model:value="hindsightConfig.enabled" />
             </n-form-item>
 
             <template v-if="hindsightConfig.enabled">
-              <n-form-item label="Base URL">
+              <n-form-item :label="t('config.config.hindsight.baseUrl')">
                 <n-input v-model:value="hindsightConfig.base_url" placeholder="http://localhost:8888" />
               </n-form-item>
-              <n-form-item label="Bank ID">
+              <n-form-item :label="t('config.config.hindsight.bankId')">
                 <n-input v-model:value="hindsightConfig.bank_id" placeholder="hermes" />
               </n-form-item>
-              <n-form-item label="Recall 结果数">
+              <n-form-item :label="t('config.config.hindsight.recallLimit')">
                 <n-input-number v-model:value="hindsightConfig.recall_limit" :min="1" :max="20" />
               </n-form-item>
-              <n-form-item label="启用 Reflect">
+              <n-form-item :label="t('config.config.hindsight.enableReflect')">
                 <n-switch v-model:value="hindsightConfig.reflect_enabled" />
               </n-form-item>
-              <n-form-item label="超时时间（秒）">
+              <n-form-item :label="t('config.config.hindsight.timeout')">
                 <n-input-number v-model:value="hindsightConfig.timeout" :min="5" :max="300" />
               </n-form-item>
             </template>
@@ -127,9 +140,9 @@
             <n-form-item>
               <div class="form-actions">
                 <n-space>
-                  <n-button type="primary" @click="saveHindsightConfig" :loading="savingHindsight">保存</n-button>
-                  <n-button @click="testHindsightRecall" :loading="testingRecall">测试 Recall</n-button>
-                  <n-button @click="testHindsightReflect" :loading="testingReflect" v-if="hindsightConfig.reflect_enabled">测试 Reflect</n-button>
+                  <n-button type="primary" @click="saveHindsightConfig" :loading="savingHindsight">{{ t('common.common.save') }}</n-button>
+                  <n-button @click="testHindsightRecall" :loading="testingRecall">{{ t('config.config.hindsight.testRecall') }}</n-button>
+                  <n-button @click="testHindsightReflect" :loading="testingReflect" v-if="hindsightConfig.reflect_enabled">{{ t('config.config.hindsight.testReflect') }}</n-button>
                 </n-space>
               </div>
             </n-form-item>
@@ -138,32 +151,32 @@
       </n-tab-pane>
 
       <!-- Tab 4: 天气配置 -->
-      <n-tab-pane name="weather" tab="天气配置">
-        <n-card title="天气感知配置" style="margin-bottom: 16px">
+      <n-tab-pane name="weather" :tab="t('config.config.tabs.weather')">
+        <n-card :title="t('config.config.weather.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="120">
-            <n-form-item label="启用天气感知">
+            <n-form-item :label="t('config.config.weather.enable')">
               <n-switch v-model:value="weatherConfig.enabled" />
             </n-form-item>
 
             <template v-if="weatherConfig.enabled">
-              <n-form-item label="天气服务">
+              <n-form-item :label="t('config.config.weather.provider')">
                 <n-radio-group v-model:value="weatherConfig.provider">
-                  <n-radio value="qweather">和风天气</n-radio>
-                  <n-radio value="amap">高德地图</n-radio>
+                  <n-radio value="qweather">{{ t('config.config.weather.qweather') }}</n-radio>
+                  <n-radio value="amap">{{ t('config.config.weather.amap') }}</n-radio>
                 </n-radio-group>
               </n-form-item>
 
-              <n-form-item label="城市">
+              <n-form-item :label="t('config.config.weather.city')">
                 <n-input
                   v-model:value="weatherConfig.city"
-                  placeholder="如：北京、济南、上海"
+                  :placeholder="t('config.config.weather.cityPlaceholder')"
                 />
                 <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  城市名称（中文或英文）
+                  {{ t('config.config.weather.cityHint') }}
                 </span>
               </n-form-item>
 
-              <n-form-item label="缓存时长（小时）">
+              <n-form-item :label="t('config.config.weather.cacheHours')">
                 <n-input-number
                   v-model:value="weatherConfig.cache_hours"
                   :min="1" :max="24" :step="1"
@@ -172,53 +185,53 @@
 
               <!-- 高德地图配置 -->
               <template v-if="weatherConfig.provider === 'amap'">
-                <n-divider>高德地图配置</n-divider>
-                <n-form-item label="高德 API Key">
+                <n-divider>{{ t('config.config.weather.amapConfig') }}</n-divider>
+                <n-form-item :label="t('config.config.weather.amapKey')">
                   <n-input
                     v-model:value="weatherConfig.amap_key"
-                    placeholder="输入高德开放平台 Key"
+                    placeholder="API Key"
                     show-password-on="click"
                     type="password"
                   />
                 </n-form-item>
-                <n-form-item label="城市编码">
+                <n-form-item :label="t('config.config.weather.adcode')">
                   <n-input
                     v-model:value="weatherConfig.adcode"
-                    placeholder="如：370100（济南）"
+                    :placeholder="t('config.config.weather.adcodePlaceholder')"
                   />
                   <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                    高德城市编码，可在高德开放平台查询
+                    {{ t('config.config.weather.adcodeHint') }}
                   </span>
                 </n-form-item>
               </template>
 
               <!-- 和风天气配置 -->
               <template v-if="weatherConfig.provider === 'qweather'">
-                <n-divider>和风天气配置</n-divider>
-                <n-form-item label="和风 API Key">
+                <n-divider>{{ t('config.config.weather.qweatherConfig') }}</n-divider>
+                <n-form-item :label="t('config.config.weather.qweatherKey')">
                   <n-input
                     v-model:value="weatherConfig.qweather_key"
-                    placeholder="输入和风天气 API Key"
+                    placeholder="API Key"
                     show-password-on="click"
                     type="password"
                   />
                 </n-form-item>
-                <n-form-item label="GeoAPI URL">
+                <n-form-item :label="t('config.config.weather.geoApiUrl')">
                   <n-input
                     v-model:value="weatherConfig.qweather_geo_url"
                     placeholder="https://geoapi.qweather.com/v2/city/lookup"
                   />
                   <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                    城市查询 API
+                    {{ t('config.config.weather.geoApiHint') }}
                   </span>
                 </n-form-item>
-                <n-form-item label="天气 API URL">
+                <n-form-item :label="t('config.config.weather.weatherApiUrl')">
                   <n-input
                     v-model:value="weatherConfig.qweather_weather_url"
                     placeholder="https://devapi.qweather.com/v7/weather/now"
                   />
                   <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                    实时天气 API
+                    {{ t('config.config.weather.weatherApiHint') }}
                   </span>
                 </n-form-item>
               </template>
@@ -227,8 +240,8 @@
             <n-form-item>
               <div class="form-actions">
                 <n-space>
-                  <n-button type="primary" @click="saveWeatherConfig" :loading="savingWeather">保存</n-button>
-                  <n-button @click="testWeather" :loading="testingWeather">测试天气</n-button>
+                  <n-button type="primary" @click="saveWeatherConfig" :loading="savingWeather">{{ t('common.common.save') }}</n-button>
+                  <n-button @click="testWeather" :loading="testingWeather">{{ t('common.common.test') }}</n-button>
                 </n-space>
               </div>
             </n-form-item>
@@ -240,14 +253,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import api from '../api'
 import { useConfig } from '../composables/useConfig'
 
 // 从 App.vue 注入的主题函数
 const applyTheme = inject('applyTheme')
 
+const { t, locale } = useI18n()
 const message = useMessage()
 const activeTab = ref('basic')
 const saving = ref(false)
@@ -260,6 +275,26 @@ const testingReflect = ref(false)
 const savingWeather = ref(false)
 const testingWeather = ref(false)
 const { config: globalConfig, loadConfig: loadGlobalConfig } = useConfig()
+
+// 语言配置
+const currentLocale = ref(locale.value)
+const localeOptions = computed(() => [
+  { label: t('config.config.language.zhCN'), value: 'zh-CN' },
+  { label: t('config.config.language.enUS'), value: 'en-US' }
+])
+
+async function changeLocale(newLocale) {
+  locale.value = newLocale
+  currentLocale.value = newLocale
+  localStorage.setItem('locale', newLocale)
+  globalConfig.value.locale = newLocale
+  try {
+    await api.put('/config/set', null, { params: { key: 'locale', value: newLocale } })
+    message.success(t('common.common.success'))
+  } catch (e) {
+    message.error(t('config.config.saveFailed'))
+  }
+}
 
 const userConfig = ref({
   user_name: '曹凡',
@@ -333,9 +368,9 @@ async function saveHindsightConfig() {
   savingHindsight.value = true
   try {
     await api.put('/config/hindsight', hindsightConfig.value)
-    message.success('Hindsight 配置已保存')
+    message.success(t('config.config.hindsight.saveSuccess'))
   } catch (e) {
-    message.error('保存失败: ' + (e?.detail || '未知错误'))
+    message.error(t('config.config.saveFailed'))
   } finally {
     savingHindsight.value = false
   }
@@ -346,12 +381,12 @@ async function testHindsightRecall() {
   try {
     const result = await api.post('/hindsight/recall?query=测试recall&limit=3')
     if (result.success) {
-      message.success(`Recall 测试成功，返回 ${result.total} 条结果`)
+      message.success(t('config.config.hindsight.recallSuccess', { count: result.total }))
     } else {
-      message.error('测试失败: ' + (result.message || '未知错误'))
+      message.error(t('config.config.hindsight.testFailed'))
     }
   } catch (e) {
-    message.error('测试失败: ' + (e?.detail || '未知错误'))
+    message.error(t('config.config.hindsight.testFailed'))
   } finally {
     testingRecall.value = false
   }
@@ -362,12 +397,12 @@ async function testHindsightReflect() {
   try {
     const result = await api.post('/hindsight/reflect?query=测试reflect')
     if (result.success) {
-      message.success('Reflect 测试成功')
+      message.success(t('config.config.hindsight.reflectSuccess'))
     } else {
-      message.error('测试失败: ' + (result.message || '未知错误'))
+      message.error(t('config.config.hindsight.testFailed'))
     }
   } catch (e) {
-    message.error('测试失败: ' + (e?.detail || '未知错误'))
+    message.error(t('config.config.hindsight.testFailed'))
   } finally {
     testingReflect.value = false
   }
@@ -392,9 +427,9 @@ async function saveUserConfig() {
     // 更新全局配置
     globalConfig.value.user_name = userConfig.value.user_name
     globalConfig.value.assistant_name = userConfig.value.assistant_name
-    message.success('个性化设置已保存')
+    message.success(t('config.config.personalization.saveSuccess'))
   } catch (e) {
-    message.error('保存失败: ' + (e?.detail || '未知错误'))
+    message.error(t('config.config.saveFailed'))
   } finally {
     savingUserConfig.value = false
   }
@@ -404,9 +439,9 @@ async function saveLLMConfig() {
   saving.value = true
   try {
     await api.put('/config/llm', llmConfig.value)
-    message.success('LLM 配置已保存')
+    message.success(t('config.config.llm.saveSuccess'))
   } catch (e) {
-    message.error('保存失败: ' + (e?.detail || '未知错误'))
+    message.error(t('config.config.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -417,12 +452,12 @@ async function testLLM() {
   try {
     const result = await api.post('/llm/test', llmConfig.value)
     if (result.success) {
-      message.success('LLM 连通性测试成功')
+      message.success(t('config.config.llm.testSuccess'))
     } else {
-      message.error('测试失败: ' + (result.error || '未知错误'))
+      message.error(t('config.config.llm.testFailed'))
     }
   } catch (e) {
-    message.error('测试失败: ' + (e?.detail || '未知错误'))
+    message.error(t('config.config.llm.testFailed'))
   } finally {
     testing.value = false
   }
@@ -430,16 +465,16 @@ async function testLLM() {
 
 async function changePassword() {
   if (!passwordForm.value.old_password || !passwordForm.value.new_password) {
-    message.warning('请填写完整')
+    message.warning(t('config.config.password.fillComplete'))
     return
   }
   changingPassword.value = true
   try {
     await api.post('/auth/change-password', passwordForm.value)
-    message.success('密码修改成功')
+    message.success(t('config.config.password.changeSuccess'))
     passwordForm.value = { old_password: '', new_password: '' }
   } catch (e) {
-    message.error('修改失败: ' + (e?.detail || '未知错误'))
+    message.error(t('config.config.password.changeFailed'))
   } finally {
     changingPassword.value = false
   }
@@ -461,7 +496,7 @@ function selectTheme(themeId) {
   currentTheme.value = themeId
   applyTheme(themeId)
   api.put('/config/set', null, { params: { key: 'theme', value: themeId } }).catch(() => {})
-  message.success('主题已切换')
+  message.success(t('config.config.theme.switchSuccess'))
 }
 
 
@@ -482,9 +517,9 @@ async function saveWeatherConfig() {
   savingWeather.value = true
   try {
     await api.put('/config/weather', weatherConfig.value)
-    message.success('天气配置已保存')
+    message.success(t('config.config.weather.saveSuccess'))
   } catch (e) {
-    message.error('保存失败: ' + (e?.detail || '未知错误'))
+    message.error(t('config.config.saveFailed'))
   } finally {
     savingWeather.value = false
   }
@@ -498,12 +533,12 @@ async function testWeather() {
     // 再测试
     const result = await api.get('/config/weather/test')
     if (result.success) {
-      message.success(`天气测试成功: ${result.data.city} ${result.data.weather} ${result.data.temperature}°C`)
+      message.success(t('config.config.weather.testSuccess', { city: result.data.city, weather: result.data.weather, temperature: result.data.temperature }))
     } else {
-      message.error('测试失败: ' + (result.error || '未知错误'))
+      message.error(t('config.config.weather.testFailed'))
     }
   } catch (e) {
-    message.error('测试失败: ' + (e?.detail || '未知错误'))
+    message.error(t('config.config.weather.testFailed'))
   } finally {
     testingWeather.value = false
   }
