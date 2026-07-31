@@ -818,13 +818,9 @@ async def test_context():
             steps.append({"name": "Hindsight Reflect", "ok": False, "error": str(e)})
             errors.append(f"Hindsight Reflect: {e}")
 
-        # 步骤 7: 拼装上下文
+        # 步骤 7: 拼装上下文（使用模板渲染 API）
         try:
-            # 动态导入插件的 context_builder
-            if str(PLUGIN_DIR) not in sys.path:
-                sys.path.insert(0, str(PLUGIN_DIR.parent))
-
-            from passive_consciousness.context_builder import build_context
+            from services.template_service import TemplateService
 
             # 收集数据
             consciousness_data = {
@@ -842,12 +838,26 @@ async def test_context():
             if steps[5].get("ok"):
                 reflection = steps[5].get("data", {}).get("reflection")
 
-            context = build_context(
-                consciousness_data=consciousness_data,
-                weather_data=weather_data,
-                memories=memories,
-                reflection=reflection,
-            )
+            # 构建模板数据
+            template_data = {
+                "emotional_intensity": consciousness_data.get("emotional_intensity", {}).get("intensity", 0.0),
+                "emotional_label": consciousness_data.get("emotional_intensity", {}).get("label", "工作"),
+                "chat_heat": consciousness_data.get("chat_heat", {}).get("heat", 0.0),
+                "chat_heat_label": consciousness_data.get("chat_heat", {}).get("label", "cold"),
+                "chat_heat_count": consciousness_data.get("chat_heat", {}).get("recent_count", 0),
+                "longing_score": consciousness_data.get("longing", {}).get("score", 0.0),
+                "longing_label": consciousness_data.get("longing", {}).get("label", "calm"),
+                "weather": weather_data,
+                "memories": memories,
+                "reflection": reflection,
+                "inject_emotion": True,
+                "inject_heat": True,
+                "inject_longing": True,
+                "inject_memory": True,
+            }
+
+            # 使用模板渲染服务
+            context = TemplateService.render_active_template(template_data)
 
             steps.append({"name": "上下文拼装", "ok": True, "data": {"length": len(context)}})
         except Exception as e:
