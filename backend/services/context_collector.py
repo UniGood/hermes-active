@@ -62,7 +62,8 @@ class ContextCollector:
         self.context_config = config.get("context", {})
         self.llm_config = config.get("llm", {})
         self.hindsight_config = config.get("hindsight", {})
-        self.weather_config = config.get("weather", {})
+        # 天气配置从 weather.* 命名空间读取（独立于主动/被动意识配置）
+        self._weather_config = None  # 懒加载
     
     async def collect(self, status: Dict[str, Any]) -> ContextBundle:
         """
@@ -236,7 +237,7 @@ class ContextCollector:
         """获取时间感知"""
         now = datetime.now()
         hour = now.hour
-        
+
         return {
             "hour": hour,
             "is_workday": now.weekday() < 5,
@@ -244,32 +245,54 @@ class ContextCollector:
             "is_sleep_time": hour >= 23 or hour < 7,
             "time_display": now.strftime("%Y-%m-%d %H:%M %A")
         }
-    
+
+    def _load_weather_config(self) -> Dict[str, Any]:
+        """从 weather.* 命名空间懒加载天气配置"""
+        if self._weather_config is None:
+            from services.config_service import ConfigService
+            from models.database import ActiveSession
+            db = ActiveSession()
+            try:
+                self._weather_config = {
+                    "enabled": ConfigService.get_config(db, "weather.enabled") == "true",
+                    "provider": ConfigService.get_config(db, "weather.provider") or "qweather",
+                    "city": ConfigService.get_config(db, "weather.city") or "",
+                    "amap_key": ConfigService.get_config(db, "weather.amap_key") or "",
+                    "adcode": ConfigService.get_config(db, "weather.adcode") or "370100",
+                    "qweather_key": ConfigService.get_config(db, "weather.qweather_key") or "",
+                    "qweather_geo_url": ConfigService.get_config(db, "weather.qweather_geo_url") or "https://geoapi.qweather.com/v2/city/lookup",
+                    "qweather_weather_url": ConfigService.get_config(db, "weather.qweather_weather_url") or "https://devapi.qweather.com/v7/weather/now",
+                    "cache_hours": int(ConfigService.get_config(db, "weather.cache_hours") or "4"),
+                }
+            finally:
+                db.close()
+        return self._weather_config
+
     async def _get_weather(self) -> Optional[Dict]:
-        """获取天气信息"""
-        if not self.weather_config.get("enabled", False):
+        """获取天气信息（从 weather.* 命名空间读取配置）"""
+        weather_config = self._load_weather_config()
+
+        if not weather_config.get("enabled", False):
             return None
-        
+
         if not self.context_config.get("weather_enabled", False):
             return None
-        
+
         try:
             from services.weather_service import WeatherService
 
             weather_service = WeatherService()
             weather_info = await weather_service.get_weather(
-                amap_key=self.weather_config.get("amap_key", ""),
-                adcode=self.weather_config.get("adcode", "370100"),
-                cache_ttl=int(self.weather_config.get("cache_ttl", 3600)),
-                temp_threshold=float(self.weather_config.get("temp_change_threshold", 5.0)),
-                # 新增参数
-                provider=self.weather_config.get("provider", "amap"),
-                city=self.weather_config.get("city", ""),
-                qweather_key=self.weather_config.get("qweather_key", ""),
-                qweather_geo_url=self.weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
-                qweather_weather_url=self.weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
+                amap_key=weather_config.get("amap_key", ""),
+                adcode=weather_config.get("adcode", "370100"),
+                cache_ttl=int(weather_config.get("cache_hours", 4)) * 3600,
+                provider=weather_config.get("provider", "qweather"),
+                city=weather_config.get("city", ""),
+                qweather_key=weather_config.get("qweather_key", ""),
+                qweather_geo_url=weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
+                qweather_weather_url=weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
             )
-            
+
             if weather_info.get("success"):
                 current = weather_info.get("current", {})
                 return {
@@ -277,9 +300,9 @@ class ContextCollector:
                     "temp": current.get("temp", "?"),
                     "city": current.get("city", "济南")
                 }
-            
+
             return None
-            
+
         except Exception as e:
             logger.warning("获取天气失败: %s", e)
             return None

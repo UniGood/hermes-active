@@ -155,13 +155,6 @@ _DEFAULTS = {
     "active_consciousness.notify.platform": "weixin",
     "active_consciousness.notify.chat_id": "",
 
-    # 天气配置（共享）
-    "active_consciousness.weather.enabled": "false",
-    "active_consciousness.weather.amap_key": "",
-    "active_consciousness.weather.adcode": "370100",
-    "active_consciousness.weather.cache_ttl": "3600",
-    "active_consciousness.weather.temp_change_threshold": "5.0",
-
     # 情绪演化
     "active_consciousness.emotion.decay_rate": "0.02",
     "active_consciousness.emotion.social_need_growth": "0.01",

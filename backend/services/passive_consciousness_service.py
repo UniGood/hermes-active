@@ -48,14 +48,6 @@ _DEFAULTS = {
     "passive_consciousness.hindsight.enabled": "true",
     "passive_consciousness.hindsight.recall_limit": "5",
     "passive_consciousness.hindsight.reflect_enabled": "true",
-    "passive_consciousness.weather.enabled": "false",
-    "passive_consciousness.weather.provider": "qweather",
-    "passive_consciousness.weather.city": "北京",
-    "passive_consciousness.weather.cache_hours": "4",
-    "passive_consciousness.weather.amap_key": "",
-    "passive_consciousness.weather.qweather_key": "",
-    "passive_consciousness.weather.qweather_geo_url": "https://geoapi.qweather.com/v2/city/lookup",
-    "passive_consciousness.weather.qweather_weather_url": "https://devapi.qweather.com/v7/weather/now",
     "passive_consciousness.platforms.enabled": "false",
     "passive_consciousness.platforms.whitelist": '["weixin"]',
     "passive_consciousness.templates.list": _get_default_templates_json(),
@@ -247,25 +239,25 @@ class PassiveConsciousnessService:
             except Exception:
                 pass
 
-            # 获取天气数据
+            # 获取天气数据（从 weather.* 命名空间读取配置）
             weather_data = None
             try:
-                weather_config = config.get("weather", {})
-                if weather_config.get("enabled"):
+                weather_enabled = ConfigService.get_config(db, "weather.enabled") == "true"
+                if weather_enabled:
                     from services.weather_service import WeatherService
 
                     weather_service = WeatherService()
 
                     # 使用同步方法调用
                     weather_result = weather_service.get_weather_sync(
-                        amap_key=weather_config.get("amap_key", ""),
-                        adcode=weather_config.get("adcode", "370100"),
-                        cache_ttl=int(weather_config.get("cache_hours", 4)) * 3600,
-                        provider=weather_config.get("provider", "qweather"),
-                        city=weather_config.get("city", ""),
-                        qweather_key=weather_config.get("qweather_key", ""),
-                        qweather_geo_url=weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
-                        qweather_weather_url=weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
+                        amap_key=ConfigService.get_config(db, "weather.amap_key") or "",
+                        adcode=ConfigService.get_config(db, "weather.adcode") or "370100",
+                        cache_ttl=int(ConfigService.get_config(db, "weather.cache_hours") or "4") * 3600,
+                        provider=ConfigService.get_config(db, "weather.provider") or "qweather",
+                        city=ConfigService.get_config(db, "weather.city") or "",
+                        qweather_key=ConfigService.get_config(db, "weather.qweather_key") or "",
+                        qweather_geo_url=ConfigService.get_config(db, "weather.qweather_geo_url") or "https://geoapi.qweather.com/v2/city/lookup",
+                        qweather_weather_url=ConfigService.get_config(db, "weather.qweather_weather_url") or "https://devapi.qweather.com/v7/weather/now",
                     )
 
                     if weather_result and weather_result.get("success"):

@@ -33,6 +33,16 @@ class ConfigService:
         db.commit()
 
     @staticmethod
+    def delete_config(db: Session, key: str) -> bool:
+        """删除配置值"""
+        config = db.query(Config).filter(Config.key == key).first()
+        if config:
+            db.delete(config)
+            db.commit()
+            return True
+        return False
+
+    @staticmethod
     def get_llm_config(db: Session) -> Dict[str, Any]:
         """获取 LLM 配置"""
         config = {

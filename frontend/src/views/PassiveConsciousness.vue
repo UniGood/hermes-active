@@ -105,45 +105,6 @@
               <n-switch v-model:value="config.hindsight.reflect_enabled" />
             </n-form-item>
 
-            <!-- 天气感知 -->
-            <n-divider>天气感知</n-divider>
-            <n-form-item label="启用天气感知">
-              <n-switch v-model:value="config.weather.enabled" />
-            </n-form-item>
-
-            <template v-if="config.weather.enabled">
-              <n-form-item label="天气服务">
-                <n-radio-group v-model:value="config.weather.provider">
-                  <n-radio value="qweather">和风天气</n-radio>
-                  <n-radio value="amap">高德地图</n-radio>
-                </n-radio-group>
-              </n-form-item>
-
-              <n-form-item label="城市">
-                <n-input v-model:value="config.weather.city" placeholder="北京" />
-              </n-form-item>
-
-              <n-form-item label="缓存时间（小时）">
-                <n-input-number v-model:value="config.weather.cache_hours" :min="1" :max="24" />
-              </n-form-item>
-
-              <n-form-item label="高德 API Key" v-if="config.weather.provider === 'amap'">
-                <n-input v-model:value="config.weather.amap_key" placeholder="输入高德 API Key" show-password-on="click" type="password" />
-              </n-form-item>
-
-              <n-form-item label="和风 API Key" v-if="config.weather.provider === 'qweather'">
-                <n-input v-model:value="config.weather.qweather_key" placeholder="输入和风天气 API Key" show-password-on="click" type="password" />
-              </n-form-item>
-
-              <n-form-item label="和风 GeoAPI URL" v-if="config.weather.provider === 'qweather'">
-                <n-input v-model:value="config.weather.qweather_geo_url" placeholder="https://geoapi.qweather.com/v2/city/lookup" />
-              </n-form-item>
-
-              <n-form-item label="和风天气 URL" v-if="config.weather.provider === 'qweather'">
-                <n-input v-model:value="config.weather.qweather_weather_url" placeholder="https://devapi.qweather.com/v7/weather/now" />
-              </n-form-item>
-            </template>
-
             <!-- 模板配置 -->
             <n-divider>模板配置</n-divider>
             <n-form-item label="当前模板">
@@ -535,7 +496,6 @@ const config = ref({
   passive: { enabled: true, inject_emotion: true, inject_heat: true, inject_memory: true, inject_thought: true, thought_max_chars: 200, vibe_max_chars: 50, inject_tag: '[CONSCIOUSNESS_CONTEXT]', time_format: '%H:%M' },
   session: { sources: ['weixin'], time_range_hours: 24, max_messages_per_session: 15, filter_tool_messages: true },
   hindsight: { enabled: true, recall_limit: 5, reflect_enabled: true },
-  weather: { enabled: false, provider: 'qweather', city: '北京', cache_hours: 4, amap_key: '', qweather_key: '', qweather_geo_url: 'https://geoapi.qweather.com/v2/city/lookup', qweather_weather_url: 'https://devapi.qweather.com/v7/weather/now' },
   platforms: { enabled: false, whitelist: ['weixin'] },
   templates: { list: [], active_id: 'default' }
 })
