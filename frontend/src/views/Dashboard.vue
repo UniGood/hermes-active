@@ -14,7 +14,7 @@
     </div>
 
     <!-- 最近消息 -->
-    <n-card title="最近消息" style="margin-top: 16px">
+    <n-card :title="t('dashboard.dashboard.recentMessages')" style="margin-top: 16px">
       <n-spin :show="loading">
         <div class="message-list">
           <template v-for="msg in recentMessages" :key="msg.id">
@@ -28,13 +28,13 @@
               <div class="message-content">{{ truncate(msg.content, 100) }}</div>
             </div>
           </template>
-          <n-empty v-if="!loading && recentMessages.length === 0" description="暂无消息" />
+          <n-empty v-if="!loading && recentMessages.length === 0" :description="t('dashboard.dashboard.noMessages')" />
         </div>
       </n-spin>
     </n-card>
 
     <!-- 平台分布 -->
-    <n-card title="平台分布" style="margin-top: 16px">
+    <n-card :title="t('dashboard.dashboard.platformDistribution')" style="margin-top: 16px">
       <div class="platform-list">
         <div v-for="p in platforms" :key="p.name" class="platform-item">
           <span class="platform-name">{{ p.name }}</span>
@@ -50,7 +50,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, markRaw } from 'vue'
+import { ref, computed, onMounted, markRaw } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   ChatbubblesOutline,
   PeopleOutline,
@@ -60,15 +61,24 @@ import {
 import api from '../api'
 import { useConfig } from '../composables/useConfig'
 
+const { t } = useI18n()
 const loading = ref(false)
 const recentMessages = ref([])
 const { config, loadConfig } = useConfig()
 
-const stats = ref([
-  { label: '总会话数', value: 0, icon: markRaw(ChatbubblesOutline), color: 'var(--theme-primary)' },
-  { label: '总消息数', value: 0, icon: markRaw(PeopleOutline), color: 'var(--theme-accent)' },
-  { label: '今日消息', value: 0, icon: markRaw(TimeOutline), color: '#a8e6cf' },
-  { label: '本周消息', value: 0, icon: markRaw(TrendingUpOutline), color: '#ffd3b6' }
+// Reactive stat values
+const statValues = ref({
+  totalSessions: 0,
+  totalMessages: 0,
+  todayMessages: 0,
+  weekMessages: 0
+})
+
+const stats = computed(() => [
+  { label: t('dashboard.dashboard.stats.totalSessions'), value: statValues.value.totalSessions, icon: markRaw(ChatbubblesOutline), color: 'var(--theme-primary)' },
+  { label: t('dashboard.dashboard.stats.totalMessages'), value: statValues.value.totalMessages, icon: markRaw(PeopleOutline), color: 'var(--theme-accent)' },
+  { label: t('dashboard.dashboard.stats.todayMessages'), value: statValues.value.todayMessages, icon: markRaw(TimeOutline), color: '#a8e6cf' },
+  { label: t('dashboard.dashboard.stats.weekMessages'), value: statValues.value.weekMessages, icon: markRaw(TrendingUpOutline), color: '#ffd3b6' }
 ])
 
 const platforms = ref([])
@@ -87,18 +97,19 @@ function truncate(str, len) {
 async function loadStats() {
   try {
     const data = await api.get('/stats/overview')
-    stats.value[0].value = data.total_sessions || 0
-    stats.value[1].value = data.total_messages || 0
-    stats.value[2].value = data.today_messages || 0
-    stats.value[3].value = data.week_messages || 0
+    statValues.value = {
+      totalSessions: data.total_sessions || 0,
+      totalMessages: data.total_messages || 0,
+      todayMessages: data.today_messages || 0,
+      weekMessages: data.week_messages || 0
+    }
 
     // 加载平台分布
     const total = data.total_messages || 1
     const platformData = await api.get('/stats/platforms')
     const platformColors = { weixin: 'var(--theme-primary)', feishu: 'var(--theme-accent)', cli: '#a8e6cf', cron: '#ffd3b6' }
-    const platformNames = { weixin: '微信', feishu: '飞书', cli: 'CLI', cron: '定时任务', unknown: '其他' }
     platforms.value = (platformData || []).map(p => ({
-      name: platformNames[p.platform] || p.platform,
+      name: t(`common.platform.${p.platform}`) || p.platform,
       count: p.count,
       percent: Math.round((p.count / total) * 100),
       color: platformColors[p.platform] || '#999'
