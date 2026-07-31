@@ -1,0 +1,63 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "sessions": "Sessions",
+    "messages": "Messages",
+    "passiveConsciousness": "Passive Consciousness",
+    "activeConsciousness": "Active Consciousness",
+    "freeConsciousness": "Free Consciousness",
+    "config": "Configuration",
+    "cronJobs": "Cron Jobs",
+    "taskLogs": "Task Logs",
+    "systemLogs": "System Logs",
+    "test": "Test Tools",
+    "keyTest": "Key Test",
+    "logout": "Logout"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "noData": "No Data",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "yes": "Yes",
+    "no": "No",
+    "enable": "Enable",
+    "disable": "Disable",
+    "test": "Test",
+    "submit": "Submit",
+    "reset": "Reset",
+    "back": "Back",
+    "more": "More",
+    "less": "Less",
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "pagination": {
+    "total": "Total {total}",
+    "page": "Page {page}"
+  },
+  "status": {
+    "active": "Active",
+    "ended": "Ended",
+    "success": "Success",
+    "failed": "Failed",
+    "running": "Running",
+    "pending": "Pending"
+  },
+  "platform": {
+    "weixin": "WeChat",
+    "feishu": "Feishu",
+    "cli": "CLI",
+    "cron": "Cron",
+    "unknown": "Other"
+  }
+}

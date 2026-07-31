@@ -1,0 +1,63 @@
+{
+  "sidebar": {
+    "dashboard": "监控面板",
+    "sessions": "会话管理",
+    "messages": "消息管理",
+    "passiveConsciousness": "被动意识",
+    "activeConsciousness": "主动意识",
+    "freeConsciousness": "自由意识",
+    "config": "配置管理",
+    "cronJobs": "定时任务",
+    "taskLogs": "任务日志",
+    "systemLogs": "系统日志",
+    "test": "测试工具",
+    "keyTest": "Key测试",
+    "logout": "退出登录"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "search": "搜索",
+    "refresh": "刷新",
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "success": "操作成功",
+    "error": "操作失败",
+    "warning": "警告",
+    "yes": "是",
+    "no": "否",
+    "enable": "启用",
+    "disable": "禁用",
+    "test": "测试",
+    "submit": "提交",
+    "reset": "重置",
+    "back": "返回",
+    "more": "更多",
+    "less": "收起",
+    "expand": "展开",
+    "collapse": "收起"
+  },
+  "pagination": {
+    "total": "共 {total} 条",
+    "page": "第 {page} 页"
+  },
+  "status": {
+    "active": "活跃",
+    "ended": "已结束",
+    "success": "成功",
+    "failed": "失败",
+    "running": "运行中",
+    "pending": "待处理"
+  },
+  "platform": {
+    "weixin": "微信",
+    "feishu": "飞书",
+    "cli": "CLI",
+    "cron": "定时任务",
+    "unknown": "其他"
+  }
+}
