@@ -4,7 +4,7 @@
     <div v-if="!selectedSession" class="search-bar">
       <n-input
         v-model:value="searchText"
-        placeholder="搜索消息内容..."
+        :placeholder="t('messages.messages.searchPlaceholder')"
         clearable
         @clear="clearSearch"
         @keyup.enter="searchMessages"
@@ -13,7 +13,7 @@
           <n-icon><SearchOutline /></n-icon>
         </template>
       </n-input>
-      <n-button @click="searchMessages" :loading="searching">搜索</n-button>
+      <n-button @click="searchMessages" :loading="searching">{{ t('messages.messages.search') }}</n-button>
     </div>
 
     <!-- 搜索结果列表 -->
@@ -35,25 +35,25 @@
     <!-- Session 详情 -->
     <div v-if="selectedSession" class="session-detail-card">
       <div class="detail-header">
-        <n-button size="small" @click="clearSelection">返回搜索</n-button>
+        <n-button size="small" @click="clearSelection">{{ t('messages.messages.backToSearch') }}</n-button>
         <n-tag :type="getPlatformType(selectedSession.source)" size="small">
           {{ selectedSession.source }}
         </n-tag>
       </div>
       <div class="detail-info">
         <div><strong>Session ID:</strong> {{ selectedSession.id }}</div>
-        <div><strong>标题:</strong> {{ selectedSession.title || '无标题' }}</div>
-        <div><strong>用户 ID:</strong> {{ selectedSession.user_id || selectedSession.chat_id || selectedSession.source }}</div>
-        <div><strong>消息数:</strong> {{ selectedSession.message_count || 0 }}</div>
-        <div><strong>状态:</strong> {{ selectedSession.ended_at ? '已结束' : '活跃' }}</div>
+        <div><strong>{{ t('messages.messages.title') }}:</strong> {{ selectedSession.title || t('messages.messages.noTitle') }}</div>
+        <div><strong>{{ t('messages.messages.userId') }}:</strong> {{ selectedSession.user_id || selectedSession.chat_id || selectedSession.source }}</div>
+        <div><strong>{{ t('messages.messages.messageCount') }}:</strong> {{ selectedSession.message_count || 0 }}</div>
+        <div><strong>{{ t('messages.messages.status') }}:</strong> {{ selectedSession.ended_at ? t('common.status.ended') : t('common.status.active') }}</div>
       </div>
     </div>
 
     <!-- 消息列表 -->
     <n-spin :show="loading">
       <div v-if="selectedSession" class="toolbar">
-        <n-checkbox v-model:checked="hideTool">隐藏工具消息</n-checkbox>
-        <span class="result-count">共 {{ filteredMessages.length }} 条</span>
+        <n-checkbox v-model:checked="hideTool">{{ t('messages.messages.hideToolMessages') }}</n-checkbox>
+        <span class="result-count">{{ t('messages.messages.totalCount', { count: filteredMessages.length }) }}</span>
       </div>
       <div class="message-list" ref="messageListRef">
         <div
@@ -73,7 +73,7 @@
           </div>
           <div class="message-content" v-html="formatContent(msg.content)"></div>
         </div>
-        <n-empty v-if="!loading && filteredMessages.length === 0 && selectedSession" description="暂无消息" />
+        <n-empty v-if="!loading && filteredMessages.length === 0 && selectedSession" :description="t('messages.messages.noMessages')" />
       </div>
     </n-spin>
 
@@ -81,13 +81,13 @@
     <div v-if="selectedSession" class="send-bar">
       <n-input
         v-model:value="newMessage"
-        placeholder="输入消息..."
+        :placeholder="t('messages.messages.inputPlaceholder')"
         type="textarea"
         :autosize="{ minRows: 1, maxRows: 4 }"
         @keyup.ctrl.enter="sendMessage"
       />
       <n-button type="primary" @click="sendMessage" :loading="sending" :disabled="!newMessage.trim()">
-        发送
+        {{ t('messages.messages.send') }}
       </n-button>
     </div>
   </div>
@@ -96,10 +96,12 @@
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { SearchOutline } from '@vicons/ionicons5'
 import api from '../api'
 import { useConfig } from '../composables/useConfig'
 
+const { t } = useI18n()
 const message = useMessage()
 const { config, loadConfig } = useConfig()
 const loading = ref(false)
