@@ -61,6 +61,20 @@
               <n-input-number v-model:value="config.passive.vibe_max_chars" :min="20" :max="200" />
             </n-form-item>
 
+            <!-- 平台过滤 -->
+            <n-divider>平台过滤</n-divider>
+            <n-form-item label="启用平台过滤">
+              <n-switch v-model:value="config.platforms.enabled" />
+            </n-form-item>
+            <n-form-item label="启用的平台" v-if="config.platforms.enabled">
+              <n-select
+                v-model:value="config.platforms.whitelist"
+                multiple
+                :options="platformOptions"
+                placeholder="选择启用被动意识的平台"
+              />
+            </n-form-item>
+
             <!-- Session 来源配置 -->
             <n-divider>Session 来源</n-divider>
             <n-form-item label="来源平台">
@@ -433,7 +447,8 @@ const config = ref({
   passive: { enabled: true, inject_emotion: true, inject_heat: true, inject_memory: true, inject_thought: true, thought_max_chars: 200, vibe_max_chars: 50, inject_tag: '[CONSCIOUSNESS_CONTEXT]', time_format: '%H:%M' },
   session: { sources: ['weixin'], time_range_hours: 24, max_messages_per_session: 15, filter_tool_messages: true },
   hindsight: { enabled: true, recall_limit: 5, reflect_enabled: true },
-  weather: { enabled: false, provider: 'qweather', city: '北京', cache_hours: 4, amap_key: '', qweather_key: '', qweather_geo_url: 'https://geoapi.qweather.com/v2/city/lookup', qweather_weather_url: 'https://devapi.qweather.com/v7/weather/now' }
+  weather: { enabled: false, provider: 'qweather', city: '北京', cache_hours: 4, amap_key: '', qweather_key: '', qweather_geo_url: 'https://geoapi.qweather.com/v2/city/lookup', qweather_weather_url: 'https://devapi.qweather.com/v7/weather/now' },
+  platforms: { enabled: true, whitelist: ['weixin'] }
 })
 
 // 状态
@@ -456,7 +471,11 @@ const providerOptions = [
 ]
 const platformOptions = [
   { label: '微信', value: 'weixin' },
-  { label: '飞书', value: 'feishu' }
+  { label: '飞书', value: 'feishu' },
+  { label: 'Telegram', value: 'telegram' },
+  { label: 'Discord', value: 'discord' },
+  { label: 'Slack', value: 'slack' },
+  { label: '自定义', value: 'custom' }
 ]
 
 // 计算属性
