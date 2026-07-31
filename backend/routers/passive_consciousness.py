@@ -14,7 +14,8 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 
 from models.passive_consciousness import (
-    PassiveConsciousnessConfig, PassiveConsciousnessStatus,
+    PassiveConsciousnessConfig, PassiveConsciousnessPlatformConfig,
+    PassiveConsciousnessStatus,
     SuccessResponse, ChatRecord, TestResult
 )
 from models.database import ActiveSession, state_engine
@@ -53,32 +54,25 @@ async def update_config(config: dict):
 
 # ============ 平台配置 ============
 
-@router.get("/platforms")
+@router.get("/platforms", response_model=PassiveConsciousnessPlatformConfig)
 async def get_platforms():
     """获取平台配置"""
     try:
         config = PassiveConsciousnessService.get_config()
-        platforms = config.get("platforms", {})
-        return {
-            "success": True,
-            "data": {
-                "enabled": platforms.get("enabled", True),
-                "whitelist": platforms.get("whitelist", ["weixin"]),
-            }
-        }
+        return config.get("platforms", {})
     except Exception as e:
         logger.error("获取平台配置失败: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/platforms")
-async def update_platforms(platforms: dict):
+@router.put("/platforms", response_model=SuccessResponse)
+async def update_platforms(platforms: PassiveConsciousnessPlatformConfig):
     """更新平台配置"""
     try:
         config = PassiveConsciousnessService.get_config()
-        config["platforms"] = platforms
+        config["platforms"] = platforms.model_dump()
         PassiveConsciousnessService.update_config(config)
-        return {"success": True, "message": "平台配置已保存"}
+        return SuccessResponse(message="平台配置已保存")
     except Exception as e:
         logger.error("保存平台配置失败: %s", e)
         raise HTTPException(status_code=500, detail=str(e))

@@ -53,6 +53,12 @@ class PassiveConsciousnessWeatherConfig(BaseModel):
     cache_ttl: int = 600
 
 
+class PassiveConsciousnessPlatformConfig(BaseModel):
+    """平台配置"""
+    enabled: bool = True
+    whitelist: List[str] = ["weixin"]
+
+
 class PassiveConsciousnessConfig(BaseModel):
     """被动意识完整配置"""
     enabled: bool = False
@@ -61,6 +67,7 @@ class PassiveConsciousnessConfig(BaseModel):
     session: PassiveConsciousnessSessionConfig = PassiveConsciousnessSessionConfig()
     hindsight: PassiveConsciousnessHindsightConfig = PassiveConsciousnessHindsightConfig()
     weather: PassiveConsciousnessWeatherConfig = PassiveConsciousnessWeatherConfig()
+    platforms: PassiveConsciousnessPlatformConfig = PassiveConsciousnessPlatformConfig()
 
 
 # ============ 状态相关 ============
