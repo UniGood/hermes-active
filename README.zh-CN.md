@@ -4,7 +4,7 @@
 
 
 <p align="center">
-  <img src="docs/images/zh-hero-banner.png" width="800" alt="Hermes Active — 让 AI 助手拥有主动意识">
+  <img src="docs/images/zh-hero-banner.jpg" width="800" alt="Hermes Active — 让 AI 助手拥有主动意识">
 </p>
 
 <h1 align="center">Hermes Active</h1>
@@ -53,7 +53,7 @@
 
 
 <p align="center">
-  <img src="docs/images/zh-problem-statement.png" width="800" alt="无状态 Cron vs 持久化意识">
+  <img src="docs/images/zh-problem-statement.jpg" width="800" alt="无状态 Cron vs 持久化意识">
 </p>
 
 传统 AI 代理的主动消息功能都有同一个缺陷：**每个定时任务都会创建一个全新的、隔离的会话**。
@@ -124,7 +124,7 @@ Hermes Active 通过在 Hermes Agent 旁运行一套**持久化意识层**来解
 
 
 <p align="center">
-  <img src="docs/images/zh-architecture.png" width="800" alt="Hermes Active 系统架构">
+  <img src="docs/images/zh-architecture.jpg" width="800" alt="Hermes Active 系统架构">
 </p>
 
 ```mermaid
@@ -182,7 +182,7 @@ Hermes Active 从不写入 Hermes 的配置，也从不改动历史对话 ——
 
 
 <p align="center">
-  <img src="docs/images/zh-four-systems.png" width="800" alt="四大核心系统">
+  <img src="docs/images/zh-four-systems.jpg" width="800" alt="四大核心系统">
 </p>
 
 ### 主动意识 —— 心跳
@@ -498,7 +498,7 @@ hermes-active/
 
 
 <p align="center">
-  <img src="docs/images/zh-deployment.png" width="800" alt="部署拓扑">
+  <img src="docs/images/zh-deployment.jpg" width="800" alt="部署拓扑">
 </p>
 
 ### 前置条件
