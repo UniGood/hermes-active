@@ -55,7 +55,7 @@ class PassiveConsciousnessWeatherConfig(BaseModel):
 
 class PassiveConsciousnessPlatformConfig(BaseModel):
     """平台配置"""
-    enabled: bool = True
+    enabled: bool = False
     whitelist: List[str] = ["weixin"]
 
 

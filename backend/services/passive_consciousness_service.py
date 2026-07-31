@@ -51,7 +51,7 @@ _DEFAULTS = {
     "passive_consciousness.weather.qweather_key": "",
     "passive_consciousness.weather.qweather_geo_url": "https://geoapi.qweather.com/v2/city/lookup",
     "passive_consciousness.weather.qweather_weather_url": "https://devapi.qweather.com/v7/weather/now",
-    "passive_consciousness.platforms.enabled": "true",
+    "passive_consciousness.platforms.enabled": "false",
     "passive_consciousness.platforms.whitelist": '["weixin"]',
 }
 
