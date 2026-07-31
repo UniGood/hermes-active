@@ -4,7 +4,7 @@
     <div class="search-bar">
       <n-input
         v-model:value="searchText"
-        placeholder="搜索会话（标题/ID）..."
+        :placeholder="t('sessions.sessions.searchPlaceholder')"
         clearable
         @clear="onSearch"
         @keyup.enter="onSearch"
@@ -16,14 +16,14 @@
       <n-select
         v-model:value="platformFilter"
         :options="platformOptions"
-        placeholder="平台"
+        :placeholder="t('sessions.sessions.platform')"
         style="width: 100px"
         @update:value="onFilterChange"
       />
       <n-select
         v-model:value="statusFilter"
         :options="statusOptions"
-        placeholder="状态"
+        :placeholder="t('sessions.sessions.status')"
         style="width: 120px"
         @update:value="onFilterChange"
       />
@@ -40,25 +40,25 @@
         >
           <div class="session-header">
             <n-tag :type="getPlatformType(session.source)" size="small">
-              {{ session.source || '未知' }}
+              {{ session.source || t('sessions.sessions.unknown') }}
             </n-tag>
             <div class="session-actions">
               <span class="session-time">{{ formatTime(session.started_at) }}</span>
               <n-button size="tiny" type="error" quaternary @click.stop="handleDelete(session)">
-                删除
+                {{ t('sessions.sessions.delete') }}
               </n-button>
             </div>
           </div>
-          <div class="session-title">{{ session.title || '无标题' }}</div>
+          <div class="session-title">{{ session.title || t('sessions.sessions.noTitle') }}</div>
           <div class="session-id">{{ session.id }}</div>
           <div class="session-meta">
-            <span>消息数: {{ session.message_count || 0 }}</span>
+            <span>{{ t('sessions.sessions.messageCount', { count: session.message_count || 0 }) }}</span>
             <span :class="{ 'status-active': !session.ended_at, 'status-ended': session.ended_at }">
-              {{ session.ended_at ? '已结束' : '活跃' }}
+              {{ session.ended_at ? t('common.status.ended') : t('common.status.active') }}
             </span>
           </div>
         </div>
-        <n-empty v-if="!loading && sessions.length === 0" description="暂无会话" />
+        <n-empty v-if="!loading && sessions.length === 0" :description="t('sessions.sessions.noSessions')" />
       </div>
     </n-spin>
 
@@ -74,11 +74,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { SearchOutline } from '@vicons/ionicons5'
 import { useMessage, useDialog } from 'naive-ui'
 import api from '../api'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const message = useMessage()
@@ -92,18 +95,18 @@ const currentPage = ref(1)
 const pageSize = 20
 const total = ref(0)
 
-const platformOptions = [
-  { label: '全部', value: null },
-  { label: '微信', value: 'weixin' },
-  { label: '飞书', value: 'feishu' },
-  { label: 'CLI', value: 'cli' }
-]
+const platformOptions = computed(() => [
+  { label: t('sessions.sessions.all'), value: null },
+  { label: t('common.platform.weixin'), value: 'weixin' },
+  { label: t('common.platform.feishu'), value: 'feishu' },
+  { label: t('common.platform.cli'), value: 'cli' }
+])
 
-const statusOptions = [
-  { label: '全部', value: null },
-  { label: '活跃', value: 'active' },
-  { label: '已结束', value: 'ended' }
-]
+const statusOptions = computed(() => [
+  { label: t('sessions.sessions.all'), value: null },
+  { label: t('common.status.active'), value: 'active' },
+  { label: t('common.status.ended'), value: 'ended' }
+])
 
 // 从 localStorage 恢复查询条件
 function restoreFilters() {
@@ -152,17 +155,17 @@ function goToDetail(sessionId) {
 
 function handleDelete(session) {
   dialog.warning({
-    title: '确认删除',
-    content: `确定删除会话 "${session.title || session.id}" 及其所有消息？此操作不可恢复。`,
-    positiveText: '删除',
-    negativeText: '取消',
+    title: t('sessions.sessions.confirmDelete'),
+    content: t('sessions.sessions.confirmDeleteMessage'),
+    positiveText: t('sessions.sessions.delete'),
+    negativeText: t('common.common.cancel'),
     onPositiveClick: async () => {
       try {
         await api.delete(`/sessions/${session.id}`)
-        message.success('会话已删除')
+        message.success(t('sessions.sessions.deleteSuccess'))
         loadSessions()
       } catch (e) {
-        message.error('删除失败: ' + (e.response?.data?.detail || e.message))
+        message.error(t('sessions.sessions.deleteFailed') + ': ' + (e.response?.data?.detail || e.message))
       }
     }
   })
