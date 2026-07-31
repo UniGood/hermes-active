@@ -42,6 +42,11 @@ const routes = [
         component: () => import('../views/PassiveConsciousness.vue')
       },
       {
+        path: 'analysis',
+        name: 'Analysis',
+        component: () => import('../views/Analysis.vue')
+      },
+      {
         path: 'active-consciousness',
         name: 'ActiveConsciousness',
         component: () => import('../views/ActiveConsciousness.vue')

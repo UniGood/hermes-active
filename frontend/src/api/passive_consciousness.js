@@ -52,6 +52,17 @@ export default {
     return http.get('/passive-consciousness/platforms/available')
   },
 
+  // 分析 API
+  getAnalysisStats(params = {}) {
+    return http.get('/passive-consciousness/analysis/stats', { params })
+  },
+  getAnalysisTrends(params = {}) {
+    return http.get('/passive-consciousness/analysis/trends', { params })
+  },
+  getAnalysisSentiment(params = {}) {
+    return http.get('/passive-consciousness/analysis/sentiment', { params })
+  },
+
   // 天气 API
   getWeather() {
     return http.get('/passive-consciousness/weather')
