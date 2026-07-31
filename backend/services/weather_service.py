@@ -482,6 +482,26 @@ class WeatherService:
 
         raise ValueError(f"未找到城市: {city}")
 
+    def clear_cache(self):
+        """清除天气缓存"""
+        self._cache.clear()
+        self._last_weather.clear()
+
+    def get_cache_status(self) -> Dict:
+        """获取缓存状态"""
+        now = time.time()
+        entries = {}
+        for key, cached in self._cache.items():
+            age = now - cached["timestamp"]
+            entries[key] = {
+                "age_seconds": round(age, 1),
+                "has_data": cached["data"].get("success", False),
+            }
+        return {
+            "entries": len(entries),
+            "details": entries,
+        }
+
     async def _http_get(self, url: str, timeout: int = 10) -> Dict:
         """发送 HTTP GET 请求"""
         import io

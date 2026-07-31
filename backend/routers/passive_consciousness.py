@@ -171,6 +171,127 @@ async def test_hindsight_reflect():
         return {"success": False, "error": str(e)}
 
 
+# ============ 天气 API ============
+
+@router.get("/weather")
+async def get_weather():
+    """获取当前天气（带缓存）"""
+    try:
+        from services.weather_service import WeatherService
+
+        config = PassiveConsciousnessService.get_config()
+        weather_config = config.get("weather", {})
+
+        if not weather_config.get("enabled"):
+            return {"success": False, "error": "天气感知未启用"}
+
+        service = WeatherService()
+        result = await service.get_weather(
+            amap_key=weather_config.get("amap_key", ""),
+            adcode=weather_config.get("adcode", "370100"),
+            cache_ttl=int(weather_config.get("cache_hours", 4)) * 3600,
+            provider=weather_config.get("provider", "qweather"),
+            city=weather_config.get("city", ""),
+            qweather_key=weather_config.get("qweather_key", ""),
+            qweather_geo_url=weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
+            qweather_weather_url=weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
+        )
+
+        if result.get("success"):
+            current = result.get("current", {})
+            return {
+                "success": True,
+                "data": {
+                    "city": result.get("city", ""),
+                    "weather": current.get("weather", ""),
+                    "weather_code": current.get("weathercode", ""),
+                    "temperature": current.get("temp", ""),
+                    "humidity": current.get("humidity", ""),
+                    "feels_like": current.get("feelsLike", current.get("temp", "")),
+                    "pressure": current.get("pressure", ""),
+                    "visibility": current.get("visibility", ""),
+                    "wind_dir": current.get("winddirection", ""),
+                    "wind_scale": current.get("windpower", ""),
+                    "wind_speed": current.get("windSpeed", ""),
+                    "uv_index": current.get("uv_index", ""),
+                    "uv_desc": current.get("uv_desc", ""),
+                    "dressing": current.get("dressing", ""),
+                    "comfort": current.get("comfort", ""),
+                    "cold_risk": current.get("cold_risk", ""),
+                    "forecast": result.get("forecast", []),
+                    "updated_at": result.get("updated_at", ""),
+                    "provider": result.get("provider", ""),
+                    "cache_status": result.get("cache_status", {}),
+                }
+            }
+        else:
+            return {"success": False, "error": result.get("error", "未知错误")}
+    except Exception as e:
+        logger.error("获取天气失败: %s", e)
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/weather/refresh")
+async def refresh_weather():
+    """强制刷新天气"""
+    try:
+        from services.weather_service import WeatherService
+
+        config = PassiveConsciousnessService.get_config()
+        weather_config = config.get("weather", {})
+
+        if not weather_config.get("enabled"):
+            return {"success": False, "error": "天气感知未启用"}
+
+        service = WeatherService()
+        service.clear_cache()
+
+        result = await service.get_weather(
+            amap_key=weather_config.get("amap_key", ""),
+            adcode=weather_config.get("adcode", "370100"),
+            cache_ttl=0,
+            provider=weather_config.get("provider", "qweather"),
+            city=weather_config.get("city", ""),
+            qweather_key=weather_config.get("qweather_key", ""),
+            qweather_geo_url=weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
+            qweather_weather_url=weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
+        )
+
+        if result.get("success"):
+            return {"success": True, "message": "天气数据已刷新"}
+        else:
+            return {"success": False, "error": result.get("error", "未知错误")}
+    except Exception as e:
+        logger.error("刷新天气失败: %s", e)
+        return {"success": False, "error": str(e)}
+
+
+@router.get("/weather/status")
+async def get_weather_status():
+    """获取天气服务状态"""
+    try:
+        from services.weather_service import WeatherService
+
+        config = PassiveConsciousnessService.get_config()
+        weather_config = config.get("weather", {})
+
+        service = WeatherService()
+        cache_status = service.get_cache_status()
+
+        return {
+            "success": True,
+            "data": {
+                "enabled": weather_config.get("enabled", False),
+                "provider": weather_config.get("provider", "qweather"),
+                "city": weather_config.get("city", ""),
+                "cache": cache_status,
+            }
+        }
+    except Exception as e:
+        logger.error("获取天气状态失败: %s", e)
+        return {"success": False, "error": str(e)}
+
+
 # ============ 被动意识插件测试 ============
 
 @router.post("/test/weather")
