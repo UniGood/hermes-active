@@ -44,14 +44,14 @@ DEFAULT_LLM_CONFIG = {
 
 # 天气默认配置
 DEFAULT_WEATHER_CONFIG = {
-    "enabled": "false",
-    "provider": "qweather",
-    "city": "北京",
-    "cache_hours": "4",
-    "amap_key": "",
-    "qweather_key": "",
-    "qweather_geo_url": "https://geoapi.qweather.com/v2/city/lookup",
-    "qweather_weather_url": "https://devapi.qweather.com/v7/weather/now",
+    "weather.enabled": "false",
+    "weather.provider": "qweather",
+    "weather.city": "北京",
+    "weather.cache_hours": "4",
+    "weather.amap_key": "",
+    "weather.qweather_key": "",
+    "weather.qweather_geo_url": "https://geoapi.qweather.com/v2/city/lookup",
+    "weather.qweather_weather_url": "https://devapi.qweather.com/v7/weather/now",
 }
 
 # 默认提示词
