@@ -468,6 +468,53 @@ async def preview_template_endpoint(template_id: str, data: dict = None):
         logger.error("预览模板失败: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============ 分析 API ============
+
+
+@router.get("/analysis/stats")
+async def get_analysis_stats(
+    hours: int = 24,
+    platform: str = None
+):
+    """获取注入统计"""
+    try:
+        from services.analysis_service import AnalysisService
+        stats = AnalysisService.get_injection_stats(hours, platform)
+        return {"success": True, "data": stats}
+    except Exception as e:
+        logger.error("获取注入统计失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/analysis/trends")
+async def get_analysis_trends(
+    hours: int = 24,
+    interval: str = "hour"
+):
+    """获取趋势数据"""
+    try:
+        from services.analysis_service import AnalysisService
+        trends = AnalysisService.get_trend_data(hours, interval)
+        return {"success": True, "data": trends}
+    except Exception as e:
+        logger.error("获取趋势数据失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/analysis/sentiment")
+async def get_analysis_sentiment(
+    hours: int = 24
+):
+    """获取情感分析"""
+    try:
+        from services.analysis_service import AnalysisService
+        sentiment = AnalysisService.get_sentiment_analysis(hours)
+        return {"success": True, "data": sentiment}
+    except Exception as e:
+        logger.error("获取情感分析失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/test/weather")
 async def test_weather():
     """测试天气 API（支持高德和和风天气）"""
