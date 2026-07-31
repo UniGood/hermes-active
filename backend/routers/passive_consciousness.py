@@ -173,29 +173,45 @@ async def test_hindsight_reflect():
 
 # ============ 天气 API ============
 
+
+def _get_weather_config() -> dict:
+    """从被动意识配置中提取天气配置并转换为 WeatherService.get_weather 所需的关键字参数"""
+    config = PassiveConsciousnessService.get_config()
+    weather_config = config.get("weather", {})
+    return weather_config
+
+
+def _build_weather_kwargs(weather_config: dict, cache_ttl: int = None) -> dict:
+    """将天气配置 dict 转换为 WeatherService.get_weather 所需的关键字参数"""
+    kwargs = {
+        "amap_key": weather_config.get("amap_key", ""),
+        "adcode": weather_config.get("adcode", "370100"),
+        "provider": weather_config.get("provider", "qweather"),
+        "city": weather_config.get("city", ""),
+        "qweather_key": weather_config.get("qweather_key", ""),
+        "qweather_geo_url": weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
+        "qweather_weather_url": weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
+    }
+    if cache_ttl is not None:
+        kwargs["cache_ttl"] = cache_ttl
+    else:
+        kwargs["cache_ttl"] = int(weather_config.get("cache_hours", 4)) * 3600
+    return kwargs
+
+
 @router.get("/weather")
 async def get_weather():
     """获取当前天气（带缓存）"""
     try:
         from services.weather_service import WeatherService
 
-        config = PassiveConsciousnessService.get_config()
-        weather_config = config.get("weather", {})
+        weather_config = _get_weather_config()
 
         if not weather_config.get("enabled"):
             return {"success": False, "error": "天气感知未启用"}
 
         service = WeatherService()
-        result = await service.get_weather(
-            amap_key=weather_config.get("amap_key", ""),
-            adcode=weather_config.get("adcode", "370100"),
-            cache_ttl=int(weather_config.get("cache_hours", 4)) * 3600,
-            provider=weather_config.get("provider", "qweather"),
-            city=weather_config.get("city", ""),
-            qweather_key=weather_config.get("qweather_key", ""),
-            qweather_geo_url=weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
-            qweather_weather_url=weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
-        )
+        result = await service.get_weather(**_build_weather_kwargs(weather_config))
 
         if result.get("success"):
             current = result.get("current", {})
@@ -204,24 +220,12 @@ async def get_weather():
                 "data": {
                     "city": result.get("city", ""),
                     "weather": current.get("weather", ""),
-                    "weather_code": current.get("weathercode", ""),
                     "temperature": current.get("temp", ""),
                     "humidity": current.get("humidity", ""),
-                    "feels_like": current.get("feelsLike", current.get("temp", "")),
-                    "pressure": current.get("pressure", ""),
-                    "visibility": current.get("visibility", ""),
-                    "wind_dir": current.get("winddirection", ""),
-                    "wind_scale": current.get("windpower", ""),
-                    "wind_speed": current.get("windSpeed", ""),
-                    "uv_index": current.get("uv_index", ""),
-                    "uv_desc": current.get("uv_desc", ""),
-                    "dressing": current.get("dressing", ""),
-                    "comfort": current.get("comfort", ""),
-                    "cold_risk": current.get("cold_risk", ""),
+                    "winddirection": current.get("winddirection", ""),
                     "forecast": result.get("forecast", []),
-                    "updated_at": result.get("updated_at", ""),
-                    "provider": result.get("provider", ""),
-                    "cache_status": result.get("cache_status", {}),
+                    "weather_changed": result.get("weather_changed", False),
+                    "change_type": result.get("change_type"),
                 }
             }
         else:
@@ -237,25 +241,14 @@ async def refresh_weather():
     try:
         from services.weather_service import WeatherService
 
-        config = PassiveConsciousnessService.get_config()
-        weather_config = config.get("weather", {})
+        weather_config = _get_weather_config()
 
         if not weather_config.get("enabled"):
             return {"success": False, "error": "天气感知未启用"}
 
         service = WeatherService()
-        service.clear_cache()
 
-        result = await service.get_weather(
-            amap_key=weather_config.get("amap_key", ""),
-            adcode=weather_config.get("adcode", "370100"),
-            cache_ttl=0,
-            provider=weather_config.get("provider", "qweather"),
-            city=weather_config.get("city", ""),
-            qweather_key=weather_config.get("qweather_key", ""),
-            qweather_geo_url=weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
-            qweather_weather_url=weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
-        )
+        result = await service.get_weather(**_build_weather_kwargs(weather_config, cache_ttl=0))
 
         if result.get("success"):
             return {"success": True, "message": "天气数据已刷新"}
@@ -272,8 +265,7 @@ async def get_weather_status():
     try:
         from services.weather_service import WeatherService
 
-        config = PassiveConsciousnessService.get_config()
-        weather_config = config.get("weather", {})
+        weather_config = _get_weather_config()
 
         service = WeatherService()
         cache_status = service.get_cache_status()
@@ -300,24 +292,14 @@ async def test_weather():
     try:
         from services.weather_service import WeatherService
 
-        config = PassiveConsciousnessService.get_config()
-        weather_config = config.get("weather", {})
+        weather_config = _get_weather_config()
 
         if not weather_config.get("enabled"):
             return {"success": False, "error": "天气感知未启用"}
 
         # 使用 WeatherService 获取天气（强制刷新缓存）
         service = WeatherService()
-        result = await service.get_weather(
-            amap_key=weather_config.get("amap_key", ""),
-            adcode=weather_config.get("adcode", "370100"),
-            cache_ttl=0,  # 不使用缓存
-            provider=weather_config.get("provider", "amap"),
-            city=weather_config.get("city", ""),
-            qweather_key=weather_config.get("qweather_key", ""),
-            qweather_geo_url=weather_config.get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup"),
-            qweather_weather_url=weather_config.get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now"),
-        )
+        result = await service.get_weather(**_build_weather_kwargs(weather_config, cache_ttl=0))
 
         if result.get("success"):
             current = result.get("current", {})
@@ -329,7 +311,6 @@ async def test_weather():
                     "temperature": current.get("temp", ""),
                     "humidity": current.get("humidity", ""),
                     "winddirection": current.get("winddirection", ""),
-                    "reporttime": "",
                 }
             }
         else:

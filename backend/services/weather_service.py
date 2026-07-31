@@ -38,11 +38,16 @@ QWEATHER_CITY_IDS = {
 
 
 class WeatherService:
-    """天气服务 - 高德地图 API + 和风天气 API"""
+    """天气服务 - 高德地图 API + 和风天气 API
+
+    Uses class-level cache so that cache persists across per-request instances.
+    """
+
+    _cache: Dict[str, Dict] = {}
+    _last_weather: Dict[str, Dict] = {}
 
     def __init__(self):
-        self._cache: Dict[str, Dict] = {}
-        self._last_weather: Dict[str, Dict] = {}  # 按城市存储
+        pass
 
     async def get_weather(
         self,
