@@ -47,6 +47,11 @@ export default {
     return http.get('/passive-consciousness/test/full')
   },
 
+  // 平台
+  getAvailablePlatforms() {
+    return http.get('/passive-consciousness/platforms/available')
+  },
+
   // 天气 API
   getWeather() {
     return http.get('/passive-consciousness/weather')

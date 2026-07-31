@@ -70,15 +70,18 @@
               <n-select
                 v-model:value="config.platforms.whitelist"
                 multiple
-                :options="platformOptions"
+                :options="platformFilterOptions"
                 placeholder="选择启用被动意识的平台"
               />
+              <n-text v-if="config.platforms.enabled && config.platforms.whitelist.length === 0" type="error" style="font-size: 12px; margin-top: 4px;">
+                请至少选择一个平台
+              </n-text>
             </n-form-item>
 
             <!-- Session 来源配置 -->
             <n-divider>Session 来源</n-divider>
             <n-form-item label="来源平台">
-              <n-select v-model:value="config.session.sources" multiple :options="platformOptions" />
+              <n-select v-model:value="config.session.sources" multiple :options="sessionSourceOptions" />
             </n-form-item>
             <n-form-item label="时间范围（小时）">
               <n-input-number v-model:value="config.session.time_range_hours" :min="1" :max="168" />
@@ -448,7 +451,7 @@ const config = ref({
   session: { sources: ['weixin'], time_range_hours: 24, max_messages_per_session: 15, filter_tool_messages: true },
   hindsight: { enabled: true, recall_limit: 5, reflect_enabled: true },
   weather: { enabled: false, provider: 'qweather', city: '北京', cache_hours: 4, amap_key: '', qweather_key: '', qweather_geo_url: 'https://geoapi.qweather.com/v2/city/lookup', qweather_weather_url: 'https://devapi.qweather.com/v7/weather/now' },
-  platforms: { enabled: true, whitelist: ['weixin'] }
+  platforms: { enabled: false, whitelist: ['weixin'] }
 })
 
 // 状态
@@ -469,14 +472,10 @@ const providerOptions = [
   { label: 'DeepSeek', value: 'deepseek' },
   { label: '自定义', value: 'custom' }
 ]
-const platformOptions = [
-  { label: '微信', value: 'weixin' },
-  { label: '飞书', value: 'feishu' },
-  { label: 'Telegram', value: 'telegram' },
-  { label: 'Discord', value: 'discord' },
-  { label: 'Slack', value: 'slack' },
-  { label: '自定义', value: 'custom' }
-]
+// 平台过滤选项 - 从 API 获取
+const platformFilterOptions = ref([])
+// Session 来源选项 - 从 API 获取
+const sessionSourceOptions = ref([])
 
 // 计算属性
 const longingTagType = computed(() => {
@@ -536,9 +535,40 @@ const loadChats = async () => {
   }
 }
 
+// 加载可用平台列表
+const loadPlatforms = async () => {
+  try {
+    const resp = await api.getAvailablePlatforms()
+    if (resp.success && resp.data) {
+      const options = resp.data.map(p => ({ label: p.name, value: p.id }))
+      platformFilterOptions.value = options
+      sessionSourceOptions.value = options
+    }
+  } catch (e) {
+    console.error('加载平台列表失败:', e)
+    // 使用默认值
+    const defaultOptions = [
+      { label: '微信', value: 'weixin' },
+      { label: '飞书', value: 'feishu' },
+      { label: 'Telegram', value: 'telegram' },
+      { label: 'Discord', value: 'discord' },
+      { label: 'Slack', value: 'slack' },
+      { label: '自定义', value: 'custom' }
+    ]
+    platformFilterOptions.value = defaultOptions
+    sessionSourceOptions.value = defaultOptions
+  }
+}
+
 // 保存配置
 const saving = ref(false)
 const saveConfig = async () => {
+  // 验证：如果启用了平台过滤但没有选择任何平台，则提示错误
+  if (config.value.platforms.enabled && config.value.platforms.whitelist.length === 0) {
+    message.error('启用平台过滤时，请至少选择一个平台')
+    return
+  }
+
   saving.value = true
   try {
     await api.saveConfig(config.value)
@@ -662,7 +692,8 @@ onMounted(async () => {
   await Promise.all([
     loadConfig(),
     loadStatus(),
-    loadChats()
+    loadChats(),
+    loadPlatforms()
   ])
 })
 </script>
