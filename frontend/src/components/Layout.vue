@@ -27,7 +27,7 @@
       <div class="sidebar-footer">
         <n-button quaternary @click="handleLogout" style="width: 100%">
           <template #icon><n-icon><LogOutOutline /></n-icon></template>
-          <span v-if="!sidebarCollapsed">退出登录</span>
+          <span v-if="!sidebarCollapsed">{{ t('common.sidebar.logout') }}</span>
         </n-button>
       </div>
     </aside>
@@ -61,6 +61,7 @@
 import { ref, markRaw, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../store/auth'
 import api from '../api'
 import {
@@ -84,6 +85,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const message = useMessage()
+const { t } = useI18n()
 // PC端默认展开，移动端默认折叠
 const sidebarCollapsed = ref(window.innerWidth <= 768)
 const userAvatar = ref('')
@@ -129,18 +131,18 @@ async function handleAvatarUpload(e) {
 onMounted(loadAvatar)
 
 const menuItems = [
-  { path: '/', label: '监控面板', icon: markRaw(HomeOutline) },
-  { path: '/sessions', label: '会话管理', icon: markRaw(PersonOutline) },
-  { path: '/messages', label: '消息管理', icon: markRaw(ChatbubblesOutline) },
-  { path: '/passive-consciousness', label: '被动意识', icon: markRaw(BulbOutline) },
-  { path: '/active-consciousness', label: '主动意识', icon: markRaw(HeartOutline) },
-  { path: '/free-consciousness', label: '自由意识', icon: markRaw(SparklesOutline) },
-  { path: '/config', label: '配置管理', icon: markRaw(SettingsOutline) },
-  { path: '/cron-jobs', label: '定时任务', icon: markRaw(TimeOutline) },
-  { path: '/task-logs', label: '任务日志', icon: markRaw(DocumentTextOutline) },
-  { path: '/system-logs', label: '系统日志', icon: markRaw(TerminalOutline) },
-  { path: '/test', label: '测试工具', icon: markRaw(FlaskOutline) },
-  { path: '/key-test', label: 'Key测试', icon: markRaw(KeyOutline) }
+  { path: '/', label: t('common.sidebar.dashboard'), icon: markRaw(HomeOutline) },
+  { path: '/sessions', label: t('common.sidebar.sessions'), icon: markRaw(PersonOutline) },
+  { path: '/messages', label: t('common.sidebar.messages'), icon: markRaw(ChatbubblesOutline) },
+  { path: '/passive-consciousness', label: t('common.sidebar.passiveConsciousness'), icon: markRaw(BulbOutline) },
+  { path: '/active-consciousness', label: t('common.sidebar.activeConsciousness'), icon: markRaw(HeartOutline) },
+  { path: '/free-consciousness', label: t('common.sidebar.freeConsciousness'), icon: markRaw(SparklesOutline) },
+  { path: '/config', label: t('common.sidebar.config'), icon: markRaw(SettingsOutline) },
+  { path: '/cron-jobs', label: t('common.sidebar.cronJobs'), icon: markRaw(TimeOutline) },
+  { path: '/task-logs', label: t('common.sidebar.taskLogs'), icon: markRaw(DocumentTextOutline) },
+  { path: '/system-logs', label: t('common.sidebar.systemLogs'), icon: markRaw(TerminalOutline) },
+  { path: '/test', label: t('common.sidebar.test'), icon: markRaw(FlaskOutline) },
+  { path: '/key-test', label: t('common.sidebar.keyTest'), icon: markRaw(KeyOutline) }
 ]
 
 function isActive(path) {
