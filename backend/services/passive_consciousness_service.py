@@ -19,6 +19,11 @@ logger = logging.getLogger("hermes.passive_consciousness")
 # 配置 key 前缀
 PREFIX = "passive_consciousness."
 
+# 延迟导入 DEFAULT_TEMPLATES（避免循环导入）
+def _get_default_templates_json():
+    from services.template_service import DEFAULT_TEMPLATES
+    return json.dumps(DEFAULT_TEMPLATES, ensure_ascii=False)
+
 # 默认配置（扁平 key → 默认值）
 _DEFAULTS = {
     "passive_consciousness.enabled": "false",
@@ -53,6 +58,8 @@ _DEFAULTS = {
     "passive_consciousness.weather.qweather_weather_url": "https://devapi.qweather.com/v7/weather/now",
     "passive_consciousness.platforms.enabled": "false",
     "passive_consciousness.platforms.whitelist": '["weixin"]',
+    "passive_consciousness.templates.list": _get_default_templates_json(),
+    "passive_consciousness.templates.active_id": "default",
 }
 
 # 想念等级

@@ -286,6 +286,188 @@ async def get_weather_status():
 
 # ============ 被动意识插件测试 ============
 
+
+# ============ 模板 API ============
+
+
+@router.get("/templates")
+async def get_templates():
+    """获取模板列表"""
+    try:
+        from services.template_service import TemplateService
+        templates = TemplateService.get_templates()
+        return {"success": True, "data": templates}
+    except Exception as e:
+        logger.error("获取模板列表失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/templates")
+async def create_template(template: dict):
+    """创建模板"""
+    try:
+        from services.template_service import TemplateService
+
+        # 验证必填字段
+        if not template.get("id") or not template.get("name") or not template.get("content"):
+            raise HTTPException(status_code=400, detail="缺少必填字段")
+
+        # 检查 ID 是否已存在
+        existing = TemplateService.get_template(template["id"])
+        if existing:
+            raise HTTPException(status_code=400, detail="模板 ID 已存在")
+
+        # 添加到模板列表
+        templates = TemplateService.get_templates()
+        templates.append(template)
+
+        # 保存到配置
+        config = PassiveConsciousnessService.get_config()
+        if "templates" not in config:
+            config["templates"] = {}
+        config["templates"]["list"] = templates
+        PassiveConsciousnessService.update_config(config)
+
+        return {"success": True, "message": "模板已创建"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("创建模板失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/templates/variables")
+async def get_template_variables():
+    """获取可用变量列表"""
+    try:
+        from services.template_service import TemplateService
+        variables = TemplateService.get_variables()
+        return {"success": True, "data": variables}
+    except Exception as e:
+        logger.error("获取变量列表失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/templates/render")
+async def render_template(data: dict):
+    """渲染模板（供插件调用）"""
+    try:
+        from services.template_service import TemplateService
+
+        context = TemplateService.render_active_template(data)
+        return {"success": True, "data": {"context": context}}
+    except Exception as e:
+        logger.error("渲染模板失败: %s", e)
+        return {"success": False, "error": str(e)}
+
+
+@router.get("/templates/{template_id}")
+async def get_template(template_id: str):
+    """获取单个模板"""
+    try:
+        from services.template_service import TemplateService
+        template = TemplateService.get_template(template_id)
+        if template:
+            return {"success": True, "data": template}
+        else:
+            raise HTTPException(status_code=404, detail="模板不存在")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("获取模板失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/templates/{template_id}")
+async def update_template(template_id: str, template: dict):
+    """更新模板"""
+    try:
+        from services.template_service import TemplateService
+
+        # 检查模板是否存在
+        existing = TemplateService.get_template(template_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="模板不存在")
+
+        # 更新模板
+        templates = TemplateService.get_templates()
+        for i, t in enumerate(templates):
+            if t["id"] == template_id:
+                templates[i] = {**t, **template, "id": template_id}
+                break
+
+        # 保存到配置
+        config = PassiveConsciousnessService.get_config()
+        if "templates" not in config:
+            config["templates"] = {}
+        config["templates"]["list"] = templates
+        PassiveConsciousnessService.update_config(config)
+
+        return {"success": True, "message": "模板已更新"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("更新模板失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/templates/{template_id}")
+async def delete_template(template_id: str):
+    """删除模板"""
+    try:
+        from services.template_service import TemplateService
+
+        # 检查是否是默认模板
+        if template_id == "default":
+            raise HTTPException(status_code=400, detail="不能删除默认模板")
+
+        # 检查模板是否存在
+        existing = TemplateService.get_template(template_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="模板不存在")
+
+        # 删除模板
+        templates = TemplateService.get_templates()
+        templates = [t for t in templates if t["id"] != template_id]
+
+        # 保存到配置
+        config = PassiveConsciousnessService.get_config()
+        if "templates" not in config:
+            config["templates"] = {}
+        config["templates"]["list"] = templates
+
+        # 如果删除的是当前激活的模板，切换到默认模板
+        if config.get("templates", {}).get("active_id") == template_id:
+            config["templates"]["active_id"] = "default"
+
+        PassiveConsciousnessService.update_config(config)
+
+        return {"success": True, "message": "模板已删除"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("删除模板失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/templates/{template_id}/preview")
+async def preview_template_endpoint(template_id: str, data: dict = None):
+    """预览模板渲染结果"""
+    try:
+        from services.template_service import TemplateService
+
+        template = TemplateService.get_template(template_id)
+        if not template:
+            raise HTTPException(status_code=404, detail="模板不存在")
+
+        preview = TemplateService.preview_template(template["content"], data)
+        return {"success": True, "data": {"preview": preview}}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("预览模板失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/test/weather")
 async def test_weather():
     """测试天气 API（支持高德和和风天气）"""
