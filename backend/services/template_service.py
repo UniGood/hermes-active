@@ -113,14 +113,38 @@ class TemplateService:
         return DEFAULT_TEMPLATES[0]
 
     @staticmethod
+    def _preprocess_data(data: Dict[str, Any]) -> Dict[str, Any]:
+        """预处理数据，确保类型正确"""
+        processed = data.copy()
+
+        # 处理天气数据中的数字字段
+        if "weather" in processed and isinstance(processed["weather"], dict):
+            weather = processed["weather"].copy()
+            numeric_fields = ["temperature", "humidity", "feels_like", "pressure", "visibility"]
+            for field in numeric_fields:
+                if field in weather and isinstance(weather[field], str):
+                    try:
+                        weather[field] = int(weather[field])
+                    except (ValueError, TypeError):
+                        try:
+                            weather[field] = float(weather[field])
+                        except (ValueError, TypeError):
+                            weather[field] = 0
+            processed["weather"] = weather
+
+        return processed
+
+    @staticmethod
     def render_template(
         template_content: str,
         data: Dict[str, Any],
     ) -> str:
         """渲染模板"""
         try:
+            # 预处理数据
+            processed_data = TemplateService._preprocess_data(data)
             template = TemplateService._env.from_string(template_content)
-            return template.render(**data)
+            return template.render(**processed_data)
         except TemplateSyntaxError as e:
             logger.error("模板语法错误: %s", e)
             raise ValueError(f"模板语法错误: {e}")
