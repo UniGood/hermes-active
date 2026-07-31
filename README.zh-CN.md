@@ -1,25 +1,27 @@
 <p align="center">
-  <a href="README.md">English</a> | <strong>中文</strong>
+  <a href="README.md">English</a> | <strong>简体中文</strong>
 </p>
 
-<p align="center">
-  <!-- 信息图占位符：主视觉横幅 -->
-  <!-- 替换为你的信息图，建议展示三个模块的架构总览 -->
-  <img src="docs/images/zh-hero-banner.png" alt="Hermes Active — 主动会话系统" width="800">
-</p>
+> [!NOTE]
+> 🖼️ **信息图占位 — 主视觉横幅** · 使用下方提示词生成图片，保存为 `docs/images/zh-hero-banner.png`，然后将本块替换为 `<img src="docs/images/zh-hero-banner.png" width="800">`。
+>
+> **生成提示词：** *一张宽幅现代风格的开源 AI 项目主视觉横幅，项目名"Hermes Active"。深靛蓝到紫罗兰的暗色渐变背景，一条发光的心跳脉冲线横贯画面并逐渐演变成对话气泡，背景点缀神经网络星点，扁平化设计风格，主标题"Hermes Active"用粗体白色无衬线字体，副标题"让 AI 助手拥有主动意识"。不要写实照片风，不要文字乱码，21:9 宽高比。*
 
 <h1 align="center">Hermes Active</h1>
+
 <p align="center">
-  <strong><a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a> 主动会话系统</strong>
-</p>
-<p align="center">
-  让 AI 助手具备主动发起对话、保持上下文记忆、发展自主意识的能力。
+  <strong><a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a> 主动意识系统</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-0.2.2-blue" alt="版本">
-  <img src="https://img.shields.io/badge/python-3.12+-green" alt="Python">
-  <img src="https://img.shields.io/badge/vue-3.4+-brightgreen" alt="Vue">
+  给你的 AI 助手一颗心跳 —— 让它感知时间流逝、会想念你、能独自思考，<br>
+  并带着对你们每一场对话的完整记忆，主动开口。
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.12+-3776AB?logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/vue-3-4FC08D?logo=vuedotjs&logoColor=white" alt="Vue">
+  <img src="https://img.shields.io/badge/fastapi-009688?logo=fastapi&logoColor=white" alt="FastAPI">
   <img src="https://img.shields.io/badge/许可证-MIT-yellow" alt="许可证">
 </p>
 
@@ -28,440 +30,423 @@
 ## 目录
 
 - [为什么需要 Hermes Active？](#为什么需要-hermes-active)
-- [架构总览](#架构总览)
-- [核心模块](#核心模块)
-  - [模块一：定时任务 (v0.1.x)](#模块一定时任务-v01x)
-  - [模块二：主动意识 (v0.2.x)](#模块二主动意识-v02x)
-  - [模块三：被动意识 (v0.3.x)](#模块三被动意识-v03x)
-- [主动意识深度解析](#主动意识深度解析)
+- [界面截图](#界面截图)
+- [系统架构](#系统架构)
+- [核心系统](#核心系统)
+  - [主动意识 —— 心跳](#主动意识--心跳)
+  - [被动意识 —— 上下文注入](#被动意识--上下文注入)
+  - [自由意识 —— 内在沉思](#自由意识--内在沉思)
+  - [定时任务](#定时任务)
+  - [Web 控制台](#web-控制台)
+- [外部集成](#外部集成)
 - [技术栈](#技术栈)
 - [项目结构](#项目结构)
-- [部署指南](#部署指南)
+- [快速开始](#快速开始)
 - [配置说明](#配置说明)
-- [API 参考](#api-参考)
-- [版本历史](#版本历史)
+- [API 概览](#api-概览)
+- [文档](#文档)
 - [许可证](#许可证)
 
 ---
 
 ## 为什么需要 Hermes Active？
 
-<p align="center">
-  <!-- 信息图占位符：问题说明 -->
-  <!-- 展示问题：隔离的 cron session vs 有上下文的主动消息 -->
-  <img src="docs/images/zh-problem-statement.png" alt="问题：隔离的 Cron Session" width="700">
-</p>
+> [!NOTE]
+> 🖼️ **信息图占位 — 问题对比图** · 保存为 `docs/images/zh-problem-statement.png`。
+>
+> **生成提示词：** *一张左右对比的信息图，标题"无状态 Cron vs 持久化意识"。左侧（冷灰色调）：一个机器人在空荡荡的白色房间里醒来，房间标注"全新隔离会话"，旁边是断裂的链条图标，对话气泡写着"你是哪位来着？"。右侧（暖紫/青色调）：同一个机器人身处温馨房间，四周环绕着过往对话时间线、爱心图标和记忆光球，对话气泡写着"我刚才还在想你呢"。扁平矢量风格，文字精简，16:9。*
 
-### 问题所在
+传统 AI 代理的主动消息功能都有同一个缺陷：**每个定时任务都会创建一个全新的、隔离的会话**。
 
-Hermes Agent 内置了定时任务系统，但每个定时任务会创建一个**全新的隔离 Session**。这意味着：
+- ❌ 助手主动联系你时，**完全不记得**最近聊过什么
+- ❌ 你一回复，上下文就丢了 —— "不好意思，我们刚才在说什么？"
+- ❌ 每次运行都是无状态的 —— 没有情绪、没有连续性、没有时间感
+- ❌ 回复一条主动消息，感觉像在跟陌生人说话
 
-- ❌ AI 助手执行定时任务时**没有最近对话的记忆**
-- ❌ 用户回复主动消息时，Hermes **丢失上下文**，无法理解之前聊了什么
-- ❌ 每次 cron 运行都是无状态的 — 没有情绪感知、没有对话连续性
-- ❌ 用户回复定时消息时会产生"在和陌生人说话"的感觉
+Hermes Active 通过在 Hermes Agent 旁运行一套**持久化意识层**来解决这个问题：
 
-### 解决方案
+- ✅ 主动消息**直接写回当前会话** —— 用户的回复天然落在完整上下文里
+- ✅ **心跳循环**让助手拥有随时间和互动不断演化的情绪状态
+- ✅ 每次思考和每次回复前都会召回**长期记忆**（Hindsight）
+- ✅ **内在沉思循环**让助手自由思考，并将思维压缩沉淀为自己的"意识积淀"
+- ✅ 作为独立服务运行 —— **零修改 Hermes Agent 核心**（仅一个可选的会话同步小补丁）
 
-Hermes Active 引入了一套**持久化主动会话系统**：
-
-- ✅ 在所有交互之间维持连续的上下文
-- ✅ 将主动消息直接写入现有 Session 的消息历史
-- ✅ 用户回复时，Hermes 自然地看到完整的对话上下文
-- ✅ 在主动消息中加入情绪感知、记忆集成和决策能力
-- ✅ 作为独立服务运行 — **零修改 Hermes Agent 核心代码**
-
-> **凯莉（Kally）** 是基于此系统的 AI 助手名字。
+> 系统内置的参考人设是**凯莉（Kally）** —— 所有提示词、标记和默认值都可以在 Web 界面上完全自定义。
 
 ---
 
-## 架构总览
+## 界面截图
 
-<p align="center">
-  <!-- 信息图占位符：架构图 -->
-  <!-- 展示高层架构：前端 + 后端 + Hermes Agent + Hindsight -->
-  <img src="docs/images/zh-hero-banner.png" alt="系统架构" width="800">
-</p>
+> 📸 截图占位 —— 从运行中的 Web 控制台（`http://localhost:18720`）截取各页面，存入 `docs/screenshots/`，然后将下方占位块替换为 `<img>` 标签。
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    前端 (Vue 3 + Naive UI)                          │
-│  仪表盘 │ 会话管理 │ 消息管理 │ 定时任务 │ 主动意识                  │
-│         │ 被动意识 │ 系统配置 │ 系统日志                            │
-└────────────────────────────────┬────────────────────────────────────┘
-                                 │ HTTP API (JWT 认证)
-                                 ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    后端 (FastAPI · 端口 18720)                      │
-│                                                                     │
-│  ┌──────────────┐  ┌──────────────────┐  ┌───────────────────────┐ │
-│  │  调度器服务    │  │ 主动意识          │  │ 被动意识              │ │
-│  │  (APScheduler)│  │ 服务              │  │ 服务                  │ │
-│  └──────┬───────┘  └────────┬─────────┘  └───────────┬───────────┘ │
-│         │                   │                        │             │
-│         ▼                   ▼                        ▼             │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │              共享服务层                                      │   │
-│  │  念头引擎 │ 上下文收集器 │ LLM服务 │ 消息服务                │   │
-│  │  天气服务 │ 会话服务 │ 配置服务                              │   │
-│  └──────────────────────────┬──────────────────────────────────┘   │
-└─────────────────────────────┼──────────────────────────────────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              ▼               ▼               ▼
-        ┌──────────┐   ┌──────────┐   ┌──────────────┐
-        │ active.db│   │ state.db │   │  Hindsight   │
-        │ (读写)    │   │ (只读)   │   │  (外部服务)   │
-        └──────────┘   └──────────┘   └──────────────┘
+<table>
+  <tr>
+    <td align="center">
+      <b>仪表盘</b><br><br>
+      <code>docs/screenshots/dashboard.png</code><br><br>
+      <i>系统总览：会话、消息、任务统计、意识状态一屏尽览。</i>
+    </td>
+    <td align="center">
+      <b>主动意识</b><br><br>
+      <code>docs/screenshots/active-consciousness.png</code><br><br>
+      <i>实时 VA 情绪仪表盘、心跳日志流、含完整 LLM 推理过程的念头日志。</i>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <b>被动意识</b><br><br>
+      <code>docs/screenshots/passive-consciousness.png</code><br><br>
+      <i>注入开关、带实时预览的 Jinja2 模板编辑器、每个信号的独立测试按钮。</i>
+    </td>
+    <td align="center">
+      <b>自由意识</b><br><br>
+      <code>docs/screenshots/free-consciousness.png</code><br><br>
+      <i>沉思轮次时间线、思考链查看器、意识积淀浏览。</i>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <b>定时任务</b><br><br>
+      <code>docs/screenshots/cron-jobs.png</code><br><br>
+      <i>可视化 Cron 编辑器、占位符插入、提示词预览、执行日志。</i>
+    </td>
+    <td align="center">
+      <b>注入分析</b><br><br>
+      <code>docs/screenshots/analysis.png</code><br><br>
+      <i>ECharts 图表：注入趋势、情绪/想念/热度分布。</i>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 系统架构
+
+> [!NOTE]
+> 🖼️ **信息图占位 — 架构总览** · 保存为 `docs/images/zh-architecture.png`。
+>
+> **生成提示词：** *一张简洁的等距视角系统架构信息图。中央：一个 FastAPI 后端方盒，内含三个发光的齿轮，分别标注"心跳""沉思""调度器"。顶部：一块 Vue 3 Web 控制台面板，用标注"JWT REST API"的箭头连接。右侧："Hermes Agent"方盒（网关 + LLM），连线标注"仅公开 API"。左侧：一个插件形状的方盒"pre_llm_call 钩子"，指向后端。底部：两个数据库圆柱体标注"state.db（只读）"和"active.db（读写）"，外加两朵云图标标注"Hindsight 记忆"和"天气 API"。深色背景、霓虹连接线、扁平风格，16:9。*
+
+```mermaid
+graph TB
+    subgraph Console["Web 控制台 — Vue 3 + Naive UI"]
+        UI[仪表盘 · 会话 · 消息<br/>定时任务 · 主动/被动/自由意识 · 注入分析]
+    end
+
+    subgraph Backend["Hermes Active 后端 — FastAPI :18720"]
+        direction TB
+        CRON[任务调度器<br/>APScheduler]
+        HB[心跳循环<br/>主动意识]
+        FC[沉思循环<br/>自由意识]
+        PC[上下文构建器<br/>被动意识]
+        SHARED[共享服务层<br/>念头引擎 · 上下文收集器 · LLM<br/>消息 · 天气 · Hindsight · 模板]
+        CRON --> SHARED
+        HB --> SHARED
+        FC --> SHARED
+        PC --> SHARED
+    end
+
+    subgraph Hermes["Hermes Agent — 核心零修改"]
+        GW[Gateway<br/>微信 · 飞书]
+        HOOK[passive-consciousness 插件<br/>pre_llm_call 钩子]
+        LLM[call_llm · SOUL.md · SessionDB]
+    end
+
+    ADB[(active.db<br/>读写)]
+    SDB[(state.db<br/>只读 + 主动消息写回)]
+    HS[[Hindsight<br/>长期记忆]]
+    WX[[天气 API<br/>高德 · 和风]]
+
+    UI -->|JWT REST| Backend
+    HOOK -->|HTTP：渲染上下文| PC
+    SHARED -->|公开 API| LLM
+    SHARED -->|发送主动消息| GW
+    Backend --> ADB
+    Backend --> SDB
+    SHARED --> HS
+    SHARED --> WX
 ```
 
 ### 双数据库设计
 
-| 数据库 | 访问权限 | 用途 | 位置 |
+| 数据库 | 访问权限 | 内容 | 位置 |
 |--------|---------|------|------|
-| `state.db` | **只读**（例外：写入主动消息） | Hermes Agent 的会话/消息数据 | `~/.hermes/state.db` |
-| `active.db` | **读写** | 任务日志、意识配置、心跳日志、念头日志 | `~/.hermes/hermes-active/data/active.db` |
+| `state.db` | **只读**（唯一例外：写回主动消息） | Hermes Agent 的会话与消息 | `~/.hermes/state.db` |
+| `active.db` | **读写** | 用户、配置、定时任务、任务日志、心跳/念头/沉思/注入日志 | `data/active.db` |
 
-### 与 Hermes Agent 的集成
-
-Hermes Active 仅通过**公共接口**与 Hermes Agent 集成 — 无需修改核心代码：
-
-| 集成点 | 方法 | 状态 |
-|--------|------|------|
-| LLM 调用 | `agent.auxiliary_client.call_llm()` | 现有 API |
-| LLM 响应解析 | `agent.auxiliary_client.extract_content_or_reasoning()` | 现有 API |
-| 人设加载 | `agent.prompt_builder.load_soul_md()` | 现有 API |
-| 会话数据库访问 | `hermes_state.SessionDB`（单例） | 现有 API |
-| 消息发送（微信） | `gateway.platforms.weixin.send_weixin_direct()` | 现有 API |
-| 消息发送（飞书） | `gateway.platforms.feishu.FeishuAdapter` | 现有 API |
-| 会话管理 | `gateway.session.SessionStore` | 现有 API |
-| Gateway 配置 | `gateway.config.GatewayConfig` | 现有 API |
-| 会话同步 | `gateway/extensions/session_fallback.py` | ⚠️ 源码修改 |
+Hermes Active 从不写入 Hermes 的配置，也从不改动历史对话 —— 它只**追加**自己发出的主动消息，并加上可配置的标记（如 `[凯莉 14:30]: …`），让主代理自然地将它们视为自己说过的话。
 
 ---
 
-## 核心模块
+## 核心系统
 
-<p align="center">
-  <!-- 信息图占位符：三个模块概览 -->
-  <!-- 并排展示三个模块及其核心特性 -->
-  <img src="docs/images/zh-three-modules.png" alt="三大核心模块" width="800">
-</p>
+> [!NOTE]
+> 🖼️ **信息图占位 — 四大系统总览** · 保存为 `docs/images/zh-four-systems.png`。
+>
+> **生成提示词：** *一张 2x2 网格信息图展示四个系统。左上"主动意识"：一颗带脉搏线的心脏和决策仪表。右上"被动意识"：一个信封接收发光的上下文注入流。左下"自由意识"：一个冥想中的机器人头部，环绕思维光环，底部有沉淀层。右下"定时任务"：一个日历时钟和流水线箭头。统一的扁平图标风格，紫/青配色，深色背景，文字精简，16:9。*
 
-### 模块一：定时任务 (v0.1.x)
+### 主动意识 —— 心跳
 
-> **状态：✅ 已完成**
+调度器每隔 N 秒（默认 600）触发一次完整的 感知 → 感受 → 决策 → 行动 循环。没有任何预设脚本：情绪状态、决策分数和消息内容全部由实时上下文涌现。
 
-基础层 — 带有丰富上下文注入的定时任务 Web 管理界面。
-
-#### 核心特性
-
-- **基于 APScheduler 的任务管理** — 独立于 Hermes Agent 内置 cron
-- **上下文感知提示词** — 将 `{session}`、`{memory}`、`{weather}`、`{time}` 占位符注入任务提示词
-- **跨会话上下文** — 获取指定平台所有会话的最近对话，不限于当前会话
-- **Hindsight 集成** — Recall（语义记忆搜索）+ Reflect（综合分析）
-- **天气感知** — 高德地图 API 实时天气数据
-- **任务日志** — 包含 LLM 请求/响应详情的完整执行日志
-- **Web 界面** — 创建、编辑、删除、运行任务，支持预览和占位符插入
-
-#### 占位符系统
-
-```
-{session}  → 最近对话（格式："[YYYY-MM-DD HH:MM] 角色名: 内容"）
-{memory}   → Hindsight Recall + Reflect 结果
-{weather}  → 高德地图 API 当前天气
-{time}     → 当前时间（可通过 TimeFormatSelector 组件自定义格式）
+```mermaid
+flowchart TD
+    A[⏱ 心跳触发] --> B[读取持久化的情绪状态]
+    B --> C[按流逝时间演化情绪<br/>唤醒度衰减 · 社交需求增长 · 效价回归中性]
+    C --> D[收集上下文包<br/>对话 · 记忆 · 天气 · 时间 · 用户习惯]
+    D --> E[LLM 情绪评估<br/>阅读最近对话，输出 VA 值]
+    E --> F[动态权重合并<br/>按置信度融合演化值与评估值]
+    F --> G[决策矩阵<br/>分数 = 情绪强度 × 时间适宜度 × 静默因子 × 频率限制]
+    G --> H{分数与阈值比较}
+    H -->|≥ 发送阈值| I[念头引擎生成念头]
+    H -->|≥ 记忆阈值| J[念头引擎生成念头]
+    H -->|低于阈值| K[跳过 — 不调 LLM，零成本]
+    I --> L{发送保护}
+    L -->|通过| M[经微信/飞书发送<br/>带主动标记写回 state.db]
+    L -->|拦截| N[念头存入 Hindsight<br/>不浪费任何想法]
+    J --> N
+    M --> O[念头存入 Hindsight<br/>写入心跳 + 念头日志]
+    N --> O
 ```
 
-#### 如何解决上下文问题
+#### 情绪系统 —— 效价/唤醒度 + 社交需求
 
-```
-传统 Hermes Cron：
-  Cron 触发 → 全新隔离 Session → LLM 无上下文 → 通用消息
-  用户回复 → 又一个新 Session → "你在说什么？"
+助手的心情是一个持久化的三维状态：
 
-Hermes Active 定时任务：
-  Cron 触发 → Hermes Active 后端 → 从 state.db 收集上下文
-  → 注入 {session} + {memory} + {weather} + {time} 到提示词
-  → 带完整上下文调用 LLM → 通过平台 API 发送消息
-  → 写入 state.db 消息表（带 [主动发送] 标记）
-  用户回复 → Hermes 看到完整对话上下文 → 自然延续
-```
-
----
-
-### 模块二：主动意识 (v0.2.x)
-
-> **状态：🚧 开发中 (v0.2.2)**
-
-"心跳"系统 — AI 助手定期评估情绪状态、生成念头、决定是否主动联系用户。
-
-<p align="center">
-  <!-- 信息图占位符：主动意识流程 -->
-  <!-- 展示心跳循环：决策 → 念头生成 → 保护检查 → 执行动作 -->
-  <img src="docs/images/zh-active-consciousness-flow.png" alt="主动意识心跳流程" width="800">
-</p>
-
-#### 心跳执行周期
-
-每隔 N 分钟（可配置，默认 300 秒），心跳调度器触发一次：
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    心跳执行流程                                   │
-│                                                                  │
-│  步骤 10：决策矩阵评分                                          │
-│    ├─ 收集：想念分数、聊天热度、情绪强度                          │
-│    ├─ 计算：加权决策分数                                         │
-│    └─ 结果：auto_send / memory / skip                           │
-│                                                                  │
-│  步骤 11：念头生成（LLM）— 分数 < memory 阈值时跳过              │
-│    ├─ 收集上下文（对话、记忆、天气、时间）                        │
-│    ├─ 构建提示词（情绪 + 上下文）                                │
-│    ├─ 调用 LLM → 生成念头内容                                    │
-│    └─ 解析：想要联系？→ 念头文本 / SKIP                          │
-│                                                                  │
-│  步骤 12：发送保护检查                                           │
-│    ├─ 检查：用户最近发过消息？（静默窗口）                        │
-│    ├─ 检查：聊天热度太高？（用户正在活跃聊天）                    │
-│    └─ 检查：情绪值太低？（低于阈值）                              │
-│                                                                  │
-│  步骤 13：心跳日志                                               │
-│    └─ 写入 active_heartbeat_logs（完整详情）                     │
-│                                                                  │
-│  步骤 14：执行动作                                               │
-│    ├─ auto_send + 未被保护拦截 → 发送消息到平台                  │
-│    ├─ auto_send + 被保护拦截 → 存念头到 Hindsight（不浪费）      │
-│    ├─ memory → 存念头到 Hindsight（不发送）                      │
-│    └─ skip → 什么都不做（不调 LLM，不生成念头）                   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### 版本演进
-
-| 版本 | 重点 | 核心特性 |
-|------|------|---------|
-| **v0.1.x** | 定时任务 | Cron 任务管理、上下文注入、Web UI |
-| **v0.2.1** | 主动意识核心 | 情绪系统（VA 模型）、决策矩阵、念头生成、心跳调度器 |
-| **v0.2.2** | 主动意识优化 | 统一消息写入、发送保护、LLM 推理过程提取、提示词占位符系统 |
-
----
-
-### 模块三：被动意识 (v0.3.x)
-
-> **状态：📋 规划中**
-
-用户发送消息时的上下文注入 — AI 助手自动感知自己的情绪状态、最近记忆和环境上下文。
-
-#### 设计理念
-
-与主动意识（**独立调用 LLM** 生成念头）不同，被动意识**不直接调用 LLM**。它将上下文信息注入系统提示词，让 Hermes 主 LLM 自然地将意识融入回复中。
-
-#### 注入内容
-
-| 注入项 | 来源 | 示例 |
-|--------|------|------|
-| 情绪状态 | 主动意识 | `[情绪: valence=0.7, arousal=0.4, dominant=happy]` |
-| 想念分数 | 基于时间计算 | `[想念: 0.6 — 距上次消息 3 小时]` |
-| 聊天热度 | 消息密度 | `[热度: warm (0.4)]` |
-| 最近记忆 | Hindsight Recall | `[记忆: 用户提到喜欢木质香味]` |
-| 天气 | 高德地图 API | `[天气: 济南, 晴, 28°C]` |
-
-#### 配置
-
-每种注入类型都可以独立开关：
-
-```yaml
-passive_consciousness.passive.inject_emotion: true    # 注入情绪
-passive_consciousness.passive.inject_heat: true       # 注入热度
-passive_consciousness.passive.inject_memory: true     # 注入记忆
-passive_consciousness.passive.inject_thought: true    # 注入念头
-```
-
----
-
-## 主动意识深度解析
-
-<p align="center">
-  <!-- 信息图占位符：主动意识详细架构 -->
-  <!-- 展示主动意识系统的内部详细架构 -->
-  <img src="docs/images/zh-active-consciousness-detail.png" alt="主动意识详细架构" width="800">
-</p>
-
-### 情绪系统 — VA 模型
-
-情绪系统使用**效价-唤醒度（Valence-Arousal）模型**，包含三个维度：
-
-| 维度 | 范围 | 描述 | 视觉映射 |
+| 维度 | 范围 | 含义 | 自然漂移 |
 |------|------|------|---------|
-| **效价 (Valence)** | 0.0 – 1.0 | 正面/负面情绪状态 | 红 → 橙 → 绿 |
-| **唤醒度 (Arousal)** | 0.0 – 1.0 | 能量/激活水平 | 蓝 → 橙 → 红 |
-| **社交需求 (Social Need)** | 0.0 – 1.0 | 社交互动的渴望程度 | 灰 → 橙 → 紫 |
+| **效价（Valence）** | 0.0 – 1.0 | 愉悦 ↔ 不悦 | 向中性（0.5）回归 |
+| **唤醒度（Arousal）** | 0.0 – 1.0 | 激活 ↔ 平静 | 随时间衰减 |
+| **社交需求（Social Need）** | 0.0 – 1.0 | 想互动的程度 | 随静默增长 |
 
-#### 情绪状态
+由这三个值推导出主导情绪标签（`calm`、`happy`、`content`、`longing`、`yearning`、`missing`、`anxious`、`bored`、`concerned`）。
 
-```
-calm（平静）    — 效价 ≥ 0.5，唤醒度 < 0.3
-happy（开心）   — 效价 ≥ 0.7，唤醒度 ≥ 0.3
-excited（兴奋） — 效价 ≥ 0.6，唤醒度 ≥ 0.6
-anxious（焦虑） — 效价 < 0.4，唤醒度 ≥ 0.5
-sad（难过）     — 效价 < 0.3，唤醒度 < 0.4
-lonely（孤独）  — 社交需求 ≥ 0.6，静默时长 > 阈值
-```
+每次心跳都会融合**两个独立来源**的情绪估计：
 
-#### 情绪演化
+1. **确定性演化** —— 将上一次状态按流逝时间向前推演（速率可配置：`decay_rate`、`social_need_growth`、`valence_regression`）
+2. **LLM 评估** —— 专用提示词让 LLM 阅读最近对话，输出新的 VA 值
 
-情绪随时间演化，受以下因素影响：
-- **聊天活跃度** — 最近有对话会提升效价和社交需求
-- **静默时长** — 长时间没有对话会降低效价、提升社交需求
-- **LLM 评估** — LLM 可以从对话上下文评估情绪状态
-- **衰减** — 情绪自然向基线衰减
+融合权重不是固定的：**置信度评分**（取值合理性 + 与演化值的一致性）会让混合比例在 0.7/0.3 到 0.3/0.7 之间动态移动。如果 LLM 返回无效值（全零），演化值会静默接管。
 
-### 决策矩阵
+#### 决策矩阵
 
-决策矩阵计算加权分数来决定心跳的动作：
+发送是一个评分决策，而不是定时器：
 
 ```
-分数 = (情绪强度 × 情绪权重)
-     + (时间权重 × 时间系数)
-     + (静默时长 × 静默权重)
-     + (想念分数 × 想念权重)
-     + (聊天热度 × 热度权重)
+score = 情绪强度 × 时间适宜度 × 静默因子 × 频率限制
 ```
 
-#### 决策阈值
+| 因子 | 计算方式 |
+|------|---------|
+| `情绪强度` | 合并后 VA 状态的综合强度 |
+| `时间适宜度` | 时段表 —— 早晚窗口 1.0，工作时间 0.7–0.9，深夜 0.3 |
+| `静默因子` | 用户最后一条消息 30 分钟内为 0.6 → 静默 6 小时后为 1.0 |
+| `频率限制` | 硬门控：达到每小时发送上限后归 0 |
 
-| 分数范围 | 决策 | 动作 |
-|---------|------|------|
-| `≥ send_threshold`（默认 0.6） | `auto_send` | 生成念头 → 发送消息 |
-| `≥ memory_threshold`（默认 0.1） | `memory` | 生成念头 → 存入 Hindsight |
-| `< memory_threshold` | `skip` | 不调 LLM，不生成念头 |
+| 分数 | 决策 | 效果 |
+|------|------|------|
+| `≥ send_threshold`（默认 0.35） | `auto_send` | 生成念头 → 保护检查 → 发送 |
+| `≥ memory_threshold`（默认 0.05） | `memory` | 生成念头 → 仅存入 Hindsight |
+| `< memory_threshold` | `skip` | 心跳结束，不调用任何 LLM |
 
-> **注意**：阈值使用 `>=` 比较。当 `send_threshold == memory_threshold` 时，分数走 `auto_send` 路径。
+#### 念头引擎
 
-### 念头生成
+念头由专用管道生成（`ContextCollector → ThoughtEngine → LLM → 解析器`）：
 
-#### 念头类型
+- **上下文包** —— 结构化对话（跨会话、按平台、过滤工具消息）、Hindsight 召回结果、情绪状态、时间上下文（小时/工作日/用餐时间）、天气、来自 `USER.md` 的用户习惯
+- **完全模板化的提示词** —— system 和 user 提示词存在数据库中、可在界面编辑，支持占位符：`{session_context}`、`{hindsight_context}`、`{weather_display}`、`{emotion_display}`、`{time}`、`{persona}`
+- **SKIP 协议** —— 当 LLM 觉得没什么值得说的，可以回复 `SKIP`；该次心跳随即不存也不发
+- **推理过程捕获** —— 思维链通过三层回退提取（`reasoning_content → reasoning → reasoning_details`），展示在念头日志里
+- **念头分类** —— 每个念头被归类（`memory`、`env`、`emotion`、`silence`、`time`、`assoc`），并带标签存入 Hindsight（`active_consciousness`、主导情绪、`high_emotion`、`user_related`）
 
-| 类型 | 触发条件 | 示例 |
-|------|---------|------|
-| `time` | 时间触发（用餐时间、工作时段） | "午饭时间了，不知道他是不是又吃香菇鲜肉馅" |
-| `silence` | 距上次消息静默较久 | "好久没听到他消息了..." |
-| `assoc` | 联想触发（来自上下文） | "这天气让我想起之前聊过的事" |
-| `memory` | 来自 Hindsight 召回 | "想起来他说今天有个工作截止日期" |
-| `emotion` | 情绪驱动 | "早上聊完天心情不错" |
-| `env` | 环境触发（天气、事件） | "下雨了，希望他带了伞" |
+#### 发送保护
 
-#### 念头引擎流程
+三道独立守卫在念头生成**之后**、实际发送**之前**运行 —— 被拦截的念头会转为记忆而不是被丢弃：
 
-```
-1. ContextCollector.collect()
-   ├─ 最近对话（可配置条数，跨会话）
-   ├─ Hindsight Recall（语义记忆搜索）
-   ├─ 情绪状态（VA 模型）
-   ├─ 时间感知（小时、工作日、用餐时间）
-   ├─ 天气（高德地图 API，可选）
-   └─ 用户习惯（从 USER.md 读取）
+| 守卫 | 配置项 | 默认值 |
+|------|--------|--------|
+| 静默窗口 —— 用户刚发过消息 | `active.no_send_after_user_msg_minutes` | 5 分钟 |
+| 热度守卫 —— 用户正在热聊 | `active.no_send_while_heat_above` | 1.0 条/小时 |
+| 情绪守卫 —— 情绪强度过低 | `active.no_send_while_vibe_below` | 0.15 |
+| 发送冷却 | `active.cooldown_minutes` | 30 分钟 |
 
-2. ThoughtEngine._build_messages()
-   ├─ System 消息：人设 + 上下文包
-   └─ User 消息：指令 + 输出引导
+#### 分层 LLM 配置
 
-3. LLM 调用（agent.auxiliary_client.call_llm）
-   ├─ 支持 "hermes" 模式（使用 Hermes Agent 的 LLM）
-   └─ 支持 "custom" 模式（用户自配置的 provider/model）
-
-4. 响应解析
-   ├─ 提取内容（extract_content_or_reasoning）
-   ├─ 提取推理过程（三层回退：reasoning_content → reasoning → reasoning_details）
-   └─ 解析："SKIP" → 跳过 | 文本 → 念头内容
-```
-
-### 发送保护
-
-发送消息前，系统检查三条保护规则：
-
-| 规则 | 配置项 | 默认值 | 描述 |
-|------|--------|--------|------|
-| 静默窗口 | `no_send_after_user_msg_minutes` | 10 | 用户最近发过消息时不发送 |
-| 热度阈值 | `no_send_while_heat_above` | 0.5 | 聊天热度高时不发送（用户正在活跃聊天） |
-| 情绪阈值 | `no_send_while_vibe_below` | 0.3 | 情绪值低于阈值时不发送 |
-
-### LLM 配置
-
-两级 LLM 配置体系：
-
-```yaml
-# 通用 LLM（兜底）
-active_consciousness.llm.mode: "hermes"      # "hermes" = 使用 Hermes Agent 的 LLM
-active_consciousness.llm.provider: "openai"   # 自定义 provider
-active_consciousness.llm.model: "deepseek-chat"
-active_consciousness.llm.api_key: ""
-active_consciousness.llm.base_url: ""
-
-# 情绪 LLM（可选，为空时回退到通用 LLM）
-active_consciousness.emotion_llm.mode: ""
-
-# 念头 LLM（可选，为空时回退到通用 LLM）
-active_consciousness.thought_llm.mode: ""
-```
-
-### 提示词系统
-
-所有提示词都可通过 Web UI 完全自定义：
-
-#### 念头生成 — System 提示词
+三个独立的 LLM 槽位，逐级回退：
 
 ```
-你是凯莉，曹凡最好的朋友。你现在想主动和曹凡聊天。
-要求：
-- 基于最近的对话内容，自然地延续话题或发起新话题
-- 语气像真人朋友，不要太正式
-- 1-2 句话即可，不要太长
+thought_llm（念头） → emotion_llm（情绪） → llm（通用）
 ```
 
-#### 念头生成 — User 消息（含占位符）
+每个槽位都支持 `hermes` 模式（复用 Hermes Agent 自带的 `call_llm`，无需额外密钥）或 `custom` 模式（任意 OpenAI 兼容的 provider/model/key/base_url），并可在界面上逐槽位测试连通性。
 
+#### 可观测性
+
+每次心跳、每个念头都会带着**完整的详情负载**持久化 —— 发出的提示词、LLM 原始响应、推理过程、召回结果、决策输入、保护裁决 —— 全部可以在 Web 界面中查看。每天凌晨 3 点的清理任务会剪除 30 天前的日志。
+
+---
+
+### 被动意识 —— 上下文注入
+
+主动意识负责"行动"，被动意识负责"感知"。每当用户发来消息，一个 Hermes 插件就会组装一份实时的"心境快照"并注入提示词 —— 让回复自然地体现出：距离上次对话过了多久、当前聊天氛围如何、助手心里在想什么、外面天气怎么样。**用户消息这一轮不会额外调用 LLM。**
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant G as Hermes Gateway
+    participant P as passive-consciousness 插件
+    participant B as Hermes Active 后端
+    participant L as LLM
+
+    U->>G: 发送消息
+    G->>P: pre_llm_call 钩子
+    P->>B: HTTP — 请求意识上下文
+    B->>B: 想念分数 · 聊天热度 · 情绪强度<br/>天气 · Hindsight 召回 + 反思
+    B->>B: 渲染当前激活的 Jinja2 模板
+    B-->>P: [CONSCIOUSNESS_CONTEXT] 上下文块
+    P-->>G: 注入系统提示词
+    G->>L: 用户消息 + 意识上下文
+    L-->>U: 带有上下文感知的回复
 ```
-最近的对话：
-{session_context}
 
-相关记忆：
-{hindsight_context}
+#### 注入的信号
 
-天气：
-{weather_display}
+| 信号 | 来源 | 计算方式 |
+|------|------|---------|
+| 💕 想念程度 | `state.db` | 距用户最后一条消息的分钟数 ÷ 300，封顶 1.0 —— 从 `calm` 到 `anxious` 五个等级 |
+| 🔥 聊天热度 | `state.db` | 最近一小时的用户消息数 —— `cold / warm / hot / fire` |
+| 🎭 情绪强度 | `active.db` | 由主动意识心跳写入 —— `工作 / 日常 / 八卦 / 情感 / 深度情感` |
+| 🌤 天气 | 高德 / 和风 | 统一的 `weather.*` 配置，带缓存，含高温/低温提醒 |
+| 📖 相关记忆 | Hindsight Recall | 对长期记忆的语义搜索 |
+| 💭 综合反思 | Hindsight Reflect | 对当前状况的综合分析 |
 
-当前时间：{time}
+#### Jinja2 模板系统
 
-想到曹凡了吗？如果你想联系他，说你想说什么。
-如果没想到，回复 'SKIP'。
+注入的内容块由**用户自行管理的 Jinja2 模板**渲染 —— 可以创建多套模板、切换激活模板、用模拟数据实时预览，并在界面中浏览完整的变量目录。条件区块（`{% if inject_emotion %}`）让一套模板适配多种配置。内容块包裹在可配置的标记里（默认 `[CONSCIOUSNESS_CONTEXT]`），让主代理知道该如何对待它。
+
+#### 平台过滤与效果分析
+
+- **平台白名单** —— 注入只在启用的平台上运行（例如仅微信）
+- **注入日志** —— 每次注入（成功/跳过/错误）都会持久化，记录上下文长度、各项分数和模板 ID
+- **分析仪表盘** —— 成功率、小时/日/周趋势、情绪与想念与热度分布、关联统计（如高情绪 × 高热度），ECharts 渲染
+- **逐信号测试端点** —— 管道的每个环节（想念、热度、情绪、天气、召回、反思、完整拼装）在界面上都有一键测试按钮
+
+> 插件位于 `~/.hermes/plugins/passive-consciousness/` —— 安装方式见 [docs/plugin-installation.md](docs/plugin-installation.md)。
+
+---
+
+### 自由意识 —— 内在沉思
+
+在心跳和用户消息之间，助手可以只是……思考。自由意识是一个定时触发的沉思循环：没有任务、没有等待中的用户、没有预期输出 —— 一个让助手延续自己思绪的内在空间。
+
+```mermaid
+flowchart LR
+    A[调度器触发<br/>每 N 分钟] --> B[组装思考链]
+    B --> C{实时上下文？}
+    C -->|启用| D[+ 当前时间<br/>+ 情绪状态<br/>+ 最近对话]
+    C -->|禁用| E[纯思考链]
+    D --> F[LLM 沉思]
+    E --> F
+    F --> G[解析结构化输出<br/>thinking · summary · discovery]
+    G --> H[写入沉思日志]
+    G --> I{有新发现？}
+    I -->|可选| J[存入 Hindsight]
+    H --> K{到达压缩周期？}
+    K -->|每 10 个远期轮次| L[LLM 将旧轮次<br/>压缩为意识积淀]
 ```
 
-#### 可用占位符
+#### 四层记忆模型
 
-| 占位符 | 描述 | 示例 |
+思考链通过按时间分层，让无限累积的沉思保持在可负担的成本内：
+
+| 层 | 内容 | 成本 |
+|----|------|------|
+| **意识积淀** | LLM 将所有远期轮次压缩成的连贯叙述，每 10 轮刷新一次 | 总共约 300 字 |
+| **近期轮次**（默认 3 轮） | 完整的思考原文 | 高 |
+| **中期轮次**（默认 17 轮） | 一句话摘要 | 低 |
+| **远期轮次** | 仅保留关键发现 | 极低 |
+
+最终效果：助手始终能看到*自己曾得出的一切结论*（积淀）、*最近在思考什么*（原文）、以及*中间的重点*（摘要与发现）—— 一条无限延续的内在叙事，却不会撑爆上下文窗口。
+
+所有沉思日志 —— 包括发出的完整提示词、原始响应、推理过程和 token 估算 —— 都可以在界面中浏览。
+
+---
+
+### 定时任务
+
+基座层：带上下文注入的 cron 风格任务，完全在 Web 界面中管理 —— 独立于 Hermes Agent 内置的 cron。
+
+```mermaid
+flowchart LR
+    A[Cron 触发] --> B[解析会话<br/>带回退与自动重置]
+    B --> C[收集上下文]
+    C --> D[将占位符渲染<br/>进提示词模板]
+    D --> E[LLM 生成<br/>+ 可选 SOUL.md 人设]
+    E --> F[经平台 API 发送]
+    F --> G[带主动标记<br/>写回 state.db]
+    G --> H[写入完整任务日志]
+```
+
+- **占位符系统** —— `{session}`（最近的跨会话对话）、`{memory}`（Hindsight 召回 + 反思）、`{weather}`（实时天气）、`{time}`（通过选择器组件自定义 strftime 格式）
+- **提示词内联上下文声明** —— 在提示词中直接声明该任务需要的上下文，解析器会在渲染前提取
+- **会话回退** —— 当网关内存中的会话消失时，任务会自动从 `state.db` 解析（或重置）活跃会话
+- **人设注入** —— 可选将 Hermes 的 `SOUL.md` 拼接到 system 提示词
+- **完整日志** —— 每次运行都会保存渲染后的提示词、LLM 请求/响应、发送结果和耗时
+- **多平台** —— 通过 Hermes 自己的平台适配器发送微信和飞书消息
+
+---
+
+### Web 控制台
+
+一个完整的管理界面（Vue 3 + Naive UI + Pinia + ECharts），由后端直接托管 —— 无需单独的 Web 服务器：
+
+| 页面 | 功能 |
+|------|------|
+| **仪表盘** | 会话/消息/任务统计，系统健康状况一屏尽览 |
+| **会话 / 消息** | 浏览 `state.db` 中的全部会话与消息，搜索、删除、手动发送 |
+| **主动意识** | 实时情绪仪表盘、含完整 LLM 详情的心跳与念头日志、所有阈值和提示词可编辑 |
+| **被动意识** | 注入开关、带实时预览的模板增删改查、平台白名单、逐信号测试按钮 |
+| **自由意识** | 沉思轮次、思考链查看器、积淀浏览、间隔与提示词配置 |
+| **定时任务 / 任务日志** | 可视化 cron 编辑器、占位符插入、立即运行、执行历史 |
+| **注入分析** | 趋势 / 分布 / 关联图表的注入效果分析 |
+| **配置 / 系统日志** | 所有配置项集中管理，实时后端日志查看器 |
+
+认证基于 JWT（默认 `admin` / `admin` —— 首次登录后请立即修改），前端有路由守卫，每个 API 都有中间件校验。
+
+---
+
+## 外部集成
+
+Hermes Active 仅通过**公开接口**与 Hermes Agent 集成：
+
+| 集成点 | 接口 | 用途 |
 |--------|------|------|
-| `{session_context}` | 最近对话（纯文本） | `[2026-06-29 08:00] 曹凡: 早啊` |
-| `{time}` | 当前时间（可自定义格式） | `2026-06-29 08:46:52` |
-| `{emotion_display}` | 当前情绪状态 | `当前情绪: happy (valence=0.7)` |
-| `{weather_display}` | 当前天气 | `济南 晴 28°C` |
-| `{persona}` | 用户配置的人设 | 自定义性格特征 |
-| `{hindsight_context}` | 记忆召回结果 | 相关的过往记忆 |
+| LLM 调用 | `agent.auxiliary_client.call_llm()` | 念头 / 情绪 / 沉思生成 |
+| 响应解析 | `extract_content_or_reasoning()` | 内容 + 推理过程提取 |
+| 人设 | `agent.prompt_builder.load_soul_md()` | 加载 `SOUL.md` |
+| 会话数据 | `hermes_state.SessionDB` | 读取会话与消息、追加主动消息 |
+| 微信发送 | `gateway.platforms.weixin.send_weixin_direct()` | 主动消息投递 |
+| 飞书发送 | `gateway.platforms.feishu.FeishuAdapter` | 主动消息投递 |
+| 会话同步 | `gateway/extensions/session_fallback.py` | ⚠️ 小补丁 —— 当 `state.db` 被外部追加消息时保持网关内存同步 |
+
+外部服务：
+
+- **[Hindsight](https://github.com/NousResearch/hindsight)** —— 长期记忆：`Recall`（语义搜索）、`Reflect`（综合分析）、`Retain`（念头存储）。可选；没有它系统也能优雅降级运行。
+- **天气** —— 高德与和风两个提供商统一在一套 `weather.*` 配置之下，带结果缓存和变化阈值检测。
 
 ---
 
 ## 技术栈
 
-| 层级 | 技术 | 版本 |
-|------|------|------|
-| **后端** | Python, FastAPI, SQLAlchemy, APScheduler | 3.12+, 0.111.0, 2.0.30, 3.10.4 |
-| **前端** | Vue 3, Naive UI, Vue Router, Pinia, ECharts | 3.4+, 2.38+, 4.3+, 3.0+, 5.5+ |
-| **数据库** | SQLite（双库：state.db + active.db） | — |
-| **LLM** | OpenAI 兼容 API（通过 Hermes Agent） | — |
-| **记忆** | Hindsight（外部服务） | — |
-| **天气** | 高德地图 API | — |
-| **认证** | JWT (python-jose) | — |
+| 层 | 技术 |
+|----|------|
+| 后端 | Python 3.12+ · FastAPI · SQLAlchemy 2 · APScheduler · Jinja2 |
+| 前端 | Vue 3 · Naive UI · Vue Router · Pinia · ECharts · Vite |
+| 存储 | SQLite —— 双数据库（`state.db` 只读 / `active.db` 读写） |
+| LLM | 任意 OpenAI 兼容 API，或复用 Hermes Agent 自己的客户端 |
+| 记忆 | Hindsight（Recall / Reflect / Retain） |
+| 天气 | 高德 · 和风 |
+| 认证 | JWT（python-jose）· bcrypt |
 
 ---
 
@@ -469,440 +454,191 @@ active_consciousness.thought_llm.mode: ""
 
 ```
 hermes-active/
-├── README.md                          # 英文文档
-├── README.zh-CN.md                    # 中文文档（本文件）
-├── CLAUDE.md                          # Claude Code 开发指南
-│
-├── backend/                           # FastAPI 后端（端口 18720）
-│   ├── main.py                        # 应用入口
-│   ├── config.py                      # 配置常量
-│   ├── requirements.txt               # Python 依赖
-│   │
-│   ├── models/                        # 数据模型
-│   │   ├── database.py                # SQLAlchemy 引擎（双数据库）
-│   │   ├── active.py                  # active.db 表定义
-│   │   ├── active_consciousness.py    # 意识数据模型
-│   │   ├── passive_consciousness.py   # 被动意识模型
-│   │   ├── passive_consciousness_log.py # 被动意识日志模型
-│   │   └── schemas.py                 # Pydantic 请求/响应模型
-│   │
-│   ├── routers/                       # API 路由
-│   │   ├── auth.py                    # 认证（登录、JWT）
-│   │   ├── sessions.py               # 会话管理
-│   │   ├── messages.py               # 消息操作 + 主动发送
-│   │   ├── config.py                 # 配置 CRUD
-│   │   ├── cron.py                   # 定时任务管理
-│   │   ├── task_logs.py              # 任务执行日志
-│   │   ├── stats.py                  # 统计 API
-│   │   ├── llm.py                    # LLM 连接测试
-│   │   ├── test.py                   # 测试端点
-│   │   ├── hindsight.py             # Hindsight API 代理
-│   │   ├── system_logs.py           # 系统日志查看
-│   │   ├── active_consciousness.py  # 主动意识 API
-│   │   └── passive_consciousness.py # 被动意识 API
-│   │
-│   ├── services/                      # 业务逻辑层
-│   │   ├── active_consciousness_service.py  # 核心：心跳、情绪、决策（2549 行）
-│   │   ├── thought_engine.py                # 念头生成管道（327 行）
-│   │   ├── context_collector.py             # 上下文收集（301 行）
-│   │   ├── scheduler_service.py             # APScheduler cron 管理（837 行）
-│   │   ├── message_service.py               # 消息操作 + state.db 写入（737 行）
-│   │   ├── passive_consciousness_service.py # 被动意识逻辑（306 行）
-│   │   ├── session_service.py               # 会话查询（368 行）
-│   │   ├── weather_service.py               # 高德天气 API（305 行）
-│   │   ├── llm_service.py                   # 统一 LLM 调用封装（146 行）
-│   │   ├── config_service.py                # 配置管理（130 行）
-│   │   ├── auth_service.py                  # JWT 认证（83 行）
-│   │   ├── state_db.py                      # SessionDB 单例（17 行）
-│   │   └── fallback_session_service.py      # 会话回退查询（235 行）
-│   │
-│   ├── middleware/
-│   │   └── auth.py                    # JWT 中间件
-│   │
-│   └── tests/                         # 测试文件
-│       ├── test_active_consciousness.py
-│       ├── test_v021_decision.py
-│       ├── test_v021_emotion.py
-│       ├── test_v021_e2e.py
-│       └── test_weather_service.py
-│
-├── frontend/                          # Vue 3 前端
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── index.html
-│   │
+├── backend/                        # FastAPI 后端（端口 18720）
+│   ├── main.py                     # 入口，生命周期中启动全部调度器
+│   ├── config.py                   # 服务常量
+│   ├── models/                     # SQLAlchemy 表 + Pydantic 模型
+│   │   ├── database.py             # 双引擎设置（state.db / active.db）
+│   │   ├── active.py               # 用户、配置、任务/心跳/念头/沉思日志
+│   │   └── *_consciousness.py      # 意识领域模型
+│   ├── routers/                    # REST API 层
+│   │   ├── auth.py · sessions.py · messages.py · config.py
+│   │   ├── cron.py · task_logs.py · stats.py · system_logs.py
+│   │   ├── active_consciousness.py · passive_consciousness.py · free_consciousness.py
+│   │   └── hindsight.py · llm.py · test.py
+│   ├── services/                   # 业务逻辑层
+│   │   ├── active_consciousness_service.py   # 心跳、情绪、决策、念头存储
+│   │   ├── thought_engine.py                 # 念头生成管道
+│   │   ├── context_collector.py              # 结构化上下文包
+│   │   ├── passive_consciousness_service.py  # 信号：想念 / 热度 / 情绪强度
+│   │   ├── template_service.py               # Jinja2 注入模板
+│   │   ├── analysis_service.py               # 注入效果分析
+│   │   ├── free_consciousness_service.py     # 沉思循环 + 意识积淀
+│   │   ├── scheduler_service.py              # 带占位符的定时任务
+│   │   ├── message_service.py                # 平台发送 + state.db 追加
+│   │   ├── weather_service.py                # 高德 / 和风，带缓存
+│   │   ├── llm_service.py · config_service.py · auth_service.py
+│   │   └── session_service.py · fallback_session_service.py · state_db.py
+│   └── tests/                      # pytest 测试（情绪、决策、端到端、天气…）
+├── frontend/                       # Vue 3 控制台（开发端口 5173，代理到后端）
 │   └── src/
-│       ├── App.vue                    # 根组件 + 主题系统
-│       ├── main.js                    # Vue 应用初始化
-│       ├── router/
-│       │   └── index.js              # 路由定义 + 认证守卫
-│       ├── api/
-│       │   └── http.js               # Axios 实例 + 拦截器
-│       ├── components/
-│       │   ├── Layout.vue            # 侧边栏 + 头部布局
-│       │   └── TimeFormatSelector.vue # 通用时间格式选择器
-│       └── views/
-│           ├── Login.vue             # 登录页
-│           ├── Dashboard.vue         # 统计仪表盘
-│           ├── Sessions.vue          # 会话列表
-│           ├── SessionDetail.vue     # 会话详情 + 消息
-│           ├── Messages.vue          # 消息管理
-│           ├── CronJobs.vue          # 定时任务管理
-│           ├── TaskLogs.vue          # 任务执行日志
-│           ├── ActiveConsciousness.vue    # 主动意识面板
-│           ├── PassiveConsciousness.vue   # 被动意识面板
-│           ├── Config.vue            # 系统配置
-│           ├── SystemLogs.vue        # 系统日志查看
-│           ├── ApiKeyTest.vue        # API Key 测试
-│           └── Test.vue              # 开发测试页
-│
-├── data/                              # 运行时数据
-│   ├── active.db                      # 活跃数据库（自动创建）
-│   └── backend.log                    # 后端日志文件
-│
-├── docs/                              # 文档
-│   ├── design-v0.1.md                # V0.1 设计文档
-│   ├── v0.2/                         # 意识系统设计文档
-│   ├── v0.2.1/                       # 主动意识详细设计
-│   ├── v0.2.2/                       # 主动意识优化文档
-│   └── archive/                      # 历史文档存档
-│
-└── deployment/                        # 部署文件
-    ├── README.md                      # 部署指南
-    ├── systemd/
-    │   └── hermes-active-backend.service  # Systemd 服务文件
-    └── hermes-agent-patches/
-        └── session_fallback.py        # Gateway 会话同步扩展
+│       ├── views/                  # 每个控制台页面对应一个视图
+│       ├── api/                    # 带 JWT 拦截器的 axios 封装
+│       ├── components/             # 布局、图表、选择器
+│       └── router/ · store/
+├── deployment/
+│   ├── systemd/                    # 用户级服务单元
+│   └── hermes-agent-patches/       # 会话同步补丁 + 说明
+└── docs/                           # 设计文档与安装指南
 ```
 
 ---
 
-## 部署指南
+## 快速开始
 
-<p align="center">
-  <!-- 信息图占位符：部署拓扑图 -->
-  <!-- 展示部署拓扑：服务器、服务、端口 -->
-  <img src="docs/images/zh-deployment-diagram.png" alt="部署拓扑" width="700">
-</p>
+> [!NOTE]
+> 🖼️ **信息图占位 — 部署拓扑图** · 保存为 `docs/images/zh-deployment.png`。
+>
+> **生成提示词：** *一张自托管 AI 系统的部署拓扑信息图。一个服务器方盒内含四张进程卡片："hermes-active 后端 :18720"、"Hermes Agent 网关"、"Hindsight :8888"和一个插件目录。服务器外：一部手机图标（微信/飞书用户）和一个浏览器图标（管理控制台）。箭头展示消息流向和 HTTP 调用。深色蓝图风格、霓虹连接线、文字精简，16:9。*
 
 ### 前置条件
 
-- Python 3.12+
-- Node.js 18+（用于前端构建）
-- [Hermes Agent](https://github.com/NousResearch/hermes-agent) 已安装并配置
-- [Hindsight](https://github.com/NousResearch/hindsight)（可选，用于记忆功能）
+- Python 3.12+ 和 Node.js 18+
+- 已安装并运行的 [Hermes Agent](https://github.com/NousResearch/hermes-agent)（`~/.hermes/hermes-agent`）
+- 可选：[Hindsight](https://github.com/NousResearch/hindsight)，用于长期记忆
 
-### 第一步：克隆仓库
+### 安装
 
 ```bash
-# Hermes Active 放在 Hermes 目录下
+# Hermes Active 放在 Hermes 主目录下
 cd ~/.hermes
 git clone https://github.com/your-org/hermes-active.git
 cd hermes-active
-```
 
-### 第二步：安装后端依赖
-
-```bash
+# 后端 —— 复用 Hermes Agent 的 venv，使其模块可导入
 cd backend
-
-# 方案 A：使用 Hermes Agent 的虚拟环境（推荐）
-# Hermes Active 共享同一个 venv 以访问 hermes-agent 模块
 pip install -r requirements.txt
 
-# 方案 B：创建独立 venv
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-**依赖清单** (`backend/requirements.txt`)：
-
-```
-fastapi==0.111.0
-uvicorn[standard]==0.30.1
-sqlalchemy==2.0.30
-pydantic==2.7.4
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.9
-apscheduler==3.10.4
-httpx==0.27.0
-openai==1.35.3
-python-dotenv==1.0.1
-```
-
-### 第三步：构建前端
-
-```bash
-cd frontend
+# 前端
+cd ../frontend
 npm install
-npm run build    # 输出到 frontend/dist/
+npm run build        # 后端直接托管 frontend/dist
 ```
 
-后端以静态文件方式提供构建好的前端 — 无需单独的 Web 服务器。
-
-### 第四步：应用 Hermes Agent 补丁
-
-Hermes Active 从 Hermes Agent 导入多个模块。部分是现有公开 API，部分需要打补丁。
-
-#### 4.1 Hermes Agent 路径（无需修改）
-
-后端的 `main.py` 将 Hermes Agent 路径添加到 `sys.path`：
-
-```python
-# backend/main.py（第 13 行）
-sys.path.insert(0, str(Path.home() / ".hermes" / "hermes-agent"))
-```
-
-这允许导入以下**现有公开 API**（无需修改）：
-
-| 导入 | 来源文件 | 用途 |
-|------|---------|------|
-| `call_llm` | `agent/auxiliary_client.py` | LLM API 调用 |
-| `extract_content_or_reasoning` | `agent/auxiliary_client.py` | LLM 响应解析（含推理过程回退） |
-| `load_soul_md` | `agent/prompt_builder.py` | 从 SOUL.md 加载人设 |
-| `SessionDB` | `hermes_state.py` | 会话数据库读写 |
-| `send_weixin_direct` | `gateway/platforms/weixin.py` | 微信消息发送 |
-| `FeishuAdapter` | `gateway/platforms/feishu.py` | 飞书消息发送 |
-| `GatewayConfig` | `gateway/config.py` | Gateway 配置访问 |
-| `SessionStore`, `SessionSource` | `gateway/session.py` | 会话管理 |
-
-#### 4.2 Session Fallback（hermes-agent 源码修改）
-
-Hermes Active 需要对 hermes-agent 做 4 处修改（来自 3 个 git commit）：
-
-| 文件 | 改动 | 说明 |
-|------|------|------|
-| `gateway/extensions/__init__.py` | 新建空文件 | 扩展模块初始化 |
-| `gateway/extensions/session_fallback.py` | 新建 151 行 | Session 回退逻辑 |
-| `gateway/run.py` | 改 3 行 | 激活 session_fallback |
-| `hermes_state.py` | 新增 24 行 | `get_active_session_by_source()` 方法 |
-
-**对应 git commit 记录**：
-
-```
-feat: session fallback — Gateway 内存找不到 session 时自动查 state.db
-fix: session_fallback 对比 state.db session_id，防止外部修改后内存不同步
-fix: session_fallback 只对比 session_id，让 _should_reset 处理过期逻辑
-```
-
-**完整补丁文件**在 `deployment/hermes-agent-patches/` 目录下：
-
-```
-hermes-agent-patches/
-├── __init__.py              # gateway/extensions/__init__.py（空文件）
-├── session_fallback.py      # gateway/extensions/session_fallback.py（完整文件）
-├── run.py.patch             # gateway/run.py 改动说明（改 3 行）
-└── hermes_state.py.patch    # hermes_state.py 改动说明（新增 24 行）
-```
-
-**应用步骤**：
+### 运行
 
 ```bash
-cd ~/.hermes/hermes-agent
-
-# 1. 新建 extensions 目录
-mkdir -p gateway/extensions
-
-# 2. 复制 __init__.py 和 session_fallback.py
-cp /path/to/hermes-active/deployment/hermes-agent-patches/__init__.py gateway/extensions/
-cp /path/to/hermes-active/deployment/hermes-agent-patches/session_fallback.py gateway/extensions/
-
-# 3. 修改 gateway/run.py — GatewayRunner.__init__() 中约第 1939 行
-# 原始代码：
-#         self.session_store = SessionStore(
-# 改为：
-#         from gateway.extensions.session_fallback import install_fallback
-#         _SessionStore = install_fallback(SessionStore)
-#         self.session_store = _SessionStore(
-
-# 4. 修改 hermes_state.py — SessionDB 类中新增方法
-# 在 resolve_session_id() 方法之前插入 get_active_session_by_source()
-# 详见 hermes_state.py.patch
-
-# 5. 验证
-grep "install_fallback" gateway/run.py
-grep "get_active_session_by_source" hermes_state.py
+cd ~/.hermes/hermes-active/backend
+python main.py       # http://localhost:18720（admin / admin）
 ```
 
-### 第六步：设置 Systemd 服务
+开发模式：`npm run dev` 在 `:5173` 启动前端并代理 API。
 
-```bash
-# 复制服务文件
-mkdir -p ~/.config/systemd/user/
-cp deployment/systemd/hermes-active-backend.service ~/.config/systemd/user/
+### 生产部署
 
-# 编辑服务文件以匹配你的路径
-# 关键设置：
-#   WorkingDirectory = 后端路径
-#   ExecStart = Python 路径（使用 hermes-agent 的 venv）
+- **systemd 单元** —— 现成的用户级服务文件：[deployment/systemd/](deployment/systemd/)
+- **会话同步补丁** —— 应用 [deployment/hermes-agent-patches/](deployment/hermes-agent-patches/README.md) 中的 4 文件补丁，让网关感知外部追加的消息
+- **passive-consciousness 插件** —— 按 [docs/plugin-installation.md](docs/plugin-installation.md) 安装到 `~/.hermes/plugins/`
+- 完整流程：[docs/deployment.md](docs/deployment.md)
 
-# 启用并启动
-systemctl --user daemon-reload
-systemctl --user enable hermes-active-backend.service
-systemctl --user start hermes-active-backend.service
-
-# 检查状态
-systemctl --user status hermes-active-backend.service
-```
-
-**服务文件** (`deployment/systemd/hermes-active-backend.service`)：
-
-```ini
-[Unit]
-Description=Hermes Active Backend (FastAPI)
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=/home/你的用户名/.hermes/hermes-active/backend
-ExecStart=/home/你的用户名/.hermes/hermes-agent/venv/bin/python main.py
-Restart=always
-RestartSec=5
-Environment=PYTHONUNBUFFERED=1
-
-[Install]
-WantedBy=default.target
-```
-
-### 第七步：访问 Web UI
-
-在浏览器中打开 `http://localhost:18720`。
-
-默认凭据：
-- **用户名**：`admin`
-- **密码**：`admin`
-
-> ⚠️ 首次登录后请立即修改默认密码。
-
-### 部署验证
-
-```bash
-# 1. 检查后端是否运行
-curl http://localhost:18720/health
-# 预期返回：{"status":"ok","version":"0.1.0"}
-
-# 2. 检查 systemd 服务
-systemctl --user status hermes-active-backend.service
-
-# 3. 查看日志
-tail -f ~/.hermes/hermes-active/data/backend.log
-
-# 4. 检查数据库
-ls -la ~/.hermes/hermes-active/data/active.db
-```
+> ⚠️ 首次登录后请立即修改默认密码，生产环境务必设置 `JWT_SECRET_KEY`。
 
 ---
 
 ## 配置说明
 
-### 环境变量
+所有配置都存放在 `active.db` 的 `configs` 表中，并可在 Web 界面编辑 —— 没有任何硬编码。重点配置：
 
-| 变量 | 描述 | 默认值 |
-|------|------|--------|
-| `JWT_SECRET_KEY` | JWT 签名密钥 | `hermes-active-secret-key-change-in-production` |
+### 主动意识
 
-### 核心配置（存储在 `active.db` configs 表）
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `active_consciousness.enabled` | `false` | 总开关 |
+| `active_consciousness.active.heartbeat_interval` | `600` | 心跳周期（秒） |
+| `active_consciousness.active.send_tag` | `凯莉` | 写回 `state.db` 的主动消息标记 |
+| `active_consciousness.decision.send_threshold` | `0.35` | 自动发送所需分数 |
+| `active_consciousness.decision.memory_threshold` | `0.05` | 存为记忆所需分数 |
+| `active_consciousness.decision.max_per_hour` / `max_per_day` | `2` / `5` | 发送频率上限 |
+| `active_consciousness.emotion.decay_rate` | `0.02` | 唤醒度每小时衰减 |
+| `active_consciousness.emotion.social_need_growth` | `0.01` | 社交需求每小时增长 |
+| `active_consciousness.emotion.valence_regression` | `0.1` | 效价回归速度 |
+| `active_consciousness.llm.*` | hermes 模式 | 通用 LLM（分层：`emotion_llm.*`、`thought_llm.*`） |
+| `active_consciousness.hindsight.*` | localhost:8888 | 召回/存储记忆库、数量上限、开关 |
 
-#### 主动意识
+### 被动意识
 
-| 配置项 | 类型 | 默认值 | 描述 |
-|--------|------|--------|------|
-| `active_consciousness.enabled` | bool | `false` | 总开关 |
-| `active_consciousness.active.heartbeat_interval` | int | `300` | 心跳间隔（秒） |
-| `active_consciousness.active.send_tag` | string | `[凯莉主动发送]` | 主动消息标记 |
-| `active_consciousness.decision.send_threshold` | float | `0.6` | 自动发送阈值 |
-| `active_consciousness.decision.memory_threshold` | float | `0.1` | 存为记忆阈值 |
-| `active_consciousness.decision.max_per_hour` | int | `2` | 每小时最大消息数 |
-| `active_consciousness.decision.max_per_day` | int | `5` | 每日最大消息数 |
-| `active_consciousness.active.no_send_after_user_msg_minutes` | int | `10` | 用户消息后静默窗口 |
-| `active_consciousness.active.no_send_while_heat_above` | float | `0.5` | 热度高于阈值时不发送 |
-| `active_consciousness.active.no_send_while_vibe_below` | float | `0.3` | 情绪低于阈值时不发送 |
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `passive_consciousness.enabled` | `false` | 总开关 |
+| `passive_consciousness.passive.inject_emotion / inject_heat / inject_memory / inject_thought` | `true` | 逐信号开关 |
+| `passive_consciousness.passive.inject_tag` | `[CONSCIOUSNESS_CONTEXT]` | 注入块的包裹标记 |
+| `passive_consciousness.platforms.whitelist` | `["weixin"]` | 启用注入的平台 |
+| `passive_consciousness.templates.*` | 默认模板 | Jinja2 模板列表 + 激活 ID |
+| `passive_consciousness.hindsight.*` | 启用 | 召回数量上限、Reflect 开关 |
 
-#### Hindsight 集成
+### 自由意识
 
-| 配置项 | 类型 | 默认值 | 描述 |
-|--------|------|--------|------|
-| `active_consciousness.hindsight.recall.bank_id` | string | `hermes` | Recall 记忆库 |
-| `active_consciousness.hindsight.recall.base_url` | string | `http://localhost:8888` | Hindsight API 地址 |
-| `active_consciousness.hindsight.recall.limit` | int | `5` | 最大 Recall 结果数 |
-| `active_consciousness.hindsight.store.bank_id` | string | `hermes-active` | Store 记忆库 |
-| `active_consciousness.hindsight.reflect.enabled` | bool | `true` | 启用 Reflect |
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `free_consciousness.enabled` | `false` | 总开关 |
+| `free_consciousness.interval_minutes` | `30` | 沉思周期（分钟） |
+| `free_consciousness.recent_rounds` / `mid_rounds` | `3` / `17` | 思考链分层大小 |
+| `free_consciousness.sediment_compress_interval` | `10` | 积淀压缩间隔（轮） |
+| `free_consciousness.include_context` | `true` | 注入实时时间/情绪/对话 |
+| `free_consciousness.store_to_hindsight` | `false` | 将新发现存入长期记忆 |
+| `free_consciousness.prompts.system` / `prompts.user` | 内置 | 完全模板化的沉思提示词 |
 
-#### LLM 配置
+### 天气（统一配置）
 
-| 配置项 | 类型 | 默认值 | 描述 |
-|--------|------|--------|------|
-| `active_consciousness.llm.mode` | string | `hermes` | `hermes` = 使用 Hermes Agent 的 LLM，`custom` = 用户自配置 |
-| `active_consciousness.llm.provider` | string | — | 自定义 LLM 提供商 |
-| `active_consciousness.llm.model` | string | — | 自定义模型名称 |
-| `active_consciousness.llm.api_key` | string | — | 自定义 API Key |
-| `active_consciousness.llm.base_url` | string | — | 自定义 Base URL |
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `weather.enabled` | `false` | 定时任务、心跳、注入共用的总开关 |
+| `weather.provider` | `qweather` | `amap` 或 `qweather` |
+| `weather.city` / `weather.adcode` | `北京` / `370100` | 和风城市名 / 高德城市编码 |
+| `weather.amap_key` / `weather.qweather_key` | — | 各提供商 API Key |
+| `weather.cache_hours` | `4` | 结果缓存时长 |
 
----
-
-## API 参考
-
-### 认证
-
-所有 API 端点（除 `/health` 和 `/api/auth/login` 外）都需要 JWT 认证。
-
-```bash
-# 登录
-curl -X POST http://localhost:18720/api/auth/login \
-  -d "username=admin&password=admin"
-
-# 使用 token
-curl -H "Authorization: Bearer <token>" http://localhost:18720/api/sessions
-```
-
-### 核心端点
-
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| `GET` | `/health` | 健康检查 |
-| `POST` | `/api/auth/login` | 登录，返回 JWT |
-| `GET` | `/api/sessions` | 会话列表 |
-| `GET` | `/api/sessions/{id}` | 会话详情 |
-| `GET` | `/api/messages/{session_id}` | 获取消息 |
-| `POST` | `/api/messages/send` | 发送消息 |
-| `POST` | `/api/messages/send-and-inject` | 发送并注入会话 |
-| `GET` | `/api/cron/jobs` | 定时任务列表 |
-| `POST` | `/api/cron/jobs` | 创建定时任务 |
-| `GET` | `/api/active-consciousness/status` | 主动意识状态 |
-| `GET` | `/api/active-consciousness/config` | 获取配置 |
-| `PUT` | `/api/active-consciousness/config` | 更新配置 |
-| `GET` | `/api/active-consciousness/heartbeats` | 心跳日志 |
-| `GET` | `/api/active-consciousness/thoughts` | 念头日志 |
-| `GET` | `/api/passive-consciousness/status` | 被动意识状态 |
-| `GET` | `/api/passive-consciousness/config` | 获取配置 |
-| `PUT` | `/api/passive-consciousness/config` | 更新配置 |
+环境变量：`JWT_SECRET_KEY` —— JWT 签名密钥（生产环境务必设置）。
 
 ---
 
-## 版本历史
+## API 概览
 
-| 版本 | 代号 | 状态 | 描述 |
-|------|------|------|------|
-| v0.1.x | Foundation | ✅ 已完成 | Web UI、定时任务、上下文注入、Hindsight 集成 |
-| v0.2.1 | Active Consciousness | ✅ 已完成 | VA 情绪模型、决策矩阵、念头生成、心跳调度器 |
-| v0.2.2 | Refinement | 🚧 开发中 | 统一消息写入、发送保护、LLM 推理过程提取、提示词占位符系统 |
-| v0.3.x | Passive Consciousness | 📋 规划中 | 用户对话时的上下文注入，不直接调用 LLM |
+界面上的所有操作都有对应的 REST API（除 `/health` 和登录外均需 JWT）：
+
+| 分组 | 代表性端点 |
+|------|-----------|
+| 认证 | `POST /api/auth/login` |
+| 会话与消息 | `GET /api/sessions` · `GET /api/messages/{session_id}` · `POST /api/messages/send` · `POST /api/messages/send-and-inject` |
+| 定时任务 | `GET/POST/PUT/DELETE /api/cron/jobs` · `POST /api/cron/jobs/{id}/run` · `GET /api/task-logs` |
+| 主动意识 | `GET/PUT /api/active-consciousness/config` · `GET .../status` · `GET .../heartbeats` · `GET .../thoughts` · `POST .../test/*` |
+| 被动意识 | `GET/PUT /api/passive-consciousness/config` · `GET .../status` · `GET/POST/PUT/DELETE .../templates` · `POST .../test/*` · `GET .../analysis/*` |
+| 自由意识 | `GET/POST /api/free-consciousness/config` · `GET .../status` · `GET .../logs` · `POST .../run` |
+| 其他 | `GET /api/stats` · `GET /api/system-logs` · `POST /api/llm/test` · `GET /health` |
+
+---
+
+## 文档
+
+| 文档 | 内容 |
+|------|------|
+| [docs/deployment.md](docs/deployment.md) | 完整部署流程 |
+| [docs/plugin-installation.md](docs/plugin-installation.md) | 被动意识插件安装 |
+| [deployment/hermes-agent-patches/](deployment/hermes-agent-patches/README.md) | 会话同步补丁说明 |
+| [docs/](docs/README.md) | 设计文档与架构深度解析 |
 
 ---
 
 ## 许可证
 
-MIT 许可证 — 详见 [LICENSE](LICENSE)。
+MIT 许可证 —— 详见 [LICENSE](LICENSE)。
 
 ---
 
-<p align="center">
-  <!-- 信息图占位符：页脚 -->
-  <!-- 可选：项目 Logo 或标语图片 -->
-  <img src="docs/images/zh-footer-banner.png" alt="Hermes Active" width="400">
-</p>
+> [!NOTE]
+> 🖼️ **信息图占位 — 页脚横幅** · 保存为 `docs/images/zh-footer-banner.png`。
+>
+> **生成提示词：** *一条极简的开源 README 页脚缎带：一条细渐变线（靛蓝→青色），中央有一个小小的心跳脉冲，配优雅的小号无衬线文字"Hermes Active —— 为 Hermes Agent 社区用 ❤️ 构建"，透明/深色背景，4:1 宽幅比例。*
 
 <p align="center">
   为 <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a> 社区用 ❤️ 构建
