@@ -2,10 +2,10 @@
   <a href="README.md">English</a> | <strong>简体中文</strong>
 </p>
 
-
-<p align="center">
-  <img src="docs/images/zh-hero-banner.jpg" width="800" alt="Hermes Active — 让 AI 助手拥有主动意识">
-</p>
+> [!NOTE]
+> 🖼️ **信息图占位 — 主视觉横幅** · 使用下方提示词生成图片，保存为 `docs/images/zh-hero-banner.png`，然后将本块替换为 `<img src="docs/images/zh-hero-banner.png" width="800">`。
+>
+> **生成提示词：** *一张宽幅现代风格的开源 AI 项目主视觉横幅，项目名"Hermes Active"。纯白色背景，极简设计，一条细长的珊瑚橙色心跳脉冲线横贯画面中央，逐渐演变成几个简约的对话气泡，主标题"Hermes Active"用粗体深灰色无衬线字体居中，副标题"让 AI 助手拥有主动意识"用浅灰色小字。不要写实照片风，不要文字乱码，不要深色背景，干净留白，21:9 宽高比。*
 
 <h1 align="center">Hermes Active</h1>
 
@@ -51,10 +51,10 @@
 
 ## 为什么需要 Hermes Active？
 
-
-<p align="center">
-  <img src="docs/images/zh-problem-statement.jpg" width="800" alt="无状态 Cron vs 持久化意识">
-</p>
+> [!NOTE]
+> 🖼️ **信息图占位 — 问题对比图** · 保存为 `docs/images/zh-problem-statement.png`。
+>
+> **生成提示词：** *一张左右对比的信息图，标题"Stateless Cron vs Persistent Consciousness"。白色背景，极简扁平矢量风格。左侧：浅灰色区域，一个简约机器人图标面对空白对话框，旁边断裂的锁链图标，对话气泡写着"Who are you again?"。右侧：浅珊瑚橙色区域，同一个机器人图标周围环绕时间线和记忆节点，对话气泡写着"I was just thinking about you"。文字精简，大量留白，16:9。*
 
 传统 AI 代理的主动消息功能都有同一个缺陷：**每个定时任务都会创建一个全新的、隔离的会话**。
 
@@ -122,10 +122,10 @@ Hermes Active 通过在 Hermes Agent 旁运行一套**持久化意识层**来解
 
 ## 系统架构
 
-
-<p align="center">
-  <img src="docs/images/zh-architecture.jpg" width="800" alt="Hermes Active 系统架构">
-</p>
+> [!NOTE]
+> 🖼️ **信息图占位 — 架构总览** · 保存为 `docs/images/zh-architecture.png`。
+>
+> **生成提示词：** *一张简洁的系统架构信息图。白色背景，极简扁平设计。中央：一个圆角矩形"FastAPI Backend"，内含三个简约齿轮图标标注"Heartbeat""Contemplation""Scheduler"。顶部：一块面板"Vue 3 Web Console"，用细箭头连接标注"JWT REST API"。右侧："Hermes Agent"方盒，连线标注"Public APIs"。底部：两个浅灰色圆柱体标注"state.db (R/O)"和"active.db (R/W)"。所有连线用浅灰色细线，节点用珊瑚橙色点缀，大量留白，16:9。*
 
 ```mermaid
 graph TB
@@ -180,10 +180,10 @@ Hermes Active 从不写入 Hermes 的配置，也从不改动历史对话 ——
 
 ## 核心系统
 
-
-<p align="center">
-  <img src="docs/images/zh-four-systems.jpg" width="800" alt="四大核心系统">
-</p>
+> [!NOTE]
+> 🖼️ **信息图占位 — 四大系统总览** · 保存为 `docs/images/zh-four-systems.png`。
+>
+> **生成提示词：** *一张 2x2 网格信息图展示四个系统。白色背景，极简图标风格。左上"Active Consciousness"：一颗简约的心脏轮廓带脉搏线。右上"Passive Consciousness"：一个信封图标加注入箭头。左下"Free Consciousness"：一个大脑轮廓加沉思符号。右下"Scheduled Tasks"：一个日历加时钟图标。统一使用珊瑚橙色作为图标主色，浅灰色辅助，大量留白，16:9。*
 
 ### 主动意识 —— 心跳
 
@@ -496,10 +496,10 @@ hermes-active/
 
 ## 快速开始
 
-
-<p align="center">
-  <img src="docs/images/zh-deployment.jpg" width="800" alt="部署拓扑">
-</p>
+> [!NOTE]
+> 🖼️ **信息图占位 — 部署拓扑图** · 保存为 `docs/images/zh-deployment.png`。
+>
+> **生成提示词：** *一张自托管 AI 系统的部署拓扑信息图。白色背景，极简蓝图风格。一个浅灰色圆角矩形代表服务器，内含四张白色卡片："hermes-active :18720"、"Hermes Gateway"、"Hindsight :8888"、"plugins/"。服务器外：左侧一个简约手机图标，右侧一个浏览器图标，箭头展示消息流向。所有连线用浅灰色细线，关键节点用珊瑚橙色点缀，大量留白，16:9。*
 
 ### 前置条件
 
@@ -638,7 +638,7 @@ MIT 许可证 —— 详见 [LICENSE](LICENSE)。
 > [!NOTE]
 > 🖼️ **信息图占位 — 页脚横幅** · 保存为 `docs/images/zh-footer-banner.png`。
 >
-> **生成提示词：** *一条极简的开源 README 页脚缎带：一条细渐变线（靛蓝→青色），中央有一个小小的心跳脉冲，配优雅的小号无衬线文字"Hermes Active —— 为 Hermes Agent 社区用 ❤️ 构建"，透明/深色背景，4:1 宽幅比例。*
+> **生成提示词：** *一条极简的开源 README 页脚缎带。纯白色背景，一条超细珊瑚橙色渐变线横贯中央，线中央有一个极小的心跳脉冲符号，配优雅的小号深灰色无衬线文字"Hermes Active — Built with ❤️ for the Hermes Agent Community"，干净留白，6:1 宽幅比例。*
 
 <p align="center">
   为 <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a> 社区用 ❤️ 构建
