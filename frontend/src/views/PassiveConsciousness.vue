@@ -2,139 +2,139 @@
   <div class="passive-consciousness-page">
     <n-tabs v-model:value="activeTab" type="line" animated>
       <!-- Tab 1: 配置 -->
-      <n-tab-pane name="config" tab="配置">
-        <n-card title="💡 被动意识配置" style="margin-bottom: 16px">
+      <n-tab-pane name="config" :tab="t('passiveConsciousness.tabs.config')">
+        <n-card :title="'💡 ' + t('passiveConsciousness.config.title')" style="margin-bottom: 16px">
           <!-- 总开关 -->
-          <n-form-item label="启用被动意识">
+          <n-form-item :label="t('passiveConsciousness.config.enable')">
             <n-switch v-model:value="config.enabled" />
           </n-form-item>
 
           <template v-if="config.enabled">
             <!-- LLM 配置 -->
-            <n-divider>LLM 配置</n-divider>
-            <n-form-item label="LLM 模式">
+            <n-divider>{{ t('passiveConsciousness.config.llm.title') }}</n-divider>
+            <n-form-item :label="t('passiveConsciousness.config.llm.mode')">
               <n-radio-group v-model:value="config.llm.mode">
-                <n-radio value="hermes">使用 Hermes LLM</n-radio>
-                <n-radio value="custom">自定义 LLM</n-radio>
+                <n-radio value="hermes">{{ t('passiveConsciousness.config.llm.hermesMode') }}</n-radio>
+                <n-radio value="custom">{{ t('passiveConsciousness.config.llm.customMode') }}</n-radio>
               </n-radio-group>
             </n-form-item>
-            <n-form-item label="Provider" v-if="config.llm.mode === 'custom'">
+            <n-form-item :label="t('passiveConsciousness.config.llm.provider')" v-if="config.llm.mode === 'custom'">
               <n-select v-model:value="config.llm.provider" :options="providerOptions" />
             </n-form-item>
-            <n-form-item label="Model" v-if="config.llm.mode === 'custom'">
+            <n-form-item :label="t('passiveConsciousness.config.llm.model')" v-if="config.llm.mode === 'custom'">
               <n-input v-model:value="config.llm.model" placeholder="deepseek-chat" />
             </n-form-item>
-            <n-form-item label="API Key" v-if="config.llm.mode === 'custom'">
-              <n-input v-model:value="config.llm.api_key" placeholder="输入 API Key" />
+            <n-form-item :label="t('passiveConsciousness.config.llm.apiKey')" v-if="config.llm.mode === 'custom'">
+              <n-input v-model:value="config.llm.api_key" :placeholder="t('passiveConsciousness.config.llm.apiKeyPlaceholder')" />
             </n-form-item>
-            <n-form-item label="Base URL" v-if="config.llm.mode === 'custom'">
+            <n-form-item :label="t('passiveConsciousness.config.llm.baseUrl')" v-if="config.llm.mode === 'custom'">
               <n-input v-model:value="config.llm.base_url" placeholder="https://api.openai.com/v1" />
             </n-form-item>
 
             <!-- 被动意识配置 -->
-            <n-divider>注入配置</n-divider>
-            <n-form-item label="启用注入">
+            <n-divider>{{ t('passiveConsciousness.config.injection.title') }}</n-divider>
+            <n-form-item :label="t('passiveConsciousness.config.injection.enable')">
               <n-switch v-model:value="config.passive.enabled" />
             </n-form-item>
-            <n-form-item label="注入情绪">
+            <n-form-item :label="t('passiveConsciousness.config.injection.emotion')">
               <n-switch v-model:value="config.passive.inject_emotion" />
             </n-form-item>
-            <n-form-item label="注入热度">
+            <n-form-item :label="t('passiveConsciousness.config.injection.heat')">
               <n-switch v-model:value="config.passive.inject_heat" />
             </n-form-item>
-            <n-form-item label="注入记忆">
+            <n-form-item :label="t('passiveConsciousness.config.injection.memory')">
               <n-switch v-model:value="config.passive.inject_memory" />
             </n-form-item>
-            <n-form-item label="注入想法">
+            <n-form-item :label="t('passiveConsciousness.config.injection.thought')">
               <n-switch v-model:value="config.passive.inject_thought" />
             </n-form-item>
-            <n-form-item label="注入标记">
+            <n-form-item :label="t('passiveConsciousness.config.injection.tag')">
               <n-input v-model:value="config.passive.inject_tag" placeholder="[CONSCIOUSNESS_CONTEXT]" />
             </n-form-item>
-            <n-form-item label="时间格式">
+            <n-form-item :label="t('passiveConsciousness.config.injection.timeFormat')">
               <n-input v-model:value="config.passive.time_format" placeholder="%H:%M" />
             </n-form-item>
-            <n-form-item label="想法最大字符">
+            <n-form-item :label="t('passiveConsciousness.config.injection.thoughtMaxChars')">
               <n-input-number v-model:value="config.passive.thought_max_chars" :min="50" :max="500" />
             </n-form-item>
-            <n-form-item label="Vibe 最大字符">
+            <n-form-item :label="t('passiveConsciousness.config.injection.vibeMaxChars')">
               <n-input-number v-model:value="config.passive.vibe_max_chars" :min="20" :max="200" />
             </n-form-item>
 
             <!-- 平台过滤 -->
-            <n-divider>平台过滤</n-divider>
-            <n-form-item label="启用平台过滤">
+            <n-divider>{{ t('passiveConsciousness.config.platforms.title') }}</n-divider>
+            <n-form-item :label="t('passiveConsciousness.config.platforms.enable')">
               <n-switch v-model:value="config.platforms.enabled" />
             </n-form-item>
-            <n-form-item label="启用的平台" v-if="config.platforms.enabled">
+            <n-form-item :label="t('passiveConsciousness.config.platforms.enabledPlatforms')" v-if="config.platforms.enabled">
               <n-select
                 v-model:value="config.platforms.whitelist"
                 multiple
                 :options="platformFilterOptions"
-                placeholder="选择启用被动意识的平台"
+                :placeholder="t('passiveConsciousness.config.platforms.selectPlaceholder')"
               />
               <n-text v-if="config.platforms.enabled && config.platforms.whitelist.length === 0" type="error" style="font-size: 12px; margin-top: 4px;">
-                请至少选择一个平台
+                {{ t('passiveConsciousness.config.platforms.minSelectError') }}
               </n-text>
             </n-form-item>
 
             <!-- Session 来源配置 -->
-            <n-divider>Session 来源</n-divider>
-            <n-form-item label="来源平台">
+            <n-divider>{{ t('passiveConsciousness.config.session.title') }}</n-divider>
+            <n-form-item :label="t('passiveConsciousness.config.session.sourcePlatform')">
               <n-select v-model:value="config.session.sources" multiple :options="sessionSourceOptions" />
             </n-form-item>
-            <n-form-item label="时间范围（小时）">
+            <n-form-item :label="t('passiveConsciousness.config.session.timeRange')">
               <n-input-number v-model:value="config.session.time_range_hours" :min="1" :max="168" />
             </n-form-item>
-            <n-form-item label="每 Session 最大消息">
+            <n-form-item :label="t('passiveConsciousness.config.session.maxMessages')">
               <n-input-number v-model:value="config.session.max_messages_per_session" :min="5" :max="100" />
             </n-form-item>
-            <n-form-item label="过滤 Tool 消息">
+            <n-form-item :label="t('passiveConsciousness.config.session.filterTool')">
               <n-switch v-model:value="config.session.filter_tool_messages" />
             </n-form-item>
 
             <!-- Hindsight -->
-            <n-divider>Hindsight 记忆</n-divider>
-            <n-form-item label="启用 Hindsight">
+            <n-divider>{{ t('passiveConsciousness.config.hindsight.title') }}</n-divider>
+            <n-form-item :label="t('passiveConsciousness.config.hindsight.enable')">
               <n-switch v-model:value="config.hindsight.enabled" />
             </n-form-item>
-            <n-form-item label="Recall 结果数">
+            <n-form-item :label="t('passiveConsciousness.config.hindsight.recallLimit')">
               <n-input-number v-model:value="config.hindsight.recall_limit" :min="1" :max="20" />
             </n-form-item>
-            <n-form-item label="启用 Reflect">
+            <n-form-item :label="t('passiveConsciousness.config.hindsight.reflectEnable')">
               <n-switch v-model:value="config.hindsight.reflect_enabled" />
             </n-form-item>
 
             <!-- 模板配置 -->
-            <n-divider>模板配置</n-divider>
-            <n-form-item label="当前模板">
+            <n-divider>{{ t('passiveConsciousness.config.templates.title') }}</n-divider>
+            <n-form-item :label="t('passiveConsciousness.config.templates.current')">
               <n-select
                 v-model:value="config.templates.active_id"
                 :options="templateOptions"
-                placeholder="选择模板"
+                :placeholder="t('passiveConsciousness.config.templates.selectPlaceholder')"
               />
             </n-form-item>
             <n-space>
               <n-button @click="openTemplateEditor()" size="small">
-                新建模板
+                {{ t('passiveConsciousness.config.templates.create') }}
               </n-button>
               <n-button @click="openTemplateEditor(config.templates.active_id)" size="small" :disabled="!config.templates.active_id">
-                编辑当前模板
+                {{ t('passiveConsciousness.config.templates.editCurrent') }}
               </n-button>
             </n-space>
           </template>
 
           <n-button type="primary" @click="saveConfig" :loading="saving" style="margin-top: 16px">
-            保存配置
+            {{ t('passiveConsciousness.config.save') }}
           </n-button>
         </n-card>
       </n-tab-pane>
 
       <!-- Tab 2: 状态 -->
-      <n-tab-pane name="status" tab="状态">
+      <n-tab-pane name="status" :tab="t('passiveConsciousness.tabs.status')">
         <n-grid :cols="3" :x-gap="12" :y-gap="12">
           <n-grid-item>
-            <n-card title="想念分数">
+            <n-card :title="t('passiveConsciousness.status.longing')">
               <n-statistic :value="status.longing.score" :precision="3">
                 <template #suffix>
                   <n-tag :type="longingTagType" size="small">{{ status.longing.label }}</n-tag>
@@ -144,7 +144,7 @@
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card title="聊天热度">
+            <n-card :title="t('passiveConsciousness.status.chatHeat')">
               <n-statistic :value="status.chat_heat.heat" :precision="2">
                 <template #suffix>
                   <n-tag :type="heatTagType" size="small">{{ status.chat_heat.label }}</n-tag>
@@ -154,7 +154,7 @@
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card title="情绪值">
+            <n-card :title="t('passiveConsciousness.status.emotion')">
               <n-statistic :value="status.emotional_intensity.intensity" :precision="3">
                 <template #suffix>
                   <n-tag size="small">{{ status.emotional_intensity.label }}</n-tag>
@@ -164,7 +164,7 @@
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card title="🌤 天气">
+            <n-card :title="'🌤 ' + t('passiveConsciousness.status.weather')">
               <template v-if="status.weather">
                 <n-statistic :value="status.weather.temperature" :suffix="'°C'">
                   <template #prefix>
@@ -173,18 +173,18 @@
                 </n-statistic>
                 <n-space vertical size="small" style="margin-top: 8px">
                   <n-text>💨 {{ status.weather.wind_dir }}</n-text>
-                  <n-text>💧 湿度 {{ status.weather.humidity }}%</n-text>
+                  <n-text>💧 {{ t('passiveConsciousness.status.humidity') }} {{ status.weather.humidity }}%</n-text>
                   <n-text>📍 {{ status.weather.city }}</n-text>
                 </n-space>
               </template>
-              <n-text v-else type="secondary">天气感知未启用</n-text>
+              <n-text v-else type="secondary">{{ t('passiveConsciousness.status.weatherDisabled') }}</n-text>
             </n-card>
           </n-grid-item>
         </n-grid>
       </n-tab-pane>
 
       <!-- Tab 3: 聊天记录 -->
-      <n-tab-pane name="chat" tab="聊天记录">
+      <n-tab-pane name="chat" :tab="t('passiveConsciousness.tabs.chat')">
         <n-list bordered>
           <n-list-item v-for="msg in chats.items" :key="msg.id">
             <div :class="['chat-msg', msg.role === 'user' ? 'user-msg' : 'assistant-msg']">
@@ -201,9 +201,9 @@
       </n-tab-pane>
 
       <!-- Tab 4: 测试 -->
-      <n-tab-pane name="test" tab="测试">
+      <n-tab-pane name="test" :tab="t('passiveConsciousness.tabs.test')">
         <!-- 一键全量测试 -->
-        <n-card title="🚀 一键全量测试" style="margin-bottom: 16px">
+        <n-card :title="'🚀 ' + t('passiveConsciousness.test.fullTest')" style="margin-bottom: 16px">
           <n-space vertical>
             <n-button
               type="primary"
@@ -212,16 +212,16 @@
               :loading="testing.full"
               block
             >
-              运行全量测试
+              {{ t('passiveConsciousness.test.runFullTest') }}
             </n-button>
             <template v-if="fullTestResult">
               <n-alert
                 :type="fullTestResult.failed === 0 ? 'success' : 'warning'"
-                :title="`测试完成：${fullTestResult.success}/${fullTestResult.total} 项成功`"
+                :title="t('passiveConsciousness.test.testComplete', { success: fullTestResult.success, total: fullTestResult.total })"
                 style="margin-top: 8px"
               >
                 <template v-if="fullTestResult.failed > 0">
-                  失败项：
+                  {{ t('passiveConsciousness.test.failedItems') }}
                   <template v-for="(val, key) in fullTestResult.results" :key="key">
                     <n-tag v-if="!val?.success && !val?.steps" type="error" size="small" style="margin: 2px">
                       {{ key }}
@@ -237,91 +237,91 @@
         <n-grid :cols="2" :x-gap="12" :y-gap="12">
           <!-- 💕 想念分数 -->
           <n-grid-item>
-            <n-card title="💕 想念分数" size="small">
+            <n-card :title="'💕 ' + t('passiveConsciousness.test.longing')" size="small">
               <n-button @click="runTest('longing')" :loading="testing.longing" size="small" style="margin-bottom: 12px">
-                测试
+                {{ t('passiveConsciousness.test.test') }}
               </n-button>
               <n-alert v-if="testResults.longing?.error" type="error" style="margin-bottom: 8px">
                 {{ testResults.longing.error }}
               </n-alert>
               <n-descriptions v-if="testResults.longing?.data" :column="1" label-placement="left" bordered size="small">
-                <n-descriptions-item label="分数">{{ testResults.longing.data.score }}</n-descriptions-item>
-                <n-descriptions-item label="等级">{{ testResults.longing.data.level }} ({{ testResults.longing.data.label }})</n-descriptions-item>
-                <n-descriptions-item label="间隔分钟">{{ testResults.longing.data.gap_minutes }}</n-descriptions-item>
-                <n-descriptions-item label="最近消息">{{ testResults.longing.data.last_user_msg_at || '无' }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.score')">{{ testResults.longing.data.score }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.level')">{{ testResults.longing.data.level }} ({{ testResults.longing.data.label }})</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.gapMinutes')">{{ testResults.longing.data.gap_minutes }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.recentMsg')">{{ testResults.longing.data.last_user_msg_at || t('passiveConsciousness.test.labels.none') }}</n-descriptions-item>
               </n-descriptions>
             </n-card>
           </n-grid-item>
 
           <!-- 🔥 聊天热度 -->
           <n-grid-item>
-            <n-card title="🔥 聊天热度" size="small">
+            <n-card :title="'🔥 ' + t('passiveConsciousness.test.chatHeat')" size="small">
               <n-button @click="runTest('chatHeat')" :loading="testing.chatHeat" size="small" style="margin-bottom: 12px">
-                测试
+                {{ t('passiveConsciousness.test.test') }}
               </n-button>
               <n-alert v-if="testResults.chatHeat?.error" type="error" style="margin-bottom: 8px">
                 {{ testResults.chatHeat.error }}
               </n-alert>
               <n-descriptions v-if="testResults.chatHeat?.data" :column="1" label-placement="left" bordered size="small">
-                <n-descriptions-item label="热度">{{ testResults.chatHeat.data.heat }}</n-descriptions-item>
-                <n-descriptions-item label="等级">{{ testResults.chatHeat.data.label }}</n-descriptions-item>
-                <n-descriptions-item label="近1小时消息数">{{ testResults.chatHeat.data.recent_count }}</n-descriptions-item>
-                <n-descriptions-item label="最近消息">{{ testResults.chatHeat.data.recent_msg_at || '无' }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.heat')">{{ testResults.chatHeat.data.heat }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.level')">{{ testResults.chatHeat.data.label }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.recentCount')">{{ testResults.chatHeat.data.recent_count }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.recentMsg')">{{ testResults.chatHeat.data.recent_msg_at || t('passiveConsciousness.test.labels.none') }}</n-descriptions-item>
               </n-descriptions>
             </n-card>
           </n-grid-item>
 
           <!-- 🎭 情绪值 -->
           <n-grid-item>
-            <n-card title="🎭 情绪值" size="small">
+            <n-card :title="'🎭 ' + t('passiveConsciousness.test.emotionalIntensity')" size="small">
               <n-button @click="runTest('emotionalIntensity')" :loading="testing.emotionalIntensity" size="small" style="margin-bottom: 12px">
-                测试
+                {{ t('passiveConsciousness.test.test') }}
               </n-button>
               <n-alert v-if="testResults.emotionalIntensity?.error" type="error" style="margin-bottom: 8px">
                 {{ testResults.emotionalIntensity.error }}
               </n-alert>
               <n-descriptions v-if="testResults.emotionalIntensity?.data" :column="1" label-placement="left" bordered size="small">
-                <n-descriptions-item label="强度">{{ testResults.emotionalIntensity.data.intensity }}</n-descriptions-item>
-                <n-descriptions-item label="标签">{{ testResults.emotionalIntensity.data.label }}</n-descriptions-item>
-                <n-descriptions-item label="原始值">{{ testResults.emotionalIntensity.data.raw_value || '未设置' }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.intensity')">{{ testResults.emotionalIntensity.data.intensity }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.tag')">{{ testResults.emotionalIntensity.data.label }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.rawValue')">{{ testResults.emotionalIntensity.data.raw_value || t('passiveConsciousness.test.labels.unset') }}</n-descriptions-item>
               </n-descriptions>
             </n-card>
           </n-grid-item>
 
           <!-- 🌤 天气感知 -->
           <n-grid-item>
-            <n-card title="🌤 天气感知" size="small">
+            <n-card :title="'🌤 ' + t('passiveConsciousness.test.weather')" size="small">
               <n-space style="margin-bottom: 12px">
                 <n-button @click="runTest('weather')" :loading="testing.weather" size="small">
-                  测试
+                  {{ t('passiveConsciousness.test.test') }}
                 </n-button>
                 <n-button @click="clearWeatherCache" size="small" secondary>
-                  清除缓存
+                  {{ t('passiveConsciousness.test.clearCache') }}
                 </n-button>
               </n-space>
               <n-alert v-if="testResults.weather?.error" type="error" style="margin-bottom: 8px">
                 {{ testResults.weather.error }}
               </n-alert>
               <n-descriptions v-if="testResults.weather?.data" :column="1" label-placement="left" bordered size="small">
-                <n-descriptions-item label="城市">{{ testResults.weather.data.city }}</n-descriptions-item>
-                <n-descriptions-item label="天气">{{ testResults.weather.data.weather }}</n-descriptions-item>
-                <n-descriptions-item label="温度">{{ testResults.weather.data.temperature }}°C</n-descriptions-item>
-                <n-descriptions-item label="湿度">{{ testResults.weather.data.humidity }}%</n-descriptions-item>
-                <n-descriptions-item label="风向">{{ testResults.weather.data.winddirection }}</n-descriptions-item>
-                <n-descriptions-item label="更新时间">{{ testResults.weather.data.reporttime }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.city')">{{ testResults.weather.data.city }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.weather')">{{ testResults.weather.data.weather }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.temperature')">{{ testResults.weather.data.temperature }}°C</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.humidity')">{{ testResults.weather.data.humidity }}%</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.windDir')">{{ testResults.weather.data.winddirection }}</n-descriptions-item>
+                <n-descriptions-item :label="t('passiveConsciousness.test.labels.updateTime')">{{ testResults.weather.data.reporttime }}</n-descriptions-item>
               </n-descriptions>
             </n-card>
           </n-grid-item>
 
           <!-- 📖 Hindsight 记忆 -->
           <n-grid-item>
-            <n-card title="📖 Hindsight 记忆" size="small">
+            <n-card :title="'📖 ' + t('passiveConsciousness.test.hindsight')" size="small">
               <n-space style="margin-bottom: 12px">
                 <n-button @click="runTest('hindsightRecall')" :loading="testing.hindsightRecall" size="small">
-                  Recall 测试
+                  {{ t('passiveConsciousness.test.recallTest') }}
                 </n-button>
                 <n-button @click="runTest('hindsightReflect')" :loading="testing.hindsightReflect" size="small">
-                  Reflect 测试
+                  {{ t('passiveConsciousness.test.reflectTest') }}
                 </n-button>
               </n-space>
               <n-alert v-if="testResults.hindsightRecall?.error" type="error" style="margin-bottom: 8px">
@@ -332,7 +332,7 @@
               </n-alert>
               <template v-if="testResults.hindsightRecall?.data">
                 <n-descriptions :column="1" label-placement="left" bordered size="small" style="margin-bottom: 8px">
-                  <n-descriptions-item label="Recall 结果数">{{ testResults.hindsightRecall.data.count }}</n-descriptions-item>
+                  <n-descriptions-item :label="t('passiveConsciousness.test.labels.recallCount')">{{ testResults.hindsightRecall.data.count }}</n-descriptions-item>
                 </n-descriptions>
                 <n-list bordered size="small" v-if="testResults.hindsightRecall.data.results?.length">
                   <n-list-item v-for="(r, i) in testResults.hindsightRecall.data.results" :key="i">
@@ -344,7 +344,7 @@
                 </n-list>
               </template>
               <template v-if="testResults.hindsightReflect?.data">
-                <n-card title="Reflect 结果" size="small" style="margin-top: 8px">
+                <n-card :title="'Reflect ' + t('passiveConsciousness.templateEditor.previewResult')" size="small" style="margin-top: 8px">
                   <n-text>{{ testResults.hindsightReflect.data.reflection }}</n-text>
                 </n-card>
               </template>
@@ -353,19 +353,19 @@
 
           <!-- 📋 完整上下文预览 -->
           <n-grid-item :span="2">
-            <n-card title="📋 完整上下文预览" size="small">
+            <n-card :title="'📋 ' + t('passiveConsciousness.test.contextPreview')" size="small">
               <n-button
                 type="primary"
                 @click="runContextTest"
                 :loading="testing.context"
                 style="margin-bottom: 12px"
               >
-                模拟完整流程
+                {{ t('passiveConsciousness.test.simulateFlow') }}
               </n-button>
 
               <template v-if="contextResult">
                 <!-- 步骤状态 -->
-                <n-card title="执行步骤" size="small" style="margin-bottom: 12px">
+                <n-card :title="t('passiveConsciousness.test.steps')" size="small" style="margin-bottom: 12px">
                   <n-list bordered size="small">
                     <n-list-item v-for="(step, i) in contextResult.steps" :key="i">
                       <n-space align="center">
@@ -385,7 +385,7 @@
                 <n-alert
                   v-if="contextResult.errors?.length"
                   type="warning"
-                  title="部分步骤失败"
+                  :title="t('passiveConsciousness.test.partialFail')"
                   style="margin-bottom: 12px"
                 >
                   <n-list size="small">
@@ -396,9 +396,9 @@
                 </n-alert>
 
                 <!-- 最终上下文 -->
-                <n-card title="注入上下文" size="small">
+                <n-card :title="t('passiveConsciousness.test.injectedContext')" size="small">
                   <n-code
-                    :code="contextResult.context || '（空）'"
+                    :code="contextResult.context || t('passiveConsciousness.test.empty')"
                     language="text"
                     word-wrap
                   />
@@ -411,35 +411,35 @@
     </n-tabs>
 
     <!-- 模板编辑器弹窗 -->
-    <n-modal v-model:show="showTemplateEditor" preset="card" title="模板编辑器" style="width: 90vw; max-width: 1200px;">
+    <n-modal v-model:show="showTemplateEditor" preset="card" :title="t('passiveConsciousness.templateEditor.title')" style="width: 90vw; max-width: 1200px;">
       <n-grid :cols="2" :x-gap="16">
         <!-- 左侧：编辑器 -->
         <n-grid-item>
-          <n-card title="模板内容" size="small">
-            <n-form-item label="模板 ID" v-if="templateEditor.isNew">
+          <n-card :title="t('passiveConsciousness.templateEditor.content')" size="small">
+            <n-form-item :label="t('passiveConsciousness.templateEditor.id')" v-if="templateEditor.isNew">
               <n-input v-model:value="templateEditor.id" placeholder="my-template" />
             </n-form-item>
-            <n-form-item label="模板名称">
-              <n-input v-model:value="templateEditor.name" placeholder="我的模板" />
+            <n-form-item :label="t('passiveConsciousness.templateEditor.name')">
+              <n-input v-model:value="templateEditor.name" :placeholder="t('passiveConsciousness.templateEditor.name')" />
             </n-form-item>
-            <n-form-item label="描述">
-              <n-input v-model:value="templateEditor.description" placeholder="模板描述（可选）" />
+            <n-form-item :label="t('passiveConsciousness.templateEditor.description')">
+              <n-input v-model:value="templateEditor.description" :placeholder="t('passiveConsciousness.templateEditor.description')" />
             </n-form-item>
-            <n-form-item label="模板内容">
+            <n-form-item :label="t('passiveConsciousness.templateEditor.contentEditor')">
               <n-input
                 v-model:value="templateEditor.content"
                 type="textarea"
                 :rows="16"
-                placeholder="输入 Jinja2 模板内容"
+                :placeholder="t('passiveConsciousness.templateEditor.contentPlaceholder')"
                 style="font-family: monospace"
               />
             </n-form-item>
             <n-space>
               <n-button type="primary" @click="saveTemplate" :loading="templateEditor.saving">
-                保存
+                {{ t('passiveConsciousness.templateEditor.save') }}
               </n-button>
               <n-button @click="previewTemplate" :loading="templateEditor.previewing">
-                预览
+                {{ t('passiveConsciousness.templateEditor.preview') }}
               </n-button>
               <n-button
                 type="error"
@@ -447,7 +447,7 @@
                 :loading="templateEditor.deleting"
                 v-if="!templateEditor.isNew && templateEditor.id !== 'default'"
               >
-                删除
+                {{ t('passiveConsciousness.templateEditor.delete') }}
               </n-button>
             </n-space>
           </n-card>
@@ -455,14 +455,14 @@
 
         <!-- 右侧：预览 + 变量参考 -->
         <n-grid-item>
-          <n-card title="预览结果" size="small" style="margin-bottom: 16px">
+          <n-card :title="t('passiveConsciousness.templateEditor.previewResult')" size="small" style="margin-bottom: 16px">
             <n-code
-              :code="templateEditor.preview || '（点击预览按钮查看渲染结果）'"
+              :code="templateEditor.preview || t('passiveConsciousness.templateEditor.previewPlaceholder')"
               language="text"
               word-wrap
             />
           </n-card>
-          <n-card title="可用变量" size="small">
+          <n-card :title="t('passiveConsciousness.templateEditor.variables')" size="small">
             <n-list bordered size="small">
               <n-list-item v-for="v in templateVariables" :key="v.name">
                 <n-space align="center">
@@ -482,10 +482,12 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { useConfig } from '../composables/useConfig'
 import api from '../api/passive_consciousness'
 
 const message = useMessage()
+const { t } = useI18n()
 const { config: globalConfig } = useConfig()
 const activeTab = ref('config')
 
@@ -505,7 +507,7 @@ const status = ref({
   enabled: false,
   longing: { score: 0, level: 0, label: 'calm', last_user_msg_at: null, last_self_msg_at: null },
   chat_heat: { heat: 0, label: 'cold', recent_count: 0, recent_hours: 0, recent_user_msg_at: null },
-  emotional_intensity: { intensity: 0, label: '工作' },
+  emotional_intensity: { intensity: 0, label: '' },
   weather: null
 })
 
@@ -561,7 +563,7 @@ const loadConfig = async () => {
     const data = await api.getConfig()
     config.value = data
   } catch (e) {
-    message.error('加载配置失败')
+    message.error(t('passiveConsciousness.messages.loadConfigFail'))
   }
 }
 const loadStatus = async () => {
@@ -569,7 +571,7 @@ const loadStatus = async () => {
     const data = await api.getStatus()
     status.value = data
   } catch (e) {
-    message.error('加载状态失败')
+    message.error(t('passiveConsciousness.messages.loadStatusFail'))
   }
 }
 const loadChats = async () => {
@@ -577,7 +579,7 @@ const loadChats = async () => {
     const data = await api.getChats()
     chats.value = data
   } catch (e) {
-    message.error('加载聊天记录失败')
+    message.error(t('passiveConsciousness.messages.loadChatsFail'))
   }
 }
 
@@ -591,7 +593,7 @@ const loadPlatforms = async () => {
       sessionSourceOptions.value = options
     }
   } catch (e) {
-    console.error('加载平台列表失败:', e)
+    console.error(t('passiveConsciousness.messages.loadPlatformsFail') + ':', e)
     // 使用默认值
     const defaultOptions = [
       { label: '微信', value: 'weixin' },
@@ -611,16 +613,16 @@ const saving = ref(false)
 const saveConfig = async () => {
   // 验证：如果启用了平台过滤但没有选择任何平台，则提示错误
   if (config.value.platforms.enabled && config.value.platforms.whitelist.length === 0) {
-    message.error('启用平台过滤时，请至少选择一个平台')
+    message.error(t('passiveConsciousness.messages.platformMinError'))
     return
   }
 
   saving.value = true
   try {
     await api.saveConfig(config.value)
-    message.success('配置已保存')
+    message.success(t('passiveConsciousness.messages.configSaved'))
   } catch (e) {
-    message.error('保存配置失败')
+    message.error(t('passiveConsciousness.messages.saveConfigFail'))
   } finally {
     saving.value = false
   }
@@ -663,9 +665,9 @@ const templates = ref([])
 
 // 模板选项（用于下拉框）
 const templateOptions = computed(() => {
-  return templates.value.map(t => ({
-    label: t.name + (t.is_default ? ' (默认)' : ''),
-    value: t.id
+  return templates.value.map(tmpl => ({
+    label: tmpl.name + (tmpl.is_default ? ' ' + t('passiveConsciousness.defaultLabel') : ''),
+    value: tmpl.id
   }))
 })
 
@@ -696,20 +698,31 @@ const testApiMap = {
   hindsightReflect: () => api.testHindsightReflect(),
 }
 
+// 测试名称映射
+const testNameMap = {
+  longing: () => t('passiveConsciousness.test.longing'),
+  chatHeat: () => t('passiveConsciousness.test.chatHeat'),
+  emotionalIntensity: () => t('passiveConsciousness.test.emotionalIntensity'),
+  weather: () => t('passiveConsciousness.test.weather'),
+  hindsightRecall: () => t('passiveConsciousness.test.hindsight'),
+  hindsightReflect: () => t('passiveConsciousness.test.hindsight'),
+}
+
 // 运行单项测试
 const runTest = async (name) => {
   testing.value[name] = true
+  const displayName = testNameMap[name]?.() || name
   try {
     const resp = await testApiMap[name]()
     testResults.value[name] = resp
     if (resp?.success) {
-      message.success(`${name} 测试成功`)
+      message.success(displayName + ' ' + t('passiveConsciousness.messages.testSuccess'))
     } else {
-      message.warning(`${name} 测试返回: ${resp?.error || '未知'}`)
+      message.warning(displayName + ' ' + t('passiveConsciousness.messages.testReturned') + ': ' + (resp?.error || t('passiveConsciousness.messages.unknown')))
     }
   } catch (e) {
     testResults.value[name] = { success: false, error: e.message || String(e) }
-    message.error(`${name} 测试失败: ${e.message}`)
+    message.error(displayName + ' ' + t('passiveConsciousness.messages.testFailed') + ': ' + e.message)
   } finally {
     testing.value[name] = false
   }
@@ -719,9 +732,9 @@ const runTest = async (name) => {
 const clearWeatherCache = async () => {
   try {
     await api.clearWeatherCache()
-    message.success('天气缓存已清除')
+    message.success(t('passiveConsciousness.messages.weatherCacheCleared'))
   } catch (e) {
-    message.error('清除缓存失败: ' + e.message)
+    message.error(t('passiveConsciousness.messages.clearCacheFail') + ': ' + e.message)
   }
 }
 
@@ -732,12 +745,12 @@ const runFullTest = async () => {
     const resp = await api.testFull()
     fullTestResult.value = resp
     if (resp?.failed === 0) {
-      message.success(`全量测试通过：${resp.success}/${resp.total}`)
+      message.success(t('passiveConsciousness.messages.fullTestPassed', { success: resp.success, total: resp.total }))
     } else {
-      message.warning(`全量测试：${resp?.success}/${resp?.total} 项成功`)
+      message.warning(t('passiveConsciousness.messages.fullTestResult', { success: resp?.success, total: resp?.total }))
     }
   } catch (e) {
-    message.error(`全量测试失败: ${e.message}`)
+    message.error(t('passiveConsciousness.messages.fullTestFailed') + ': ' + e.message)
   } finally {
     testing.value.full = false
   }
@@ -752,12 +765,12 @@ const runContextTest = async () => {
     const okCount = resp?.steps?.filter(s => s.ok).length || 0
     const totalSteps = resp?.steps?.length || 0
     if (resp?.errors?.length === 0) {
-      message.success(`上下文拼装完成：${okCount}/${totalSteps} 步骤成功`)
+      message.success(t('passiveConsciousness.messages.contextComplete', { ok: okCount, total: totalSteps }))
     } else {
-      message.warning(`上下文拼装：${okCount}/${totalSteps} 步骤成功，${resp?.errors?.length} 个错误`)
+      message.warning(t('passiveConsciousness.messages.contextPartial', { ok: okCount, total: totalSteps, errors: resp?.errors?.length }))
     }
   } catch (e) {
-    message.error(`上下文测试失败: ${e.message}`)
+    message.error(t('passiveConsciousness.messages.contextTestFailed') + ': ' + e.message)
   } finally {
     testing.value.context = false
   }
@@ -773,7 +786,7 @@ const loadTemplates = async () => {
       templates.value = resp.data
     }
   } catch (e) {
-    console.error('加载模板列表失败:', e)
+    console.error(t('passiveConsciousness.messages.loadTemplateListFail') + ':', e)
   }
 }
 
@@ -785,7 +798,7 @@ const loadTemplateVariables = async () => {
       templateVariables.value = resp.data
     }
   } catch (e) {
-    console.error('加载模板变量失败:', e)
+    console.error(t('passiveConsciousness.messages.loadTemplateVarsFail') + ':', e)
   }
 }
 
@@ -809,7 +822,7 @@ const openTemplateEditor = async (templateId) => {
         }
       }
     } catch (e) {
-      message.error('加载模板失败: ' + e.message)
+      message.error(t('passiveConsciousness.messages.loadTemplateFail') + ': ' + e.message)
       return
     }
   } else {
@@ -838,7 +851,7 @@ const previewTemplate = async () => {
       const resp = await api.previewTemplate('default', {})
       // 对于新模板，我们先保存再预览，或者直接用 mock 渲染
       // 简单处理：提示用户先保存
-      message.info('请先保存模板后再预览')
+      message.info(t('passiveConsciousness.messages.saveTemplateFirst'))
       return
     }
     const resp = await api.previewTemplate(templateEditor.value.id)
@@ -846,7 +859,7 @@ const previewTemplate = async () => {
       templateEditor.value.preview = resp.data.preview
     }
   } catch (e) {
-    message.error('预览失败: ' + e.message)
+    message.error(t('passiveConsciousness.messages.previewFail') + ': ' + e.message)
   } finally {
     templateEditor.value.previewing = false
   }
@@ -856,15 +869,15 @@ const previewTemplate = async () => {
 const saveTemplate = async () => {
   // 验证
   if (!templateEditor.value.name) {
-    message.error('请输入模板名称')
+    message.error(t('passiveConsciousness.messages.enterTemplateName'))
     return
   }
   if (!templateEditor.value.content) {
-    message.error('请输入模板内容')
+    message.error(t('passiveConsciousness.messages.enterTemplateContent'))
     return
   }
   if (templateEditor.value.isNew && !templateEditor.value.id) {
-    message.error('请输入模板 ID')
+    message.error(t('passiveConsciousness.messages.enterTemplateId'))
     return
   }
 
@@ -879,17 +892,17 @@ const saveTemplate = async () => {
     if (templateEditor.value.isNew) {
       templateData.id = templateEditor.value.id
       await api.createTemplate(templateData)
-      message.success('模板已创建')
+      message.success(t('passiveConsciousness.messages.templateCreated'))
     } else {
       await api.updateTemplate(templateEditor.value.id, templateData)
-      message.success('模板已更新')
+      message.success(t('passiveConsciousness.messages.templateUpdated'))
     }
 
     // 重新加载模板列表
     await loadTemplates()
     showTemplateEditor.value = false
   } catch (e) {
-    message.error('保存失败: ' + (e.response?.data?.detail || e.message))
+    message.error(t('passiveConsciousness.messages.saveFail') + ': ' + (e.response?.data?.detail || e.message))
   } finally {
     templateEditor.value.saving = false
   }
@@ -898,18 +911,18 @@ const saveTemplate = async () => {
 // 删除模板
 const deleteTemplate = async () => {
   if (templateEditor.value.id === 'default') {
-    message.error('不能删除默认模板')
+    message.error(t('passiveConsciousness.messages.cannotDeleteDefault'))
     return
   }
 
   templateEditor.value.deleting = true
   try {
     await api.deleteTemplate(templateEditor.value.id)
-    message.success('模板已删除')
+    message.success(t('passiveConsciousness.messages.templateDeleted'))
     await loadTemplates()
     showTemplateEditor.value = false
   } catch (e) {
-    message.error('删除失败: ' + (e.response?.data?.detail || e.message))
+    message.error(t('passiveConsciousness.messages.deleteFail') + ': ' + (e.response?.data?.detail || e.message))
   } finally {
     templateEditor.value.deleting = false
   }

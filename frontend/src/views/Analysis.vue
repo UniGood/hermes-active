@@ -1,6 +1,6 @@
 <template>
   <div class="analysis-page">
-    <n-card title="被动意识注入分析" style="margin-bottom: 16px">
+    <n-card :title="t('analysis.pageTitle')" style="margin-bottom: 16px">
       <!-- 筛选区 -->
       <n-space align="center" style="margin-bottom: 16px">
         <n-select
@@ -13,23 +13,23 @@
           v-model:value="selectedPlatform"
           :options="platformOptions"
           clearable
-          placeholder="全部平台"
+          :placeholder="t('analysis.filters.allPlatforms')"
           style="width: 160px"
           @update:value="fetchStats"
         />
-        <n-button @click="fetchAll" :loading="loading">刷新</n-button>
+        <n-button @click="fetchAll" :loading="loading">{{ t('analysis.filters.refresh') }}</n-button>
       </n-space>
 
       <!-- 概览卡片 -->
       <n-grid :cols="4" :x-gap="12" :y-gap="12" style="margin-bottom: 24px">
         <n-gi>
           <n-card size="small">
-            <n-statistic label="总注入次数" :value="stats.total" />
+            <n-statistic :label="t('analysis.stats.totalInjections')" :value="stats.total" />
           </n-card>
         </n-gi>
         <n-gi>
           <n-card size="small">
-            <n-statistic label="成功率">
+            <n-statistic :label="t('analysis.stats.successRate')">
               <template #default>
                 {{ (stats.success_rate * 100).toFixed(1) }}%
               </template>
@@ -38,12 +38,12 @@
         </n-gi>
         <n-gi>
           <n-card size="small">
-            <n-statistic label="平均上下文长度" :value="stats.avg_context_length" :precision="0" />
+            <n-statistic :label="t('analysis.stats.avgContextLength')" :value="stats.avg_context_length" :precision="0" />
           </n-card>
         </n-gi>
         <n-gi>
           <n-card size="small">
-            <n-statistic label="平均情感强度" :value="stats.avg_emotional_intensity" :precision="3" />
+            <n-statistic :label="t('analysis.stats.avgEmotionalIntensity')" :value="stats.avg_emotional_intensity" :precision="3" />
           </n-card>
         </n-gi>
       </n-grid>
@@ -52,17 +52,17 @@
       <n-grid :cols="3" :x-gap="12" :y-gap="12" style="margin-bottom: 24px">
         <n-gi>
           <n-card size="small">
-            <n-statistic label="平均想念分数" :value="stats.avg_longing_score" :precision="3" />
+            <n-statistic :label="t('analysis.stats.avgLongingScore')" :value="stats.avg_longing_score" :precision="3" />
           </n-card>
         </n-gi>
         <n-gi>
           <n-card size="small">
-            <n-statistic label="平均聊天热度" :value="stats.avg_chat_heat" :precision="2" />
+            <n-statistic :label="t('analysis.stats.avgChatHeat')" :value="stats.avg_chat_heat" :precision="2" />
           </n-card>
         </n-gi>
         <n-gi>
           <n-card size="small">
-            <n-statistic label="成功 / 跳过 / 错误">
+            <n-statistic :label="t('analysis.stats.successSkippedError')">
               <template #default>
                 {{ stats.success }} / {{ stats.skipped }} / {{ stats.error }}
               </template>
@@ -73,19 +73,19 @@
     </n-card>
 
     <!-- 趋势图 -->
-    <n-card title="注入趋势" style="margin-bottom: 16px">
+    <n-card :title="t('analysis.charts.injectionTrend')" style="margin-bottom: 16px">
       <div ref="trendChartRef" style="width: 100%; height: 360px"></div>
     </n-card>
 
     <!-- 情感分布 -->
     <n-grid :cols="2" :x-gap="12" style="margin-bottom: 16px">
       <n-gi>
-        <n-card title="情绪分布">
+        <n-card :title="t('analysis.charts.emotionDistribution')">
           <div ref="emotionChartRef" style="width: 100%; height: 320px"></div>
         </n-card>
       </n-gi>
       <n-gi>
-        <n-card title="想念等级分布">
+        <n-card :title="t('analysis.charts.longingLevelDistribution')">
           <div ref="longingChartRef" style="width: 100%; height: 320px"></div>
         </n-card>
       </n-gi>
@@ -93,40 +93,43 @@
 
     <n-grid :cols="2" :x-gap="12" style="margin-bottom: 16px">
       <n-gi>
-        <n-card title="聊天热度分布">
+        <n-card :title="t('analysis.charts.chatHeatDistribution')">
           <div ref="heatChartRef" style="width: 100%; height: 320px"></div>
         </n-card>
       </n-gi>
       <n-gi>
-        <n-card title="平台分布">
+        <n-card :title="t('analysis.charts.platformDistribution')">
           <div ref="platformChartRef" style="width: 100%; height: 320px"></div>
         </n-card>
       </n-gi>
     </n-grid>
 
     <!-- 状态分布 -->
-    <n-card title="注入状态分布" style="margin-bottom: 16px">
+    <n-card :title="t('analysis.charts.injectionStatusDistribution')" style="margin-bottom: 16px">
       <div ref="statusChartRef" style="width: 100%; height: 320px"></div>
     </n-card>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
 import api from '../api/passive_consciousness'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const timeRange = ref(24)
 const selectedPlatform = ref(null)
 
-const timeRangeOptions = [
-  { label: '最近 6 小时', value: 6 },
-  { label: '最近 24 小时', value: 24 },
-  { label: '最近 3 天', value: 72 },
-  { label: '最近 7 天', value: 168 },
-  { label: '最近 30 天', value: 720 },
-]
+const timeRangeOptions = computed(() => [
+  { label: t('analysis.timeRange.last6Hours'), value: 6 },
+  { label: t('analysis.timeRange.last24Hours'), value: 24 },
+  { label: t('analysis.timeRange.last3Days'), value: 72 },
+  { label: t('analysis.timeRange.last7Days'), value: 168 },
+  { label: t('analysis.timeRange.last30Days'), value: 720 },
+])
 
 const platformOptions = ref([])
 
@@ -246,17 +249,17 @@ function renderTrendChart() {
   const periods = trends.data.map(d => d.period)
   chart.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['注入次数', '成功次数', '平均想念', '平均情感'] },
+    legend: { data: [t('analysis.chartLegend.injectionCount'), t('analysis.chartLegend.successCount'), t('analysis.chartLegend.avgLonging'), t('analysis.chartLegend.avgEmotion')] },
     xAxis: { type: 'category', data: periods, axisLabel: { rotate: 30 } },
     yAxis: [
-      { type: 'value', name: '次数' },
-      { type: 'value', name: '分数', min: 0, max: 1 },
+      { type: 'value', name: t('analysis.chartAxis.count') },
+      { type: 'value', name: t('analysis.chartAxis.score'), min: 0, max: 1 },
     ],
     series: [
-      { name: '注入次数', type: 'bar', data: trends.data.map(d => d.count) },
-      { name: '成功次数', type: 'bar', data: trends.data.map(d => d.success_count) },
-      { name: '平均想念', type: 'line', yAxisIndex: 1, data: trends.data.map(d => d.avg_longing), smooth: true },
-      { name: '平均情感', type: 'line', yAxisIndex: 1, data: trends.data.map(d => d.avg_emotion), smooth: true },
+      { name: t('analysis.chartLegend.injectionCount'), type: 'bar', data: trends.data.map(d => d.count) },
+      { name: t('analysis.chartLegend.successCount'), type: 'bar', data: trends.data.map(d => d.success_count) },
+      { name: t('analysis.chartLegend.avgLonging'), type: 'line', yAxisIndex: 1, data: trends.data.map(d => d.avg_longing), smooth: true },
+      { name: t('analysis.chartLegend.avgEmotion'), type: 'line', yAxisIndex: 1, data: trends.data.map(d => d.avg_emotion), smooth: true },
     ],
     grid: { left: 60, right: 60, bottom: 60 },
   })
@@ -279,15 +282,15 @@ function renderPieChart(el, data, name) {
 }
 
 function renderEmotionChart() {
-  renderPieChart(emotionChartRef.value, sentiment.emotional_distribution, '情绪分布')
+  renderPieChart(emotionChartRef.value, sentiment.emotional_distribution, t('analysis.chartLegend.emotionDistribution'))
 }
 
 function renderLongingChart() {
-  renderPieChart(longingChartRef.value, sentiment.longing_distribution, '想念等级')
+  renderPieChart(longingChartRef.value, sentiment.longing_distribution, t('analysis.chartLegend.longingLevel'))
 }
 
 function renderHeatChart() {
-  renderPieChart(heatChartRef.value, sentiment.heat_distribution, '聊天热度')
+  renderPieChart(heatChartRef.value, sentiment.heat_distribution, t('analysis.chartLegend.chatHeat'))
 }
 
 function renderPlatformChart() {
@@ -298,7 +301,7 @@ function renderPlatformChart() {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { orient: 'vertical', left: 'left' },
     series: [{
-      name: '平台',
+      name: t('analysis.chartLegend.platform'),
       type: 'pie',
       radius: ['40%', '70%'],
       label: { formatter: '{b}\n{d}%' },
@@ -315,7 +318,7 @@ function renderStatusChart() {
     tooltip: { trigger: 'axis' },
     xAxis: {
       type: 'category',
-      data: ['成功', '跳过', '错误'],
+      data: [t('analysis.status.success'), t('analysis.status.skipped'), t('analysis.status.error')],
     },
     yAxis: { type: 'value' },
     series: [{

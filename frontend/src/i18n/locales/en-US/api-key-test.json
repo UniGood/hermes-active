@@ -1,6 +1,37 @@
 {
   "apiKeyTest": {
-    "title": "Key Test",
-    "description": "API Key connectivity test"
+    "config": {
+      "title": "API Configuration",
+      "baseUrl": "Base URL",
+      "apiKey": "API Key",
+      "model": "Model",
+      "system": "System",
+      "testConnection": "Test Connection",
+      "clearChat": "Clear Chat",
+      "connectionSuccess": "✅ Connection OK",
+      "connectionFailed": "❌ Connection Failed"
+    },
+    "chat": {
+      "title": "Chat Test",
+      "emptyHint": "Send a message to test the API",
+      "thinking": "Thinking...",
+      "placeholder": "Type a message to test...",
+      "send": "Send",
+      "stream": "Streaming",
+      "toolCalls": "Tool Calls"
+    },
+    "response": {
+      "title": "Raw Response"
+    },
+    "tool": {
+      "searchWeb": "Search web information",
+      "searchQuery": "Search keywords"
+    },
+    "errors": {
+      "emptyResponse": "Empty response (both content and tool_calls are empty)",
+      "emptyChoices": "API returned empty choices",
+      "emptyChoicesNonStream": "API returned empty response (choices is empty), non-streaming may not be supported",
+      "jsonParseFailed": "JSON parse failed"
+    }
   }
 }

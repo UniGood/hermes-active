@@ -5,11 +5,11 @@
       <n-space align="center">
         <n-button @click="loadLogs" :loading="loading" size="small">
           <template #icon><n-icon><RefreshOutline /></n-icon></template>
-          刷新
+          {{ t('systemLogs.toolbar.refresh') }}
         </n-button>
         <n-switch v-model:value="autoScroll">
-          <template #checked>自动滚动</template>
-          <template #unchecked>手动滚动</template>
+          <template #checked>{{ t('systemLogs.toolbar.autoScroll') }}</template>
+          <template #unchecked>{{ t('systemLogs.toolbar.manualScroll') }}</template>
         </n-switch>
         <n-input-number
           v-model:value="lineCount"
@@ -20,11 +20,11 @@
           style="width: 140px"
           @update:value="loadLogs"
         >
-          <template #prefix>行数</template>
+          <template #prefix>{{ t('systemLogs.toolbar.lineCountPrefix') }}</template>
         </n-input-number>
       </n-space>
       <n-space align="center">
-        <n-tag type="info" size="small">共 {{ logs.length }} 行</n-tag>
+        <n-tag type="info" size="small">{{ t('systemLogs.toolbar.totalLines', { count: logs.length }) }}</n-tag>
       </n-space>
     </div>
 
@@ -44,8 +44,11 @@
 
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RefreshOutline } from '@vicons/ionicons5'
 import api from '../api'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const logs = ref([])
@@ -77,7 +80,7 @@ async function loadLogs() {
     }
   } catch (e) {
     console.error('加载系统日志失败:', e)
-    message.value = '加载失败: ' + (e?.detail || e?.message || '未知错误')
+    message.value = t('systemLogs.messages.loadError', { detail: e?.detail || e?.message || t('systemLogs.messages.loadFailed') })
   } finally {
     loading.value = false
   }

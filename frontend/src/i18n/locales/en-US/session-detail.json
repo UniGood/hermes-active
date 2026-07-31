@@ -1,17 +1,31 @@
 {
-  "sessionDetail": {
-    "title": "Session Detail",
-    "back": "Back",
+  "back": "← Back",
+  "sessionInfo": {
     "sessionId": "Session ID",
-    "sessionTitle": "Title",
-    "noTitle": "Untitled",
-    "userId": "User ID",
     "platform": "Platform",
-    "status": "Status",
+    "unknown": "Unknown",
+    "title": "Title",
+    "noTitle": "Untitled",
     "messageCount": "Messages",
-    "startTime": "Start Time",
-    "endTime": "End Time",
-    "messages": "Messages",
-    "noMessages": "No messages"
+    "status": "Status",
+    "statusEnded": "Ended",
+    "statusActive": "Active",
+    "startTime": "Start Time"
+  },
+  "messages": {
+    "title": "Message History",
+    "searchPlaceholder": "Search messages...",
+    "showToolMessages": "Show tool messages",
+    "showAllFields": "Show all fields",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this message? ID: {id}",
+    "deleted": "Message deleted",
+    "deleteFailed": "Delete failed",
+    "noMessages": "No messages",
+    "loadSessionFailed": "Failed to load session",
+    "loadMessagesFailed": "Failed to load messages",
+    "roleSystem": "System",
+    "roleTool": "Tool",
+    "emptyContent": "(empty)"
   }
 }

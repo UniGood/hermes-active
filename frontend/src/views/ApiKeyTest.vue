@@ -1,31 +1,31 @@
 <template>
   <div class="api-key-test">
     <!-- 配置区域 -->
-    <n-card title="API 配置" size="small" style="margin-bottom: 12px">
+    <n-card :title="t('apiKeyTest.config.title')" size="small" style="margin-bottom: 12px">
       <n-space vertical :size="8">
         <div class="config-row">
-          <span class="config-label">Base URL:</span>
+          <span class="config-label">{{ t('apiKeyTest.config.baseUrl') }}:</span>
           <n-input v-model:value="config.baseUrl" placeholder="https://api.openai.com/v1" size="small" />
         </div>
         <div class="config-row">
-          <span class="config-label">API Key:</span>
+          <span class="config-label">{{ t('apiKeyTest.config.apiKey') }}:</span>
           <n-input v-model:value="config.apiKey" placeholder="sk-..." size="small" />
         </div>
         <div class="config-row">
-          <span class="config-label">Model:</span>
+          <span class="config-label">{{ t('apiKeyTest.config.model') }}:</span>
           <n-input v-model:value="config.model" placeholder="gpt-4o" size="small" />
         </div>
         <div class="config-row">
-          <span class="config-label">System:</span>
+          <span class="config-label">{{ t('apiKeyTest.config.system') }}:</span>
           <n-input v-model:value="config.systemPrompt" placeholder="You are a helpful assistant." size="small" />
         </div>
         <n-space>
           <n-button size="small" type="primary" @click="testConnection" :loading="testing">
-            测试连接
+            {{ t('apiKeyTest.config.testConnection') }}
           </n-button>
-          <n-button size="small" @click="clearChat">清空对话</n-button>
+          <n-button size="small" @click="clearChat">{{ t('apiKeyTest.config.clearChat') }}</n-button>
           <n-tag v-if="connectionStatus" :type="connectionStatus === 'success' ? 'success' : 'error'" size="small">
-            {{ connectionStatus === 'success' ? '✅ 连接正常' : '❌ 连接失败' }}
+            {{ connectionStatus === 'success' ? t('apiKeyTest.config.connectionSuccess') : t('apiKeyTest.config.connectionFailed') }}
           </n-tag>
           <n-tag v-if="latency" type="info" size="small">{{ latency }}ms</n-tag>
         </n-space>
@@ -33,10 +33,10 @@
     </n-card>
 
     <!-- 聊天区域 -->
-    <n-card title="聊天测试" size="small" style="margin-bottom: 12px">
+    <n-card :title="t('apiKeyTest.chat.title')" size="small" style="margin-bottom: 12px">
       <div class="chat-container" ref="chatContainer">
         <div v-if="messages.length === 0" class="chat-empty">
-          发送消息测试 API 效果
+          {{ t('apiKeyTest.chat.emptyHint') }}
         </div>
         <div v-for="(msg, i) in messages" :key="i" class="chat-message" :class="msg.role">
           <div class="message-role">{{ msg.role === 'user' ? '👤' : '🤖' }}</div>
@@ -56,7 +56,7 @@
         <div v-if="streaming" class="chat-message assistant">
           <div class="message-role">🤖</div>
           <div class="message-content">
-            <div class="message-text">{{ streamingContent || '思考中...' }}</div>
+            <div class="message-text">{{ streamingContent || t('apiKeyTest.chat.thinking') }}</div>
           </div>
         </div>
       </div>
@@ -66,21 +66,21 @@
           v-model:value="inputText"
           type="textarea"
           :autosize="{ minRows: 2, maxRows: 4 }"
-          placeholder="输入消息测试..."
+          :placeholder="t('apiKeyTest.chat.placeholder')"
           @keydown.enter.exact.prevent="sendMessage"
         />
         <n-space style="margin-top: 8px">
           <n-button type="primary" @click="sendMessage" :loading="streaming" :disabled="!inputText.trim()">
-            发送
+            {{ t('apiKeyTest.chat.send') }}
           </n-button>
-          <n-checkbox v-model:checked="useStream">流式</n-checkbox>
-          <n-checkbox v-model:checked="useToolCalls">工具调用</n-checkbox>
+          <n-checkbox v-model:checked="useStream">{{ t('apiKeyTest.chat.stream') }}</n-checkbox>
+          <n-checkbox v-model:checked="useToolCalls">{{ t('apiKeyTest.chat.toolCalls') }}</n-checkbox>
         </n-space>
       </div>
     </n-card>
 
     <!-- 原始响应 -->
-    <n-card title="原始响应" size="small" v-if="lastRawResponse">
+    <n-card :title="t('apiKeyTest.response.title')" size="small" v-if="lastRawResponse">
       <n-input
         :value="lastRawResponse"
         type="textarea"
@@ -94,6 +94,9 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const message = useMessage()
 
@@ -151,11 +154,11 @@ const testTools = [
     type: 'function',
     function: {
       name: 'web_search',
-      description: '搜索网络信息',
+      description: t('apiKeyTest.tool.searchWeb'),
       parameters: {
         type: 'object',
         properties: {
-          query: { type: 'string', description: '搜索关键词' }
+          query: { type: 'string', description: t('apiKeyTest.tool.searchQuery') }
         },
         required: ['query']
       }
@@ -226,7 +229,7 @@ async function testConnection() {
               connectionStatus.value = 'success'
             } else {
               connectionStatus.value = 'error'
-              message.warning('API 返回空响应（choices 为空），可能不支持非流式调用')
+              message.warning(t('apiKeyTest.errors.emptyChoicesNonStream'))
             }
           }
         } else {
@@ -389,16 +392,16 @@ async function sendMessage() {
             }))
           }
           if (!resultMsg.content && !resultMsg.toolCalls) {
-            resultMsg.error = '返回空响应（content 和 tool_calls 都为空）'
+            resultMsg.error = t('apiKeyTest.errors.emptyResponse')
           }
           messages.value.push(resultMsg)
           saveMessages()
         } else {
-          messages.value.push({ role: 'assistant', content: '', error: 'API 返回空 choices' })
+          messages.value.push({ role: 'assistant', content: '', error: t('apiKeyTest.errors.emptyChoices') })
           saveMessages()
         }
       } catch {
-        messages.value.push({ role: 'assistant', content: '', error: 'JSON 解析失败' })
+        messages.value.push({ role: 'assistant', content: '', error: t('apiKeyTest.errors.jsonParseFailed') })
         saveMessages()
       }
     }

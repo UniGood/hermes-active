@@ -1,6 +1,37 @@
 {
   "apiKeyTest": {
-    "title": "Key 测试",
-    "description": "API Key 连通性测试"
+    "config": {
+      "title": "API 配置",
+      "baseUrl": "Base URL",
+      "apiKey": "API Key",
+      "model": "Model",
+      "system": "System",
+      "testConnection": "测试连接",
+      "clearChat": "清空对话",
+      "connectionSuccess": "✅ 连接正常",
+      "connectionFailed": "❌ 连接失败"
+    },
+    "chat": {
+      "title": "聊天测试",
+      "emptyHint": "发送消息测试 API 效果",
+      "thinking": "思考中...",
+      "placeholder": "输入消息测试...",
+      "send": "发送",
+      "stream": "流式",
+      "toolCalls": "工具调用"
+    },
+    "response": {
+      "title": "原始响应"
+    },
+    "tool": {
+      "searchWeb": "搜索网络信息",
+      "searchQuery": "搜索关键词"
+    },
+    "errors": {
+      "emptyResponse": "返回空响应（content 和 tool_calls 都为空）",
+      "emptyChoices": "API 返回空 choices",
+      "emptyChoicesNonStream": "API 返回空响应（choices 为空），可能不支持非流式调用",
+      "jsonParseFailed": "JSON 解析失败"
+    }
   }
 }

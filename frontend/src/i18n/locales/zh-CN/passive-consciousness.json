@@ -2,16 +2,168 @@
   "passiveConsciousness": {
     "title": "被动意识",
     "description": "被动意识系统在用户消息到达时自动注入上下文信息",
+    "tabs": {
+      "config": "配置",
+      "status": "状态",
+      "chat": "聊天记录",
+      "test": "测试"
+    },
     "config": {
       "title": "被动意识配置",
       "enable": "启用被动意识",
-      "missScore": "想念分数",
-      "chatHeat": "聊天热度",
-      "hindsight": "Hindsight 集成"
+      "llm": {
+        "title": "LLM 配置",
+        "mode": "LLM 模式",
+        "hermesMode": "使用 Hermes LLM",
+        "customMode": "自定义 LLM",
+        "provider": "Provider",
+        "model": "Model",
+        "apiKey": "API Key",
+        "baseUrl": "Base URL",
+        "apiKeyPlaceholder": "输入 API Key"
+      },
+      "injection": {
+        "title": "注入配置",
+        "enable": "启用注入",
+        "emotion": "注入情绪",
+        "heat": "注入热度",
+        "memory": "注入记忆",
+        "thought": "注入想法",
+        "tag": "注入标记",
+        "timeFormat": "时间格式",
+        "thoughtMaxChars": "想法最大字符",
+        "vibeMaxChars": "Vibe 最大字符"
+      },
+      "platforms": {
+        "title": "平台过滤",
+        "enable": "启用平台过滤",
+        "enabledPlatforms": "启用的平台",
+        "selectPlaceholder": "选择启用被动意识的平台",
+        "minSelectError": "请至少选择一个平台"
+      },
+      "session": {
+        "title": "Session 来源",
+        "sourcePlatform": "来源平台",
+        "timeRange": "时间范围（小时）",
+        "maxMessages": "每 Session 最大消息",
+        "filterTool": "过滤 Tool 消息"
+      },
+      "hindsight": {
+        "title": "Hindsight 记忆",
+        "enable": "启用 Hindsight",
+        "recallLimit": "Recall 结果数",
+        "reflectEnable": "启用 Reflect"
+      },
+      "templates": {
+        "title": "模板配置",
+        "current": "当前模板",
+        "selectPlaceholder": "选择模板",
+        "create": "新建模板",
+        "editCurrent": "编辑当前模板"
+      },
+      "save": "保存配置"
     },
     "status": {
       "enabled": "已启用",
-      "disabled": "已禁用"
-    }
+      "disabled": "已禁用",
+      "longing": "想念分数",
+      "chatHeat": "聊天热度",
+      "emotion": "情绪值",
+      "weather": "天气",
+      "weatherDisabled": "天气感知未启用",
+      "humidity": "湿度"
+    },
+    "test": {
+      "fullTest": "一键全量测试",
+      "runFullTest": "运行全量测试",
+      "testComplete": "测试完成：{success}/{total} 项成功",
+      "failedItems": "失败项：",
+      "longing": "想念分数",
+      "chatHeat": "聊天热度",
+      "emotionalIntensity": "情绪值",
+      "weather": "天气感知",
+      "hindsight": "Hindsight 记忆",
+      "contextPreview": "完整上下文预览",
+      "test": "测试",
+      "clearCache": "清除缓存",
+      "recallTest": "Recall 测试",
+      "reflectTest": "Reflect 测试",
+      "simulateFlow": "模拟完整流程",
+      "labels": {
+        "score": "分数",
+        "level": "等级",
+        "gapMinutes": "间隔分钟",
+        "recentMsg": "最近消息",
+        "none": "无",
+        "heat": "热度",
+        "recentCount": "近1小时消息数",
+        "intensity": "强度",
+        "tag": "标签",
+        "rawValue": "原始值",
+        "unset": "未设置",
+        "city": "城市",
+        "weather": "天气",
+        "temperature": "温度",
+        "humidity": "湿度",
+        "windDir": "风向",
+        "updateTime": "更新时间",
+        "recallCount": "Recall 结果数"
+      },
+      "steps": "执行步骤",
+      "partialFail": "部分步骤失败",
+      "injectedContext": "注入上下文",
+      "empty": "（空）"
+    },
+    "templateEditor": {
+      "title": "模板编辑器",
+      "content": "模板内容",
+      "id": "模板 ID",
+      "name": "模板名称",
+      "description": "描述",
+      "contentEditor": "模板内容",
+      "contentPlaceholder": "输入 Jinja2 模板内容",
+      "save": "保存",
+      "preview": "预览",
+      "delete": "删除",
+      "previewResult": "预览结果",
+      "previewPlaceholder": "点击预览按钮查看渲染结果",
+      "variables": "可用变量"
+    },
+    "messages": {
+      "loadConfigFail": "加载配置失败",
+      "loadStatusFail": "加载状态失败",
+      "loadChatsFail": "加载聊天记录失败",
+      "loadPlatformsFail": "加载平台列表失败",
+      "platformMinError": "启用平台过滤时，请至少选择一个平台",
+      "configSaved": "配置已保存",
+      "saveConfigFail": "保存配置失败",
+      "weatherCacheCleared": "天气缓存已清除",
+      "clearCacheFail": "清除缓存失败",
+      "saveTemplateFirst": "请先保存模板后再预览",
+      "previewFail": "预览失败",
+      "enterTemplateName": "请输入模板名称",
+      "enterTemplateContent": "请输入模板内容",
+      "enterTemplateId": "请输入模板 ID",
+      "templateCreated": "模板已创建",
+      "templateUpdated": "模板已更新",
+      "saveFail": "保存失败",
+      "cannotDeleteDefault": "不能删除默认模板",
+      "templateDeleted": "模板已删除",
+      "deleteFail": "删除失败",
+      "loadTemplateFail": "加载模板失败",
+      "loadTemplateListFail": "加载模板列表失败",
+      "loadTemplateVarsFail": "加载模板变量失败",
+      "testSuccess": "测试成功",
+      "testReturned": "测试返回",
+      "testFailed": "测试失败",
+      "unknown": "未知",
+      "fullTestPassed": "全量测试通过：{success}/{total}",
+      "fullTestResult": "全量测试：{success}/{total} 项成功",
+      "fullTestFailed": "全量测试失败",
+      "contextComplete": "上下文拼装完成：{ok}/{total} 步骤成功",
+      "contextPartial": "上下文拼装：{ok}/{total} 步骤成功，{errors} 个错误",
+      "contextTestFailed": "上下文测试失败"
+    },
+    "defaultLabel": "(默认)"
   }
 }

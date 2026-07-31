@@ -2,7 +2,7 @@
   <div class="session-detail-page">
     <!-- 返回按钮 -->
     <n-button quaternary @click="router.back()" style="margin-bottom: 16px">
-      ← 返回
+      {{ t('session-detail.back') }}
     </n-button>
 
     <!-- Session 信息 -->
@@ -13,38 +13,38 @@
           <n-text code>{{ session.id }}</n-text>
         </div>
         <div class="info-item">
-          <span class="label">平台</span>
+          <span class="label">{{ t('session-detail.sessionInfo.platform') }}</span>
           <n-tag :type="getPlatformType(session.source)" size="small">
-            {{ session.source || '未知' }}
+            {{ session.source || t('session-detail.sessionInfo.unknown') }}
           </n-tag>
         </div>
         <div class="info-item">
-          <span class="label">标题</span>
-          <span class="value">{{ session.title || '无标题' }}</span>
+          <span class="label">{{ t('session-detail.sessionInfo.title') }}</span>
+          <span class="value">{{ session.title || t('session-detail.sessionInfo.noTitle') }}</span>
         </div>
         <div class="info-item">
-          <span class="label">消息数</span>
+          <span class="label">{{ t('session-detail.sessionInfo.messageCount') }}</span>
           <span class="value">{{ session.message_count || 0 }}</span>
         </div>
         <div class="info-item">
-          <span class="label">状态</span>
+          <span class="label">{{ t('session-detail.sessionInfo.status') }}</span>
           <n-tag :type="session.ended_at ? 'default' : 'success'" size="small">
-            {{ session.ended_at ? '已结束' : '活跃' }}
+            {{ session.ended_at ? t('session-detail.sessionInfo.statusEnded') : t('session-detail.sessionInfo.statusActive') }}
           </n-tag>
         </div>
         <div class="info-item">
-          <span class="label">开始时间</span>
+          <span class="label">{{ t('session-detail.sessionInfo.startTime') }}</span>
           <span class="value">{{ formatTime(session.started_at) }}</span>
         </div>
       </div>
     </n-card>
 
     <!-- 消息历史 -->
-    <n-card title="消息历史" style="margin-top: 16px">
+    <n-card :title="t('session-detail.messages.title')" style="margin-top: 16px">
       <div class="toolbar">
         <n-input
           v-model:value="searchText"
-          placeholder="搜索消息内容..."
+          :placeholder="t('session-detail.messages.searchPlaceholder')"
           clearable
           size="small"
           style="max-width: 300px"
@@ -54,10 +54,10 @@
           </template>
         </n-input>
         <n-checkbox v-model:checked="showToolMessages">
-          显示工具消息
+          {{ t('session-detail.messages.showToolMessages') }}
         </n-checkbox>
         <n-checkbox v-model:checked="showAllFields">
-          显示全部字段
+          {{ t('session-detail.messages.showAllFields') }}
         </n-checkbox>
       </div>
 
@@ -82,10 +82,10 @@
                 <n-popconfirm @positive-click="handleDeleteMessage(msg)">
                   <template #trigger>
                     <n-button text type="error" size="small" class="delete-btn">
-                      删除
+                      {{ t('session-detail.messages.delete') }}
                     </n-button>
                   </template>
-                  确定删除这条消息？ID: {{ msg.id }}
+                  {{ t('session-detail.messages.deleteConfirm', { id: msg.id }) }}
                 </n-popconfirm>
               </div>
             </div>
@@ -135,7 +135,7 @@
               <span v-if="msg.observed">Observed: {{ msg.observed }}</span>
             </div>
           </div>
-          <n-empty v-if="!loading && filteredMessages.length === 0" description="暂无消息" />
+          <n-empty v-if="!loading && filteredMessages.length === 0" :description="t('session-detail.messages.noMessages')" />
         </div>
       </n-spin>
     </n-card>
@@ -147,9 +147,12 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { SearchOutline } from '@vicons/ionicons5'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import api from '../api'
 import { messagesApi } from '../api'
 import { useConfig } from '../composables/useConfig'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -205,12 +208,12 @@ function getRoleClass(role) {
 }
 
 function getRoleName(role) {
-  const map = { user: config.value.user_name, assistant: config.value.assistant_name, system: '系统', tool: '工具' }
+  const map = { user: config.value.user_name, assistant: config.value.assistant_name, system: t('session-detail.messages.roleSystem'), tool: t('session-detail.messages.roleTool') }
   return map[role] || role
 }
 
 function formatContent(content) {
-  if (!content) return '<span style="color:#999">（空）</span>'
+  if (!content) return `<span style="color:#999">${t('session-detail.messages.emptyContent')}</span>`
   return content
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -224,7 +227,7 @@ async function loadSession() {
     const data = await api.get(`/sessions/${sessionId}`)
     session.value = data
   } catch (e) {
-    console.error('加载会话失败:', e)
+    console.error(t('session-detail.messages.loadSessionFailed') + ':', e)
   }
 }
 
@@ -241,7 +244,7 @@ async function loadMessages() {
     })
     messages.value = data.items || []
   } catch (e) {
-    console.error('加载消息失败:', e)
+    console.error(t('session-detail.messages.loadMessagesFailed') + ':', e)
   } finally {
     loading.value = false
   }
@@ -251,10 +254,10 @@ async function handleDeleteMessage(msg) {
   try {
     await messagesApi.deleteMessage(msg.id)
     messages.value = messages.value.filter(m => m.id !== msg.id)
-    message.success('消息已删除')
+    message.success(t('session-detail.messages.deleted'))
   } catch (e) {
-    console.error('删除消息失败:', e)
-    message.error('删除失败')
+    console.error(t('session-detail.messages.deleteFailed') + ':', e)
+    message.error(t('session-detail.messages.deleteFailed'))
   }
 }
 

@@ -1,6 +1,133 @@
 {
   "test": {
     "title": "测试工具",
-    "description": "系统测试和调试工具"
+    "description": "系统测试和调试工具",
+    "card": {
+      "sessionSelect": "1. Session 选择",
+      "context": "2. 获取上下文",
+      "generate": "3. 生成主动消息",
+      "send": "4. 发送消息",
+      "oneClick": "一键测试",
+      "logs": "执行日志"
+    },
+    "session": {
+      "platform": "目标平台",
+      "label": "Session",
+      "placeholder": "选择 session",
+      "getLatest": "获取最新",
+      "refresh": "刷新列表",
+      "id": "Session ID",
+      "title": "标题",
+      "untitled": "无标题",
+      "messageCount": "消息数",
+      "status": "状态",
+      "ended": "已结束",
+      "active": "活跃",
+      "notFound": "未找到 Session"
+    },
+    "context": {
+      "sessionTab": "Session 上下文",
+      "recallTab": "Hindsight Recall",
+      "reflectTab": "Hindsight Reflect",
+      "read": "读取上下文",
+      "messagesUnit": "条消息",
+      "includeTool": "获取tool上下文",
+      "contextCount": "共 {count} 条上下文"
+    },
+    "recall": {
+      "searchPlaceholder": "输入搜索关键词",
+      "unit": "条",
+      "button": "Recall",
+      "resultCount": "共 {count} 条结果",
+      "entity": "实体",
+      "noResult": "无结果"
+    },
+    "reflect": {
+      "queryPlaceholder": "输入问题/查询",
+      "memoryUnit": "条记忆",
+      "button": "Reflect",
+      "analysisLabel": "综合分析结果：",
+      "noResult": "无结果"
+    },
+    "prompt": {
+      "config": "提示词配置",
+      "systemLabel": "系统提示词：",
+      "systemPlaceholder": "系统提示词，定义 AI 的角色和行为规则",
+      "userLabel": "用户提示词：",
+      "userPlaceholder": "用户提示词模板，支持 {context} 占位符",
+      "userHint": "支持 {context} 占位符，运行时替换为实际上下文",
+      "appendSoul": "拼接 soul.md",
+      "preview": "预览提示词",
+      "fillDefault": "填充默认系统提示词",
+      "previewTitle": "查看提示词预览",
+      "systemFinal": "系统提示词（最终版）：",
+      "userTemplate": "用户提示词模板：",
+      "contextContent": "实际上下文内容：",
+      "soulContent": "soul.md 内容："
+    },
+    "generate": {
+      "button": "根据上下文生成消息",
+      "contextLoaded": "已获取上下文 ({source})",
+      "noContext": "请先获取上下文",
+      "result": "生成结果：",
+      "fillToSend": "填入发送框"
+    },
+    "send": {
+      "placeholder": "输入要发送的消息...",
+      "writeToDB": "写入 Session DB",
+      "withMark": "带标记",
+      "markLabel": "发送标记：",
+      "timeFormat": "时间格式：",
+      "sendTo": "发送到 {platform}",
+      "preview": "预览:"
+    },
+    "timeFormat": {
+      "short": "简短",
+      "hms": "时分秒",
+      "dateHM": "日期时分",
+      "full": "完整",
+      "dateWeekday": "日期星期"
+    },
+    "oneClick": {
+      "button": "生成 + 发送 + 写入DB"
+    },
+    "logs": {
+      "empty": "暂无日志"
+    },
+    "messages": {
+      "filledToSendBox": "已填入发送框",
+      "loadedDefaultPrompt": "已加载默认提示词",
+      "loadDefaultFailed": "加载默认提示词失败",
+      "selectSessionFirst": "请先选择 Session 并获取上下文",
+      "previewSuccess": "提示词预览成功",
+      "previewFailed": "预览失败",
+      "loadingSessionList": "加载 {platform} Session 列表",
+      "count": "个",
+      "loadSessionListFailed": "加载 Session 列表失败",
+      "sessionAutoReset": "Session 已自动重置",
+      "getLatestSession": "获取最新 {platform} Session",
+      "sessionNotFound": "未找到 {platform} 的 Session",
+      "getLatestFailed": "获取最新 Session 失败",
+      "contextLoaded": "读取到 {count} 条 Session 上下文消息",
+      "contextLoadFailed": "读取上下文失败",
+      "enterSearchKeyword": "请输入搜索关键词",
+      "recallSuccess": "Recall 成功",
+      "recallResultCount": "条结果",
+      "recallFailed": "Recall 失败",
+      "recallRequestFailed": "Recall 请求失败",
+      "enterQuery": "请输入问题/查询",
+      "reflectSuccess": "Reflect 成功",
+      "reflectFailed": "Reflect 失败",
+      "reflectRequestFailed": "Reflect 请求失败",
+      "getContextFirst": "请先获取上下文",
+      "generateMessage": "生成消息",
+      "generateSuccess": "生成成功",
+      "generateFailed": "生成失败",
+      "sendSuccess": "发送成功",
+      "sendFailed": "发送失败",
+      "fullTestComplete": "完整流程测试完成",
+      "fullTestSuccess": "完整流程测试成功",
+      "fullTestFailed": "完整流程测试失败"
+    }
   }
 }

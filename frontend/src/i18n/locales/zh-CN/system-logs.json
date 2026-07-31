@@ -1,8 +1,17 @@
 {
   "systemLogs": {
     "title": "系统日志",
-    "refresh": "刷新",
-    "clear": "清空",
+    "toolbar": {
+      "refresh": "刷新",
+      "autoScroll": "自动滚动",
+      "manualScroll": "手动滚动",
+      "lineCountPrefix": "行数",
+      "totalLines": "共 {count} 行"
+    },
+    "messages": {
+      "loadFailed": "加载系统日志失败",
+      "loadError": "加载失败: {detail}"
+    },
     "noLogs": "暂无系统日志",
     "level": {
       "info": "信息",

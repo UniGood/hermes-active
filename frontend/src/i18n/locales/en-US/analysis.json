@@ -1,6 +1,52 @@
 {
   "analysis": {
-    "title": "Analysis",
-    "description": "Data analysis and statistics"
+    "pageTitle": "Passive Consciousness Injection Analysis",
+    "filters": {
+      "allPlatforms": "All Platforms",
+      "refresh": "Refresh"
+    },
+    "timeRange": {
+      "last6Hours": "Last 6 Hours",
+      "last24Hours": "Last 24 Hours",
+      "last3Days": "Last 3 Days",
+      "last7Days": "Last 7 Days",
+      "last30Days": "Last 30 Days"
+    },
+    "stats": {
+      "totalInjections": "Total Injections",
+      "successRate": "Success Rate",
+      "avgContextLength": "Avg Context Length",
+      "avgEmotionalIntensity": "Avg Emotional Intensity",
+      "avgLongingScore": "Avg Longing Score",
+      "avgChatHeat": "Avg Chat Heat",
+      "successSkippedError": "Success / Skipped / Error"
+    },
+    "charts": {
+      "injectionTrend": "Injection Trend",
+      "emotionDistribution": "Emotion Distribution",
+      "longingLevelDistribution": "Longing Level Distribution",
+      "chatHeatDistribution": "Chat Heat Distribution",
+      "platformDistribution": "Platform Distribution",
+      "injectionStatusDistribution": "Injection Status Distribution"
+    },
+    "chartLegend": {
+      "injectionCount": "Injections",
+      "successCount": "Successes",
+      "avgLonging": "Avg Longing",
+      "avgEmotion": "Avg Emotion",
+      "emotionDistribution": "Emotion Dist.",
+      "longingLevel": "Longing Level",
+      "chatHeat": "Chat Heat",
+      "platform": "Platform"
+    },
+    "chartAxis": {
+      "count": "Count",
+      "score": "Score"
+    },
+    "status": {
+      "success": "Success",
+      "skipped": "Skipped",
+      "error": "Error"
+    }
   }
 }

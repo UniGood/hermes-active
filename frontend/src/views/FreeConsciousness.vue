@@ -2,14 +2,14 @@
   <div class="free-consciousness-page">
     <n-tabs v-model:value="activeTab" type="line" animated>
       <!-- Tab 1: 状态 & 配置 -->
-      <n-tab-pane name="status" tab="状态 & 配置">
+      <n-tab-pane name="status" :tab="t('freeConsciousness.tabs.statusConfig')">
         <!-- 开关卡片 -->
         <n-card size="small" style="margin-bottom: 16px">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 12px;">
               <span :class="['breathing-dot', status.enabled ? 'dot-green' : 'dot-gray']"></span>
               <span style="font-size: 16px; font-weight: 600;">
-                自由意识 {{ status.enabled ? '运行中' : '已停止' }}
+                {{ t('freeConsciousness.status.label') }} {{ status.enabled ? t('freeConsciousness.status.running') : t('freeConsciousness.status.stopped') }}
               </span>
             </div>
             <n-switch v-model:value="status.enabled" @update:value="onToggle" />
@@ -19,31 +19,31 @@
         <!-- 状态信息 -->
         <n-grid :cols="isMobile ? 1 : 3" :x-gap="12" :y-gap="12">
           <n-grid-item>
-            <n-card size="small" title="总轮次">
+            <n-card size="small" :title="t('freeConsciousness.status.totalRounds')">
               <n-statistic :value="status.total_rounds ?? 0" />
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card size="small" title="上次沉思">
+            <n-card size="small" :title="t('freeConsciousness.status.lastRun')">
               <div style="font-size: 14px; color: var(--theme-text-secondary);">
                 {{ status.last_run_at ? formatTime(status.last_run_at) : '—' }}
               </div>
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card size="small" title="下次沉思">
+            <n-card size="small" :title="t('freeConsciousness.status.nextRun')">
               <div style="font-size: 14px; color: var(--theme-text-secondary);">
                 {{ status.next_run_at ? formatTime(status.next_run_at) : '—' }}
               </div>
             </n-card>
           </n-grid-item>
           <n-grid-item>
-            <n-card size="small" title="思考链 Token 数">
+            <n-card size="small" :title="t('freeConsciousness.status.chainTokens')">
               <n-statistic :value="status.chain_tokens ?? 0" />
             </n-card>
           </n-grid-item>
           <n-grid-item :span="isMobile ? 1 : 2">
-            <n-card size="small" title="积淀信息">
+            <n-card size="small" :title="t('freeConsciousness.status.sedimentInfo')">
               <div style="font-size: 13px; color: var(--theme-text-secondary); white-space: pre-wrap; word-break: break-all;">
                 {{ status.sediment_info || '—' }}
               </div>
@@ -54,75 +54,75 @@
         <!-- 操作按钮 -->
         <n-space style="margin-top: 16px;">
           <n-button type="primary" @click="onManualRun" :loading="running">
-            手动触发沉思
+            {{ t('freeConsciousness.actions.manualRun') }}
           </n-button>
           <n-button @click="onRestart" :loading="restarting">
-            重启
+            {{ t('freeConsciousness.actions.restart') }}
           </n-button>
         </n-space>
 
         <!-- LLM 配置面板 -->
-        <n-card title="LLM 配置" size="small" style="margin-top: 16px;">
+        <n-card :title="t('freeConsciousness.llm.title')" size="small" style="margin-top: 16px;">
           <n-grid :cols="isMobile ? 1 : 2" :x-gap="16">
             <n-grid-item>
-              <n-form-item label="Provider">
+              <n-form-item :label="t('freeConsciousness.llm.provider')">
                 <n-select v-model:value="config.llm_provider" :options="providerOptions" />
               </n-form-item>
             </n-grid-item>
             <n-grid-item>
-              <n-form-item label="Model">
+              <n-form-item :label="t('freeConsciousness.llm.model')">
                 <n-input v-model:value="config.llm_model" placeholder="model name" />
               </n-form-item>
             </n-grid-item>
             <n-grid-item>
-              <n-form-item label="API Key">
-                <n-input v-model:value="config.llm_api_key" placeholder="输入 API Key" />
+              <n-form-item :label="t('freeConsciousness.llm.apiKey')">
+                <n-input v-model:value="config.llm_api_key" :placeholder="t('freeConsciousness.llm.apiKey')" />
               </n-form-item>
             </n-grid-item>
             <n-grid-item>
-              <n-form-item label="Base URL">
+              <n-form-item :label="t('freeConsciousness.llm.baseUrl')">
                 <n-input v-model:value="config.llm_base_url" placeholder="https://api.openai.com/v1" />
               </n-form-item>
             </n-grid-item>
             <n-grid-item>
-              <n-form-item label="Max Tokens">
+              <n-form-item :label="t('freeConsciousness.llm.maxTokens')">
                 <n-input-number v-model:value="config.llm_max_tokens" :min="256" :max="128000" />
               </n-form-item>
             </n-grid-item>
             <n-grid-item>
-              <n-form-item label="Temperature">
+              <n-form-item :label="t('freeConsciousness.llm.temperature')">
                 <n-input-number v-model:value="config.llm_temperature" :min="0" :max="2" :step="0.1" />
               </n-form-item>
             </n-grid-item>
           </n-grid>
           <n-button size="small" @click="onTestLlm" :loading="testingLlm" style="margin-top: 8px;">
-            测试连接
+            {{ t('freeConsciousness.llm.testConnection') }}
           </n-button>
           <n-alert v-if="llmTestResult !== null" :type="llmTestResult ? 'success' : 'error'" style="margin-top: 8px;" closable @close="llmTestResult = null">
-            {{ llmTestResult ? 'LLM 连通成功' : 'LLM 连通失败' }}
+            {{ llmTestResult ? t('freeConsciousness.llm.testSuccess') : t('freeConsciousness.llm.testFail') }}
           </n-alert>
         </n-card>
 
         <!-- 沉思参数面板 -->
-        <n-card title="沉思参数" size="small" style="margin-top: 16px;">
+        <n-card :title="t('freeConsciousness.params.title')" size="small" style="margin-top: 16px;">
           <n-grid :cols="isMobile ? 1 : 2" :x-gap="16">
             <n-grid-item>
-              <n-form-item label="沉思间隔（分钟）">
+              <n-form-item :label="t('freeConsciousness.params.intervalMinutes')">
                 <n-input-number v-model:value="config.interval_minutes" :min="1" :max="1440" />
               </n-form-item>
             </n-grid-item>
             <n-grid-item>
-              <n-form-item label="最近轮次">
+              <n-form-item :label="t('freeConsciousness.params.recentRounds')">
                 <n-input-number v-model:value="config.recent_rounds" :min="1" :max="100" />
               </n-form-item>
             </n-grid-item>
             <n-grid-item>
-              <n-form-item label="中间轮次">
+              <n-form-item :label="t('freeConsciousness.params.midRounds')">
                 <n-input-number v-model:value="config.mid_rounds" :min="0" :max="50" />
               </n-form-item>
             </n-grid-item>
             <n-grid-item>
-              <n-form-item label="积淀压缩间隔">
+              <n-form-item :label="t('freeConsciousness.params.sedimentCompressInterval')">
                 <n-input-number v-model:value="config.sediment_compress_interval" :min="1" :max="100" />
               </n-form-item>
             </n-grid-item>
@@ -130,42 +130,42 @@
         </n-card>
 
         <!-- 可选配置 -->
-        <n-card title="可选配置" size="small" style="margin-top: 16px;">
-          <n-form-item label="包含上下文">
+        <n-card :title="t('freeConsciousness.optional.title')" size="small" style="margin-top: 16px;">
+          <n-form-item :label="t('freeConsciousness.optional.includeContext')">
             <n-switch v-model:value="config.include_context" />
           </n-form-item>
-          <n-form-item label="上下文消息条数">
+          <n-form-item :label="t('freeConsciousness.optional.contextLimit')">
             <n-input-number v-model:value="config.context_limit" :min="5" :max="100" />
           </n-form-item>
-          <n-form-item label="存储到 Hindsight">
+          <n-form-item :label="t('freeConsciousness.optional.storeToHindsight')">
             <n-switch v-model:value="config.store_to_hindsight" />
           </n-form-item>
-          <n-form-item label="Persona（沉思风格）">
-            <n-input v-model:value="config.persona" type="textarea" :rows="2" placeholder="如：用第一人称自言自语，像一个安静的少女在深夜写日记" />
+          <n-form-item :label="t('freeConsciousness.optional.persona')">
+            <n-input v-model:value="config.persona" type="textarea" :rows="2" :placeholder="t('freeConsciousness.optional.personaPlaceholder')" />
           </n-form-item>
         </n-card>
 
         <!-- 提示词配置 -->
-        <n-card title="提示词配置" size="small" style="margin-top: 16px;">
-          <n-form-item label="System Prompt（支持 {persona} {chain_text} 占位符）">
-            <n-input v-model:value="config.prompts_system" type="textarea" :rows="6" placeholder="沉思的系统提示词" />
+        <n-card :title="t('freeConsciousness.prompts.title')" size="small" style="margin-top: 16px;">
+          <n-form-item :label="t('freeConsciousness.prompts.systemLabel')">
+            <n-input v-model:value="config.prompts_system" type="textarea" :rows="6" :placeholder="t('freeConsciousness.prompts.systemPlaceholder')" />
           </n-form-item>
-          <n-form-item label="User Prompt">
-            <n-input v-model:value="config.prompts_user" type="textarea" :rows="4" placeholder="沉思的用户提示词" />
+          <n-form-item :label="t('freeConsciousness.prompts.userLabel')">
+            <n-input v-model:value="config.prompts_user" type="textarea" :rows="4" :placeholder="t('freeConsciousness.prompts.userPlaceholder')" />
           </n-form-item>
           <n-button type="primary" @click="onSaveConfig" :loading="saving" style="margin-top: 8px;">
-            保存配置
+            {{ t('freeConsciousness.prompts.save') }}
           </n-button>
         </n-card>
       </n-tab-pane>
 
       <!-- Tab 2: 沉思日志 -->
-      <n-tab-pane name="logs" tab="沉思日志">
+      <n-tab-pane name="logs" :tab="t('freeConsciousness.tabs.logs')">
         <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <n-input-number v-model:value="logFilter.round" placeholder="轮次筛选" clearable
+          <n-input-number v-model:value="logFilter.round" :placeholder="t('freeConsciousness.log.roundFilter')" clearable
             :show-button="false" style="width: 140px"
             @update:value="loadLogs(1)" />
-          <n-button size="small" quaternary @click="logFilter.round = null; loadLogs(1)">全部</n-button>
+          <n-button size="small" quaternary @click="logFilter.round = null; loadLogs(1)">{{ t('freeConsciousness.log.all') }}</n-button>
         </div>
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;">
           <n-data-table :columns="logColumns" :data="logs.items" :pagination="logPagination"
@@ -175,35 +175,35 @@
     </n-tabs>
 
     <!-- 日志详情弹窗 -->
-    <n-modal v-model:show="showLogDetail" preset="card" title="沉思详情" style="width: 90%; max-width: 700px;">
+    <n-modal v-model:show="showLogDetail" preset="card" :title="t('freeConsciousness.logDetail.title')" style="width: 90%; max-width: 700px;">
       <template v-if="logDetail">
         <n-tabs type="line" animated>
-          <n-tab-pane name="thinking" tab="思考过程">
-            <div style="white-space: pre-wrap; line-height: 1.8; font-size: 14px; padding: 8px 0;">{{ logDetail.thinking || '（无）' }}</div>
+          <n-tab-pane name="thinking" :tab="t('freeConsciousness.logDetail.tabThinking')">
+            <div style="white-space: pre-wrap; line-height: 1.8; font-size: 14px; padding: 8px 0;">{{ logDetail.thinking || t('freeConsciousness.logDetail.none') }}</div>
           </n-tab-pane>
-          <n-tab-pane name="summary" tab="摘要 & 发现">
+          <n-tab-pane name="summary" :tab="t('freeConsciousness.logDetail.tabSummary')">
             <div style="margin-bottom: 12px;">
-              <div style="font-weight: 600; margin-bottom: 4px; color: var(--theme-text-secondary);">摘要</div>
-              <div style="white-space: pre-wrap; line-height: 1.6;">{{ logDetail.summary || '（无）' }}</div>
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--theme-text-secondary);">{{ t('freeConsciousness.logDetail.summaryLabel') }}</div>
+              <div style="white-space: pre-wrap; line-height: 1.6;">{{ logDetail.summary || t('freeConsciousness.logDetail.none') }}</div>
             </div>
             <n-divider />
             <div>
-              <div style="font-weight: 600; margin-bottom: 4px; color: var(--theme-text-secondary);">发现</div>
-              <div style="white-space: pre-wrap; line-height: 1.6;">{{ logDetail.discovery || '（无）' }}</div>
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--theme-text-secondary);">{{ t('freeConsciousness.logDetail.discoveryLabel') }}</div>
+              <div style="white-space: pre-wrap; line-height: 1.6;">{{ logDetail.discovery || t('freeConsciousness.logDetail.none') }}</div>
             </div>
           </n-tab-pane>
-          <n-tab-pane name="llm" tab="LLM 详情">
+          <n-tab-pane name="llm" :tab="t('freeConsciousness.logDetail.tabLlm')">
             <template v-if="logDetail.llm_details">
               <!-- 基本信息 -->
               <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;">
-                <n-descriptions-item label="模型">{{ logDetail.llm_details.model || '—' }}</n-descriptions-item>
-                <n-descriptions-item label="耗时">{{ logDetail.llm_details.duration ? logDetail.llm_details.duration + 's' : '—' }}</n-descriptions-item>
-                <n-descriptions-item label="成功">{{ logDetail.llm_details.success ? '是' : '否' }}</n-descriptions-item>
-                <n-descriptions-item label="消息">{{ logDetail.llm_details.message || '—' }}</n-descriptions-item>
+                <n-descriptions-item :label="t('freeConsciousness.logDetail.model')">{{ logDetail.llm_details.model || '—' }}</n-descriptions-item>
+                <n-descriptions-item :label="t('freeConsciousness.logDetail.duration')">{{ logDetail.llm_details.duration ? logDetail.llm_details.duration + 's' : '—' }}</n-descriptions-item>
+                <n-descriptions-item :label="t('freeConsciousness.logDetail.success')">{{ logDetail.llm_details.success ? t('freeConsciousness.logDetail.yes') : t('freeConsciousness.logDetail.no') }}</n-descriptions-item>
+                <n-descriptions-item :label="t('freeConsciousness.logDetail.message')">{{ logDetail.llm_details.message || '—' }}</n-descriptions-item>
               </n-descriptions>
               <!-- Prompt -->
               <div v-if="logDetail.llm_details.prompt_sent" style="margin-bottom: 12px;">
-                <div style="font-weight: 600; margin-bottom: 4px;">Prompt</div>
+                <div style="font-weight: 600; margin-bottom: 4px;">{{ t('freeConsciousness.logDetail.prompt') }}</div>
                 <n-collapse>
                   <n-collapse-item v-for="(msg, i) in logDetail.llm_details.prompt_sent" :key="i" :title="msg.role" :name="i">
                     <n-code :code="msg.content" language="text" word-wrap style="font-size: 12px;" />
@@ -212,16 +212,16 @@
               </div>
               <!-- LLM 原始返回 -->
               <div v-if="logDetail.llm_details.response_raw" style="margin-bottom: 12px;">
-                <div style="font-weight: 600; margin-bottom: 4px;">LLM 原始返回</div>
+                <div style="font-weight: 600; margin-bottom: 4px;">{{ t('freeConsciousness.logDetail.responseRaw') }}</div>
                 <n-code :code="logDetail.llm_details.response_raw" language="text" word-wrap style="font-size: 12px;" />
               </div>
               <!-- 推理过程 -->
               <div v-if="logDetail.llm_details.reasoning_content">
-                <div style="font-weight: 600; margin-bottom: 4px;">推理过程</div>
+                <div style="font-weight: 600; margin-bottom: 4px;">{{ t('freeConsciousness.logDetail.reasoning') }}</div>
                 <n-code :code="logDetail.llm_details.reasoning_content" language="text" word-wrap style="font-size: 12px;" />
               </div>
             </template>
-            <div v-else style="color: var(--theme-text-muted);">无 LLM 详情</div>
+            <div v-else style="color: var(--theme-text-muted);">{{ t('freeConsciousness.logDetail.noLlmDetail') }}</div>
           </n-tab-pane>
         </n-tabs>
       </template>
@@ -233,9 +233,11 @@
 import { ref, reactive, computed, onMounted, h } from 'vue'
 import { useMessage } from 'naive-ui'
 import { NTag, NButton, NSpace } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import api from '../api/freeConsciousness'
 
 const message = useMessage()
+const { t } = useI18n()
 const activeTab = ref('status')
 
 // 移动端检测
@@ -278,7 +280,7 @@ const providerOptions = [
   { label: 'OpenAI', value: 'openai' },
   { label: 'DeepSeek', value: 'deepseek' },
   { label: 'Anthropic', value: 'anthropic' },
-  { label: '自定义', value: 'custom' },
+  { label: 'Custom', value: 'custom' },
 ]
 
 // 操作状态
@@ -303,11 +305,11 @@ const logPagination = computed(() => ({
 }))
 
 // 日志表格列
-const logColumns = [
-  { title: 'ID', key: 'id', width: 60 },
-  { title: '轮次', key: 'round_number', width: 70 },
+const logColumns = computed(() => [
+  { title: t('freeConsciousness.log.colId'), key: 'id', width: 60 },
+  { title: t('freeConsciousness.log.colRound'), key: 'round_number', width: 70 },
   {
-    title: '摘要',
+    title: t('freeConsciousness.log.colSummary'),
     key: 'summary',
     ellipsis: { tooltip: true },
     width: 180,
@@ -317,7 +319,7 @@ const logColumns = [
     },
   },
   {
-    title: '发现',
+    title: t('freeConsciousness.log.colDiscovery'),
     key: 'discovery',
     width: 160,
     ellipsis: { tooltip: true },
@@ -328,28 +330,28 @@ const logColumns = [
       return '—'
     },
   },
-  { title: 'Token', key: 'thinking_tokens', width: 70 },
+  { title: t('freeConsciousness.log.colToken'), key: 'thinking_tokens', width: 70 },
   {
-    title: '时间',
+    title: t('freeConsciousness.log.colTime'),
     key: 'created_at',
     width: 140,
     render: (row) => formatTime(row.created_at),
   },
   {
-    title: '操作',
+    title: t('freeConsciousness.log.colActions'),
     key: 'actions',
     width: 130,
     fixed: 'right',
     render: (row) => {
       return h(NSpace, { size: 'small' }, {
         default: () => [
-          h(NButton, { size: 'tiny', onClick: () => viewLogDetail(row.id) }, { default: () => '详情' }),
-          h(NButton, { size: 'tiny', type: 'error', onClick: () => deleteLog(row.id) }, { default: () => '删除' }),
+          h(NButton, { size: 'tiny', onClick: () => viewLogDetail(row.id) }, { default: () => t('freeConsciousness.log.detail') }),
+          h(NButton, { size: 'tiny', type: 'error', onClick: () => deleteLog(row.id) }, { default: () => t('freeConsciousness.log.delete') }),
         ],
       })
     },
   },
-]
+])
 
 // 格式化时间
 function formatTime(t) {
@@ -381,7 +383,7 @@ async function loadStatus() {
     }
     // 积淀信息
     if (data.sediment) {
-      status.sediment_info = `覆盖第 ${data.sediment.source_rounds} 轮，${data.sediment.source_count} 轮压缩`
+      status.sediment_info = t('freeConsciousness.status.sedimentInfoText', { rounds: data.sediment.source_rounds, count: data.sediment.source_count })
     } else {
       status.sediment_info = ''
     }
@@ -424,7 +426,7 @@ async function loadLogs(page = 1) {
     logs.total = data.total ?? 0
     logs.items = data.items ?? []
   } catch (e) {
-    message.error('加载日志失败')
+    message.error(t('freeConsciousness.messages.loadLogsFail'))
   }
 }
 
@@ -432,10 +434,10 @@ async function loadLogs(page = 1) {
 async function onToggle(enabled) {
   try {
     await api.toggle(enabled)
-    message.success(enabled ? '已开启' : '已关闭')
+    message.success(enabled ? t('freeConsciousness.messages.enabled') : t('freeConsciousness.messages.disabled'))
     await loadStatus()
   } catch (e) {
-    message.error('操作失败')
+    message.error(t('freeConsciousness.messages.operationFail'))
     status.enabled = !enabled
   }
 }
@@ -444,10 +446,10 @@ async function onManualRun() {
   running.value = true
   try {
     await api.manualRun()
-    message.success('沉思已触发')
+    message.success(t('freeConsciousness.messages.triggered'))
     await loadStatus()
   } catch (e) {
-    message.error('触发失败')
+    message.error(t('freeConsciousness.messages.triggerFail'))
   } finally {
     running.value = false
   }
@@ -457,10 +459,10 @@ async function onRestart() {
   restarting.value = true
   try {
     await api.restart()
-    message.success('已重启')
+    message.success(t('freeConsciousness.messages.restarted'))
     await loadStatus()
   } catch (e) {
-    message.error('重启失败')
+    message.error(t('freeConsciousness.messages.restartFail'))
   } finally {
     restarting.value = false
   }
@@ -507,9 +509,9 @@ async function onSaveConfig() {
       },
     }
     await api.saveConfig(payload)
-    message.success('配置已保存')
+    message.success(t('freeConsciousness.messages.configSaved'))
   } catch (e) {
-    message.error('保存失败')
+    message.error(t('freeConsciousness.messages.saveFail'))
   } finally {
     saving.value = false
   }
@@ -521,17 +523,17 @@ async function viewLogDetail(id) {
     logDetail.value = data
     showLogDetail.value = true
   } catch (e) {
-    message.error('加载详情失败')
+    message.error(t('freeConsciousness.messages.loadDetailFail'))
   }
 }
 
 async function deleteLog(id) {
   try {
     await api.deleteLog(id)
-    message.success('已删除')
+    message.success(t('freeConsciousness.messages.deleted'))
     await loadLogs(logPage.value)
   } catch (e) {
-    message.error('删除失败')
+    message.error(t('freeConsciousness.messages.deleteFail'))
   }
 }
 

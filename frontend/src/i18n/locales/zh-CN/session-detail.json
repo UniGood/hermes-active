@@ -1,17 +1,31 @@
 {
-  "sessionDetail": {
-    "title": "会话详情",
-    "back": "返回",
+  "back": "← 返回",
+  "sessionInfo": {
     "sessionId": "Session ID",
-    "sessionTitle": "标题",
-    "noTitle": "无标题",
-    "userId": "用户 ID",
     "platform": "平台",
-    "status": "状态",
+    "unknown": "未知",
+    "title": "标题",
+    "noTitle": "无标题",
     "messageCount": "消息数",
-    "startTime": "开始时间",
-    "endTime": "结束时间",
-    "messages": "消息列表",
-    "noMessages": "暂无消息"
+    "status": "状态",
+    "statusEnded": "已结束",
+    "statusActive": "活跃",
+    "startTime": "开始时间"
+  },
+  "messages": {
+    "title": "消息历史",
+    "searchPlaceholder": "搜索消息内容...",
+    "showToolMessages": "显示工具消息",
+    "showAllFields": "显示全部字段",
+    "delete": "删除",
+    "deleteConfirm": "确定删除这条消息？ID: {id}",
+    "deleted": "消息已删除",
+    "deleteFailed": "删除失败",
+    "noMessages": "暂无消息",
+    "loadSessionFailed": "加载会话失败",
+    "loadMessagesFailed": "加载消息失败",
+    "roleSystem": "系统",
+    "roleTool": "工具",
+    "emptyContent": "（空）"
   }
 }
