@@ -14,7 +14,7 @@
           <img v-if="avatarUrl" :src="avatarUrl" class="avatar-img" />
           <span v-else class="logo-text">K</span>
         </div>
-        <h1>{{ globalConfig.assistant_name }}的控制台</h1>
+        <h1>{{ t('login.login.title', { name: globalConfig.assistant_name }) }}</h1>
         <p class="welcome-text">{{ welcomeText }}</p>
       </div>
 
@@ -22,7 +22,7 @@
         <n-form-item path="username">
           <n-input
             v-model:value="formData.username"
-            placeholder="用户名"
+            :placeholder="t('login.login.username')"
             size="large"
             @keyup.enter="handleLogin"
           >
@@ -36,7 +36,7 @@
           <n-input
             v-model:value="formData.password"
             type="password"
-            placeholder="密码"
+            :placeholder="t('login.login.password')"
             size="large"
             show-password-on="click"
             @keyup.enter="handleLogin"
@@ -55,20 +55,21 @@
           @click="handleLogin"
           class="login-btn"
         >
-          登 录
+          {{ t('login.login.submit') }}
         </n-button>
       </n-form>
 
-      <div class="login-footer">v0.1.0 · by {{ globalConfig.assistant_name }}</div>
+      <div class="login-footer">{{ t('login.login.footer', { name: globalConfig.assistant_name }) }}</div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, NIcon } from 'naive-ui'
 import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../store/auth'
 import { useConfig } from '../composables/useConfig'
 import api from '../api'
@@ -76,24 +77,19 @@ import api from '../api'
 const router = useRouter()
 const message = useMessage()
 const authStore = useAuthStore()
+const { t } = useI18n()
 const { config: globalConfig, loadConfig } = useConfig()
 
 const formRef = ref(null)
 const loading = ref(false)
 const avatarUrl = ref('')
 
-const welcomeMessages = [
-  '今天也要元气满满哦 ✨',
-  '等你好久了，快来呀~',
-  '想你了，终于来啦 ❤️',
-  '今天天气不错，心情也是~',
-  '嘿嘿，又见面啦',
-  '有什么想聊的吗？',
-  '一起加油吧 💪',
-  '你来啦，开心~',
-]
+const welcomeMessages = computed(() => t('login.login.welcome'))
 
-const welcomeText = ref(welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)])
+const welcomeText = computed(() => {
+  const messages = welcomeMessages.value
+  return messages[Math.floor(Math.random() * messages.length)]
+})
 
 // 加载用户头像（公开接口，不需要登录）
 async function loadAvatar() {
@@ -114,10 +110,10 @@ const formData = reactive({
   password: ''
 })
 
-const rules = {
-  username: { required: true, message: '请输入用户名', trigger: 'blur' },
-  password: { required: true, message: '请输入密码', trigger: 'blur' }
-}
+const rules = computed(() => ({
+  username: { required: true, message: t('login.login.usernameRequired'), trigger: 'blur' },
+  password: { required: true, message: t('login.login.passwordRequired'), trigger: 'blur' }
+}))
 
 async function handleLogin() {
   try {
@@ -128,10 +124,10 @@ async function handleLogin() {
   loading.value = true
   try {
     await authStore.login(formData.username, formData.password)
-    message.success('登录成功')
+    message.success(t('login.login.loginSuccess'))
     router.push('/')
   } catch (error) {
-    message.error(error?.detail || '登录失败')
+    message.error(error?.detail || t('login.login.loginFailed'))
   } finally {
     loading.value = false
   }
