@@ -41,6 +41,10 @@ class PassiveConsciousnessLog(DeclarativeBase):
     # 用户消息摘要
     user_message_preview = Column(String, nullable=True)  # 前100字
 
+    # 模板与上下文
+    template_id = Column(String, nullable=True)
+    context_preview = Column(String, nullable=True)  # 前200字
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -62,4 +66,6 @@ class PassiveConsciousnessLog(DeclarativeBase):
             "context_length": self.context_length,
             "error_message": self.error_message,
             "user_message_preview": self.user_message_preview,
+            "template_id": self.template_id,
+            "context_preview": self.context_preview,
         }
