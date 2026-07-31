@@ -51,6 +51,55 @@ async def update_config(config: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============ 平台配置 ============
+
+@router.get("/platforms")
+async def get_platforms():
+    """获取平台配置"""
+    try:
+        config = PassiveConsciousnessService.get_config()
+        platforms = config.get("platforms", {})
+        return {
+            "success": True,
+            "data": {
+                "enabled": platforms.get("enabled", True),
+                "whitelist": platforms.get("whitelist", ["weixin"]),
+            }
+        }
+    except Exception as e:
+        logger.error("获取平台配置失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/platforms")
+async def update_platforms(platforms: dict):
+    """更新平台配置"""
+    try:
+        config = PassiveConsciousnessService.get_config()
+        config["platforms"] = platforms
+        PassiveConsciousnessService.update_config(config)
+        return {"success": True, "message": "平台配置已保存"}
+    except Exception as e:
+        logger.error("保存平台配置失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/platforms/available")
+async def get_available_platforms():
+    """获取可用平台列表"""
+    return {
+        "success": True,
+        "data": [
+            {"id": "weixin", "name": "微信", "description": "微信公众号/小程序"},
+            {"id": "feishu", "name": "飞书", "description": "飞书机器人"},
+            {"id": "telegram", "name": "Telegram", "description": "Telegram Bot"},
+            {"id": "discord", "name": "Discord", "description": "Discord Bot"},
+            {"id": "slack", "name": "Slack", "description": "Slack Bot"},
+            {"id": "custom", "name": "自定义", "description": "自定义平台"},
+        ]
+    }
+
+
 # ============ 状态 ============
 
 @router.get("/status")
