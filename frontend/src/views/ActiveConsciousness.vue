@@ -853,7 +853,7 @@
       <template v-if="thoughtContentData">
         <!-- 念头内容（最醒目） -->
         <n-card size="small" style="margin-bottom: 12px;">
-          <div style="white-space: pre-wrap; font-size: 14px; line-height: 1.6;">{{ thoughtContentData.thought_content || '{{ t('activeConsciousness.modals.noThoughtContent') }}' }}</div>
+          <div style="white-space: pre-wrap; font-size: 14px; line-height: 1.6;">{{ thoughtContentData.thought_content || t('activeConsciousness.modals.noThoughtContent') }}</div>
         </n-card>
         <!-- 基本信息 -->
         <n-descriptions bordered :column="2" size="small" style="margin-bottom: 12px;" :label-style="{ width: '100px' }">
@@ -1222,7 +1222,7 @@
             <!-- 结果信息 -->
             <div style="flex: 1; min-width: 200px;">
               <div style="font-size: 13px; color: var(--theme-text-secondary); margin-bottom: 2px;">
-                {{ thoughtDetailsData.thought || "{{ t('activeConsciousness.modals.noThoughtContent') }}" }}
+                {{ thoughtDetailsData.thought || t('activeConsciousness.modals.noThoughtContent') }}
               </div>
               <div style="font-size: 12px; color: var(--theme-text-muted);">
                 {{ thoughtTypeLabelCn(thoughtDetailsData.thought_type) }} · {{ emotionLabelCn(thoughtDetailsData.emotion_state?.dominant) }}

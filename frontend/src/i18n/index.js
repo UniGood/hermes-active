@@ -1,19 +1,26 @@
 import { createI18n } from 'vue-i18n'
 
-// 动态导入翻译文件
-function loadLocaleMessages() {
-  const locales = ['zh-CN', 'en-US']
-  const messages = {}
+// 静态导入翻译文件（Vite 要求 import.meta.glob 使用静态字符串）
+const zhCNModules = import.meta.glob('./locales/zh-CN/*.json', { eager: true })
+const enUSModules = import.meta.glob('./locales/en-US/*.json', { eager: true })
 
-  locales.forEach(locale => {
-    // 使用 Vite 的 import.meta.glob 动态导入
-    const modules = import.meta.glob(`./locales/${locale}/*.json`, { eager: true })
-    messages[locale] = {}
-    for (const path in modules) {
-      const key = path.replace(`./locales/${locale}/`, '').replace('.json', '')
-      messages[locale][key] = modules[path].default
-    }
-  })
+function loadLocaleMessages() {
+  const messages = {
+    'zh-CN': {},
+    'en-US': {}
+  }
+
+  // 加载中文翻译
+  for (const path in zhCNModules) {
+    const key = path.replace('./locales/zh-CN/', '').replace('.json', '')
+    messages['zh-CN'][key] = zhCNModules[path].default
+  }
+
+  // 加载英文翻译
+  for (const path in enUSModules) {
+    const key = path.replace('./locales/en-US/', '').replace('.json', '')
+    messages['en-US'][key] = enUSModules[path].default
+  }
 
   return messages
 }
