@@ -42,6 +42,18 @@ DEFAULT_LLM_CONFIG = {
     "base_url": ""
 }
 
+# 天气默认配置
+DEFAULT_WEATHER_CONFIG = {
+    "enabled": "false",
+    "provider": "qweather",
+    "city": "北京",
+    "cache_hours": "4",
+    "amap_key": "",
+    "qweather_key": "",
+    "qweather_geo_url": "https://geoapi.qweather.com/v2/city/lookup",
+    "qweather_weather_url": "https://devapi.qweather.com/v7/weather/now",
+}
+
 # 默认提示词
 DEFAULT_PROMPTS = {
     "system": """你是凯莉，曹凡最好的朋友。你现在想主动和曹凡聊天。

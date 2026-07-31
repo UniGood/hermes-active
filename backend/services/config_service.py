@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from pathlib import Path
 
 from models.active import Config
-from config import DEFAULT_LLM_CONFIG, DEFAULT_PROMPTS, SOUL_PATH, MEMORY_PATH
+from config import DEFAULT_LLM_CONFIG, DEFAULT_PROMPTS, DEFAULT_WEATHER_CONFIG, SOUL_PATH, MEMORY_PATH
 
 
 class ConfigService:
@@ -65,6 +65,21 @@ class ConfigService:
             ConfigService.set_config(db, "prompts_system", prompts_data["system"])
         if "generation" in prompts_data:
             ConfigService.set_config(db, "prompts_generation", prompts_data["generation"])
+
+    @staticmethod
+    def get_weather_config(db: Session) -> Dict[str, str]:
+        """获取天气配置"""
+        config = {}
+        for key, default in DEFAULT_WEATHER_CONFIG.items():
+            config[key] = ConfigService.get_config(db, f"weather_{key}") or default
+        return config
+
+    @staticmethod
+    def update_weather_config(db: Session, config_data: Dict[str, str]):
+        """更新天气配置"""
+        for key, value in config_data.items():
+            if key in DEFAULT_WEATHER_CONFIG:
+                ConfigService.set_config(db, f"weather_{key}", str(value))
 
     @staticmethod
     def get_cron_jobs(db: Session) -> List[Dict[str, Any]]:
