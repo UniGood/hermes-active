@@ -2,10 +2,10 @@
   <a href="README.md">English</a> | <strong>简体中文</strong>
 </p>
 
-> [!NOTE]
-> 🖼️ **信息图占位 — 主视觉横幅** · 使用下方提示词生成图片，保存为 `docs/images/zh-hero-banner.png`，然后将本块替换为 `<img src="docs/images/zh-hero-banner.png" width="800">`。
->
-> **生成提示词：** *一张宽幅现代风格的开源 AI 项目主视觉横幅，项目名"Hermes Active"。深靛蓝到紫罗兰的暗色渐变背景，一条发光的心跳脉冲线横贯画面并逐渐演变成对话气泡，背景点缀神经网络星点，扁平化设计风格，主标题"Hermes Active"用粗体白色无衬线字体，副标题"让 AI 助手拥有主动意识"。不要写实照片风，不要文字乱码，21:9 宽高比。*
+
+<p align="center">
+  <img src="docs/images/zh-hero-banner.png" width="800" alt="Hermes Active — 让 AI 助手拥有主动意识">
+</p>
 
 <h1 align="center">Hermes Active</h1>
 
@@ -51,10 +51,10 @@
 
 ## 为什么需要 Hermes Active？
 
-> [!NOTE]
-> 🖼️ **信息图占位 — 问题对比图** · 保存为 `docs/images/zh-problem-statement.png`。
->
-> **生成提示词：** *一张左右对比的信息图，标题"无状态 Cron vs 持久化意识"。左侧（冷灰色调）：一个机器人在空荡荡的白色房间里醒来，房间标注"全新隔离会话"，旁边是断裂的链条图标，对话气泡写着"你是哪位来着？"。右侧（暖紫/青色调）：同一个机器人身处温馨房间，四周环绕着过往对话时间线、爱心图标和记忆光球，对话气泡写着"我刚才还在想你呢"。扁平矢量风格，文字精简，16:9。*
+
+<p align="center">
+  <img src="docs/images/zh-problem-statement.png" width="800" alt="无状态 Cron vs 持久化意识">
+</p>
 
 传统 AI 代理的主动消息功能都有同一个缺陷：**每个定时任务都会创建一个全新的、隔离的会话**。
 
@@ -122,10 +122,10 @@ Hermes Active 通过在 Hermes Agent 旁运行一套**持久化意识层**来解
 
 ## 系统架构
 
-> [!NOTE]
-> 🖼️ **信息图占位 — 架构总览** · 保存为 `docs/images/zh-architecture.png`。
->
-> **生成提示词：** *一张简洁的等距视角系统架构信息图。中央：一个 FastAPI 后端方盒，内含三个发光的齿轮，分别标注"心跳""沉思""调度器"。顶部：一块 Vue 3 Web 控制台面板，用标注"JWT REST API"的箭头连接。右侧："Hermes Agent"方盒（网关 + LLM），连线标注"仅公开 API"。左侧：一个插件形状的方盒"pre_llm_call 钩子"，指向后端。底部：两个数据库圆柱体标注"state.db（只读）"和"active.db（读写）"，外加两朵云图标标注"Hindsight 记忆"和"天气 API"。深色背景、霓虹连接线、扁平风格，16:9。*
+
+<p align="center">
+  <img src="docs/images/zh-architecture.png" width="800" alt="Hermes Active 系统架构">
+</p>
 
 ```mermaid
 graph TB
@@ -180,10 +180,10 @@ Hermes Active 从不写入 Hermes 的配置，也从不改动历史对话 ——
 
 ## 核心系统
 
-> [!NOTE]
-> 🖼️ **信息图占位 — 四大系统总览** · 保存为 `docs/images/zh-four-systems.png`。
->
-> **生成提示词：** *一张 2x2 网格信息图展示四个系统。左上"主动意识"：一颗带脉搏线的心脏和决策仪表。右上"被动意识"：一个信封接收发光的上下文注入流。左下"自由意识"：一个冥想中的机器人头部，环绕思维光环，底部有沉淀层。右下"定时任务"：一个日历时钟和流水线箭头。统一的扁平图标风格，紫/青配色，深色背景，文字精简，16:9。*
+
+<p align="center">
+  <img src="docs/images/zh-four-systems.png" width="800" alt="四大核心系统">
+</p>
 
 ### 主动意识 —— 心跳
 
@@ -496,10 +496,10 @@ hermes-active/
 
 ## 快速开始
 
-> [!NOTE]
-> 🖼️ **信息图占位 — 部署拓扑图** · 保存为 `docs/images/zh-deployment.png`。
->
-> **生成提示词：** *一张自托管 AI 系统的部署拓扑信息图。一个服务器方盒内含四张进程卡片："hermes-active 后端 :18720"、"Hermes Agent 网关"、"Hindsight :8888"和一个插件目录。服务器外：一部手机图标（微信/飞书用户）和一个浏览器图标（管理控制台）。箭头展示消息流向和 HTTP 调用。深色蓝图风格、霓虹连接线、文字精简，16:9。*
+
+<p align="center">
+  <img src="docs/images/zh-deployment.png" width="800" alt="部署拓扑">
+</p>
 
 ### 前置条件
 
