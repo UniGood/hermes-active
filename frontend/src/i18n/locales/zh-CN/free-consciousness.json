@@ -1,0 +1,10 @@
+{
+  "freeConsciousness": {
+    "title": "自由意识",
+    "description": "自由意识系统允许 AI 自主探索和思考",
+    "config": {
+      "title": "自由意识配置",
+      "enable": "启用自由意识"
+    }
+  }
+}

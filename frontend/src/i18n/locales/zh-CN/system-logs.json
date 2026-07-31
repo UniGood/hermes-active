@@ -1,0 +1,14 @@
+{
+  "systemLogs": {
+    "title": "系统日志",
+    "refresh": "刷新",
+    "clear": "清空",
+    "noLogs": "暂无系统日志",
+    "level": {
+      "info": "信息",
+      "warn": "警告",
+      "error": "错误",
+      "debug": "调试"
+    }
+  }
+}

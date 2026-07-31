@@ -1,0 +1,91 @@
+{
+  "config": {
+    "tabs": {
+      "basic": "基础配置",
+      "llm": "LLM 配置",
+      "hindsight": "Hindsight 配置",
+      "weather": "天气配置"
+    },
+    "personalization": {
+      "title": "个性化设置",
+      "userName": "用户名称",
+      "assistantName": "助手名称",
+      "saveSuccess": "个性化设置已保存"
+    },
+    "language": {
+      "title": "语言设置",
+      "label": "界面语言",
+      "zhCN": "简体中文",
+      "enUS": "English"
+    },
+    "theme": {
+      "title": "主题配置",
+      "current": "当前",
+      "switchSuccess": "主题已切换"
+    },
+    "password": {
+      "title": "修改密码",
+      "oldPassword": "旧密码",
+      "newPassword": "新密码",
+      "submit": "修改密码",
+      "fillComplete": "请填写完整",
+      "changeSuccess": "密码修改成功",
+      "changeFailed": "修改失败"
+    },
+    "llm": {
+      "title": "LLM 配置",
+      "mode": "模式",
+      "hermes": "使用 Hermes LLM",
+      "custom": "自定义配置",
+      "provider": "Provider",
+      "model": "Model",
+      "apiKey": "API Key",
+      "baseUrl": "Base URL",
+      "saveSuccess": "LLM 配置已保存",
+      "testSuccess": "LLM 连通性测试成功",
+      "testFailed": "测试失败"
+    },
+    "hindsight": {
+      "title": "Hindsight 记忆配置",
+      "enable": "启用 Hindsight",
+      "baseUrl": "Base URL",
+      "bankId": "Bank ID",
+      "recallLimit": "Recall 结果数",
+      "enableReflect": "启用 Reflect",
+      "timeout": "超时时间（秒）",
+      "saveSuccess": "Hindsight 配置已保存",
+      "testRecall": "测试 Recall",
+      "testReflect": "测试 Reflect",
+      "testSuccess": "测试成功",
+      "testFailed": "测试失败",
+      "recallSuccess": "Recall 测试成功，返回 {count} 条结果",
+      "reflectSuccess": "Reflect 测试成功"
+    },
+    "weather": {
+      "title": "天气感知配置",
+      "enable": "启用天气感知",
+      "provider": "天气服务",
+      "qweather": "和风天气",
+      "amap": "高德地图",
+      "city": "城市",
+      "cityPlaceholder": "如：北京、济南、上海",
+      "cityHint": "城市名称（中文或英文）",
+      "cacheHours": "缓存时长（小时）",
+      "amapConfig": "高德地图配置",
+      "amapKey": "高德 API Key",
+      "adcode": "城市编码",
+      "adcodePlaceholder": "如：370100（济南）",
+      "adcodeHint": "高德城市编码，可在高德开放平台查询",
+      "qweatherConfig": "和风天气配置",
+      "qweatherKey": "和风 API Key",
+      "geoApiUrl": "GeoAPI URL",
+      "geoApiHint": "城市查询 API",
+      "weatherApiUrl": "天气 API URL",
+      "weatherApiHint": "实时天气 API",
+      "saveSuccess": "天气配置已保存",
+      "testSuccess": "天气测试成功: {city} {weather} {temperature}°C",
+      "testFailed": "测试失败"
+    },
+    "saveFailed": "保存失败"
+  }
+}

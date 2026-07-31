@@ -1,0 +1,91 @@
+{
+  "config": {
+    "tabs": {
+      "basic": "Basic",
+      "llm": "LLM",
+      "hindsight": "Hindsight",
+      "weather": "Weather"
+    },
+    "personalization": {
+      "title": "Personalization",
+      "userName": "User Name",
+      "assistantName": "Assistant Name",
+      "saveSuccess": "Personalization settings saved"
+    },
+    "language": {
+      "title": "Language Settings",
+      "label": "Interface Language",
+      "zhCN": "简体中文",
+      "enUS": "English"
+    },
+    "theme": {
+      "title": "Theme",
+      "current": "Current",
+      "switchSuccess": "Theme switched"
+    },
+    "password": {
+      "title": "Change Password",
+      "oldPassword": "Old Password",
+      "newPassword": "New Password",
+      "submit": "Change Password",
+      "fillComplete": "Please fill in all fields",
+      "changeSuccess": "Password changed successfully",
+      "changeFailed": "Change failed"
+    },
+    "llm": {
+      "title": "LLM Configuration",
+      "mode": "Mode",
+      "hermes": "Use Hermes LLM",
+      "custom": "Custom Configuration",
+      "provider": "Provider",
+      "model": "Model",
+      "apiKey": "API Key",
+      "baseUrl": "Base URL",
+      "saveSuccess": "LLM configuration saved",
+      "testSuccess": "LLM connectivity test successful",
+      "testFailed": "Test failed"
+    },
+    "hindsight": {
+      "title": "Hindsight Memory Configuration",
+      "enable": "Enable Hindsight",
+      "baseUrl": "Base URL",
+      "bankId": "Bank ID",
+      "recallLimit": "Recall Limit",
+      "enableReflect": "Enable Reflect",
+      "timeout": "Timeout (seconds)",
+      "saveSuccess": "Hindsight configuration saved",
+      "testRecall": "Test Recall",
+      "testReflect": "Test Reflect",
+      "testSuccess": "Test successful",
+      "testFailed": "Test failed",
+      "recallSuccess": "Recall test successful, returned {count} results",
+      "reflectSuccess": "Reflect test successful"
+    },
+    "weather": {
+      "title": "Weather Configuration",
+      "enable": "Enable Weather",
+      "provider": "Weather Service",
+      "qweather": "QWeather",
+      "amap": "AMap",
+      "city": "City",
+      "cityPlaceholder": "e.g., Beijing, Shanghai",
+      "cityHint": "City name (Chinese or English)",
+      "cacheHours": "Cache Duration (hours)",
+      "amapConfig": "AMap Configuration",
+      "amapKey": "AMap API Key",
+      "adcode": "City Code",
+      "adcodePlaceholder": "e.g., 370100",
+      "adcodeHint": "AMap city code, available on AMap Open Platform",
+      "qweatherConfig": "QWeather Configuration",
+      "qweatherKey": "QWeather API Key",
+      "geoApiUrl": "GeoAPI URL",
+      "geoApiHint": "City lookup API",
+      "weatherApiUrl": "Weather API URL",
+      "weatherApiHint": "Real-time weather API",
+      "saveSuccess": "Weather configuration saved",
+      "testSuccess": "Weather test successful: {city} {weather} {temperature}°C",
+      "testFailed": "Test failed"
+    },
+    "saveFailed": "Save failed"
+  }
+}

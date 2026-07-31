@@ -1,0 +1,21 @@
+{
+  "activeConsciousness": {
+    "title": "Active Consciousness",
+    "description": "Active consciousness system periodically generates thoughts and decides whether to send messages",
+    "config": {
+      "title": "Active Consciousness Config",
+      "enable": "Enable Active Consciousness",
+      "heartbeat": "Heartbeat Interval",
+      "emotion": "Emotion System",
+      "decision": "Decision Matrix"
+    },
+    "thoughts": {
+      "title": "Thoughts",
+      "type": "Type",
+      "content": "Content",
+      "score": "Score",
+      "time": "Time",
+      "noThoughts": "No thoughts"
+    }
+  }
+}

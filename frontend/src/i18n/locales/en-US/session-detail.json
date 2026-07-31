@@ -1,0 +1,17 @@
+{
+  "sessionDetail": {
+    "title": "Session Detail",
+    "back": "Back",
+    "sessionId": "Session ID",
+    "sessionTitle": "Title",
+    "noTitle": "Untitled",
+    "userId": "User ID",
+    "platform": "Platform",
+    "status": "Status",
+    "messageCount": "Messages",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "messages": "Messages",
+    "noMessages": "No messages"
+  }
+}

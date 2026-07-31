@@ -1,0 +1,17 @@
+{
+  "sessionDetail": {
+    "title": "会话详情",
+    "back": "返回",
+    "sessionId": "Session ID",
+    "sessionTitle": "标题",
+    "noTitle": "无标题",
+    "userId": "用户 ID",
+    "platform": "平台",
+    "status": "状态",
+    "messageCount": "消息数",
+    "startTime": "开始时间",
+    "endTime": "结束时间",
+    "messages": "消息列表",
+    "noMessages": "暂无消息"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "login": {
+    "title": "{name}'s Console",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Login",
+    "footer": "v0.1.0 · by {name}",
+    "welcome": [
+      "Have a great day! ✨",
+      "Been waiting for you~",
+      "Missed you, welcome back! ❤️",
+      "Nice weather, nice mood~",
+      "Hey, good to see you again!",
+      "What would you like to chat about?",
+      "Let's do this! 💪",
+      "You're here, yay~"
+    ],
+    "usernameRequired": "Please enter username",
+    "passwordRequired": "Please enter password",
+    "loginSuccess": "Login successful",
+    "loginFailed": "Login failed"
+  }
+}

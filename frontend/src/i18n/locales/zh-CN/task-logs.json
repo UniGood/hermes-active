@@ -1,0 +1,20 @@
+{
+  "taskLogs": {
+    "statusPlaceholder": "状态",
+    "typePlaceholder": "类型",
+    "refresh": "刷新",
+    "noLogs": "暂无任务日志",
+    "duration": "耗时: {time}s",
+    "statusOptions": {
+      "success": "成功",
+      "failed": "失败"
+    },
+    "typeOptions": {
+      "send_message": "发送消息",
+      "generate": "LLM 生成",
+      "send_proactive": "主动消息",
+      "cron_run": "定时任务",
+      "test_context": "上下文读取"
+    }
+  }
+}

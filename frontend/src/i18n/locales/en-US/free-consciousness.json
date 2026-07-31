@@ -1,0 +1,10 @@
+{
+  "freeConsciousness": {
+    "title": "Free Consciousness",
+    "description": "Free consciousness system allows AI to explore and think independently",
+    "config": {
+      "title": "Free Consciousness Config",
+      "enable": "Enable Free Consciousness"
+    }
+  }
+}

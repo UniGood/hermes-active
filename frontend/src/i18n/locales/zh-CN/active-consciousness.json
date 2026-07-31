@@ -1,0 +1,21 @@
+{
+  "activeConsciousness": {
+    "title": "主动意识",
+    "description": "主动意识系统通过心跳调度器定期生成念头并决定是否发送消息",
+    "config": {
+      "title": "主动意识配置",
+      "enable": "启用主动意识",
+      "heartbeat": "心跳间隔",
+      "emotion": "情绪系统",
+      "decision": "决策矩阵"
+    },
+    "thoughts": {
+      "title": "念头列表",
+      "type": "类型",
+      "content": "内容",
+      "score": "评分",
+      "time": "时间",
+      "noThoughts": "暂无念头"
+    }
+  }
+}

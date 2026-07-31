@@ -1,0 +1,14 @@
+{
+  "systemLogs": {
+    "title": "System Logs",
+    "refresh": "Refresh",
+    "clear": "Clear",
+    "noLogs": "No system logs",
+    "level": {
+      "info": "Info",
+      "warn": "Warning",
+      "error": "Error",
+      "debug": "Debug"
+    }
+  }
+}

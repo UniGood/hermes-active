@@ -1,0 +1,23 @@
+{
+  "login": {
+    "title": "{name}的控制台",
+    "username": "用户名",
+    "password": "密码",
+    "submit": "登 录",
+    "footer": "v0.1.0 · by {name}",
+    "welcome": [
+      "今天也要元气满满哦 ✨",
+      "等你好久了，快来呀~",
+      "想你了，终于来啦 ❤️",
+      "今天天气不错，心情也是~",
+      "嘿嘿，又见面啦",
+      "有什么想聊的吗？",
+      "一起加油吧 💪",
+      "你来啦，开心~"
+    ],
+    "usernameRequired": "请输入用户名",
+    "passwordRequired": "请输入密码",
+    "loginSuccess": "登录成功",
+    "loginFailed": "登录失败"
+  }
+}

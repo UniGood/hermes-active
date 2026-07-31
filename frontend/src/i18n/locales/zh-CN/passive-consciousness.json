@@ -1,0 +1,17 @@
+{
+  "passiveConsciousness": {
+    "title": "被动意识",
+    "description": "被动意识系统在用户消息到达时自动注入上下文信息",
+    "config": {
+      "title": "被动意识配置",
+      "enable": "启用被动意识",
+      "missScore": "想念分数",
+      "chatHeat": "聊天热度",
+      "hindsight": "Hindsight 集成"
+    },
+    "status": {
+      "enabled": "已启用",
+      "disabled": "已禁用"
+    }
+  }
+}

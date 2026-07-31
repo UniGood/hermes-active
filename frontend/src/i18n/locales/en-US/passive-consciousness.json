@@ -1,0 +1,17 @@
+{
+  "passiveConsciousness": {
+    "title": "Passive Consciousness",
+    "description": "Passive consciousness system automatically injects context when user messages arrive",
+    "config": {
+      "title": "Passive Consciousness Config",
+      "enable": "Enable Passive Consciousness",
+      "missScore": "Miss Score",
+      "chatHeat": "Chat Heat",
+      "hindsight": "Hindsight Integration"
+    },
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    }
+  }
+}
