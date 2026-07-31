@@ -177,7 +177,12 @@ class PassiveConsciousnessService:
                     if row and row[0]:
                         last_user_msg_at = str(row[0])
                         try:
-                            last_user_dt = datetime.fromisoformat(str(row[0]))
+                            # 支持 Unix 时间戳（float）和 ISO 格式
+                            ts = row[0]
+                            if isinstance(ts, (int, float)):
+                                last_user_dt = datetime.fromtimestamp(float(ts))
+                            else:
+                                last_user_dt = datetime.fromisoformat(str(ts))
                         except Exception:
                             last_user_dt = now
                         gap_minutes = (now - last_user_dt).total_seconds() / 60
@@ -208,13 +213,16 @@ class PassiveConsciousnessService:
             recent_hours = 0.0
             recent_user_msg_at = None
 
+            # 计算 1 小时前的 Unix 时间戳
+            one_hour_ago = (now.timestamp() - 3600)
+
             try:
                 with state_engine.connect() as conn:
                     row = conn.execute(text(
                         "SELECT COUNT(*), MAX(timestamp) FROM messages "
-                        "WHERE role='user' AND timestamp > datetime('now', '-1 hour') "
+                        "WHERE role='user' AND timestamp > :one_hour_ago "
                         "AND session_id IN (SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL)"
-                    )).fetchone()
+                    ), {"one_hour_ago": one_hour_ago}).fetchone()
                     if row:
                         recent_count = row[0] or 0
                         if row[1]:

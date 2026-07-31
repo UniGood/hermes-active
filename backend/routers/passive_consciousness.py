@@ -627,7 +627,12 @@ async def test_longing():
             if row and row[0]:
                 last_user_msg_at = str(row[0])
                 try:
-                    last_dt = datetime.fromisoformat(str(row[0]))
+                    # 支持 Unix 时间戳（float）和 ISO 格式
+                    ts = row[0]
+                    if isinstance(ts, (int, float)):
+                        last_dt = datetime.fromtimestamp(float(ts))
+                    else:
+                        last_dt = datetime.fromisoformat(str(ts))
                 except Exception:
                     last_dt = now
                 gap_minutes = round((now - last_dt).total_seconds() / 60.0, 2)
@@ -671,13 +676,16 @@ async def test_chat_heat():
         recent_count = 0
         recent_msg_at = None
 
+        # 计算 1 小时前的 Unix 时间戳
+        one_hour_ago = (datetime.now().timestamp() - 3600)
+
         with state_engine.connect() as conn:
             row = conn.execute(text(
                 "SELECT COUNT(*), MAX(m.timestamp) FROM messages m "
                 "JOIN sessions s ON m.session_id = s.id "
                 "WHERE m.role = 'user' AND s.source = 'weixin' AND s.ended_at IS NULL "
-                "AND m.timestamp > datetime('now', '-1 hour')"
-            )).fetchone()
+                "AND m.timestamp > :one_hour_ago"
+            ), {"one_hour_ago": one_hour_ago}).fetchone()
 
             if row:
                 recent_count = row[0] or 0
