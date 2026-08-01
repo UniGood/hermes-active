@@ -14,7 +14,7 @@
     </div>
 
     <!-- 最近消息 -->
-    <n-card :title="t('dashboard.dashboard.recentMessages')" style="margin-top: 16px">
+    <n-card :title="t('dashboard.recentMessages')" style="margin-top: 16px">
       <n-spin :show="loading">
         <div class="message-list">
           <template v-for="msg in recentMessages" :key="msg.id">
@@ -28,13 +28,13 @@
               <div class="message-content">{{ truncate(msg.content, 100) }}</div>
             </div>
           </template>
-          <n-empty v-if="!loading && recentMessages.length === 0" :description="t('dashboard.dashboard.noMessages')" />
+          <n-empty v-if="!loading && recentMessages.length === 0" :description="t('dashboard.noMessages')" />
         </div>
       </n-spin>
     </n-card>
 
     <!-- 平台分布 -->
-    <n-card :title="t('dashboard.dashboard.platformDistribution')" style="margin-top: 16px">
+    <n-card :title="t('dashboard.platformDistribution')" style="margin-top: 16px">
       <div class="platform-list">
         <div v-for="p in platforms" :key="p.name" class="platform-item">
           <span class="platform-name">{{ p.name }}</span>
@@ -75,10 +75,10 @@ const statValues = ref({
 })
 
 const stats = computed(() => [
-  { label: t('dashboard.dashboard.stats.totalSessions'), value: statValues.value.totalSessions, icon: markRaw(ChatbubblesOutline), color: 'var(--theme-primary)' },
-  { label: t('dashboard.dashboard.stats.totalMessages'), value: statValues.value.totalMessages, icon: markRaw(PeopleOutline), color: 'var(--theme-accent)' },
-  { label: t('dashboard.dashboard.stats.todayMessages'), value: statValues.value.todayMessages, icon: markRaw(TimeOutline), color: '#a8e6cf' },
-  { label: t('dashboard.dashboard.stats.weekMessages'), value: statValues.value.weekMessages, icon: markRaw(TrendingUpOutline), color: '#ffd3b6' }
+  { label: t('dashboard.stats.totalSessions'), value: statValues.value.totalSessions, icon: markRaw(ChatbubblesOutline), color: 'var(--theme-primary)' },
+  { label: t('dashboard.stats.totalMessages'), value: statValues.value.totalMessages, icon: markRaw(PeopleOutline), color: 'var(--theme-accent)' },
+  { label: t('dashboard.stats.todayMessages'), value: statValues.value.todayMessages, icon: markRaw(TimeOutline), color: '#a8e6cf' },
+  { label: t('dashboard.stats.weekMessages'), value: statValues.value.weekMessages, icon: markRaw(TrendingUpOutline), color: '#ffd3b6' }
 ])
 
 const platforms = ref([])

@@ -4,7 +4,7 @@
     <div v-if="!selectedSession" class="search-bar">
       <n-input
         v-model:value="searchText"
-        :placeholder="t('messages.messages.searchPlaceholder')"
+        :placeholder="t('messages.searchPlaceholder')"
         clearable
         @clear="clearSearch"
         @keyup.enter="searchMessages"
@@ -13,7 +13,7 @@
           <n-icon><SearchOutline /></n-icon>
         </template>
       </n-input>
-      <n-button @click="searchMessages" :loading="searching">{{ t('messages.messages.search') }}</n-button>
+      <n-button @click="searchMessages" :loading="searching">{{ t('messages.search') }}</n-button>
     </div>
 
     <!-- 搜索结果列表 -->
@@ -35,25 +35,25 @@
     <!-- Session 详情 -->
     <div v-if="selectedSession" class="session-detail-card">
       <div class="detail-header">
-        <n-button size="small" @click="clearSelection">{{ t('messages.messages.backToSearch') }}</n-button>
+        <n-button size="small" @click="clearSelection">{{ t('messages.backToSearch') }}</n-button>
         <n-tag :type="getPlatformType(selectedSession.source)" size="small">
           {{ selectedSession.source }}
         </n-tag>
       </div>
       <div class="detail-info">
         <div><strong>Session ID:</strong> {{ selectedSession.id }}</div>
-        <div><strong>{{ t('messages.messages.title') }}:</strong> {{ selectedSession.title || t('messages.messages.noTitle') }}</div>
-        <div><strong>{{ t('messages.messages.userId') }}:</strong> {{ selectedSession.user_id || selectedSession.chat_id || selectedSession.source }}</div>
-        <div><strong>{{ t('messages.messages.messageCount') }}:</strong> {{ selectedSession.message_count || 0 }}</div>
-        <div><strong>{{ t('messages.messages.status') }}:</strong> {{ selectedSession.ended_at ? t('common.status.ended') : t('common.status.active') }}</div>
+        <div><strong>{{ t('messages.title') }}:</strong> {{ selectedSession.title || t('messages.noTitle') }}</div>
+        <div><strong>{{ t('messages.userId') }}:</strong> {{ selectedSession.user_id || selectedSession.chat_id || selectedSession.source }}</div>
+        <div><strong>{{ t('messages.messageCount') }}:</strong> {{ selectedSession.message_count || 0 }}</div>
+        <div><strong>{{ t('messages.status') }}:</strong> {{ selectedSession.ended_at ? t('common.status.ended') : t('common.status.active') }}</div>
       </div>
     </div>
 
     <!-- 消息列表 -->
     <n-spin :show="loading">
       <div v-if="selectedSession" class="toolbar">
-        <n-checkbox v-model:checked="hideTool">{{ t('messages.messages.hideToolMessages') }}</n-checkbox>
-        <span class="result-count">{{ t('messages.messages.totalCount', { count: filteredMessages.length }) }}</span>
+        <n-checkbox v-model:checked="hideTool">{{ t('messages.hideToolMessages') }}</n-checkbox>
+        <span class="result-count">{{ t('messages.totalCount', { count: filteredMessages.length }) }}</span>
       </div>
       <div class="message-list" ref="messageListRef">
         <div
@@ -73,7 +73,7 @@
           </div>
           <div class="message-content" v-html="formatContent(msg.content)"></div>
         </div>
-        <n-empty v-if="!loading && filteredMessages.length === 0 && selectedSession" :description="t('messages.messages.noMessages')" />
+        <n-empty v-if="!loading && filteredMessages.length === 0 && selectedSession" :description="t('messages.noMessages')" />
       </div>
     </n-spin>
 
@@ -81,13 +81,13 @@
     <div v-if="selectedSession" class="send-bar">
       <n-input
         v-model:value="newMessage"
-        :placeholder="t('messages.messages.inputPlaceholder')"
+        :placeholder="t('messages.inputPlaceholder')"
         type="textarea"
         :autosize="{ minRows: 1, maxRows: 4 }"
         @keyup.ctrl.enter="sendMessage"
       />
       <n-button type="primary" @click="sendMessage" :loading="sending" :disabled="!newMessage.trim()">
-        {{ t('messages.messages.send') }}
+        {{ t('messages.send') }}
       </n-button>
     </div>
   </div>

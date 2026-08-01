@@ -2,14 +2,14 @@
   <div class="config-page">
     <n-tabs v-model:value="activeTab" type="line" animated>
       <!-- Tab 1: 基础配置 -->
-      <n-tab-pane name="basic" :tab="t('config.config.tabs.basic')">
+      <n-tab-pane name="basic" :tab="t('config.tabs.basic')">
         <!-- 个性化设置 -->
-        <n-card :title="t('config.config.personalization.title')" style="margin-bottom: 16px">
+        <n-card :title="t('config.personalization.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="100">
-            <n-form-item :label="t('config.config.personalization.userName')">
+            <n-form-item :label="t('config.personalization.userName')">
               <n-input v-model:value="userConfig.user_name" placeholder="曹凡" />
             </n-form-item>
-            <n-form-item :label="t('config.config.personalization.assistantName')">
+            <n-form-item :label="t('config.personalization.assistantName')">
               <n-input v-model:value="userConfig.assistant_name" placeholder="凯莉" />
             </n-form-item>
             <n-form-item>
@@ -21,9 +21,9 @@
         </n-card>
 
         <!-- 语言设置 -->
-        <n-card :title="t('config.config.language.title')" style="margin-bottom: 16px">
+        <n-card :title="t('config.language.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="100">
-            <n-form-item :label="t('config.config.language.label')">
+            <n-form-item :label="t('config.language.label')">
               <n-select
                 v-model:value="currentLocale"
                 :options="localeOptions"
@@ -34,7 +34,7 @@
         </n-card>
 
         <!-- 主题配置 -->
-        <n-card :title="t('config.config.theme.title')" style="margin-bottom: 16px">
+        <n-card :title="t('config.theme.title')" style="margin-bottom: 16px">
           <div class="theme-list">
             <div
               v-for="th in themes" :key="th.id"
@@ -50,23 +50,23 @@
                 <div class="theme-name">{{ th.name }}</div>
                 <div class="theme-desc">{{ th.desc }}</div>
               </div>
-              <n-tag v-if="currentTheme === th.id" type="success" size="small">{{ t('config.config.theme.current') }}</n-tag>
+              <n-tag v-if="currentTheme === th.id" type="success" size="small">{{ t('config.theme.current') }}</n-tag>
             </div>
           </div>
         </n-card>
 
         <!-- 修改密码 -->
-        <n-card :title="t('config.config.password.title')" style="margin-bottom: 16px">
+        <n-card :title="t('config.password.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="80">
-            <n-form-item :label="t('config.config.password.oldPassword')">
+            <n-form-item :label="t('config.password.oldPassword')">
               <n-input v-model:value="passwordForm.old_password" type="password" show-password-on="click" />
             </n-form-item>
-            <n-form-item :label="t('config.config.password.newPassword')">
+            <n-form-item :label="t('config.password.newPassword')">
               <n-input v-model:value="passwordForm.new_password" type="password" show-password-on="click" />
             </n-form-item>
             <n-form-item>
               <div class="form-actions">
-                <n-button type="warning" @click="changePassword" :loading="changingPassword">{{ t('config.config.password.submit') }}</n-button>
+                <n-button type="warning" @click="changePassword" :loading="changingPassword">{{ t('config.password.submit') }}</n-button>
               </div>
             </n-form-item>
           </n-form>
@@ -74,27 +74,27 @@
       </n-tab-pane>
 
       <!-- Tab 2: LLM 配置 -->
-      <n-tab-pane name="llm" :tab="t('config.config.tabs.llm')">
-        <n-card :title="t('config.config.llm.title')" style="margin-bottom: 16px">
+      <n-tab-pane name="llm" :tab="t('config.tabs.llm')">
+        <n-card :title="t('config.llm.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="80">
-            <n-form-item :label="t('config.config.llm.mode')">
+            <n-form-item :label="t('config.llm.mode')">
               <n-radio-group v-model:value="llmConfig.mode">
-                <n-radio value="hermes">{{ t('config.config.llm.hermes') }}</n-radio>
-                <n-radio value="custom">{{ t('config.config.llm.custom') }}</n-radio>
+                <n-radio value="hermes">{{ t('config.llm.hermes') }}</n-radio>
+                <n-radio value="custom">{{ t('config.llm.custom') }}</n-radio>
               </n-radio-group>
             </n-form-item>
 
             <template v-if="llmConfig.mode === 'custom'">
-              <n-form-item :label="t('config.config.llm.provider')">
+              <n-form-item :label="t('config.llm.provider')">
                 <n-input v-model:value="llmConfig.provider" placeholder="openai" />
               </n-form-item>
-              <n-form-item :label="t('config.config.llm.model')">
+              <n-form-item :label="t('config.llm.model')">
                 <n-input v-model:value="llmConfig.model" placeholder="gpt-4" />
               </n-form-item>
-              <n-form-item :label="t('config.config.llm.apiKey')">
+              <n-form-item :label="t('config.llm.apiKey')">
                 <n-input v-model:value="llmConfig.api_key" placeholder="API Key" />
               </n-form-item>
-              <n-form-item :label="t('config.config.llm.baseUrl')">
+              <n-form-item :label="t('config.llm.baseUrl')">
                 <n-input v-model:value="llmConfig.base_url" placeholder="https://api.openai.com/v1" />
               </n-form-item>
             </template>
@@ -112,27 +112,27 @@
       </n-tab-pane>
 
       <!-- Tab 3: Hindsight 配置 -->
-      <n-tab-pane name="hindsight" :tab="t('config.config.tabs.hindsight')">
-        <n-card :title="t('config.config.hindsight.title')" style="margin-bottom: 16px">
+      <n-tab-pane name="hindsight" :tab="t('config.tabs.hindsight')">
+        <n-card :title="t('config.hindsight.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="100">
-            <n-form-item :label="t('config.config.hindsight.enable')">
+            <n-form-item :label="t('config.hindsight.enable')">
               <n-switch v-model:value="hindsightConfig.enabled" />
             </n-form-item>
 
             <template v-if="hindsightConfig.enabled">
-              <n-form-item :label="t('config.config.hindsight.baseUrl')">
+              <n-form-item :label="t('config.hindsight.baseUrl')">
                 <n-input v-model:value="hindsightConfig.base_url" placeholder="http://localhost:8888" />
               </n-form-item>
-              <n-form-item :label="t('config.config.hindsight.bankId')">
+              <n-form-item :label="t('config.hindsight.bankId')">
                 <n-input v-model:value="hindsightConfig.bank_id" placeholder="hermes" />
               </n-form-item>
-              <n-form-item :label="t('config.config.hindsight.recallLimit')">
+              <n-form-item :label="t('config.hindsight.recallLimit')">
                 <n-input-number v-model:value="hindsightConfig.recall_limit" :min="1" :max="20" />
               </n-form-item>
-              <n-form-item :label="t('config.config.hindsight.enableReflect')">
+              <n-form-item :label="t('config.hindsight.enableReflect')">
                 <n-switch v-model:value="hindsightConfig.reflect_enabled" />
               </n-form-item>
-              <n-form-item :label="t('config.config.hindsight.timeout')">
+              <n-form-item :label="t('config.hindsight.timeout')">
                 <n-input-number v-model:value="hindsightConfig.timeout" :min="5" :max="300" />
               </n-form-item>
             </template>
@@ -141,8 +141,8 @@
               <div class="form-actions">
                 <n-space>
                   <n-button type="primary" @click="saveHindsightConfig" :loading="savingHindsight">{{ t('common.common.save') }}</n-button>
-                  <n-button @click="testHindsightRecall" :loading="testingRecall">{{ t('config.config.hindsight.testRecall') }}</n-button>
-                  <n-button @click="testHindsightReflect" :loading="testingReflect" v-if="hindsightConfig.reflect_enabled">{{ t('config.config.hindsight.testReflect') }}</n-button>
+                  <n-button @click="testHindsightRecall" :loading="testingRecall">{{ t('config.hindsight.testRecall') }}</n-button>
+                  <n-button @click="testHindsightReflect" :loading="testingReflect" v-if="hindsightConfig.reflect_enabled">{{ t('config.hindsight.testReflect') }}</n-button>
                 </n-space>
               </div>
             </n-form-item>
@@ -151,32 +151,32 @@
       </n-tab-pane>
 
       <!-- Tab 4: 天气配置 -->
-      <n-tab-pane name="weather" :tab="t('config.config.tabs.weather')">
-        <n-card :title="t('config.config.weather.title')" style="margin-bottom: 16px">
+      <n-tab-pane name="weather" :tab="t('config.tabs.weather')">
+        <n-card :title="t('config.weather.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="120">
-            <n-form-item :label="t('config.config.weather.enable')">
+            <n-form-item :label="t('config.weather.enable')">
               <n-switch v-model:value="weatherConfig.enabled" />
             </n-form-item>
 
             <template v-if="weatherConfig.enabled">
-              <n-form-item :label="t('config.config.weather.provider')">
+              <n-form-item :label="t('config.weather.provider')">
                 <n-radio-group v-model:value="weatherConfig.provider">
-                  <n-radio value="qweather">{{ t('config.config.weather.qweather') }}</n-radio>
-                  <n-radio value="amap">{{ t('config.config.weather.amap') }}</n-radio>
+                  <n-radio value="qweather">{{ t('config.weather.qweather') }}</n-radio>
+                  <n-radio value="amap">{{ t('config.weather.amap') }}</n-radio>
                 </n-radio-group>
               </n-form-item>
 
-              <n-form-item :label="t('config.config.weather.city')">
+              <n-form-item :label="t('config.weather.city')">
                 <n-input
                   v-model:value="weatherConfig.city"
-                  :placeholder="t('config.config.weather.cityPlaceholder')"
+                  :placeholder="t('config.weather.cityPlaceholder')"
                 />
                 <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                  {{ t('config.config.weather.cityHint') }}
+                  {{ t('config.weather.cityHint') }}
                 </span>
               </n-form-item>
 
-              <n-form-item :label="t('config.config.weather.cacheHours')">
+              <n-form-item :label="t('config.weather.cacheHours')">
                 <n-input-number
                   v-model:value="weatherConfig.cache_hours"
                   :min="1" :max="24" :step="1"
@@ -185,8 +185,8 @@
 
               <!-- 高德地图配置 -->
               <template v-if="weatherConfig.provider === 'amap'">
-                <n-divider>{{ t('config.config.weather.amapConfig') }}</n-divider>
-                <n-form-item :label="t('config.config.weather.amapKey')">
+                <n-divider>{{ t('config.weather.amapConfig') }}</n-divider>
+                <n-form-item :label="t('config.weather.amapKey')">
                   <n-input
                     v-model:value="weatherConfig.amap_key"
                     placeholder="API Key"
@@ -194,21 +194,21 @@
                     type="password"
                   />
                 </n-form-item>
-                <n-form-item :label="t('config.config.weather.adcode')">
+                <n-form-item :label="t('config.weather.adcode')">
                   <n-input
                     v-model:value="weatherConfig.adcode"
-                    :placeholder="t('config.config.weather.adcodePlaceholder')"
+                    :placeholder="t('config.weather.adcodePlaceholder')"
                   />
                   <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                    {{ t('config.config.weather.adcodeHint') }}
+                    {{ t('config.weather.adcodeHint') }}
                   </span>
                 </n-form-item>
               </template>
 
               <!-- 和风天气配置 -->
               <template v-if="weatherConfig.provider === 'qweather'">
-                <n-divider>{{ t('config.config.weather.qweatherConfig') }}</n-divider>
-                <n-form-item :label="t('config.config.weather.qweatherKey')">
+                <n-divider>{{ t('config.weather.qweatherConfig') }}</n-divider>
+                <n-form-item :label="t('config.weather.qweatherKey')">
                   <n-input
                     v-model:value="weatherConfig.qweather_key"
                     placeholder="API Key"
@@ -216,22 +216,22 @@
                     type="password"
                   />
                 </n-form-item>
-                <n-form-item :label="t('config.config.weather.geoApiUrl')">
+                <n-form-item :label="t('config.weather.geoApiUrl')">
                   <n-input
                     v-model:value="weatherConfig.qweather_geo_url"
                     placeholder="https://geoapi.qweather.com/v2/city/lookup"
                   />
                   <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                    {{ t('config.config.weather.geoApiHint') }}
+                    {{ t('config.weather.geoApiHint') }}
                   </span>
                 </n-form-item>
-                <n-form-item :label="t('config.config.weather.weatherApiUrl')">
+                <n-form-item :label="t('config.weather.weatherApiUrl')">
                   <n-input
                     v-model:value="weatherConfig.qweather_weather_url"
                     placeholder="https://devapi.qweather.com/v7/weather/now"
                   />
                   <span style="margin-left: 8px; font-size: 12px; color: #999;">
-                    {{ t('config.config.weather.weatherApiHint') }}
+                    {{ t('config.weather.weatherApiHint') }}
                   </span>
                 </n-form-item>
               </template>
@@ -279,8 +279,8 @@ const { config: globalConfig, loadConfig: loadGlobalConfig } = useConfig()
 // 语言配置
 const currentLocale = ref(locale.value)
 const localeOptions = computed(() => [
-  { label: t('config.config.language.zhCN'), value: 'zh-CN' },
-  { label: t('config.config.language.enUS'), value: 'en-US' }
+  { label: t('config.language.zhCN'), value: 'zh-CN' },
+  { label: t('config.language.enUS'), value: 'en-US' }
 ])
 
 async function changeLocale(newLocale) {
@@ -292,7 +292,7 @@ async function changeLocale(newLocale) {
     await api.put('/config/set', null, { params: { key: 'locale', value: newLocale } })
     message.success(t('common.common.success'))
   } catch (e) {
-    message.error(t('config.config.saveFailed'))
+    message.error(t('config.saveFailed'))
   }
 }
 
@@ -368,9 +368,9 @@ async function saveHindsightConfig() {
   savingHindsight.value = true
   try {
     await api.put('/config/hindsight', hindsightConfig.value)
-    message.success(t('config.config.hindsight.saveSuccess'))
+    message.success(t('config.hindsight.saveSuccess'))
   } catch (e) {
-    message.error(t('config.config.saveFailed'))
+    message.error(t('config.saveFailed'))
   } finally {
     savingHindsight.value = false
   }
@@ -381,12 +381,12 @@ async function testHindsightRecall() {
   try {
     const result = await api.post('/hindsight/recall?query=测试recall&limit=3')
     if (result.success) {
-      message.success(t('config.config.hindsight.recallSuccess', { count: result.total }))
+      message.success(t('config.hindsight.recallSuccess', { count: result.total }))
     } else {
-      message.error(t('config.config.hindsight.testFailed'))
+      message.error(t('config.hindsight.testFailed'))
     }
   } catch (e) {
-    message.error(t('config.config.hindsight.testFailed'))
+    message.error(t('config.hindsight.testFailed'))
   } finally {
     testingRecall.value = false
   }
@@ -397,12 +397,12 @@ async function testHindsightReflect() {
   try {
     const result = await api.post('/hindsight/reflect?query=测试reflect')
     if (result.success) {
-      message.success(t('config.config.hindsight.reflectSuccess'))
+      message.success(t('config.hindsight.reflectSuccess'))
     } else {
-      message.error(t('config.config.hindsight.testFailed'))
+      message.error(t('config.hindsight.testFailed'))
     }
   } catch (e) {
-    message.error(t('config.config.hindsight.testFailed'))
+    message.error(t('config.hindsight.testFailed'))
   } finally {
     testingReflect.value = false
   }
@@ -427,9 +427,9 @@ async function saveUserConfig() {
     // 更新全局配置
     globalConfig.value.user_name = userConfig.value.user_name
     globalConfig.value.assistant_name = userConfig.value.assistant_name
-    message.success(t('config.config.personalization.saveSuccess'))
+    message.success(t('config.personalization.saveSuccess'))
   } catch (e) {
-    message.error(t('config.config.saveFailed'))
+    message.error(t('config.saveFailed'))
   } finally {
     savingUserConfig.value = false
   }
@@ -439,9 +439,9 @@ async function saveLLMConfig() {
   saving.value = true
   try {
     await api.put('/config/llm', llmConfig.value)
-    message.success(t('config.config.llm.saveSuccess'))
+    message.success(t('config.llm.saveSuccess'))
   } catch (e) {
-    message.error(t('config.config.saveFailed'))
+    message.error(t('config.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -452,12 +452,12 @@ async function testLLM() {
   try {
     const result = await api.post('/llm/test', llmConfig.value)
     if (result.success) {
-      message.success(t('config.config.llm.testSuccess'))
+      message.success(t('config.llm.testSuccess'))
     } else {
-      message.error(t('config.config.llm.testFailed'))
+      message.error(t('config.llm.testFailed'))
     }
   } catch (e) {
-    message.error(t('config.config.llm.testFailed'))
+    message.error(t('config.llm.testFailed'))
   } finally {
     testing.value = false
   }
@@ -465,16 +465,16 @@ async function testLLM() {
 
 async function changePassword() {
   if (!passwordForm.value.old_password || !passwordForm.value.new_password) {
-    message.warning(t('config.config.password.fillComplete'))
+    message.warning(t('config.password.fillComplete'))
     return
   }
   changingPassword.value = true
   try {
     await api.post('/auth/change-password', passwordForm.value)
-    message.success(t('config.config.password.changeSuccess'))
+    message.success(t('config.password.changeSuccess'))
     passwordForm.value = { old_password: '', new_password: '' }
   } catch (e) {
-    message.error(t('config.config.password.changeFailed'))
+    message.error(t('config.password.changeFailed'))
   } finally {
     changingPassword.value = false
   }
@@ -496,7 +496,7 @@ function selectTheme(themeId) {
   currentTheme.value = themeId
   applyTheme(themeId)
   api.put('/config/set', null, { params: { key: 'theme', value: themeId } }).catch(() => {})
-  message.success(t('config.config.theme.switchSuccess'))
+  message.success(t('config.theme.switchSuccess'))
 }
 
 
@@ -517,9 +517,9 @@ async function saveWeatherConfig() {
   savingWeather.value = true
   try {
     await api.put('/config/weather', weatherConfig.value)
-    message.success(t('config.config.weather.saveSuccess'))
+    message.success(t('config.weather.saveSuccess'))
   } catch (e) {
-    message.error(t('config.config.saveFailed'))
+    message.error(t('config.saveFailed'))
   } finally {
     savingWeather.value = false
   }
@@ -533,12 +533,12 @@ async function testWeather() {
     // 再测试
     const result = await api.get('/config/weather/test')
     if (result.success) {
-      message.success(t('config.config.weather.testSuccess', { city: result.data.city, weather: result.data.weather, temperature: result.data.temperature }))
+      message.success(t('config.weather.testSuccess', { city: result.data.city, weather: result.data.weather, temperature: result.data.temperature }))
     } else {
-      message.error(t('config.config.weather.testFailed'))
+      message.error(t('config.weather.testFailed'))
     }
   } catch (e) {
-    message.error(t('config.config.weather.testFailed'))
+    message.error(t('config.weather.testFailed'))
   } finally {
     testingWeather.value = false
   }

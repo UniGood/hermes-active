@@ -14,7 +14,7 @@
           <img v-if="avatarUrl" :src="avatarUrl" class="avatar-img" />
           <span v-else class="logo-text">K</span>
         </div>
-        <h1>{{ t('login.login.title', { name: globalConfig.assistant_name }) }}</h1>
+        <h1>{{ t('login.title', { name: globalConfig.assistant_name }) }}</h1>
         <p class="welcome-text">{{ welcomeText }}</p>
       </div>
 
@@ -22,7 +22,7 @@
         <n-form-item path="username">
           <n-input
             v-model:value="formData.username"
-            :placeholder="t('login.login.username')"
+            :placeholder="t('login.username')"
             size="large"
             @keyup.enter="handleLogin"
           >
@@ -36,7 +36,7 @@
           <n-input
             v-model:value="formData.password"
             type="password"
-            :placeholder="t('login.login.password')"
+            :placeholder="t('login.password')"
             size="large"
             show-password-on="click"
             @keyup.enter="handleLogin"
@@ -55,11 +55,11 @@
           @click="handleLogin"
           class="login-btn"
         >
-          {{ t('login.login.submit') }}
+          {{ t('login.submit') }}
         </n-button>
       </n-form>
 
-      <div class="login-footer">{{ t('login.login.footer', { name: globalConfig.assistant_name }) }}</div>
+      <div class="login-footer">{{ t('login.footer', { name: globalConfig.assistant_name }) }}</div>
     </div>
   </div>
 </template>
@@ -84,7 +84,7 @@ const formRef = ref(null)
 const loading = ref(false)
 const avatarUrl = ref('')
 
-const welcomeMessages = computed(() => t('login.login.welcome'))
+const welcomeMessages = computed(() => t('login.welcome'))
 
 const welcomeText = computed(() => {
   const messages = welcomeMessages.value
@@ -111,8 +111,8 @@ const formData = reactive({
 })
 
 const rules = computed(() => ({
-  username: { required: true, message: t('login.login.usernameRequired'), trigger: 'blur' },
-  password: { required: true, message: t('login.login.passwordRequired'), trigger: 'blur' }
+  username: { required: true, message: t('login.usernameRequired'), trigger: 'blur' },
+  password: { required: true, message: t('login.passwordRequired'), trigger: 'blur' }
 }))
 
 async function handleLogin() {
@@ -124,10 +124,10 @@ async function handleLogin() {
   loading.value = true
   try {
     await authStore.login(formData.username, formData.password)
-    message.success(t('login.login.loginSuccess'))
+    message.success(t('login.loginSuccess'))
     router.push('/')
   } catch (error) {
-    message.error(error?.detail || t('login.login.loginFailed'))
+    message.error(error?.detail || t('login.loginFailed'))
   } finally {
     loading.value = false
   }

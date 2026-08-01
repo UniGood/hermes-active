@@ -4,7 +4,7 @@
     <div class="search-bar">
       <n-input
         v-model:value="searchText"
-        :placeholder="t('sessions.sessions.searchPlaceholder')"
+        :placeholder="t('sessions.searchPlaceholder')"
         clearable
         @clear="onSearch"
         @keyup.enter="onSearch"
@@ -16,14 +16,14 @@
       <n-select
         v-model:value="platformFilter"
         :options="platformOptions"
-        :placeholder="t('sessions.sessions.platform')"
+        :placeholder="t('sessions.platform')"
         style="width: 100px"
         @update:value="onFilterChange"
       />
       <n-select
         v-model:value="statusFilter"
         :options="statusOptions"
-        :placeholder="t('sessions.sessions.status')"
+        :placeholder="t('sessions.status')"
         style="width: 120px"
         @update:value="onFilterChange"
       />
@@ -40,25 +40,25 @@
         >
           <div class="session-header">
             <n-tag :type="getPlatformType(session.source)" size="small">
-              {{ session.source || t('sessions.sessions.unknown') }}
+              {{ session.source || t('sessions.unknown') }}
             </n-tag>
             <div class="session-actions">
               <span class="session-time">{{ formatTime(session.started_at) }}</span>
               <n-button size="tiny" type="error" quaternary @click.stop="handleDelete(session)">
-                {{ t('sessions.sessions.delete') }}
+                {{ t('sessions.delete') }}
               </n-button>
             </div>
           </div>
-          <div class="session-title">{{ session.title || t('sessions.sessions.noTitle') }}</div>
+          <div class="session-title">{{ session.title || t('sessions.noTitle') }}</div>
           <div class="session-id">{{ session.id }}</div>
           <div class="session-meta">
-            <span>{{ t('sessions.sessions.messageCount', { count: session.message_count || 0 }) }}</span>
+            <span>{{ t('sessions.messageCount', { count: session.message_count || 0 }) }}</span>
             <span :class="{ 'status-active': !session.ended_at, 'status-ended': session.ended_at }">
               {{ session.ended_at ? t('common.status.ended') : t('common.status.active') }}
             </span>
           </div>
         </div>
-        <n-empty v-if="!loading && sessions.length === 0" :description="t('sessions.sessions.noSessions')" />
+        <n-empty v-if="!loading && sessions.length === 0" :description="t('sessions.noSessions')" />
       </div>
     </n-spin>
 
@@ -96,14 +96,14 @@ const pageSize = 20
 const total = ref(0)
 
 const platformOptions = computed(() => [
-  { label: t('sessions.sessions.all'), value: null },
+  { label: t('sessions.all'), value: null },
   { label: t('common.platform.weixin'), value: 'weixin' },
   { label: t('common.platform.feishu'), value: 'feishu' },
   { label: t('common.platform.cli'), value: 'cli' }
 ])
 
 const statusOptions = computed(() => [
-  { label: t('sessions.sessions.all'), value: null },
+  { label: t('sessions.all'), value: null },
   { label: t('common.status.active'), value: 'active' },
   { label: t('common.status.ended'), value: 'ended' }
 ])
@@ -155,17 +155,17 @@ function goToDetail(sessionId) {
 
 function handleDelete(session) {
   dialog.warning({
-    title: t('sessions.sessions.confirmDelete'),
-    content: t('sessions.sessions.confirmDeleteMessage'),
-    positiveText: t('sessions.sessions.delete'),
+    title: t('sessions.confirmDelete'),
+    content: t('sessions.confirmDeleteMessage'),
+    positiveText: t('sessions.delete'),
     negativeText: t('common.common.cancel'),
     onPositiveClick: async () => {
       try {
         await api.delete(`/sessions/${session.id}`)
-        message.success(t('sessions.sessions.deleteSuccess'))
+        message.success(t('sessions.deleteSuccess'))
         loadSessions()
       } catch (e) {
-        message.error(t('sessions.sessions.deleteFailed') + ': ' + (e.response?.data?.detail || e.message))
+        message.error(t('sessions.deleteFailed') + ': ' + (e.response?.data?.detail || e.message))
       }
     }
   })
