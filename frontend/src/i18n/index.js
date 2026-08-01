@@ -4,6 +4,11 @@ import { createI18n } from 'vue-i18n'
 const zhCNModules = import.meta.glob('./locales/zh-CN/*.json', { eager: true })
 const enUSModules = import.meta.glob('./locales/en-US/*.json', { eager: true })
 
+// 将连字符命名转换为驼峰命名
+function toCamelCase(str) {
+  return str.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase())
+}
+
 function loadLocaleMessages() {
   const messages = {
     'zh-CN': {},
@@ -13,13 +18,15 @@ function loadLocaleMessages() {
   // 加载中文翻译
   for (const path in zhCNModules) {
     const key = path.replace('./locales/zh-CN/', '').replace('.json', '')
-    messages['zh-CN'][key] = zhCNModules[path].default
+    const camelKey = toCamelCase(key)
+    messages['zh-CN'][camelKey] = zhCNModules[path].default
   }
 
   // 加载英文翻译
   for (const path in enUSModules) {
     const key = path.replace('./locales/en-US/', '').replace('.json', '')
-    messages['en-US'][key] = enUSModules[path].default
+    const camelKey = toCamelCase(key)
+    messages['en-US'][camelKey] = enUSModules[path].default
   }
 
   return messages
