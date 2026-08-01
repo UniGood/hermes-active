@@ -1,17 +1,15 @@
 {
-  "sessions": {
-    "searchPlaceholder": "Search sessions (title/ID)...",
-    "platform": "Platform",
-    "status": "Status",
-    "all": "All",
-    "unknown": "Unknown",
-    "delete": "Delete",
-    "noTitle": "Untitled",
-    "messageCount": "Messages: {count}",
-    "noSessions": "No sessions",
-    "confirmDelete": "Confirm Delete",
-    "confirmDeleteMessage": "Are you sure you want to delete this session?",
-    "deleteSuccess": "Deleted successfully",
-    "deleteFailed": "Delete failed"
-  }
+  "searchPlaceholder": "Search sessions (title/ID)...",
+  "platform": "Platform",
+  "status": "Status",
+  "all": "All",
+  "unknown": "Unknown",
+  "delete": "Delete",
+  "noTitle": "Untitled",
+  "messageCount": "Messages: {count}",
+  "noSessions": "No sessions",
+  "confirmDelete": "Confirm Delete",
+  "confirmDeleteMessage": "Are you sure you want to delete this session?",
+  "deleteSuccess": "Deleted successfully",
+  "deleteFailed": "Delete failed"
 }

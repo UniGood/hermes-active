@@ -1,20 +1,18 @@
 {
-  "messages": {
-    "searchPlaceholder": "搜索消息内容...",
-    "search": "搜索",
-    "backToSearch": "返回搜索",
-    "sessionId": "Session ID",
-    "title": "标题",
-    "userId": "用户 ID",
-    "messageCount": "消息数",
-    "status": "状态",
-    "noTitle": "无标题",
-    "hideToolMessages": "隐藏工具消息",
-    "totalCount": "共 {count} 条",
-    "noMessages": "暂无消息",
-    "inputPlaceholder": "输入消息...",
-    "send": "发送",
-    "loadFailed": "加载消息失败",
-    "sendFailed": "发送失败"
-  }
+  "searchPlaceholder": "搜索消息内容...",
+  "search": "搜索",
+  "backToSearch": "返回搜索",
+  "sessionId": "Session ID",
+  "title": "标题",
+  "userId": "用户 ID",
+  "messageCount": "消息数",
+  "status": "状态",
+  "noTitle": "无标题",
+  "hideToolMessages": "隐藏工具消息",
+  "totalCount": "共 {count} 条",
+  "noMessages": "暂无消息",
+  "inputPlaceholder": "输入消息...",
+  "send": "发送",
+  "loadFailed": "加载消息失败",
+  "sendFailed": "发送失败"
 }

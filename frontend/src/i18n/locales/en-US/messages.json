@@ -1,20 +1,18 @@
 {
-  "messages": {
-    "searchPlaceholder": "Search message content...",
-    "search": "Search",
-    "backToSearch": "Back to Search",
-    "sessionId": "Session ID",
-    "title": "Title",
-    "userId": "User ID",
-    "messageCount": "Messages",
-    "status": "Status",
-    "noTitle": "Untitled",
-    "hideToolMessages": "Hide Tool Messages",
-    "totalCount": "Total {count}",
-    "noMessages": "No messages",
-    "inputPlaceholder": "Type a message...",
-    "send": "Send",
-    "loadFailed": "Failed to load messages",
-    "sendFailed": "Send failed"
-  }
+  "searchPlaceholder": "Search message content...",
+  "search": "Search",
+  "backToSearch": "Back to Search",
+  "sessionId": "Session ID",
+  "title": "Title",
+  "userId": "User ID",
+  "messageCount": "Messages",
+  "status": "Status",
+  "noTitle": "Untitled",
+  "hideToolMessages": "Hide Tool Messages",
+  "totalCount": "Total {count}",
+  "noMessages": "No messages",
+  "inputPlaceholder": "Type a message...",
+  "send": "Send",
+  "loadFailed": "Failed to load messages",
+  "sendFailed": "Send failed"
 }

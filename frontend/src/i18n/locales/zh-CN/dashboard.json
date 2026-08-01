@@ -1,15 +1,13 @@
 {
-  "dashboard": {
-    "stats": {
-      "totalSessions": "总会话数",
-      "totalMessages": "总消息数",
-      "todayMessages": "今日消息",
-      "weekMessages": "本周消息"
-    },
-    "recentMessages": "最近消息",
-    "platformDistribution": "平台分布",
-    "noMessages": "暂无消息",
-    "loadStatsFailed": "加载统计失败",
-    "loadMessagesFailed": "加载消息失败"
-  }
+  "stats": {
+    "totalSessions": "总会话数",
+    "totalMessages": "总消息数",
+    "todayMessages": "今日消息",
+    "weekMessages": "本周消息"
+  },
+  "recentMessages": "最近消息",
+  "platformDistribution": "平台分布",
+  "noMessages": "暂无消息",
+  "loadStatsFailed": "加载统计失败",
+  "loadMessagesFailed": "加载消息失败"
 }

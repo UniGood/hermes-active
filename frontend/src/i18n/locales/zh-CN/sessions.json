@@ -1,17 +1,15 @@
 {
-  "sessions": {
-    "searchPlaceholder": "搜索会话（标题/ID）...",
-    "platform": "平台",
-    "status": "状态",
-    "all": "全部",
-    "unknown": "未知",
-    "delete": "删除",
-    "noTitle": "无标题",
-    "messageCount": "消息数: {count}",
-    "noSessions": "暂无会话",
-    "confirmDelete": "确认删除",
-    "confirmDeleteMessage": "确定要删除这个会话吗？",
-    "deleteSuccess": "删除成功",
-    "deleteFailed": "删除失败"
-  }
+  "searchPlaceholder": "搜索会话（标题/ID）...",
+  "platform": "平台",
+  "status": "状态",
+  "all": "全部",
+  "unknown": "未知",
+  "delete": "删除",
+  "noTitle": "无标题",
+  "messageCount": "消息数: {count}",
+  "noSessions": "暂无会话",
+  "confirmDelete": "确认删除",
+  "confirmDeleteMessage": "确定要删除这个会话吗？",
+  "deleteSuccess": "删除成功",
+  "deleteFailed": "删除失败"
 }

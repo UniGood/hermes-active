@@ -1,108 +1,106 @@
 {
-  "freeConsciousness": {
-    "title": "Free Consciousness",
-    "description": "Free consciousness system allows AI to explore and think independently",
-    "tabs": {
-      "statusConfig": "Status & Config",
-      "logs": "Contemplation Logs"
-    },
-    "status": {
-      "label": "Free Consciousness",
-      "running": "Running",
-      "stopped": "Stopped",
-      "totalRounds": "Total Rounds",
-      "lastRun": "Last Contemplation",
-      "nextRun": "Next Contemplation",
-      "chainTokens": "Thinking Chain Tokens",
-      "sedimentInfo": "Sediment Info",
-      "sedimentInfoText": "Covers round {rounds}, {count} rounds compressed"
-    },
-    "actions": {
-      "manualRun": "Trigger Contemplation",
-      "restart": "Restart"
-    },
-    "llm": {
-      "title": "LLM Configuration",
-      "provider": "Provider",
-      "model": "Model",
-      "apiKey": "API Key",
-      "baseUrl": "Base URL",
-      "maxTokens": "Max Tokens",
-      "temperature": "Temperature",
-      "testConnection": "Test Connection",
-      "testSuccess": "LLM connection successful",
-      "testFail": "LLM connection failed"
-    },
-    "params": {
-      "title": "Contemplation Parameters",
-      "intervalMinutes": "Interval (minutes)",
-      "recentRounds": "Recent Rounds",
-      "midRounds": "Mid Rounds",
-      "sedimentCompressInterval": "Sediment Compress Interval"
-    },
-    "optional": {
-      "title": "Optional Configuration",
-      "includeContext": "Include Context",
-      "contextLimit": "Context Message Limit",
-      "storeToHindsight": "Store to Hindsight",
-      "persona": "Persona (Contemplation Style)",
-      "personaPlaceholder": "e.g. Talk to yourself in first person, like a quiet girl writing a diary late at night"
-    },
-    "prompts": {
-      "title": "Prompt Configuration",
-      "systemLabel": "System Prompt (supports {persona} {chain_text} placeholders)",
-      "systemPlaceholder": "System prompt for contemplation",
-      "userLabel": "User Prompt",
-      "userPlaceholder": "User prompt for contemplation",
-      "save": "Save Configuration"
-    },
-    "log": {
-      "roundFilter": "Round Filter",
-      "all": "All",
-      "colId": "ID",
-      "colRound": "Round",
-      "colSummary": "Summary",
-      "colDiscovery": "Discovery",
-      "colToken": "Token",
-      "colTime": "Time",
-      "colActions": "Actions",
-      "detail": "Detail",
-      "delete": "Delete"
-    },
-    "logDetail": {
-      "title": "Contemplation Detail",
-      "tabThinking": "Thinking Process",
-      "tabSummary": "Summary & Discovery",
-      "tabLlm": "LLM Details",
-      "thinkingLabel": "Thinking Process",
-      "none": "(None)",
-      "summaryLabel": "Summary",
-      "discoveryLabel": "Discovery",
-      "model": "Model",
-      "duration": "Duration",
-      "success": "Success",
-      "yes": "Yes",
-      "no": "No",
-      "message": "Message",
-      "prompt": "Prompt",
-      "responseRaw": "LLM Raw Response",
-      "reasoning": "Reasoning Process",
-      "noLlmDetail": "No LLM details"
-    },
-    "messages": {
-      "loadLogsFail": "Failed to load logs",
-      "enabled": "Enabled",
-      "disabled": "Disabled",
-      "operationFail": "Operation failed",
-      "triggered": "Contemplation triggered",
-      "triggerFail": "Trigger failed",
-      "restarted": "Restarted",
-      "restartFail": "Restart failed",
-      "configSaved": "Configuration saved",
-      "saveFail": "Save failed",
-      "loadDetailFail": "Failed to load details",
-      "deleted": "Deleted",
-      "deleteFail": "Delete failed"
-    }
+  "title": "Free Consciousness",
+  "description": "Free consciousness system allows AI to explore and think independently",
+  "tabs": {
+    "statusConfig": "Status & Config",
+    "logs": "Contemplation Logs"
+  },
+  "status": {
+    "label": "Free Consciousness",
+    "running": "Running",
+    "stopped": "Stopped",
+    "totalRounds": "Total Rounds",
+    "lastRun": "Last Contemplation",
+    "nextRun": "Next Contemplation",
+    "chainTokens": "Thinking Chain Tokens",
+    "sedimentInfo": "Sediment Info",
+    "sedimentInfoText": "Covers round {rounds}, {count} rounds compressed"
+  },
+  "actions": {
+    "manualRun": "Trigger Contemplation",
+    "restart": "Restart"
+  },
+  "llm": {
+    "title": "LLM Configuration",
+    "provider": "Provider",
+    "model": "Model",
+    "apiKey": "API Key",
+    "baseUrl": "Base URL",
+    "maxTokens": "Max Tokens",
+    "temperature": "Temperature",
+    "testConnection": "Test Connection",
+    "testSuccess": "LLM connection successful",
+    "testFail": "LLM connection failed"
+  },
+  "params": {
+    "title": "Contemplation Parameters",
+    "intervalMinutes": "Interval (minutes)",
+    "recentRounds": "Recent Rounds",
+    "midRounds": "Mid Rounds",
+    "sedimentCompressInterval": "Sediment Compress Interval"
+  },
+  "optional": {
+    "title": "Optional Configuration",
+    "includeContext": "Include Context",
+    "contextLimit": "Context Message Limit",
+    "storeToHindsight": "Store to Hindsight",
+    "persona": "Persona (Contemplation Style)",
+    "personaPlaceholder": "e.g. Talk to yourself in first person, like a quiet girl writing a diary late at night"
+  },
+  "prompts": {
+    "title": "Prompt Configuration",
+    "systemLabel": "System Prompt (supports {persona} {chain_text} placeholders)",
+    "systemPlaceholder": "System prompt for contemplation",
+    "userLabel": "User Prompt",
+    "userPlaceholder": "User prompt for contemplation",
+    "save": "Save Configuration"
+  },
+  "log": {
+    "roundFilter": "Round Filter",
+    "all": "All",
+    "colId": "ID",
+    "colRound": "Round",
+    "colSummary": "Summary",
+    "colDiscovery": "Discovery",
+    "colToken": "Token",
+    "colTime": "Time",
+    "colActions": "Actions",
+    "detail": "Detail",
+    "delete": "Delete"
+  },
+  "logDetail": {
+    "title": "Contemplation Detail",
+    "tabThinking": "Thinking Process",
+    "tabSummary": "Summary & Discovery",
+    "tabLlm": "LLM Details",
+    "thinkingLabel": "Thinking Process",
+    "none": "(None)",
+    "summaryLabel": "Summary",
+    "discoveryLabel": "Discovery",
+    "model": "Model",
+    "duration": "Duration",
+    "success": "Success",
+    "yes": "Yes",
+    "no": "No",
+    "message": "Message",
+    "prompt": "Prompt",
+    "responseRaw": "LLM Raw Response",
+    "reasoning": "Reasoning Process",
+    "noLlmDetail": "No LLM details"
+  },
+  "messages": {
+    "loadLogsFail": "Failed to load logs",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "operationFail": "Operation failed",
+    "triggered": "Contemplation triggered",
+    "triggerFail": "Trigger failed",
+    "restarted": "Restarted",
+    "restartFail": "Restart failed",
+    "configSaved": "Configuration saved",
+    "saveFail": "Save failed",
+    "loadDetailFail": "Failed to load details",
+    "deleted": "Deleted",
+    "deleteFail": "Delete failed"
   }
 }

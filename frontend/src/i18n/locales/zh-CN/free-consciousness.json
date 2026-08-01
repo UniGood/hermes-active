@@ -1,108 +1,106 @@
 {
-  "freeConsciousness": {
-    "title": "自由意识",
-    "description": "自由意识系统允许 AI 自主探索和思考",
-    "tabs": {
-      "statusConfig": "状态 & 配置",
-      "logs": "沉思日志"
-    },
-    "status": {
-      "label": "自由意识",
-      "running": "运行中",
-      "stopped": "已停止",
-      "totalRounds": "总轮次",
-      "lastRun": "上次沉思",
-      "nextRun": "下次沉思",
-      "chainTokens": "思考链 Token 数",
-      "sedimentInfo": "积淀信息",
-      "sedimentInfoText": "覆盖第 {rounds} 轮，{count} 轮压缩"
-    },
-    "actions": {
-      "manualRun": "手动触发沉思",
-      "restart": "重启"
-    },
-    "llm": {
-      "title": "LLM 配置",
-      "provider": "Provider",
-      "model": "Model",
-      "apiKey": "API Key",
-      "baseUrl": "Base URL",
-      "maxTokens": "Max Tokens",
-      "temperature": "Temperature",
-      "testConnection": "测试连接",
-      "testSuccess": "LLM 连通成功",
-      "testFail": "LLM 连通失败"
-    },
-    "params": {
-      "title": "沉思参数",
-      "intervalMinutes": "沉思间隔（分钟）",
-      "recentRounds": "最近轮次",
-      "midRounds": "中间轮次",
-      "sedimentCompressInterval": "积淀压缩间隔"
-    },
-    "optional": {
-      "title": "可选配置",
-      "includeContext": "包含上下文",
-      "contextLimit": "上下文消息条数",
-      "storeToHindsight": "存储到 Hindsight",
-      "persona": "Persona（沉思风格）",
-      "personaPlaceholder": "如：用第一人称自言自语，像一个安静的少女在深夜写日记"
-    },
-    "prompts": {
-      "title": "提示词配置",
-      "systemLabel": "System Prompt（支持 {persona} {chain_text} 占位符）",
-      "systemPlaceholder": "沉思的系统提示词",
-      "userLabel": "User Prompt",
-      "userPlaceholder": "沉思的用户提示词",
-      "save": "保存配置"
-    },
-    "log": {
-      "roundFilter": "轮次筛选",
-      "all": "全部",
-      "colId": "ID",
-      "colRound": "轮次",
-      "colSummary": "摘要",
-      "colDiscovery": "发现",
-      "colToken": "Token",
-      "colTime": "时间",
-      "colActions": "操作",
-      "detail": "详情",
-      "delete": "删除"
-    },
-    "logDetail": {
-      "title": "沉思详情",
-      "tabThinking": "思考过程",
-      "tabSummary": "摘要 & 发现",
-      "tabLlm": "LLM 详情",
-      "thinkingLabel": "思考过程",
-      "none": "（无）",
-      "summaryLabel": "摘要",
-      "discoveryLabel": "发现",
-      "model": "模型",
-      "duration": "耗时",
-      "success": "成功",
-      "yes": "是",
-      "no": "否",
-      "message": "消息",
-      "prompt": "Prompt",
-      "responseRaw": "LLM 原始返回",
-      "reasoning": "推理过程",
-      "noLlmDetail": "无 LLM 详情"
-    },
-    "messages": {
-      "loadLogsFail": "加载日志失败",
-      "enabled": "已开启",
-      "disabled": "已关闭",
-      "operationFail": "操作失败",
-      "triggered": "沉思已触发",
-      "triggerFail": "触发失败",
-      "restarted": "已重启",
-      "restartFail": "重启失败",
-      "configSaved": "配置已保存",
-      "saveFail": "保存失败",
-      "loadDetailFail": "加载详情失败",
-      "deleted": "已删除",
-      "deleteFail": "删除失败"
-    }
+  "title": "自由意识",
+  "description": "自由意识系统允许 AI 自主探索和思考",
+  "tabs": {
+    "statusConfig": "状态 & 配置",
+    "logs": "沉思日志"
+  },
+  "status": {
+    "label": "自由意识",
+    "running": "运行中",
+    "stopped": "已停止",
+    "totalRounds": "总轮次",
+    "lastRun": "上次沉思",
+    "nextRun": "下次沉思",
+    "chainTokens": "思考链 Token 数",
+    "sedimentInfo": "积淀信息",
+    "sedimentInfoText": "覆盖第 {rounds} 轮，{count} 轮压缩"
+  },
+  "actions": {
+    "manualRun": "手动触发沉思",
+    "restart": "重启"
+  },
+  "llm": {
+    "title": "LLM 配置",
+    "provider": "Provider",
+    "model": "Model",
+    "apiKey": "API Key",
+    "baseUrl": "Base URL",
+    "maxTokens": "Max Tokens",
+    "temperature": "Temperature",
+    "testConnection": "测试连接",
+    "testSuccess": "LLM 连通成功",
+    "testFail": "LLM 连通失败"
+  },
+  "params": {
+    "title": "沉思参数",
+    "intervalMinutes": "沉思间隔（分钟）",
+    "recentRounds": "最近轮次",
+    "midRounds": "中间轮次",
+    "sedimentCompressInterval": "积淀压缩间隔"
+  },
+  "optional": {
+    "title": "可选配置",
+    "includeContext": "包含上下文",
+    "contextLimit": "上下文消息条数",
+    "storeToHindsight": "存储到 Hindsight",
+    "persona": "Persona（沉思风格）",
+    "personaPlaceholder": "如：用第一人称自言自语，像一个安静的少女在深夜写日记"
+  },
+  "prompts": {
+    "title": "提示词配置",
+    "systemLabel": "System Prompt（支持 {persona} {chain_text} 占位符）",
+    "systemPlaceholder": "沉思的系统提示词",
+    "userLabel": "User Prompt",
+    "userPlaceholder": "沉思的用户提示词",
+    "save": "保存配置"
+  },
+  "log": {
+    "roundFilter": "轮次筛选",
+    "all": "全部",
+    "colId": "ID",
+    "colRound": "轮次",
+    "colSummary": "摘要",
+    "colDiscovery": "发现",
+    "colToken": "Token",
+    "colTime": "时间",
+    "colActions": "操作",
+    "detail": "详情",
+    "delete": "删除"
+  },
+  "logDetail": {
+    "title": "沉思详情",
+    "tabThinking": "思考过程",
+    "tabSummary": "摘要 & 发现",
+    "tabLlm": "LLM 详情",
+    "thinkingLabel": "思考过程",
+    "none": "（无）",
+    "summaryLabel": "摘要",
+    "discoveryLabel": "发现",
+    "model": "模型",
+    "duration": "耗时",
+    "success": "成功",
+    "yes": "是",
+    "no": "否",
+    "message": "消息",
+    "prompt": "Prompt",
+    "responseRaw": "LLM 原始返回",
+    "reasoning": "推理过程",
+    "noLlmDetail": "无 LLM 详情"
+  },
+  "messages": {
+    "loadLogsFail": "加载日志失败",
+    "enabled": "已开启",
+    "disabled": "已关闭",
+    "operationFail": "操作失败",
+    "triggered": "沉思已触发",
+    "triggerFail": "触发失败",
+    "restarted": "已重启",
+    "restartFail": "重启失败",
+    "configSaved": "配置已保存",
+    "saveFail": "保存失败",
+    "loadDetailFail": "加载详情失败",
+    "deleted": "已删除",
+    "deleteFail": "删除失败"
   }
 }

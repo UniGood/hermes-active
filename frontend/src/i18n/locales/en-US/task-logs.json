@@ -1,20 +1,18 @@
 {
-  "taskLogs": {
-    "statusPlaceholder": "Status",
-    "typePlaceholder": "Type",
-    "refresh": "Refresh",
-    "noLogs": "No task logs",
-    "duration": "Duration: {time}s",
-    "statusOptions": {
-      "success": "Success",
-      "failed": "Failed"
-    },
-    "typeOptions": {
-      "send_message": "Send Message",
-      "generate": "LLM Generate",
-      "send_proactive": "Proactive Message",
-      "cron_run": "Cron Run",
-      "test_context": "Context Read"
-    }
+  "statusPlaceholder": "Status",
+  "typePlaceholder": "Type",
+  "refresh": "Refresh",
+  "noLogs": "No task logs",
+  "duration": "Duration: {time}s",
+  "statusOptions": {
+    "success": "Success",
+    "failed": "Failed"
+  },
+  "typeOptions": {
+    "send_message": "Send Message",
+    "generate": "LLM Generate",
+    "send_proactive": "Proactive Message",
+    "cron_run": "Cron Run",
+    "test_context": "Context Read"
   }
 }

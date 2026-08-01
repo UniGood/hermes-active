@@ -1,52 +1,50 @@
 {
-  "analysis": {
-    "pageTitle": "被动意识注入分析",
-    "filters": {
-      "allPlatforms": "全部平台",
-      "refresh": "刷新"
-    },
-    "timeRange": {
-      "last6Hours": "最近 6 小时",
-      "last24Hours": "最近 24 小时",
-      "last3Days": "最近 3 天",
-      "last7Days": "最近 7 天",
-      "last30Days": "最近 30 天"
-    },
-    "stats": {
-      "totalInjections": "总注入次数",
-      "successRate": "成功率",
-      "avgContextLength": "平均上下文长度",
-      "avgEmotionalIntensity": "平均情感强度",
-      "avgLongingScore": "平均想念分数",
-      "avgChatHeat": "平均聊天热度",
-      "successSkippedError": "成功 / 跳过 / 错误"
-    },
-    "charts": {
-      "injectionTrend": "注入趋势",
-      "emotionDistribution": "情绪分布",
-      "longingLevelDistribution": "想念等级分布",
-      "chatHeatDistribution": "聊天热度分布",
-      "platformDistribution": "平台分布",
-      "injectionStatusDistribution": "注入状态分布"
-    },
-    "chartLegend": {
-      "injectionCount": "注入次数",
-      "successCount": "成功次数",
-      "avgLonging": "平均想念",
-      "avgEmotion": "平均情感",
-      "emotionDistribution": "情绪分布",
-      "longingLevel": "想念等级",
-      "chatHeat": "聊天热度",
-      "platform": "平台"
-    },
-    "chartAxis": {
-      "count": "次数",
-      "score": "分数"
-    },
-    "status": {
-      "success": "成功",
-      "skipped": "跳过",
-      "error": "错误"
-    }
+  "pageTitle": "被动意识注入分析",
+  "filters": {
+    "allPlatforms": "全部平台",
+    "refresh": "刷新"
+  },
+  "timeRange": {
+    "last6Hours": "最近 6 小时",
+    "last24Hours": "最近 24 小时",
+    "last3Days": "最近 3 天",
+    "last7Days": "最近 7 天",
+    "last30Days": "最近 30 天"
+  },
+  "stats": {
+    "totalInjections": "总注入次数",
+    "successRate": "成功率",
+    "avgContextLength": "平均上下文长度",
+    "avgEmotionalIntensity": "平均情感强度",
+    "avgLongingScore": "平均想念分数",
+    "avgChatHeat": "平均聊天热度",
+    "successSkippedError": "成功 / 跳过 / 错误"
+  },
+  "charts": {
+    "injectionTrend": "注入趋势",
+    "emotionDistribution": "情绪分布",
+    "longingLevelDistribution": "想念等级分布",
+    "chatHeatDistribution": "聊天热度分布",
+    "platformDistribution": "平台分布",
+    "injectionStatusDistribution": "注入状态分布"
+  },
+  "chartLegend": {
+    "injectionCount": "注入次数",
+    "successCount": "成功次数",
+    "avgLonging": "平均想念",
+    "avgEmotion": "平均情感",
+    "emotionDistribution": "情绪分布",
+    "longingLevel": "想念等级",
+    "chatHeat": "聊天热度",
+    "platform": "平台"
+  },
+  "chartAxis": {
+    "count": "次数",
+    "score": "分数"
+  },
+  "status": {
+    "success": "成功",
+    "skipped": "跳过",
+    "error": "错误"
   }
 }

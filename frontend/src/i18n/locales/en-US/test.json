@@ -1,133 +1,131 @@
 {
-  "test": {
-    "title": "Test Tools",
-    "description": "System testing and debugging tools",
-    "card": {
-      "sessionSelect": "1. Session Selection",
-      "context": "2. Get Context",
-      "generate": "3. Generate Active Message",
-      "send": "4. Send Message",
-      "oneClick": "One-Click Test",
-      "logs": "Execution Logs"
-    },
-    "session": {
-      "platform": "Target Platform",
-      "label": "Session",
-      "placeholder": "Select session",
-      "getLatest": "Get Latest",
-      "refresh": "Refresh List",
-      "id": "Session ID",
-      "title": "Title",
-      "untitled": "Untitled",
-      "messageCount": "Messages",
-      "status": "Status",
-      "ended": "Ended",
-      "active": "Active",
-      "notFound": "Session not found"
-    },
-    "context": {
-      "sessionTab": "Session Context",
-      "recallTab": "Hindsight Recall",
-      "reflectTab": "Hindsight Reflect",
-      "read": "Read Context",
-      "messagesUnit": "messages",
-      "includeTool": "Include tool context",
-      "contextCount": "{count} context items in total"
-    },
-    "recall": {
-      "searchPlaceholder": "Enter search keywords",
-      "unit": "",
-      "button": "Recall",
-      "resultCount": "{count} results in total",
-      "entity": "Entity",
-      "noResult": "No results"
-    },
-    "reflect": {
-      "queryPlaceholder": "Enter question/query",
-      "memoryUnit": "memories",
-      "button": "Reflect",
-      "analysisLabel": "Comprehensive Analysis:",
-      "noResult": "No results"
-    },
-    "prompt": {
-      "config": "Prompt Configuration",
-      "systemLabel": "System Prompt:",
-      "systemPlaceholder": "System prompt that defines the AI's role and behavior rules",
-      "userLabel": "User Prompt:",
-      "userPlaceholder": "User prompt template, supports {context} placeholder",
-      "userHint": "Supports {context} placeholder, replaced with actual context at runtime",
-      "appendSoul": "Append soul.md",
-      "preview": "Preview Prompt",
-      "fillDefault": "Fill Default System Prompt",
-      "previewTitle": "View Prompt Preview",
-      "systemFinal": "System Prompt (Final):",
-      "userTemplate": "User Prompt Template:",
-      "contextContent": "Actual Context Content:",
-      "soulContent": "soul.md Content:"
-    },
-    "generate": {
-      "button": "Generate Message from Context",
-      "contextLoaded": "Context loaded ({source})",
-      "noContext": "Please get context first",
-      "result": "Generated Result:",
-      "fillToSend": "Fill to Send Box"
-    },
-    "send": {
-      "placeholder": "Enter message to send...",
-      "writeToDB": "Write to Session DB",
-      "withMark": "With Mark",
-      "markLabel": "Send Mark:",
-      "timeFormat": "Time Format:",
-      "sendTo": "Send to {platform}",
-      "preview": "Preview:"
-    },
-    "timeFormat": {
-      "short": "Short",
-      "hms": "HH:MM:SS",
-      "dateHM": "Date HH:MM",
-      "full": "Full",
-      "dateWeekday": "Date Weekday"
-    },
-    "oneClick": {
-      "button": "Generate + Send + Write to DB"
-    },
-    "logs": {
-      "empty": "No logs yet"
-    },
-    "messages": {
-      "filledToSendBox": "Filled to send box",
-      "loadedDefaultPrompt": "Default prompt loaded",
-      "loadDefaultFailed": "Failed to load default prompt",
-      "selectSessionFirst": "Please select a session and get context first",
-      "previewSuccess": "Prompt preview successful",
-      "previewFailed": "Preview failed",
-      "loadingSessionList": "Loading {platform} session list",
-      "count": "",
-      "loadSessionListFailed": "Failed to load session list",
-      "sessionAutoReset": "Session auto-reset",
-      "getLatestSession": "Get latest {platform} session",
-      "sessionNotFound": "No session found for {platform}",
-      "getLatestFailed": "Failed to get latest session",
-      "contextLoaded": "Read {count} session context messages",
-      "contextLoadFailed": "Failed to read context",
-      "enterSearchKeyword": "Please enter search keywords",
-      "recallSuccess": "Recall successful",
-      "recallResultCount": "results",
-      "recallFailed": "Recall failed",
-      "recallRequestFailed": "Recall request failed",
-      "enterQuery": "Please enter a question/query",
-      "reflectSuccess": "Reflect successful",
-      "reflectFailed": "Reflect failed",
-      "reflectRequestFailed": "Reflect request failed",
-      "getContextFirst": "Please get context first",
-      "generateMessage": "Generate message",
-      "generateSuccess": "Generation successful",
-      "generateFailed": "Generation failed",
-      "sendSuccess": "Send successful",
-      "sendFailed": "Send failed",
-      "fullTestComplete": "Full flow test completed",
-      "fullTestSuccess": "Full flow test successful",
-      "fullTestFailed": "Full flow test failed"
-    }
+  "title": "Test Tools",
+  "description": "System testing and debugging tools",
+  "card": {
+    "sessionSelect": "1. Session Selection",
+    "context": "2. Get Context",
+    "generate": "3. Generate Active Message",
+    "send": "4. Send Message",
+    "oneClick": "One-Click Test",
+    "logs": "Execution Logs"
+  },
+  "session": {
+    "platform": "Target Platform",
+    "label": "Session",
+    "placeholder": "Select session",
+    "getLatest": "Get Latest",
+    "refresh": "Refresh List",
+    "id": "Session ID",
+    "title": "Title",
+    "untitled": "Untitled",
+    "messageCount": "Messages",
+    "status": "Status",
+    "ended": "Ended",
+    "active": "Active",
+    "notFound": "Session not found"
+  },
+  "context": {
+    "sessionTab": "Session Context",
+    "recallTab": "Hindsight Recall",
+    "reflectTab": "Hindsight Reflect",
+    "read": "Read Context",
+    "messagesUnit": "messages",
+    "includeTool": "Include tool context",
+    "contextCount": "{count} context items in total"
+  },
+  "recall": {
+    "searchPlaceholder": "Enter search keywords",
+    "unit": "",
+    "button": "Recall",
+    "resultCount": "{count} results in total",
+    "entity": "Entity",
+    "noResult": "No results"
+  },
+  "reflect": {
+    "queryPlaceholder": "Enter question/query",
+    "memoryUnit": "memories",
+    "button": "Reflect",
+    "analysisLabel": "Comprehensive Analysis:",
+    "noResult": "No results"
+  },
+  "prompt": {
+    "config": "Prompt Configuration",
+    "systemLabel": "System Prompt:",
+    "systemPlaceholder": "System prompt that defines the AI's role and behavior rules",
+    "userLabel": "User Prompt:",
+    "userPlaceholder": "User prompt template, supports {context} placeholder",
+    "userHint": "Supports {context} placeholder, replaced with actual context at runtime",
+    "appendSoul": "Append soul.md",
+    "preview": "Preview Prompt",
+    "fillDefault": "Fill Default System Prompt",
+    "previewTitle": "View Prompt Preview",
+    "systemFinal": "System Prompt (Final):",
+    "userTemplate": "User Prompt Template:",
+    "contextContent": "Actual Context Content:",
+    "soulContent": "soul.md Content:"
+  },
+  "generate": {
+    "button": "Generate Message from Context",
+    "contextLoaded": "Context loaded ({source})",
+    "noContext": "Please get context first",
+    "result": "Generated Result:",
+    "fillToSend": "Fill to Send Box"
+  },
+  "send": {
+    "placeholder": "Enter message to send...",
+    "writeToDB": "Write to Session DB",
+    "withMark": "With Mark",
+    "markLabel": "Send Mark:",
+    "timeFormat": "Time Format:",
+    "sendTo": "Send to {platform}",
+    "preview": "Preview:"
+  },
+  "timeFormat": {
+    "short": "Short",
+    "hms": "HH:MM:SS",
+    "dateHM": "Date HH:MM",
+    "full": "Full",
+    "dateWeekday": "Date Weekday"
+  },
+  "oneClick": {
+    "button": "Generate + Send + Write to DB"
+  },
+  "logs": {
+    "empty": "No logs yet"
+  },
+  "messages": {
+    "filledToSendBox": "Filled to send box",
+    "loadedDefaultPrompt": "Default prompt loaded",
+    "loadDefaultFailed": "Failed to load default prompt",
+    "selectSessionFirst": "Please select a session and get context first",
+    "previewSuccess": "Prompt preview successful",
+    "previewFailed": "Preview failed",
+    "loadingSessionList": "Loading {platform} session list",
+    "count": "",
+    "loadSessionListFailed": "Failed to load session list",
+    "sessionAutoReset": "Session auto-reset",
+    "getLatestSession": "Get latest {platform} session",
+    "sessionNotFound": "No session found for {platform}",
+    "getLatestFailed": "Failed to get latest session",
+    "contextLoaded": "Read {count} session context messages",
+    "contextLoadFailed": "Failed to read context",
+    "enterSearchKeyword": "Please enter search keywords",
+    "recallSuccess": "Recall successful",
+    "recallResultCount": "results",
+    "recallFailed": "Recall failed",
+    "recallRequestFailed": "Recall request failed",
+    "enterQuery": "Please enter a question/query",
+    "reflectSuccess": "Reflect successful",
+    "reflectFailed": "Reflect failed",
+    "reflectRequestFailed": "Reflect request failed",
+    "getContextFirst": "Please get context first",
+    "generateMessage": "Generate message",
+    "generateSuccess": "Generation successful",
+    "generateFailed": "Generation failed",
+    "sendSuccess": "Send successful",
+    "sendFailed": "Send failed",
+    "fullTestComplete": "Full flow test completed",
+    "fullTestSuccess": "Full flow test successful",
+    "fullTestFailed": "Full flow test failed"
   }
 }

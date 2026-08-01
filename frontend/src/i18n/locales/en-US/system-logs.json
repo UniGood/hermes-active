@@ -1,23 +1,21 @@
 {
-  "systemLogs": {
-    "title": "System Logs",
-    "toolbar": {
-      "refresh": "Refresh",
-      "autoScroll": "Auto Scroll",
-      "manualScroll": "Manual Scroll",
-      "lineCountPrefix": "Lines",
-      "totalLines": "{count} lines total"
-    },
-    "messages": {
-      "loadFailed": "Failed to load system logs",
-      "loadError": "Load failed: {detail}"
-    },
-    "noLogs": "No system logs available",
-    "level": {
-      "info": "Info",
-      "warn": "Warning",
-      "error": "Error",
-      "debug": "Debug"
-    }
+  "title": "System Logs",
+  "toolbar": {
+    "refresh": "Refresh",
+    "autoScroll": "Auto Scroll",
+    "manualScroll": "Manual Scroll",
+    "lineCountPrefix": "Lines",
+    "totalLines": "{count} lines total"
+  },
+  "messages": {
+    "loadFailed": "Failed to load system logs",
+    "loadError": "Load failed: {detail}"
+  },
+  "noLogs": "No system logs available",
+  "level": {
+    "info": "Info",
+    "warn": "Warning",
+    "error": "Error",
+    "debug": "Debug"
   }
 }

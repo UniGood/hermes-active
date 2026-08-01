@@ -1,15 +1,13 @@
 {
-  "dashboard": {
-    "stats": {
-      "totalSessions": "Total Sessions",
-      "totalMessages": "Total Messages",
-      "todayMessages": "Today",
-      "weekMessages": "This Week"
-    },
-    "recentMessages": "Recent Messages",
-    "platformDistribution": "Platform Distribution",
-    "noMessages": "No messages",
-    "loadStatsFailed": "Failed to load statistics",
-    "loadMessagesFailed": "Failed to load messages"
-  }
+  "stats": {
+    "totalSessions": "Total Sessions",
+    "totalMessages": "Total Messages",
+    "todayMessages": "Today",
+    "weekMessages": "This Week"
+  },
+  "recentMessages": "Recent Messages",
+  "platformDistribution": "Platform Distribution",
+  "noMessages": "No messages",
+  "loadStatsFailed": "Failed to load statistics",
+  "loadMessagesFailed": "Failed to load messages"
 }
