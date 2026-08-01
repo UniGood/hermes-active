@@ -9,7 +9,9 @@
     "title": "Personalization",
     "userName": "User Name",
     "assistantName": "Assistant Name",
-    "saveSuccess": "Personalization settings saved"
+    "saveSuccess": "Personalization settings saved",
+    "userNamePlaceholder": "Caofan",
+    "assistantNamePlaceholder": "Kelly"
   },
   "language": {
     "title": "Language Settings",
@@ -20,7 +22,11 @@
   "theme": {
     "title": "Theme",
     "current": "Current",
-    "switchSuccess": "Theme switched"
+    "switchSuccess": "Theme switched",
+    "kellyName": "Kelly",
+    "kellyDesc": "Coral Pink + Warm Orange",
+    "elegantName": "Elegant",
+    "elegantDesc": "Bright Blue + Light Gray"
   },
   "password": {
     "title": "Change Password",
@@ -58,7 +64,9 @@
     "testSuccess": "Test successful",
     "testFailed": "Test failed",
     "recallSuccess": "Recall test successful, returned {count} results",
-    "reflectSuccess": "Reflect test successful"
+    "reflectSuccess": "Reflect test successful",
+    "recallQuery": "test recall",
+    "reflectQuery": "test reflect"
   },
   "weather": {
     "title": "Weather Configuration",

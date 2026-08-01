@@ -223,11 +223,11 @@ async function sendMessage() {
       message: newMessage.value.trim(),
       is_test: true
     })
-    message.success('发送成功')
+    message.success(t('messages.sendSuccess'))
     newMessage.value = ''
     await loadMessages()
   } catch (e) {
-    message.error('发送失败: ' + (e?.detail || e?.message || '未知错误'))
+    message.error(t('messages.sendFailedWithDetail', { detail: e?.detail || e?.message || t('messages.unknownError') }))
   } finally {
     sending.value = false
   }

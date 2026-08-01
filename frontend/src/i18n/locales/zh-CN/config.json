@@ -9,7 +9,9 @@
     "title": "个性化设置",
     "userName": "用户名称",
     "assistantName": "助手名称",
-    "saveSuccess": "个性化设置已保存"
+    "saveSuccess": "个性化设置已保存",
+    "userNamePlaceholder": "曹凡",
+    "assistantNamePlaceholder": "凯莉"
   },
   "language": {
     "title": "语言设置",
@@ -20,7 +22,11 @@
   "theme": {
     "title": "主题配置",
     "current": "当前",
-    "switchSuccess": "主题已切换"
+    "switchSuccess": "主题已切换",
+    "kellyName": "凯莉",
+    "kellyDesc": "珊瑚粉 + 暖橙",
+    "elegantName": "素雅",
+    "elegantDesc": "亮蓝 + 浅灰"
   },
   "password": {
     "title": "修改密码",
@@ -58,7 +64,9 @@
     "testSuccess": "测试成功",
     "testFailed": "测试失败",
     "recallSuccess": "Recall 测试成功，返回 {count} 条结果",
-    "reflectSuccess": "Reflect 测试成功"
+    "reflectSuccess": "Reflect 测试成功",
+    "recallQuery": "测试recall",
+    "reflectQuery": "测试reflect"
   },
   "weather": {
     "title": "天气感知配置",

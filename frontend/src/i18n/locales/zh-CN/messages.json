@@ -14,5 +14,8 @@
   "inputPlaceholder": "输入消息...",
   "send": "发送",
   "loadFailed": "加载消息失败",
-  "sendFailed": "发送失败"
+  "sendFailed": "发送失败",
+  "sendSuccess": "发送成功",
+  "sendFailedWithDetail": "发送失败: {detail}",
+  "unknownError": "未知错误"
 }

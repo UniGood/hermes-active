@@ -111,7 +111,7 @@ async function handleAvatarUpload(e) {
   const file = e.target.files[0]
   if (!file) return
   if (file.size > 500 * 1024) {
-    message.error('图片大小不能超过 500KB')
+    message.error(t('common.avatar.sizeLimit'))
     return
   }
   const reader = new FileReader()
@@ -120,9 +120,9 @@ async function handleAvatarUpload(e) {
     try {
       await api.post('/auth/avatar', { avatar: base64 })
       userAvatar.value = base64
-      message.success('头像上传成功')
+      message.success(t('common.avatar.uploadSuccess'))
     } catch (err) {
-      message.error('上传失败: ' + (err?.detail || '未知错误'))
+      message.error(t('common.avatar.uploadFailed', { error: err?.detail || t('common.error') }))
     }
   }
   reader.readAsDataURL(file)

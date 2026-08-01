@@ -39,7 +39,12 @@
     "more": "More",
     "less": "Less",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "avatar": {
+      "sizeLimit": "Image size cannot exceed 500KB",
+      "uploadSuccess": "Avatar uploaded successfully",
+      "uploadFailed": "Upload failed: {error}"
+    }
   },
   "pagination": {
     "total": "Total {total}",

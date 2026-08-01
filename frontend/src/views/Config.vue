@@ -7,10 +7,10 @@
         <n-card :title="t('config.personalization.title')" style="margin-bottom: 16px">
           <n-form label-placement="left" label-width="100">
             <n-form-item :label="t('config.personalization.userName')">
-              <n-input v-model:value="userConfig.user_name" placeholder="曹凡" />
+              <n-input v-model:value="userConfig.user_name" :placeholder="t('config.personalization.userNamePlaceholder')" />
             </n-form-item>
             <n-form-item :label="t('config.personalization.assistantName')">
-              <n-input v-model:value="userConfig.assistant_name" placeholder="凯莉" />
+              <n-input v-model:value="userConfig.assistant_name" :placeholder="t('config.personalization.assistantNamePlaceholder')" />
             </n-form-item>
             <n-form-item>
               <div class="form-actions">
@@ -338,10 +338,10 @@ const passwordForm = ref({
 })
 
 // 主题配置
-const themes = [
-  { id: 'kelly', name: '凯莉', desc: '珊瑚粉 + 暖橙', color1: '#ff9a9e', color2: '#f6d365' },
-  { id: 'elegant', name: '素雅', desc: '亮蓝 + 浅灰', color1: '#4a90d9', color2: '#e8eef5' }
-]
+const themes = computed(() => [
+  { id: 'kelly', name: t('config.theme.kellyName'), desc: t('config.theme.kellyDesc'), color1: '#ff9a9e', color2: '#f6d365' },
+  { id: 'elegant', name: t('config.theme.elegantName'), desc: t('config.theme.elegantDesc'), color1: '#4a90d9', color2: '#e8eef5' }
+])
 const currentTheme = ref('kelly')
 
 async function loadConfig() {
@@ -379,7 +379,7 @@ async function saveHindsightConfig() {
 async function testHindsightRecall() {
   testingRecall.value = true
   try {
-    const result = await api.post('/hindsight/recall?query=测试recall&limit=3')
+    const result = await api.post(`/hindsight/recall?query=${encodeURIComponent(t('config.hindsight.recallQuery'))}&limit=3`)
     if (result.success) {
       message.success(t('config.hindsight.recallSuccess', { count: result.total }))
     } else {
@@ -395,7 +395,7 @@ async function testHindsightRecall() {
 async function testHindsightReflect() {
   testingReflect.value = true
   try {
-    const result = await api.post('/hindsight/reflect?query=测试reflect')
+    const result = await api.post(`/hindsight/reflect?query=${encodeURIComponent(t('config.hindsight.reflectQuery'))}`)
     if (result.success) {
       message.success(t('config.hindsight.reflectSuccess'))
     } else {

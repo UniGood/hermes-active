@@ -14,5 +14,8 @@
   "inputPlaceholder": "Type a message...",
   "send": "Send",
   "loadFailed": "Failed to load messages",
-  "sendFailed": "Send failed"
+  "sendFailed": "Send failed",
+  "sendSuccess": "Message sent",
+  "sendFailedWithDetail": "Send failed: {detail}",
+  "unknownError": "Unknown error"
 }

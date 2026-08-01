@@ -39,7 +39,12 @@
     "more": "更多",
     "less": "收起",
     "expand": "展开",
-    "collapse": "收起"
+    "collapse": "收起",
+    "avatar": {
+      "sizeLimit": "图片大小不能超过 500KB",
+      "uploadSuccess": "头像上传成功",
+      "uploadFailed": "上传失败: {error}"
+    }
   },
   "pagination": {
     "total": "共 {total} 条",
