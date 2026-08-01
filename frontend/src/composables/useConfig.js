@@ -23,7 +23,8 @@ export function useConfig() {
       if (locale?.value) config.value.locale = locale.value
       loaded = true
     } catch (e) {
-      // 使用默认值
+      // 401 或其他错误时使用默认值
+      console.warn('加载配置失败，使用默认值:', e)
     }
   }
 

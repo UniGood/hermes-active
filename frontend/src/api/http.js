@@ -26,7 +26,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response) {
       const { status, data } = error.response
-      if (status === 401) {
+      // 只在非登录页时处理 401
+      if (status === 401 && !window.location.pathname.startsWith('/login')) {
         localStorage.removeItem('token')
         window.location.href = '/login'
       }
