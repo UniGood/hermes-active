@@ -64,5 +64,8 @@
     "cli": "CLI",
     "cron": "Cron",
     "unknown": "Other"
-  }
+  },
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "save": "Save"
 }

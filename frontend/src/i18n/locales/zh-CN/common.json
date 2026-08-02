@@ -64,5 +64,8 @@
     "cli": "CLI",
     "cron": "定时任务",
     "unknown": "其他"
-  }
+  },
+  "cancel": "取消",
+  "delete": "删除",
+  "save": "保存"
 }

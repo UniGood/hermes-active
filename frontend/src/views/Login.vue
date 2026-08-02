@@ -77,14 +77,14 @@ import api from '../api'
 const router = useRouter()
 const message = useMessage()
 const authStore = useAuthStore()
-const { t } = useI18n()
+const { t, tm } = useI18n()
 const { config: globalConfig, loadConfig } = useConfig()
 
 const formRef = ref(null)
 const loading = ref(false)
 const avatarUrl = ref('')
 
-const welcomeMessages = computed(() => t('login.welcome'))
+const welcomeMessages = computed(() => tm('login.welcome'))
 
 const welcomeText = computed(() => {
   const messages = welcomeMessages.value

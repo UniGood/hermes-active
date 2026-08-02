@@ -2,7 +2,7 @@
   <div class="session-detail-page">
     <!-- 返回按钮 -->
     <n-button quaternary @click="router.back()" style="margin-bottom: 16px">
-      {{ t('session-detail.back') }}
+      {{ t('sessionDetail.back') }}
     </n-button>
 
     <!-- Session 信息 -->
@@ -13,38 +13,38 @@
           <n-text code>{{ session.id }}</n-text>
         </div>
         <div class="info-item">
-          <span class="label">{{ t('session-detail.sessionInfo.platform') }}</span>
+          <span class="label">{{ t('sessionDetail.sessionInfo.platform') }}</span>
           <n-tag :type="getPlatformType(session.source)" size="small">
-            {{ session.source || t('session-detail.sessionInfo.unknown') }}
+            {{ session.source || t('sessionDetail.sessionInfo.unknown') }}
           </n-tag>
         </div>
         <div class="info-item">
-          <span class="label">{{ t('session-detail.sessionInfo.title') }}</span>
-          <span class="value">{{ session.title || t('session-detail.sessionInfo.noTitle') }}</span>
+          <span class="label">{{ t('sessionDetail.sessionInfo.title') }}</span>
+          <span class="value">{{ session.title || t('sessionDetail.sessionInfo.noTitle') }}</span>
         </div>
         <div class="info-item">
-          <span class="label">{{ t('session-detail.sessionInfo.messageCount') }}</span>
+          <span class="label">{{ t('sessionDetail.sessionInfo.messageCount') }}</span>
           <span class="value">{{ session.message_count || 0 }}</span>
         </div>
         <div class="info-item">
-          <span class="label">{{ t('session-detail.sessionInfo.status') }}</span>
+          <span class="label">{{ t('sessionDetail.sessionInfo.status') }}</span>
           <n-tag :type="session.ended_at ? 'default' : 'success'" size="small">
-            {{ session.ended_at ? t('session-detail.sessionInfo.statusEnded') : t('session-detail.sessionInfo.statusActive') }}
+            {{ session.ended_at ? t('sessionDetail.sessionInfo.statusEnded') : t('sessionDetail.sessionInfo.statusActive') }}
           </n-tag>
         </div>
         <div class="info-item">
-          <span class="label">{{ t('session-detail.sessionInfo.startTime') }}</span>
+          <span class="label">{{ t('sessionDetail.sessionInfo.startTime') }}</span>
           <span class="value">{{ formatTime(session.started_at) }}</span>
         </div>
       </div>
     </n-card>
 
     <!-- 消息历史 -->
-    <n-card :title="t('session-detail.messages.title')" style="margin-top: 16px">
+    <n-card :title="t('sessionDetail.messages.title')" style="margin-top: 16px">
       <div class="toolbar">
         <n-input
           v-model:value="searchText"
-          :placeholder="t('session-detail.messages.searchPlaceholder')"
+          :placeholder="t('sessionDetail.messages.searchPlaceholder')"
           clearable
           size="small"
           style="max-width: 300px"
@@ -54,10 +54,10 @@
           </template>
         </n-input>
         <n-checkbox v-model:checked="showToolMessages">
-          {{ t('session-detail.messages.showToolMessages') }}
+          {{ t('sessionDetail.messages.showToolMessages') }}
         </n-checkbox>
         <n-checkbox v-model:checked="showAllFields">
-          {{ t('session-detail.messages.showAllFields') }}
+          {{ t('sessionDetail.messages.showAllFields') }}
         </n-checkbox>
       </div>
 
@@ -82,10 +82,10 @@
                 <n-popconfirm @positive-click="handleDeleteMessage(msg)">
                   <template #trigger>
                     <n-button text type="error" size="small" class="delete-btn">
-                      {{ t('session-detail.messages.delete') }}
+                      {{ t('sessionDetail.messages.delete') }}
                     </n-button>
                   </template>
-                  {{ t('session-detail.messages.deleteConfirm', { id: msg.id }) }}
+                  {{ t('sessionDetail.messages.deleteConfirm', { id: msg.id }) }}
                 </n-popconfirm>
               </div>
             </div>
@@ -135,7 +135,7 @@
               <span v-if="msg.observed">Observed: {{ msg.observed }}</span>
             </div>
           </div>
-          <n-empty v-if="!loading && filteredMessages.length === 0" :description="t('session-detail.messages.noMessages')" />
+          <n-empty v-if="!loading && filteredMessages.length === 0" :description="t('sessionDetail.messages.noMessages')" />
         </div>
       </n-spin>
     </n-card>
@@ -208,12 +208,12 @@ function getRoleClass(role) {
 }
 
 function getRoleName(role) {
-  const map = { user: config.value.user_name, assistant: config.value.assistant_name, system: t('session-detail.messages.roleSystem'), tool: t('session-detail.messages.roleTool') }
+  const map = { user: config.value.user_name, assistant: config.value.assistant_name, system: t('sessionDetail.messages.roleSystem'), tool: t('sessionDetail.messages.roleTool') }
   return map[role] || role
 }
 
 function formatContent(content) {
-  if (!content) return `<span style="color:#999">${t('session-detail.messages.emptyContent')}</span>`
+  if (!content) return `<span style="color:#999">${t('sessionDetail.messages.emptyContent')}</span>`
   return content
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -227,7 +227,7 @@ async function loadSession() {
     const data = await api.get(`/sessions/${sessionId}`)
     session.value = data
   } catch (e) {
-    console.error(t('session-detail.messages.loadSessionFailed') + ':', e)
+    console.error(t('sessionDetail.messages.loadSessionFailed') + ':', e)
   }
 }
 
@@ -244,7 +244,7 @@ async function loadMessages() {
     })
     messages.value = data.items || []
   } catch (e) {
-    console.error(t('session-detail.messages.loadMessagesFailed') + ':', e)
+    console.error(t('sessionDetail.messages.loadMessagesFailed') + ':', e)
   } finally {
     loading.value = false
   }
@@ -254,10 +254,10 @@ async function handleDeleteMessage(msg) {
   try {
     await messagesApi.deleteMessage(msg.id)
     messages.value = messages.value.filter(m => m.id !== msg.id)
-    message.success(t('session-detail.messages.deleted'))
+    message.success(t('sessionDetail.messages.deleted'))
   } catch (e) {
-    console.error(t('session-detail.messages.deleteFailed') + ':', e)
-    message.error(t('session-detail.messages.deleteFailed'))
+    console.error(t('sessionDetail.messages.deleteFailed') + ':', e)
+    message.error(t('sessionDetail.messages.deleteFailed'))
   }
 }
 

@@ -5,7 +5,7 @@
       <n-select
         v-model:value="statusFilter"
         :options="statusOptions"
-        :placeholder="t('task-logs.taskLogs.statusPlaceholder')"
+        :placeholder="t('taskLogs.statusPlaceholder')"
         clearable
         style="width: 120px"
         @update:value="loadLogs"
@@ -13,12 +13,12 @@
       <n-select
         v-model:value="typeFilter"
         :options="typeOptions"
-        :placeholder="t('task-logs.taskLogs.typePlaceholder')"
+        :placeholder="t('taskLogs.typePlaceholder')"
         clearable
         style="width: 160px"
         @update:value="loadLogs"
       />
-      <n-button @click="loadLogs" size="small">{{ t('task-logs.taskLogs.refresh') }}</n-button>
+      <n-button @click="loadLogs" size="small">{{ t('taskLogs.refresh') }}</n-button>
     </div>
 
     <!-- 日志列表 -->
@@ -33,10 +33,10 @@
           <div class="log-message" v-if="log.message">{{ log.message }}</div>
           <div class="log-error" v-if="log.error">{{ log.error }}</div>
           <div class="log-meta">
-            <span v-if="log.duration">{{ t('task-logs.taskLogs.duration', { time: log.duration.toFixed(2) }) }}</span>
+            <span v-if="log.duration">{{ t('taskLogs.duration', { time: log.duration.toFixed(2) }) }}</span>
           </div>
         </div>
-        <n-empty v-if="!loading && logs.length === 0" :description="t('task-logs.taskLogs.noLogs')" />
+        <n-empty v-if="!loading && logs.length === 0" :description="t('taskLogs.noLogs')" />
       </div>
     </n-spin>
 
@@ -67,24 +67,24 @@ const statusFilter = ref(null)
 const typeFilter = ref(null)
 
 const statusOptions = computed(() => [
-  { label: t('task-logs.taskLogs.statusOptions.success'), value: 'success' },
-  { label: t('task-logs.taskLogs.statusOptions.failed'), value: 'failed' }
+  { label: t('taskLogs.statusOptions.success'), value: 'success' },
+  { label: t('taskLogs.statusOptions.failed'), value: 'failed' }
 ])
 
 const typeOptions = computed(() => [
-  { label: t('task-logs.taskLogs.typeOptions.send_message'), value: 'send_message' },
-  { label: t('task-logs.taskLogs.typeOptions.generate'), value: 'generate' },
-  { label: t('task-logs.taskLogs.typeOptions.send_proactive'), value: 'send_proactive' },
-  { label: t('task-logs.taskLogs.typeOptions.cron_run'), value: 'cron_run' },
-  { label: t('task-logs.taskLogs.typeOptions.test_context'), value: 'test_context' }
+  { label: t('taskLogs.typeOptions.send_message'), value: 'send_message' },
+  { label: t('taskLogs.typeOptions.generate'), value: 'generate' },
+  { label: t('taskLogs.typeOptions.send_proactive'), value: 'send_proactive' },
+  { label: t('taskLogs.typeOptions.cron_run'), value: 'cron_run' },
+  { label: t('taskLogs.typeOptions.test_context'), value: 'test_context' }
 ])
 
 const typeLabelMap = computed(() => ({
-  send_message: t('task-logs.taskLogs.typeOptions.send_message'),
-  generate: t('task-logs.taskLogs.typeOptions.generate'),
-  send_proactive: t('task-logs.taskLogs.typeOptions.send_proactive'),
-  cron_run: t('task-logs.taskLogs.typeOptions.cron_run'),
-  test_context: t('task-logs.taskLogs.typeOptions.test_context')
+  send_message: t('taskLogs.typeOptions.send_message'),
+  generate: t('taskLogs.typeOptions.generate'),
+  send_proactive: t('taskLogs.typeOptions.send_proactive'),
+  cron_run: t('taskLogs.typeOptions.cron_run'),
+  test_context: t('taskLogs.typeOptions.test_context')
 }))
 
 function getTypeLabel(type) {

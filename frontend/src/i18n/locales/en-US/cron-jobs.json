@@ -174,7 +174,15 @@
     "feishu": "Feishu",
     "cli": "CLI"
   },
-  "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+  "weekdays": [
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun"
+  ],
   "timeFormats": {
     "none": "None",
     "short": "Short",
@@ -205,5 +213,11 @@
   "runSuccess": "Job triggered",
   "runFailed": "Trigger failed",
   "saveSuccess": "Saved successfully",
-  "saveFailed": "Save failed"
+  "saveFailed": "Save failed",
+  "placeholders": {
+    "session": "Recent conversation",
+    "memory": "Memory recall",
+    "weather": "Weather",
+    "time": "Current time"
+  }
 }

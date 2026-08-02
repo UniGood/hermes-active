@@ -6,7 +6,7 @@
         {{ t('cronJobs.createJob') }}
       </n-button>
       <n-button @click="openDefaultPrompts">
-        {{ t('cronJobs.defaultPrompts') }}
+        {{ t('cronJobs.defaultPrompts.title') }}
       </n-button>
     </n-space>
 

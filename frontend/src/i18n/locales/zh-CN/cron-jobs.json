@@ -174,7 +174,15 @@
     "feishu": "飞书",
     "cli": "CLI"
   },
-  "weekdays": ["一", "二", "三", "四", "五", "六", "日"],
+  "weekdays": [
+    "一",
+    "二",
+    "三",
+    "四",
+    "五",
+    "六",
+    "日"
+  ],
   "timeFormats": {
     "none": "无",
     "short": "简短",
@@ -205,5 +213,11 @@
   "runSuccess": "任务已触发",
   "runFailed": "触发失败",
   "saveSuccess": "保存成功",
-  "saveFailed": "保存失败"
+  "saveFailed": "保存失败",
+  "placeholders": {
+    "session": "最近对话",
+    "memory": "记忆反思",
+    "weather": "天气感知",
+    "time": "当前时间"
+  }
 }
