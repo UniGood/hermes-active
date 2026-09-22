@@ -77,42 +77,42 @@ Hermes Active fixes this by running a **persistent consciousness layer** alongsi
 
 ## Screenshots
 
-> 📸 Screenshot placeholders — capture each page from the running web console (`http://localhost:18720`) and drop the files into `docs/screenshots/`, then replace the blocks below with `<img>` tags.
+> 📸 Screenshots captured from the web console (`http://localhost:18720`). Regenerate with `scripts/screenshot_readme.py`.
 
 <table>
   <tr>
     <td align="center">
       <b>Dashboard</b><br><br>
-      <code>docs/screenshots/dashboard.png</code><br><br>
+      <img src="docs/screenshots/dashboard.png" width="400"><br><br>
       <i>System overview: sessions, messages, task stats, consciousness status at a glance.</i>
     </td>
     <td align="center">
       <b>Active Consciousness</b><br><br>
-      <code>docs/screenshots/active-consciousness.png</code><br><br>
+      <img src="docs/screenshots/active-consciousness.png" width="400"><br><br>
       <i>Live VA emotion gauges, heartbeat log stream, thought log with full LLM reasoning.</i>
     </td>
   </tr>
   <tr>
     <td align="center">
       <b>Passive Consciousness</b><br><br>
-      <code>docs/screenshots/passive-consciousness.png</code><br><br>
+      <img src="docs/screenshots/passive-consciousness.png" width="400"><br><br>
       <i>Injection switches, Jinja2 template editor with live preview, per-signal test buttons.</i>
     </td>
     <td align="center">
       <b>Free Consciousness</b><br><br>
-      <code>docs/screenshots/free-consciousness.png</code><br><br>
+      <img src="docs/screenshots/free-consciousness.png" width="400"><br><br>
       <i>Contemplation rounds timeline, thinking-chain inspector, sediment viewer.</i>
     </td>
   </tr>
   <tr>
     <td align="center">
       <b>Scheduled Tasks</b><br><br>
-      <code>docs/screenshots/cron-jobs.png</code><br><br>
+      <img src="docs/screenshots/cron-jobs.png" width="400"><br><br>
       <i>Cron editor with placeholder insertion, prompt preview, execution logs.</i>
     </td>
     <td align="center">
       <b>Injection Analytics</b><br><br>
-      <code>docs/screenshots/analysis.png</code><br><br>
+      <img src="docs/screenshots/analysis.png" width="400"><br><br>
       <i>ECharts dashboards: injection trends, emotion/longing/heat distributions.</i>
     </td>
   </tr>

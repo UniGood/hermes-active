@@ -77,42 +77,42 @@ Hermes Active 通过在 Hermes Agent 旁运行一套**持久化意识层**来解
 
 ## 界面截图
 
-> 📸 截图占位 —— 从运行中的 Web 控制台（`http://localhost:18720`）截取各页面，存入 `docs/screenshots/`，然后将下方占位块替换为 `<img>` 标签。
+> 📸 截图取自运行中的 Web 控制台（`http://localhost:18720`），可用 `scripts/screenshot_readme.py` 重新生成。
 
 <table>
   <tr>
     <td align="center">
       <b>仪表盘</b><br><br>
-      <code>docs/screenshots/dashboard.png</code><br><br>
+      <img src="docs/screenshots/dashboard.png" width="400"><br><br>
       <i>系统总览：会话、消息、任务统计、意识状态一屏尽览。</i>
     </td>
     <td align="center">
       <b>主动意识</b><br><br>
-      <code>docs/screenshots/active-consciousness.png</code><br><br>
+      <img src="docs/screenshots/active-consciousness.png" width="400"><br><br>
       <i>实时 VA 情绪仪表盘、心跳日志流、含完整 LLM 推理过程的念头日志。</i>
     </td>
   </tr>
   <tr>
     <td align="center">
       <b>被动意识</b><br><br>
-      <code>docs/screenshots/passive-consciousness.png</code><br><br>
+      <img src="docs/screenshots/passive-consciousness.png" width="400"><br><br>
       <i>注入开关、带实时预览的 Jinja2 模板编辑器、每个信号的独立测试按钮。</i>
     </td>
     <td align="center">
       <b>自由意识</b><br><br>
-      <code>docs/screenshots/free-consciousness.png</code><br><br>
+      <img src="docs/screenshots/free-consciousness.png" width="400"><br><br>
       <i>沉思轮次时间线、思考链查看器、意识积淀浏览。</i>
     </td>
   </tr>
   <tr>
     <td align="center">
       <b>定时任务</b><br><br>
-      <code>docs/screenshots/cron-jobs.png</code><br><br>
+      <img src="docs/screenshots/cron-jobs.png" width="400"><br><br>
       <i>可视化 Cron 编辑器、占位符插入、提示词预览、执行日志。</i>
     </td>
     <td align="center">
       <b>注入分析</b><br><br>
-      <code>docs/screenshots/analysis.png</code><br><br>
+      <img src="docs/screenshots/analysis.png" width="400"><br><br>
       <i>ECharts 图表：注入趋势、情绪/想念/热度分布。</i>
     </td>
   </tr>
