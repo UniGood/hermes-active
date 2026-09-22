@@ -118,45 +118,6 @@ Hermes Active 通过在 Hermes Agent 旁运行一套**持久化意识层**来解
   <img src="docs/images/zh-architecture.svg" width="800">
 </p>
 
-```mermaid
-graph TB
-    subgraph Console["Web 控制台 — Vue 3 + Naive UI"]
-        UI[仪表盘 · 会话 · 消息<br/>定时任务 · 主动/被动/自由意识 · 注入分析]
-    end
-
-    subgraph Backend["Hermes Active 后端 — FastAPI :18720"]
-        direction TB
-        CRON[任务调度器<br/>APScheduler]
-        HB[心跳循环<br/>主动意识]
-        FC[沉思循环<br/>自由意识]
-        PC[上下文构建器<br/>被动意识]
-        SHARED[共享服务层<br/>念头引擎 · 上下文收集器 · LLM<br/>消息 · 天气 · Hindsight · 模板]
-        CRON --> SHARED
-        HB --> SHARED
-        FC --> SHARED
-        PC --> SHARED
-    end
-
-    subgraph Hermes["Hermes Agent — 核心零修改"]
-        GW[Gateway<br/>微信 · 飞书]
-        HOOK[passive-consciousness 插件<br/>pre_llm_call 钩子]
-        LLM[call_llm · SOUL.md · SessionDB]
-    end
-
-    ADB[(active.db<br/>读写)]
-    SDB[(state.db<br/>只读 + 主动消息写回)]
-    HS[[Hindsight<br/>长期记忆]]
-    WX[[天气 API<br/>高德 · 和风]]
-
-    UI -->|JWT REST| Backend
-    HOOK -->|HTTP：渲染上下文| PC
-    SHARED -->|公开 API| LLM
-    SHARED -->|发送主动消息| GW
-    Backend --> ADB
-    Backend --> SDB
-    SHARED --> HS
-    SHARED --> WX
-```
 
 ### 双数据库设计
 
@@ -179,25 +140,6 @@ Hermes Active 从不写入 Hermes 的配置，也从不改动历史对话 ——
 
 调度器每隔 N 秒（默认 600）触发一次完整的 感知 → 感受 → 决策 → 行动 循环。没有任何预设脚本：情绪状态、决策分数和消息内容全部由实时上下文涌现。
 
-```mermaid
-flowchart TD
-    A[⏱ 心跳触发] --> B[读取持久化的情绪状态]
-    B --> C[按流逝时间演化情绪<br/>唤醒度衰减 · 社交需求增长 · 效价回归中性]
-    C --> D[收集上下文包<br/>对话 · 记忆 · 天气 · 时间 · 用户习惯]
-    D --> E[LLM 情绪评估<br/>阅读最近对话，输出 VA 值]
-    E --> F[动态权重合并<br/>按置信度融合演化值与评估值]
-    F --> G[决策矩阵<br/>分数 = 情绪强度 × 时间适宜度 × 静默因子 × 频率限制]
-    G --> H{分数与阈值比较}
-    H -->|≥ 发送阈值| I[念头引擎生成念头]
-    H -->|≥ 记忆阈值| J[念头引擎生成念头]
-    H -->|低于阈值| K[跳过 — 不调 LLM，零成本]
-    I --> L{发送保护}
-    L -->|通过| M[经微信/飞书发送<br/>带主动标记写回 state.db]
-    L -->|拦截| N[念头存入 Hindsight<br/>不浪费任何想法]
-    J --> N
-    M --> O[念头存入 Hindsight<br/>写入心跳 + 念头日志]
-    N --> O
-```
 
 #### 情绪系统 —— 效价/唤醒度 + 社交需求
 
@@ -343,24 +285,6 @@ thought_llm（念头） → emotion_llm（情绪） → llm（通用）
 
 主动意识负责"行动"，被动意识负责"感知"。每当用户发来消息，一个 Hermes 插件就会组装一份实时的"心境快照"并注入提示词 —— 让回复自然地体现出：距离上次对话过了多久、当前聊天氛围如何、助手心里在想什么、外面天气怎么样。**用户消息这一轮不会额外调用 LLM。**
 
-```mermaid
-sequenceDiagram
-    participant U as 用户
-    participant G as Hermes Gateway
-    participant P as passive-consciousness 插件
-    participant B as Hermes Active 后端
-    participant L as LLM
-
-    U->>G: 发送消息
-    G->>P: pre_llm_call 钩子
-    P->>B: HTTP — 请求意识上下文
-    B->>B: 想念分数 · 聊天热度 · 情绪强度<br/>天气 · Hindsight 召回 + 反思
-    B->>B: 渲染当前激活的 Jinja2 模板
-    B-->>P: [CONSCIOUSNESS_CONTEXT] 上下文块
-    P-->>G: 注入系统提示词
-    G->>L: 用户消息 + 意识上下文
-    L-->>U: 带有上下文感知的回复
-```
 
 #### 注入的信号
 
@@ -405,21 +329,6 @@ sequenceDiagram
 
 在心跳和用户消息之间，助手可以只是……思考。自由意识是一个定时触发的沉思循环：没有任务、没有等待中的用户、没有预期输出 —— 一个让助手延续自己思绪的内在空间。
 
-```mermaid
-flowchart LR
-    A[调度器触发<br/>每 N 分钟] --> B[组装思考链]
-    B --> C{实时上下文？}
-    C -->|启用| D[+ 当前时间<br/>+ 情绪状态<br/>+ 最近对话]
-    C -->|禁用| E[纯思考链]
-    D --> F[LLM 沉思]
-    E --> F
-    F --> G[解析结构化输出<br/>thinking · summary · discovery]
-    G --> H[写入沉思日志]
-    G --> I{有新发现？}
-    I -->|可选| J[存入 Hindsight]
-    H --> K{到达压缩周期？}
-    K -->|每 10 个远期轮次| L[LLM 将旧轮次<br/>压缩为意识积淀]
-```
 
 #### 四层记忆模型
 
@@ -444,16 +353,6 @@ flowchart LR
 
 基座层：带上下文注入的 cron 风格任务，完全在 Web 界面中管理 —— 独立于 Hermes Agent 内置的 cron。
 
-```mermaid
-flowchart LR
-    A[Cron 触发] --> B[解析会话<br/>带回退与自动重置]
-    B --> C[收集上下文]
-    C --> D[将占位符渲染<br/>进提示词模板]
-    D --> E[LLM 生成<br/>+ 可选 SOUL.md 人设]
-    E --> F[经平台 API 发送]
-    F --> G[带主动标记<br/>写回 state.db]
-    G --> H[写入完整任务日志]
-```
 
 - **占位符系统** —— `{session}`（最近的跨会话对话）、`{memory}`（Hindsight 召回 + 反思）、`{weather}`（实时天气）、`{time}`（通过选择器组件自定义 strftime 格式）
 - **提示词内联上下文声明** —— 在提示词中直接声明该任务需要的上下文，解析器会在渲染前提取

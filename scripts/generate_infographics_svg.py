@@ -61,11 +61,12 @@ def card(x, y, w, h, rx=18, stroke=LINE, sw=2, fill="#fff", shadow=True):
             f'stroke="{stroke}" stroke-width="{sw}"{f}/>')
 
 
-def text(x, y, s, size=16.0, fill=INK, bold=False, anchor="middle", ls=0.0, weight=""):
+def text(x, y, s, size=16.0, fill=INK, bold=False, anchor="middle", ls=0.0, weight="", raw=False):
     wt = weight or ('700' if bold else '400')
     lsp = f' letter-spacing="{ls}"' if ls else ""
+    body = s if raw else s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     return (f'<text x="{x}" y="{y}" font-family="{FONT}" font-size="{size}" font-weight="{wt}"{lsp} '
-            f'fill="{fill}" text-anchor="{anchor}" dominant-baseline="central">{s}</text>')
+            f'fill="{fill}" text-anchor="{anchor}" dominant-baseline="central">{body}</text>')
 
 
 def wire(x1, y1, x2, y2):
@@ -132,7 +133,7 @@ def build_problem(lang: str) -> str:
         lcap, rcap = "Every run starts from zero", "Full memory, speaks first"
     p = [svg_open(768, 432)]
     p += [text(384, 52, f'Stateless Cron <tspan fill="{FAINT}" font-weight="400">vs</tspan> '
-              f'Persistent Consciousness', 24, INK, bold=True)]
+              f'Persistent Consciousness', 24, INK, bold=True, raw=True)]
     p += [card(32, 100, 344, 296, rx=24, stroke="none", fill=GRAY_SOFT, shadow=False)]
     p += [card(392, 100, 344, 296, rx=24, stroke="none", fill=CORAL_SOFT, shadow=False)]
     # 左：失忆
@@ -238,7 +239,7 @@ def build_deployment(lang: str) -> str:
 def build_footer(lang: str) -> str:
     p = [svg_open(720, 120)]
     p += [text(360, 42, f'Hermes Active — Built with <tspan fill="#FF6B6B" font-size="17">♥</tspan> '
-              f'for the Hermes Agent Community', 15, "#6E6E6E", weight="500", ls=0.6)]
+              f'for the Hermes Agent Community', 15, "#6E6E6E", weight="500", ls=0.6, raw=True)]
     p += [f'<path d="M60 88 H330 L342 88 L350 78 L360 100 L368 88 L380 88 H660"'
           f' stroke="url(#rib)" stroke-width="2.2" fill="none" stroke-linecap="round"'
           f' stroke-linejoin="round"/>']

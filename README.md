@@ -118,45 +118,6 @@ Hermes Active fixes this by running a **persistent consciousness layer** alongsi
   <img src="docs/images/en-architecture.svg" width="800">
 </p>
 
-```mermaid
-graph TB
-    subgraph Console["Web Console — Vue 3 + Naive UI"]
-        UI[Dashboard · Sessions · Messages<br/>Cron · Active/Passive/Free Consciousness · Analytics]
-    end
-
-    subgraph Backend["Hermes Active Backend — FastAPI :18720"]
-        direction TB
-        CRON[Task Scheduler<br/>APScheduler]
-        HB[Heartbeat Loop<br/>Active Consciousness]
-        FC[Contemplation Loop<br/>Free Consciousness]
-        PC[Context Builder<br/>Passive Consciousness]
-        SHARED[Shared Services<br/>ThoughtEngine · ContextCollector · LLM<br/>Message · Weather · Hindsight · Template]
-        CRON --> SHARED
-        HB --> SHARED
-        FC --> SHARED
-        PC --> SHARED
-    end
-
-    subgraph Hermes["Hermes Agent — unmodified core"]
-        GW[Gateway<br/>WeChat · Feishu]
-        HOOK[passive-consciousness plugin<br/>pre_llm_call hook]
-        LLM[call_llm · SOUL.md · SessionDB]
-    end
-
-    ADB[(active.db<br/>read-write)]
-    SDB[(state.db<br/>read-only + proactive writes)]
-    HS[[Hindsight<br/>long-term memory]]
-    WX[[Weather APIs<br/>Amap · QWeather]]
-
-    UI -->|JWT REST| Backend
-    HOOK -->|HTTP: render context| PC
-    SHARED -->|public APIs| LLM
-    SHARED -->|send proactive message| GW
-    Backend --> ADB
-    Backend --> SDB
-    SHARED --> HS
-    SHARED --> WX
-```
 
 ### Dual-database design
 
@@ -179,25 +140,6 @@ Hermes Active never writes Hermes' configuration and never mutates conversation 
 
 A scheduler fires every N seconds (default 600) and runs a full perceive → feel → decide → act cycle. Nothing is scripted: the emotion state, the decision score and the message itself all emerge from live context.
 
-```mermaid
-flowchart TD
-    A[⏱ Heartbeat tick] --> B[Load persisted emotion state]
-    B --> C[Evolve emotion over elapsed time<br/>arousal decays · social need grows · valence regresses to neutral]
-    C --> D[Collect context bundle<br/>conversations · memories · weather · time · habits]
-    D --> E[LLM emotion assessment<br/>reads recent chat, outputs VA values]
-    E --> F[Dynamic-weight merge<br/>confidence-scored fusion of evolved + assessed]
-    F --> G[Decision matrix<br/>score = intensity × time fitness × silence factor × frequency limit]
-    G --> H{Score vs thresholds}
-    H -->|≥ send threshold| I[Generate thought via ThoughtEngine]
-    H -->|≥ memory threshold| J[Generate thought via ThoughtEngine]
-    H -->|below| K[skip — no LLM call, no cost]
-    I --> L{Send protection}
-    L -->|pass| M[Send via WeChat / Feishu<br/>append to state.db with proactive mark]
-    L -->|blocked| N[Retain thought to Hindsight<br/>nothing is wasted]
-    J --> N
-    M --> O[Retain thought to Hindsight<br/>write heartbeat + thought logs]
-    N --> O
-```
 
 #### Emotion system — Valence/Arousal + Social Need
 
@@ -280,24 +222,6 @@ Every heartbeat and every thought is persisted with its **complete detail payloa
 
 Active consciousness *acts*; passive consciousness *perceives*. Whenever the user sends a message, a Hermes plugin assembles a live "state of mind" snapshot and injects it into the prompt — so the reply naturally reflects how long it's been, how the conversation feels, what's on the assistant's mind, and what the weather is like. **No extra LLM call is made on the user's turn.**
 
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant G as Hermes Gateway
-    participant P as passive-consciousness plugin
-    participant B as Hermes Active backend
-    participant L as LLM
-
-    U->>G: sends a message
-    G->>P: pre_llm_call hook
-    P->>B: HTTP — request consciousness context
-    B->>B: longing score · chat heat · emotional intensity<br/>weather · Hindsight recall + reflect
-    B->>B: render active Jinja2 template
-    B-->>P: [CONSCIOUSNESS_CONTEXT] block
-    P-->>G: inject into system prompt
-    G->>L: user message + consciousness context
-    L-->>U: context-aware reply
-```
 
 #### Injected signals
 
@@ -329,21 +253,6 @@ The injected block is rendered from **user-managed Jinja2 templates** — create
 
 Between heartbeats and user messages, the assistant can simply… think. Free consciousness is a scheduled contemplation loop with no task, no user waiting, and no expected output — an inner space where the assistant continues its own train of thought.
 
-```mermaid
-flowchart LR
-    A[Scheduler tick<br/>every N minutes] --> B[Assemble thinking chain]
-    B --> C{Realtime context?}
-    C -->|enabled| D[+ current time<br/>+ emotion state<br/>+ recent conversations]
-    C -->|disabled| E[Pure chain]
-    D --> F[LLM contemplation]
-    E --> F
-    F --> G[Parse structured output<br/>thinking · summary · discovery]
-    G --> H[Write contemplation log]
-    G --> I{New discovery?}
-    I -->|optional| J[Retain to Hindsight]
-    H --> K{Compression due?}
-    K -->|every 10 distant rounds| L[LLM compresses old rounds<br/>into sediment]
-```
 
 #### Four-layer memory model
 
@@ -366,16 +275,6 @@ All contemplation logs — including the exact prompt, raw response, reasoning a
 
 The foundation layer: cron-style jobs with context injection, managed entirely from the web UI — independent from Hermes Agent's built-in cron.
 
-```mermaid
-flowchart LR
-    A[Cron trigger] --> B[Resolve session<br/>with fallback & auto-reset]
-    B --> C[Collect context]
-    C --> D[Render placeholders<br/>into prompt template]
-    D --> E[LLM generation<br/>+ optional SOUL.md persona]
-    E --> F[Send via platform API]
-    F --> G[Append message to state.db<br/>with proactive mark]
-    G --> H[Write full task log]
-```
 
 - **Placeholder system** — `{session}` (recent cross-session conversations), `{memory}` (Hindsight recall + reflect), `{weather}` (live weather), `{time}` (custom strftime via a picker component)
 - **Context blocks in prompts** — declare per-job context requirements inline; the parser extracts them before rendering
