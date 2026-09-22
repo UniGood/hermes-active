@@ -2,10 +2,9 @@
   <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-> [!NOTE]
-> 🖼️ **Infographic placeholder — Hero Banner** · Generate the image, save it as `docs/images/en-hero-banner.png`, then replace this block with `<img src="docs/images/en-hero-banner.png" width="800">`.
->
-> **Generation prompt:** *A wide, modern hero banner for an open-source AI project called "Hermes Active". Pure white background, ultra-minimal design, a thin coral-orange heartbeat pulse line running across the center that morphs into a few simple chat bubbles, the title "Hermes Active" in bold dark gray sans-serif centered, subtitle "Proactive Consciousness for AI Assistants" in light gray small text beneath. No photo realism, no text artifacts, no dark background, clean whitespace, 21:9 aspect ratio.*
+<p align="center">
+  <img src="docs/images/en-hero-banner.png" width="800">
+</p>
 
 <h1 align="center">Hermes Active</h1>
 
@@ -51,10 +50,9 @@
 
 ## Why Hermes Active?
 
-> [!NOTE]
-> 🖼️ **Infographic placeholder — Problem Statement** · Save as `docs/images/en-problem-statement.png`.
->
-> **Generation prompt:** *A split-comparison infographic titled "Stateless Cron vs Persistent Consciousness". White background, minimal flat vector style. Left side: light gray area, a simple robot icon facing an empty dialog bubble, broken chain icon, speech bubble saying "Who are you again?". Right side: light coral-orange area, the same robot icon surrounded by a timeline and memory nodes, speech bubble saying "I was just thinking about you". Minimal text, generous whitespace, 16:9.*
+<p align="center">
+  <img src="docs/images/en-problem-statement.png" width="800">
+</p>
 
 Every proactive messaging feature in traditional AI agents shares the same flaw: **each scheduled task spawns a brand-new, isolated session**.
 
@@ -122,10 +120,9 @@ Hermes Active fixes this by running a **persistent consciousness layer** alongsi
 
 ## Architecture
 
-> [!NOTE]
-> 🖼️ **Infographic placeholder — Architecture Overview** · Save as `docs/images/en-architecture.png`.
->
-> **Generation prompt:** *A clean system-architecture infographic. White background, minimal flat design. Center: a rounded rectangle "FastAPI Backend" with three simple gear icons labeled "Heartbeat", "Contemplation", "Scheduler". Top: a panel "Vue 3 Web Console" connected by thin arrows labeled "JWT REST API". Right: a "Hermes Agent" box connected by "Public APIs". Bottom: two light gray cylinders labeled "state.db (R/O)" and "active.db (R/W)". All connectors in light gray thin lines, key nodes accented in coral-orange, generous whitespace, 16:9.*
+<p align="center">
+  <img src="docs/images/en-architecture.png" width="800">
+</p>
 
 ```mermaid
 graph TB
@@ -180,10 +177,9 @@ Hermes Active never writes Hermes' configuration and never mutates conversation 
 
 ## Core Systems
 
-> [!NOTE]
-> 🖼️ **Infographic placeholder — Four Systems Overview** · Save as `docs/images/en-four-systems.png`.
->
-> **Generation prompt:** *A 2x2 grid infographic of four systems. White background, minimal icon style. Top-left "Active Consciousness": a simple heart outline with pulse line. Top-right "Passive Consciousness": an envelope icon with injection arrow. Bottom-left "Free Consciousness": a brain outline with contemplation symbol. Bottom-right "Scheduled Tasks": a calendar with clock icon. Unified coral-orange for icons, light gray accents, generous whitespace, 16:9.*
+<p align="center">
+  <img src="docs/images/en-four-systems.png" width="800">
+</p>
 
 ### Active Consciousness — the heartbeat
 
@@ -496,10 +492,9 @@ hermes-active/
 
 ## Quick Start
 
-> [!NOTE]
-> 🖼️ **Infographic placeholder — Deployment Topology** · Save as `docs/images/en-deployment.png`.
->
-> **Generation prompt:** *A deployment topology infographic for a self-hosted AI system. White background, minimal blueprint style. One light gray rounded rectangle representing a server, containing four white cards: "hermes-active :18720", "Hermes Gateway", "Hindsight :8888", "plugins/". Outside: a phone icon on the left, a browser icon on the right, arrows showing message flow. All connectors in light gray thin lines, key nodes accented in coral-orange, generous whitespace, 16:9.*
+<p align="center">
+  <img src="docs/images/en-deployment.png" width="800">
+</p>
 
 ### Prerequisites
 
@@ -635,10 +630,9 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-> [!NOTE]
-> 🖼️ **Infographic placeholder — Footer Banner** · Save as `docs/images/en-footer-banner.png`.
->
-> **Generation prompt:** *A minimal footer ribbon for an open-source README. Pure white background, an ultra-thin coral-orange gradient line spanning the center with a tiny heartbeat pulse symbol, elegant small dark gray sans-serif text "Hermes Active — Built with ❤️ for the Hermes Agent Community", clean whitespace, 6:1 wide ratio.*
+<p align="center">
+  <img src="docs/images/en-footer-banner.png" width="800">
+</p>
 
 <p align="center">
   Built with ❤️ for the <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a> community
