@@ -88,8 +88,8 @@ class ContextCollector:
         emotion = self._get_emotion_state()
 
         # 1. Session 对话（按条数获取最近 N 条，过滤 tool 消息）
-        conversation_limit = self.context_config.get("conversation_limit", 200)
-        conversations = await self._get_structured_conversations(conversation_limit)
+        conversation_limit = self.context_config.get("max_messages_per_session", 200)
+        conversations = await self._get_structured_conversations(limit=conversation_limit)
 
         # 2. Hindsight 记忆
         memories = await self._recall_memories(conversations)

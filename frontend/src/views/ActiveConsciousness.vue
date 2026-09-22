@@ -343,6 +343,16 @@
               </n-form-item>
             </template>
 
+            <n-form-item :label="t('activeConsciousness.configTab.deepNightStart')">
+              <n-input-number v-model:value="config.time.deep_night_start" :min="0" :max="24" :step="0.5" style="width: 120px" />
+            </n-form-item>
+            <n-form-item :label="t('activeConsciousness.configTab.deepNightEnd')">
+              <n-input-number v-model:value="config.time.deep_night_end" :min="0" :max="24" :step="0.5" style="width: 120px" />
+            </n-form-item>
+            <n-form-item :label="t('activeConsciousness.configTab.deepNightFitness')">
+              <n-input-number v-model:value="config.time.deep_night_fitness" :min="0" :max="1" :step="0.1" style="width: 120px" />
+            </n-form-item>
+
             <!-- 决策阈值 -->
             <n-divider>{{ t('activeConsciousness.configTab.decisionThreshold') }}</n-divider>
             <n-form-item :label="t('activeConsciousness.configTab.sendThreshold')">
@@ -1386,6 +1396,7 @@ const config = ref({
     memory_limit: 5,
     weather_enabled: false
   },
+  time: { deep_night_start: 23.5, deep_night_end: 7.0, deep_night_fitness: 0.3 },
   hindsight: { enabled: true, base_url: 'http://localhost:8888', bank_id: 'hermes', store: { bank_id: 'hermes-active' }, recall_limit: 5, reflect_enabled: true, timeout: 30 },
   notify: { platform: 'weixin', chat_id: '' },
   prompts: {

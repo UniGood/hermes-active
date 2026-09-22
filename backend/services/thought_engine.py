@@ -198,6 +198,15 @@ class ThoughtEngine:
             user_name=user_name,
         )
 
+        # 深夜气质提示（可配置时段，支持跨午夜；起点为开区间，与 _deep_night_factor 一致）
+        now_h = now.hour + now.minute / 60.0
+        time_cfg = self.config.get("time", {})
+        dn_start = float(time_cfg.get("deep_night_start", 23.5))
+        dn_end = float(time_cfg.get("deep_night_end", 7.0))
+        if (dn_start <= dn_end and dn_start < now_h < dn_end) or \
+           (dn_start > dn_end and (now_h > dn_start or now_h < dn_end)):
+            user_content += "\n（现在是深夜，想得更轻、更安静，一句就好。）"
+
         return [
             {"role": "system", "content": system_content},
             {"role": "user", "content": user_content},

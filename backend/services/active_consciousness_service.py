@@ -164,6 +164,10 @@ _DEFAULTS = {
 
     # 时间窗口
     "active_consciousness.time.enabled": "true",
+    # 深夜适配（时段与活跃度折减）
+    "active_consciousness.time.deep_night_start": "23.5",
+    "active_consciousness.time.deep_night_end": "7.0",
+    "active_consciousness.time.deep_night_fitness": "0.3",
 
     # 念头存储
     "active_consciousness.thought.retain_enabled": "false",
@@ -179,6 +183,7 @@ _DEFAULTS = {
     "active_consciousness.context.sources": '["weixin"]',
     "active_consciousness.context.filter_tool_messages": "true",
     "active_consciousness.context.conversation_limit": "200",
+    "active_consciousness.context.max_messages_per_session": "15",
     "active_consciousness.context.memory_limit": "5",
     "active_consciousness.context.memory_enabled": "true",
     "active_consciousness.context.weather_enabled": "false",
@@ -2091,6 +2096,15 @@ def calculate_dominant(valence: float, arousal: float, social_need: float) -> st
     return "calm"
 
 
+def _deep_night_factor(hour: float, start: float, end: float, fitness: float) -> float:
+    """深夜时段（(start, end)，支持跨午夜）返回 fitness 折减，其余 1.0。起点为开区间。"""
+    if start <= end:
+        in_night = start < hour < end
+    else:  # 跨午夜，如 23.5 → 7.0
+        in_night = hour > start or hour < end
+    return fitness if in_night else 1.0
+
+
 def evolve_emotion(last_state: EmotionState, minutes_since_update: float) -> EmotionState:
     """
     基于时间流逝自然演化情绪
@@ -2386,8 +2400,18 @@ def make_decision_v2(
     # 计算总分
     score = intensity * time_fitness * silence_factor * frequency_limit
 
-    logger.info("决策计算: intensity=%.3f, time_fitness=%.3f(%s), silence_factor=%.3f, frequency_limit=%.3f",
-                intensity, time_fitness, time_label, silence_factor, frequency_limit)
+    # 深夜适配因子（可配置时段与折减权重）
+    time_cfg = config.get("time", {})
+    deep_night_start = float(time_cfg.get("deep_night_start", 23.5))
+    deep_night_end = float(time_cfg.get("deep_night_end", 7.0))
+    deep_night_fitness = float(time_cfg.get("deep_night_fitness", 0.3))
+    factor = _deep_night_factor(
+        datetime.now().hour + datetime.now().minute / 60.0,
+        deep_night_start, deep_night_end, deep_night_fitness)
+    score *= factor
+
+    logger.info("决策计算: intensity=%.3f, time_fitness=%.3f(%s), silence_factor=%.3f, frequency_limit=%.3f, deep_night_factor=%.3f",
+                intensity, time_fitness, time_label, silence_factor, frequency_limit, factor)
 
     # 决策阈值
     send_threshold = decision_config.get("send_threshold", 0.6)

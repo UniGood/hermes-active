@@ -32,7 +32,7 @@ class ActiveConsciousnessActiveConfig(BaseModel):
 class ActiveConsciousnessSessionConfig(BaseModel):
     """Session 来源配置"""
     sources: List[str] = ["weixin"]
-    max_messages_per_session: int = 15
+    max_messages_per_session: int = 15  # 上下文收集的最大消息条数
     filter_tool_messages: bool = True
 
 
@@ -51,14 +51,6 @@ class ActiveConsciousnessEmotionConfig(BaseModel):
     valence_regression: float = 0.1     # valence 回归中性系数
 
 
-class ActiveConsciousnessTimeConfig(BaseModel):
-    """时间窗口配置"""
-    enabled: bool = True
-    deep_night_start: float = 23.5      # 深夜开始（小时）
-    deep_night_end: float = 7.0         # 深夜结束（小时）
-    deep_night_fitness: float = 0.3     # 深夜权重
-
-
 class ActiveConsciousnessThoughtConfig(BaseModel):
     """念头存储配置"""
     retain_enabled: bool = True
@@ -71,7 +63,6 @@ class ActiveConsciousnessWeatherConfig(BaseModel):
     amap_key: str = ""              # 高德开放平台 Key
     adcode: str = "370100"          # 城市编码（默认济南）
     cache_ttl: int = 3600           # 缓存时长（秒）
-    temp_change_threshold: float = 5.0  # 温度变化阈值
 
 
 class ActiveConsciousnessNotifyConfig(BaseModel):
@@ -91,7 +82,6 @@ class ActiveConsciousnessConfig(BaseModel):
     weather: ActiveConsciousnessWeatherConfig = ActiveConsciousnessWeatherConfig()
     # v0.2.1 新增
     emotion: ActiveConsciousnessEmotionConfig = ActiveConsciousnessEmotionConfig()
-    time_window: ActiveConsciousnessTimeConfig = ActiveConsciousnessTimeConfig()
     thought: ActiveConsciousnessThoughtConfig = ActiveConsciousnessThoughtConfig()
 
 
