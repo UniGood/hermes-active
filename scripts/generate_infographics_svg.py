@@ -34,6 +34,7 @@ FILE_SUFFIX = {
 
 def svg_open(w: int, h: int, vb: str = "", extra_defs: str = "") -> str:
     box = vb or f"0 0 {w} {h}"
+    bx, by, bw, bh = (box.split() if vb else ["0", "0", str(w), str(h)])
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="{box}">
 <defs>
   <filter id="sh" x="-20%" y="-20%" width="140%" height="150%">
@@ -51,7 +52,7 @@ def svg_open(w: int, h: int, vb: str = "", extra_defs: str = "") -> str:
   </linearGradient>
   {extra_defs}
 </defs>
-<rect width="{w}" height="{h}" fill="#fff"/>
+<rect x="{bx}" y="{by}" width="{bw}" height="{bh}" fill="#fff"/>
 '''
 
 
@@ -110,7 +111,7 @@ def robot(x, y, size, color="#B5B5B5"):
 # ── 版式 1：hero 主视觉横幅 840x264（紧凑高级版） ──
 def build_hero(lang: str) -> str:
     sub = "让 AI 助手拥有主动意识" if lang == "zh" else "Proactive Consciousness for AI Assistants"
-    p = [svg_open(840, 264)]
+    p = [svg_open(840, 192, vb="0 33 840 192")]
     # eyebrow：小橙点 + 全大写宽字距标签（补回 Hermes Agent 归属）
     p += [text(423, 45, f'<tspan fill="{CORAL}" font-size="8">●</tspan>  BUILT FOR HERMES AGENT',
                10.5, "#B0B0B0", weight="500", ls=4, raw=True)]
@@ -139,7 +140,7 @@ def build_problem(lang: str) -> str:
         lcap, rcap = "每次定时任务都是一场失忆", "带着完整记忆，主动开口"
     else:
         lcap, rcap = "Every run starts from zero", "Full memory, speaks first"
-    p = [svg_open(768, 432)]
+    p = [svg_open(768, 368, vb="0 34 768 368")]
     p += [text(384, 52, f'Stateless Cron <tspan fill="{FAINT}" font-weight="400">vs</tspan> '
               f'Persistent Consciousness', 24, INK, bold=True, raw=True)]
     p += [card(32, 100, 344, 296, rx=24, stroke="none", fill=GRAY_SOFT, shadow=False)]
@@ -163,7 +164,7 @@ def build_problem(lang: str) -> str:
 
 # ── 版式 3：architecture 架构总览 768x420 ──
 def build_architecture(lang: str) -> str:
-    p = [svg_open(768, 420, vb="64 8 768 420")]
+    p = [svg_open(768, 400, vb="64 18 768 400")]
     p += [card(180, 24, 320, 64), text(340, 56, "Vue 3 Web Console", 22, INK, bold=True)]
     p += [wire(340, 88, 340, 122), text(354, 104, "JWT REST API", 13.5, SUB, anchor="start", weight="500")]
     p += [card(80, 128, 520, 156, rx=24, stroke=CORAL, sw=3)]
@@ -195,7 +196,7 @@ def build_four_systems(lang: str) -> str:
                  (P_MAIL, "Passive Consciousness", "", "Context injection on every message"),
                  (P_BRAIN, "Free Consciousness", "", "Autonomous contemplation & sediment"),
                  (P_CAL, "Scheduled Tasks", "", "Visual cron with prompt templates")]
-    p = [svg_open(768, 432)]
+    p = [svg_open(768, 408, vb="0 18 768 408")]
     p += [text(32, 36, title, 25, INK, bold=True, anchor="start")]
     p += [f'<rect x="32" y="58" width="64" height="5" rx="2.5" fill="url(#rib)"/>']
     for i, (ic, en, zh, desc) in enumerate(items):
@@ -221,7 +222,7 @@ def build_deployment(lang: str) -> str:
     ltag, rtag = ("消息入口", "Web 控制台") if lang == "zh" else ("Messages", "Web Console")
     svc = [("hermes-active", ":18720", True), ("Hermes Gateway", "", False),
            ("Hindsight", ":8888", False), ("plugins/", "", False)]
-    p = [svg_open(768, 432)]
+    p = [svg_open(768, 344, vb="0 46 768 344")]
     p += [f'<rect x="180" y="64" width="408" height="320" rx="28" fill="#FAFAFA"'
           f' stroke="{LINE}" stroke-width="2" stroke-dasharray="7 7"/>']
     p += [f'<rect x="204" y="52" width="86" height="24" rx="12" fill="#fff" stroke="{LINE}" stroke-width="1.5"/>']
@@ -245,7 +246,7 @@ def build_deployment(lang: str) -> str:
 
 # ── 版式 6：footer 页脚横幅 720x120 ──
 def build_footer(lang: str) -> str:
-    p = [svg_open(720, 120)]
+    p = [svg_open(720, 80, vb="0 27 720 80")]
     p += [text(360, 42, f'Hermes Active — Built with <tspan fill="#FF6B6B" font-size="17">♥</tspan> '
               f'for the Hermes Agent Community', 15, "#6E6E6E", weight="500", ls=0.6, raw=True)]
     p += [f'<path d="M60 88 H330 L342 88 L350 78 L360 100 L368 88 L380 88 H660"'
@@ -256,12 +257,12 @@ def build_footer(lang: str) -> str:
 
 
 BUILDERS = {
-    "hero": (build_hero, 840, 264),
-    "problem": (build_problem, 768, 432),
-    "architecture": (build_architecture, 768, 420),
-    "four-systems": (build_four_systems, 768, 432),
-    "deployment": (build_deployment, 768, 432),
-    "footer": (build_footer, 720, 120),
+    "hero": (build_hero, 840, 192),
+    "problem": (build_problem, 768, 368),
+    "architecture": (build_architecture, 768, 400),
+    "four-systems": (build_four_systems, 768, 408),
+    "deployment": (build_deployment, 768, 344),
+    "footer": (build_footer, 720, 80),
 }
 
 
