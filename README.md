@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/en-hero-banner.png" width="800">
+  <img src="docs/images/en-hero-banner.svg" width="800">
 </p>
 
 <h1 align="center">Hermes Active</h1>
@@ -51,7 +51,7 @@
 ## Why Hermes Active?
 
 <p align="center">
-  <img src="docs/images/en-problem-statement.png" width="800">
+  <img src="docs/images/en-problem-statement.svg" width="800">
 </p>
 
 Every proactive messaging feature in traditional AI agents shares the same flaw: **each scheduled task spawns a brand-new, isolated session**.
@@ -121,7 +121,7 @@ Hermes Active fixes this by running a **persistent consciousness layer** alongsi
 ## Architecture
 
 <p align="center">
-  <img src="docs/images/en-architecture.png" width="800">
+  <img src="docs/images/en-architecture.svg" width="800">
 </p>
 
 ```mermaid
@@ -178,7 +178,7 @@ Hermes Active never writes Hermes' configuration and never mutates conversation 
 ## Core Systems
 
 <p align="center">
-  <img src="docs/images/en-four-systems.png" width="800">
+  <img src="docs/images/en-four-systems.svg" width="800">
 </p>
 
 ### Active Consciousness — the heartbeat
@@ -493,7 +493,7 @@ hermes-active/
 ## Quick Start
 
 <p align="center">
-  <img src="docs/images/en-deployment.png" width="800">
+  <img src="docs/images/en-deployment.svg" width="800">
 </p>
 
 ### Prerequisites
@@ -631,7 +631,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 ---
 
 <p align="center">
-  <img src="docs/images/en-footer-banner.png" width="800">
+  <img src="docs/images/en-footer-banner.svg" width="800">
 </p>
 
 <p align="center">

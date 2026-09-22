@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/zh-hero-banner.png" width="800">
+  <img src="docs/images/zh-hero-banner.svg" width="800">
 </p>
 
 <h1 align="center">Hermes Active</h1>
@@ -51,7 +51,7 @@
 ## 为什么需要 Hermes Active？
 
 <p align="center">
-  <img src="docs/images/zh-problem-statement.png" width="800">
+  <img src="docs/images/zh-problem-statement.svg" width="800">
 </p>
 
 传统 AI 代理的主动消息功能都有同一个缺陷：**每个定时任务都会创建一个全新的、隔离的会话**。
@@ -121,7 +121,7 @@ Hermes Active 通过在 Hermes Agent 旁运行一套**持久化意识层**来解
 ## 系统架构
 
 <p align="center">
-  <img src="docs/images/zh-architecture.png" width="800">
+  <img src="docs/images/zh-architecture.svg" width="800">
 </p>
 
 ```mermaid
@@ -178,7 +178,7 @@ Hermes Active 从不写入 Hermes 的配置，也从不改动历史对话 ——
 ## 核心系统
 
 <p align="center">
-  <img src="docs/images/zh-four-systems.png" width="800">
+  <img src="docs/images/zh-four-systems.svg" width="800">
 </p>
 
 ### 主动意识 —— 心跳
@@ -571,7 +571,7 @@ hermes-active/
 ## 快速开始
 
 <p align="center">
-  <img src="docs/images/zh-deployment.png" width="800">
+  <img src="docs/images/zh-deployment.svg" width="800">
 </p>
 
 ### 前置条件
@@ -709,7 +709,7 @@ MIT 许可证 —— 详见 [LICENSE](LICENSE)。
 ---
 
 <p align="center">
-  <img src="docs/images/zh-footer-banner.png" width="800">
+  <img src="docs/images/zh-footer-banner.svg" width="800">
 </p>
 
 <p align="center">

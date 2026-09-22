@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="432" viewBox="0 0 768 432">
+<defs>
+  <filter id="sh" x="-20%" y="-20%" width="140%" height="150%">
+    <feDropShadow dx="0" dy="3.5" stdDeviation="6" flood-color="#000" flood-opacity="0.08"/>
+  </filter>
+  <marker id="ar" viewBox="0 0 10 10" refX="7.2" refY="5" markerWidth="10.5" markerHeight="10.5" orient="auto">
+    <path d="M0.8 1.2 L8.6 5 L0.8 8.8 z" fill="#8F8F8F" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/>
+  </marker>
+  <linearGradient id="bub" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FF7F50"/><stop offset="1" stop-color="#FFA07A"/>
+  </linearGradient>
+  <linearGradient id="rib" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#FFD9CC"/><stop offset=".5" stop-color="#FF7F50"/>
+    <stop offset="1" stop-color="#FFD9CC"/>
+  </linearGradient>
+  
+</defs>
+<rect width="768" height="432" fill="#fff"/>
+
+<rect x="180" y="64" width="408" height="320" rx="28" fill="#FAFAFA" stroke="#E4E4E4" stroke-width="2" stroke-dasharray="7 7"/>
+<rect x="204" y="52" width="86" height="24" rx="12" fill="#fff" stroke="#E4E4E4" stroke-width="1.5"/>
+<text x="247" y="64" font-family="'Helvetica Neue','PingFang SC','Noto Sans CJK SC','Microsoft YaHei',Arial,sans-serif" font-size="10.5" font-weight="700" letter-spacing="2" fill="#838383" text-anchor="middle" dominant-baseline="central">SERVER</text>
+<rect x="204" y="104" width="172" height="112" rx="16" fill="#fff" stroke="#FF7F50" stroke-width="2.4" filter="url(#sh)"/>
+<text x="290" y="150" font-family="'Helvetica Neue','PingFang SC','Noto Sans CJK SC','Microsoft YaHei',Arial,sans-serif" font-size="14" font-weight="700" fill="#3A3A3A" text-anchor="middle" dominant-baseline="central">hermes-active</text>
+<text x="290" y="178" font-family="'Helvetica Neue','PingFang SC','Noto Sans CJK SC','Microsoft YaHei',Arial,sans-serif" font-size="11.5" font-weight="500" fill="#FF7F50" text-anchor="middle" dominant-baseline="central">:18720</text>
+<rect x="392" y="104" width="172" height="112" rx="16" fill="#fff" stroke="#E4E4E4" stroke-width="2" filter="url(#sh)"/>
+<text x="478" y="160" font-family="'Helvetica Neue','PingFang SC','Noto Sans CJK SC','Microsoft YaHei',Arial,sans-serif" font-size="14" font-weight="700" fill="#5F5F5F" text-anchor="middle" dominant-baseline="central">Hermes Gateway</text>
+<rect x="204" y="232" width="172" height="112" rx="16" fill="#fff" stroke="#E4E4E4" stroke-width="2" filter="url(#sh)"/>
+<text x="290" y="278" font-family="'Helvetica Neue','PingFang SC','Noto Sans CJK SC','Microsoft YaHei',Arial,sans-serif" font-size="14" font-weight="700" fill="#5F5F5F" text-anchor="middle" dominant-baseline="central">Hindsight</text>
+<text x="290" y="306" font-family="'Helvetica Neue','PingFang SC','Noto Sans CJK SC','Microsoft YaHei',Arial,sans-serif" font-size="11.5" font-weight="500" fill="#838383" text-anchor="middle" dominant-baseline="central">:8888</text>
+<rect x="392" y="232" width="172" height="112" rx="16" fill="#fff" stroke="#E4E4E4" stroke-width="2" filter="url(#sh)"/>
+<text x="478" y="288" font-family="'Helvetica Neue','PingFang SC','Noto Sans CJK SC','Microsoft YaHei',Arial,sans-serif" font-size="14" font-weight="700" fill="#5F5F5F" text-anchor="middle" dominant-baseline="central">plugins/</text>
+<g transform="translate(60,194) scale(2.3333)" fill="none" stroke="#9AA0A6" stroke-width="0.86" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="3"/><path d="M10.5 18.5H13.5"/></g>
+<line x1="126" y1="222" x2="172" y2="222" stroke="#8F8F8F" stroke-width="2.6" stroke-linecap="round" marker-end="url(#ar)"/>
+<text x="90" y="286" font-family="'Helvetica Neue','PingFang SC','Noto Sans CJK SC','Microsoft YaHei',Arial,sans-serif" font-size="12" font-weight="500" fill="#838383" text-anchor="middle" dominant-baseline="central">Messages</text>
+<g transform="translate(652,196) scale(2.3333)" fill="none" stroke="#9AA0A6" stroke-width="0.86" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="3"/><path d="M2.5 9H21.5"/><circle cx="6" cy="6.8" r=".7" fill="#9AA0A6" stroke="none"/><circle cx="8.6" cy="6.8" r=".7" fill="#9AA0A6" stroke="none"/></g>
+<line x1="596" y1="222" x2="644" y2="222" stroke="#8F8F8F" stroke-width="2.6" stroke-linecap="round" marker-end="url(#ar)"/>
+<text x="680" y="286" font-family="'Helvetica Neue','PingFang SC','Noto Sans CJK SC','Microsoft YaHei',Arial,sans-serif" font-size="12" font-weight="500" fill="#838383" text-anchor="middle" dominant-baseline="central">Web Console</text>
+</svg>
