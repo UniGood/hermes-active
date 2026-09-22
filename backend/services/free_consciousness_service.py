@@ -41,6 +41,12 @@ _DEFAULTS = {
 }
 
 
+def get_hindsight_client(base_url: str = "http://localhost:8888", timeout: float = 30.0):
+    """Hindsight 客户端工厂（转发 active_consciousness_service；模块级暴露便于测试 mock）"""
+    from services.active_consciousness_service import get_hindsight_client as _impl
+    return _impl(base_url=base_url, timeout=timeout)
+
+
 class FreeConsciousnessService:
     """自由意识服务"""
 
@@ -163,6 +169,34 @@ class FreeConsciousnessService:
             })
             conn.commit()
             return result.lastrowid
+
+    @staticmethod
+    def retain_to_hindsight(round_number: int, thinking: str,
+                            summary: str | None = None,
+                            discovery: str | None = None) -> bool:
+        """把沉思沉淀进 Hindsight 长期记忆（对外出口）。
+
+        失败只记 warning，绝不影响沉思主流程。
+        """
+        try:
+            from services.active_consciousness_service import ActiveConsciousnessService
+            hs = ActiveConsciousnessService.get_config().get("hindsight", {})
+            # get_hindsight_client 用模块级定义（转发 active_consciousness_service，测试可 mock）
+            client = get_hindsight_client(
+                base_url=hs.get("base_url", "http://localhost:8888"),
+                timeout=hs.get("timeout", 30.0))
+            content = f"[自由思考·第{round_number}轮] {summary or thinking[:200]}"
+            if discovery:
+                content += f"\n发现: {discovery}"
+            client.retain(
+                bank_id=hs.get("store", {}).get("bank_id", "hermes"),
+                content=content,
+                metadata={"source": "free-consciousness", "round": str(round_number)})
+            return True
+        except Exception as e:
+            import logging
+            logging.getLogger("hermes.free").warning(f"沉思沉淀 Hindsight 失败（不影响主流程）: {e}")
+            return False
 
     @staticmethod
     def get_logs(page=1, page_size=20, round_number=None):
@@ -685,6 +719,10 @@ async def run_contemplation():
             llm_details=json.dumps(all_details, ensure_ascii=False),
             parse_failed=parsed["parse_failed"]
         )
+
+        # 6.5 沉思沉淀进 Hindsight（对外出口，失败不影响主流程）
+        FreeConsciousnessService.retain_to_hindsight(
+            round_number, parsed["thinking"], parsed.get("summary"), parsed.get("discovery"))
 
         # 7. 可选：发现存入 Hindsight
         if config.get("store_to_hindsight") and parsed["discovery"]:

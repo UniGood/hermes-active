@@ -12,11 +12,14 @@ ContextCollector - 收集 LLM 生成念头需要的全部上下文
 
 import json
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 
 logger = logging.getLogger("hermes.context_collector")
+
+# 模块级 active_engine 引用（与 models.database 同源，便于测试 mock）
+from models.database import active_engine  # noqa: E402
 
 
 @dataclass
@@ -28,6 +31,9 @@ class ContextBundle:
 
     # Hindsight 记忆
     memories: List[str]         # Recall 结果
+
+    # 最近自由思考（对外灵感出口）
+    free_thoughts: List[str] = field(default=None, kw_only=True)
 
     # 情绪状态
     emotion: Dict               # {valence, arousal, social_need, dominant}
@@ -43,7 +49,10 @@ class ContextBundle:
     
     def to_dict(self) -> Dict:
         """转换为字典（用于日志记录）"""
-        return asdict(self)
+        d = asdict(self)
+        # free_thoughts 为 None 时转 []，保证下游可迭代
+        d["free_thoughts"] = self.free_thoughts or []
+        return d
     
     def to_json(self) -> str:
         """转换为 JSON 字符串（用于日志记录）"""
@@ -85,6 +94,9 @@ class ContextCollector:
         # 2. Hindsight 记忆
         memories = await self._recall_memories(conversations)
 
+        # 2.5 最近自由思考（free_consciousness_logs 对外灵感出口）
+        free_thoughts = self._collect_free_thoughts()
+
         # 3. 时间感知
         time_context = self._get_time_context()
 
@@ -100,6 +112,7 @@ class ContextCollector:
         return ContextBundle(
             conversations=conversations,
             memories=memories,
+            free_thoughts=free_thoughts,
             emotion=emotion,
             time_context=time_context,
             weather=weather,
@@ -217,7 +230,27 @@ class ContextCollector:
         except Exception as e:
             logger.warning("Hindsight 召回失败: %s", e)
             return []
-    
+
+    def _collect_free_thoughts(self, limit: int = 3) -> List[str]:
+        """最近的自由思考摘要（free_consciousness_logs 的对外出口）"""
+        try:
+            from sqlalchemy import text
+            with active_engine.connect() as conn:
+                rows = conn.execute(text(
+                    """SELECT summary, discovery, thinking FROM free_consciousness_logs
+                       WHERE error IS NULL ORDER BY round_number DESC LIMIT :n"""
+                ), {"n": limit}).fetchall()
+            out = []
+            for r in rows:
+                s = r.summary or (r.thinking or "")[:120]
+                if r.discovery:
+                    s += f"（发现：{r.discovery}）"
+                if s:
+                    out.append(s)
+            return out
+        except Exception:
+            return []
+
     def _get_emotion_state(self) -> Dict:
         """获取情绪状态"""
         try:
