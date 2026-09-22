@@ -107,20 +107,28 @@ def robot(x, y, size, color="#B5B5B5"):
     return icon(P_ROBOT.replace("COLOR", color), x, y, size, color)
 
 
-# ── 版式 1：hero 主视觉横幅 840x360 ──
+# ── 版式 1：hero 主视觉横幅 840x264（紧凑高级版） ──
 def build_hero(lang: str) -> str:
     sub = "让 AI 助手拥有主动意识" if lang == "zh" else "Proactive Consciousness for AI Assistants"
-    p = [svg_open(840, 330)]
-    p += [text(420, 88, "Hermes Active", 46, INK, bold=True, ls=2)]
-    p += [text(420, 138, sub, 18, SUB, weight="500", ls=3)]
-    # 心跳脉冲线 -> 演变为对话气泡
-    p += [f'<path d="M72 238 H296 L312 238 L326 208 L340 268 L354 238 L370 222 L384 238 H480'
-          f' C494 238 498 224 502 216" stroke="{CORAL}" stroke-width="3.2" fill="none"'
+    p = [svg_open(840, 264)]
+    # eyebrow：小橙点 + 全大写宽字距标签（补回 Hermes Agent 归属）
+    p += [text(423, 45, f'<tspan fill="{CORAL}" font-size="8">●</tspan>  BUILT FOR HERMES AGENT',
+               10.5, "#B0B0B0", weight="500", ls=4, raw=True)]
+    # 主标题：粗细双字重，珊瑚橙细体点睛
+    p += [text(420, 99, f'Hermes<tspan font-weight="300" fill="{CORAL}"> Active</tspan>',
+               46, INK, bold=True, ls=2, raw=True)]
+    # 副标题
+    p += [text(420, 143, sub, 16, SUB, weight="500", ls=0.8)]
+    # 心跳线 -> 演变为对话气泡并渐隐（克制版，整体左移配平视觉重心）
+    p += ['<g transform="translate(-26,0)">']
+    p += [f'<path d="M185 199 H345 L357 199 L367 181 L379 219 L389 199 L399 189 L407 199 H525'
+          f' C539 199 545 190 549 184" stroke="{CORAL}" stroke-width="2" fill="none"'
           f' stroke-linecap="round" stroke-linejoin="round"/>']
-    p += [f'<rect x="506" y="190" width="146" height="54" rx="26" fill="url(#bub)"'
+    p += [f'<rect x="553" y="173" width="44" height="22" rx="11" fill="url(#bub)"'
           f' filter="url(#sh)"/>']
-    p += [f'<rect x="668" y="164" width="100" height="42" rx="21" fill="url(#bub)" opacity=".78"/>']
-    p += [f'<rect x="784" y="182" width="54" height="26" rx="13" fill="url(#bub)" opacity=".55"/>']
+    p += [f'<rect x="607" y="177" width="30" height="16" rx="8" fill="url(#bub)" opacity=".62"/>']
+    p += [f'<circle cx="650" cy="183" r="3.5" fill="{CORAL2}" opacity=".5"/>']
+    p += ["</g>"]
     p += ["</svg>"]
     return "\n".join(p)
 
@@ -248,7 +256,7 @@ def build_footer(lang: str) -> str:
 
 
 BUILDERS = {
-    "hero": (build_hero, 840, 360),
+    "hero": (build_hero, 840, 264),
     "problem": (build_problem, 768, 432),
     "architecture": (build_architecture, 768, 420),
     "four-systems": (build_four_systems, 768, 432),
