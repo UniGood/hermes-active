@@ -46,15 +46,21 @@ export default {
     return http.delete(`/active-consciousness/heartbeats/${id}`)
   },
 
-  // 测试
-  testLLMConnect() {
-    return http.post('/active-consciousness/test/llm-connect')
+  // 测试（form 传未保存的表单配置，null = 用已保存配置）
+  testLLMConnect(form = null) {
+    return http.post('/active-consciousness/test/llm-connect', form)
   },
-  testEmotionLLMConnect() {
-    return http.post('/active-consciousness/test/emotion-llm-connect')
+  testEmotionLLMConnect(form = null) {
+    return http.post('/active-consciousness/test/emotion-llm-connect', form)
   },
-  testThoughtLLMConnect() {
-    return http.post('/active-consciousness/test/thought-llm-connect')
+  testThoughtLLMConnect(form = null) {
+    return http.post('/active-consciousness/test/thought-llm-connect', form)
+  },
+  testContextCollector() {
+    return http.post('/active-consciousness/test/context-collector')
+  },
+  testThoughtEngine() {
+    return http.post('/active-consciousness/test/thought-engine')
   },
   testThoughtGeneration() {
     return http.post('/active-consciousness/test/thought-generation')

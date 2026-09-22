@@ -724,10 +724,13 @@ async def test_llm_connection(config: dict) -> dict:
             return {"success": False, "message": "未配置 LLM API Key"}
         response = await call_llm(None, "Hi", llm_config)
         duration = round(_time.time() - start, 2)
-        content = response.get("content", "")
+        # 推理型模型（reasoning 型）content 可能为空、内容放 reasoning 字段，兼容取值
+        content = response.get("content") or response.get("reasoning") or ""
         if content:
             return {"success": True, "message": f"连通成功 (耗时 {duration}s)", "duration": duration}
-        return {"success": False, "message": "LLM 返回空"}
+        # 透出真实错误（如认证失败），而不是一律"返回空"误导用户
+        err = response.get("message") or response.get("error") or "LLM 返回空（content/reasoning 均为空）"
+        return {"success": False, "message": err, "duration": duration}
     except Exception as e:
         duration = round(_time.time() - start, 2)
         return {"success": False, "message": f"连通失败: {str(e)}", "duration": duration}

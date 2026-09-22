@@ -6,7 +6,7 @@ export default {
   restart: () => http.post('/free-consciousness/restart'),
   getConfig: () => http.get('/free-consciousness/config'),
   saveConfig: (config) => http.post('/free-consciousness/config', config),
-  testLlm: () => http.post('/free-consciousness/test-llm'),
+  testLlm: (config = null) => http.post('/free-consciousness/test-llm', config),
   getLogs: (params) => http.get('/free-consciousness/logs', { params }),
   getLogDetail: (id) => http.get(`/free-consciousness/logs/${id}`),
   deleteLog: (id) => http.delete(`/free-consciousness/logs/${id}`),

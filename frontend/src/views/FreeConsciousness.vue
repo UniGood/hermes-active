@@ -472,7 +472,18 @@ async function onTestLlm() {
   testingLlm.value = true
   llmTestResult.value = null
   try {
-    await api.testLlm()
+    // 传表单当前值测试（含未保存的修改），与保存的 payload 结构一致
+    await api.testLlm({
+      llm: {
+        mode: 'custom',
+        provider: config.llm_provider,
+        model: config.llm_model,
+        api_key: config.llm_api_key,
+        base_url: config.llm_base_url,
+        max_tokens: config.llm_max_tokens,
+        temperature: config.llm_temperature,
+      },
+    })
     llmTestResult.value = true
   } catch (e) {
     llmTestResult.value = false

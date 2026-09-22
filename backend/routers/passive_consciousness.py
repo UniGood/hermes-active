@@ -10,7 +10,7 @@ import urllib.parse
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy import text
 
 from models.passive_consciousness import (
@@ -21,6 +21,8 @@ from models.passive_consciousness import (
 from models.database import ActiveSession, state_engine
 from services.config_service import ConfigService
 from services.passive_consciousness_service import PassiveConsciousnessService
+from middleware.auth import get_current_user
+from models.active import User
 
 logger = logging.getLogger("hermes.passive_consciousness.router")
 
@@ -33,7 +35,9 @@ PLUGIN_DIR = Path.home() / ".hermes" / "plugins" / "passive-consciousness"
 # ============ 配置 ============
 
 @router.get("/config")
-async def get_config():
+async def get_config(
+    current_user: User = Depends(get_current_user),
+):
     """获取被动意识配置"""
     try:
         return PassiveConsciousnessService.get_config()
@@ -43,7 +47,9 @@ async def get_config():
 
 
 @router.put("/config", response_model=SuccessResponse)
-async def update_config(config: dict):
+async def update_config(config: dict,
+    current_user: User = Depends(get_current_user),
+):
     """更新被动意识配置"""
     try:
         PassiveConsciousnessService.update_config(config)
@@ -56,7 +62,9 @@ async def update_config(config: dict):
 # ============ 平台配置 ============
 
 @router.get("/platforms", response_model=PassiveConsciousnessPlatformConfig)
-async def get_platforms():
+async def get_platforms(
+    current_user: User = Depends(get_current_user),
+):
     """获取平台配置"""
     try:
         config = PassiveConsciousnessService.get_config()
@@ -67,7 +75,9 @@ async def get_platforms():
 
 
 @router.put("/platforms", response_model=SuccessResponse)
-async def update_platforms(platforms: PassiveConsciousnessPlatformConfig):
+async def update_platforms(platforms: PassiveConsciousnessPlatformConfig,
+    current_user: User = Depends(get_current_user),
+):
     """更新平台配置"""
     try:
         config = PassiveConsciousnessService.get_config()
@@ -80,7 +90,9 @@ async def update_platforms(platforms: PassiveConsciousnessPlatformConfig):
 
 
 @router.get("/platforms/available")
-async def get_available_platforms():
+async def get_available_platforms(
+    current_user: User = Depends(get_current_user),
+):
     """获取可用平台列表"""
     return {
         "success": True,
@@ -98,7 +110,9 @@ async def get_available_platforms():
 # ============ 状态 ============
 
 @router.get("/status")
-async def get_status():
+async def get_status(
+    current_user: User = Depends(get_current_user),
+):
     """获取被动意识状态"""
     try:
         return PassiveConsciousnessService.get_status()
@@ -110,7 +124,9 @@ async def get_status():
 # ============ 日志 ============
 
 @router.get("/chats")
-async def get_chats(limit: int = 50):
+async def get_chats(limit: int = 50,
+    current_user: User = Depends(get_current_user),
+):
     """获取最近聊天记录"""
     return PassiveConsciousnessService.get_chats(limit)
 
@@ -118,7 +134,9 @@ async def get_chats(limit: int = 50):
 # ============ 测试 ============
 
 @router.post("/test/hindsight-recall")
-async def test_hindsight_recall():
+async def test_hindsight_recall(
+    current_user: User = Depends(get_current_user),
+):
     """测试 Hindsight Recall"""
     try:
         config = PassiveConsciousnessService.get_config()
@@ -147,7 +165,9 @@ async def test_hindsight_recall():
 
 
 @router.post("/test/hindsight-reflect")
-async def test_hindsight_reflect():
+async def test_hindsight_reflect(
+    current_user: User = Depends(get_current_user),
+):
     """测试 Hindsight Reflect"""
     try:
         config = PassiveConsciousnessService.get_config()
@@ -213,7 +233,9 @@ def _build_weather_kwargs(weather_config: dict, cache_ttl: int = None) -> dict:
 
 
 @router.get("/weather")
-async def get_weather():
+async def get_weather(
+    current_user: User = Depends(get_current_user),
+):
     """获取当前天气（带缓存）"""
     try:
         from services.weather_service import WeatherService
@@ -249,7 +271,9 @@ async def get_weather():
 
 
 @router.post("/weather/refresh")
-async def refresh_weather():
+async def refresh_weather(
+    current_user: User = Depends(get_current_user),
+):
     """强制刷新天气"""
     try:
         from services.weather_service import WeatherService
@@ -273,7 +297,9 @@ async def refresh_weather():
 
 
 @router.get("/weather/status")
-async def get_weather_status():
+async def get_weather_status(
+    current_user: User = Depends(get_current_user),
+):
     """获取天气服务状态"""
     try:
         from services.weather_service import WeatherService
@@ -304,7 +330,9 @@ async def get_weather_status():
 
 
 @router.get("/templates")
-async def get_templates():
+async def get_templates(
+    current_user: User = Depends(get_current_user),
+):
     """获取模板列表"""
     try:
         from services.template_service import TemplateService
@@ -316,7 +344,9 @@ async def get_templates():
 
 
 @router.post("/templates")
-async def create_template(template: dict):
+async def create_template(template: dict,
+    current_user: User = Depends(get_current_user),
+):
     """创建模板"""
     try:
         from services.template_service import TemplateService
@@ -350,7 +380,9 @@ async def create_template(template: dict):
 
 
 @router.get("/templates/variables")
-async def get_template_variables():
+async def get_template_variables(
+    current_user: User = Depends(get_current_user),
+):
     """获取可用变量列表"""
     try:
         from services.template_service import TemplateService
@@ -362,7 +394,9 @@ async def get_template_variables():
 
 
 @router.post("/templates/render")
-async def render_template(data: dict):
+async def render_template(data: dict,
+    current_user: User = Depends(get_current_user),
+):
     """渲染模板（供插件调用）"""
     try:
         from services.template_service import TemplateService
@@ -375,7 +409,9 @@ async def render_template(data: dict):
 
 
 @router.get("/templates/{template_id}")
-async def get_template(template_id: str):
+async def get_template(template_id: str,
+    current_user: User = Depends(get_current_user),
+):
     """获取单个模板"""
     try:
         from services.template_service import TemplateService
@@ -392,7 +428,9 @@ async def get_template(template_id: str):
 
 
 @router.put("/templates/{template_id}")
-async def update_template(template_id: str, template: dict):
+async def update_template(template_id: str, template: dict,
+    current_user: User = Depends(get_current_user),
+):
     """更新模板"""
     try:
         from services.template_service import TemplateService
@@ -425,7 +463,9 @@ async def update_template(template_id: str, template: dict):
 
 
 @router.delete("/templates/{template_id}")
-async def delete_template(template_id: str):
+async def delete_template(template_id: str,
+    current_user: User = Depends(get_current_user),
+):
     """删除模板"""
     try:
         from services.template_service import TemplateService
@@ -464,7 +504,9 @@ async def delete_template(template_id: str):
 
 
 @router.post("/templates/{template_id}/preview")
-async def preview_template_endpoint(template_id: str, data: dict = None):
+async def preview_template_endpoint(template_id: str, data: dict = None,
+    current_user: User = Depends(get_current_user),
+):
     """预览模板渲染结果"""
     try:
         from services.template_service import TemplateService
@@ -487,7 +529,8 @@ async def preview_template_endpoint(template_id: str, data: dict = None):
 @router.get("/analysis/stats")
 async def get_analysis_stats(
     hours: int = 24,
-    platform: str = None
+    platform: str = None,
+    current_user: User = Depends(get_current_user),
 ):
     """获取注入统计"""
     try:
@@ -502,7 +545,8 @@ async def get_analysis_stats(
 @router.get("/analysis/trends")
 async def get_analysis_trends(
     hours: int = 24,
-    interval: str = "hour"
+    interval: str = "hour",
+    current_user: User = Depends(get_current_user),
 ):
     """获取趋势数据"""
     try:
@@ -516,7 +560,8 @@ async def get_analysis_trends(
 
 @router.get("/analysis/sentiment")
 async def get_analysis_sentiment(
-    hours: int = 24
+    hours: int = 24,
+    current_user: User = Depends(get_current_user),
 ):
     """获取情感分析"""
     try:
@@ -529,7 +574,9 @@ async def get_analysis_sentiment(
 
 
 @router.post("/test/weather")
-async def test_weather():
+async def test_weather(
+    current_user: User = Depends(get_current_user),
+):
     """测试天气 API（支持高德和和风天气）"""
     try:
         from services.weather_service import WeatherService
@@ -609,7 +656,9 @@ async def _get_qweather_city_id(geo_url: str, api_key: str, city: str) -> str:
 
 
 @router.post("/test/longing")
-async def test_longing():
+async def test_longing(
+    current_user: User = Depends(get_current_user),
+):
     """测试想念分数计算"""
     try:
         now = datetime.now()
@@ -670,7 +719,9 @@ async def test_longing():
 
 
 @router.post("/test/chat-heat")
-async def test_chat_heat():
+async def test_chat_heat(
+    current_user: User = Depends(get_current_user),
+):
     """测试聊天热度计算"""
     try:
         recent_count = 0
@@ -722,7 +773,9 @@ async def test_chat_heat():
 
 
 @router.post("/test/emotional-intensity")
-async def test_emotional_intensity():
+async def test_emotional_intensity(
+    current_user: User = Depends(get_current_user),
+):
     """测试情绪值读取"""
     try:
         from services.config_service import ConfigService
@@ -766,7 +819,9 @@ async def test_emotional_intensity():
 
 
 @router.post("/test/context")
-async def test_context():
+async def test_context(
+    current_user: User = Depends(get_current_user),
+):
     """测试完整上下文拼装"""
     steps = []
     errors = []
@@ -901,7 +956,9 @@ async def test_context():
 
 
 @router.get("/test/full")
-async def test_full():
+async def test_full(
+    current_user: User = Depends(get_current_user),
+):
     """一键全量测试"""
     results = {}
 

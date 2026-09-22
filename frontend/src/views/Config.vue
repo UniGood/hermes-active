@@ -379,7 +379,7 @@ async function saveHindsightConfig() {
 async function testHindsightRecall() {
   testingRecall.value = true
   try {
-    const result = await api.post(`/hindsight/recall?query=${encodeURIComponent(t('config.hindsight.recallQuery'))}&limit=3`)
+    const result = await api.post(`/hindsight/recall?query=${encodeURIComponent(t('config.hindsight.recallQuery'))}&limit=3`, hindsightConfig.value)
     if (result.success) {
       message.success(t('config.hindsight.recallSuccess', { count: result.total }))
     } else {
@@ -395,7 +395,7 @@ async function testHindsightRecall() {
 async function testHindsightReflect() {
   testingReflect.value = true
   try {
-    const result = await api.post(`/hindsight/reflect?query=${encodeURIComponent(t('config.hindsight.reflectQuery'))}`)
+    const result = await api.post(`/hindsight/reflect?query=${encodeURIComponent(t('config.hindsight.reflectQuery'))}`, hindsightConfig.value)
     if (result.success) {
       message.success(t('config.hindsight.reflectSuccess'))
     } else {
@@ -528,10 +528,8 @@ async function saveWeatherConfig() {
 async function testWeather() {
   testingWeather.value = true
   try {
-    // 先保存配置
-    await api.put('/config/weather', weatherConfig.value)
-    // 再测试
-    const result = await api.get('/config/weather/test')
+    // 直接用表单当前值测试（含未保存的修改），不落库
+    const result = await api.post('/config/weather/test', weatherConfig.value)
     if (result.success) {
       message.success(t('config.weather.testSuccess', { city: result.data.city, weather: result.data.weather, temperature: result.data.temperature }))
     } else {

@@ -22,16 +22,11 @@ async def test_llm_connection(
     db: Session = Depends(get_active_db)
 ):
     """测试 LLM 连通性"""
-    # 获取配置，请求参数优先
+    # 获取配置，请求体显式传的字段优先（model_fields_set 区分"没传"与"传空"）
     llm_config = ConfigService.get_llm_config(db)
-    if request.provider:
-        llm_config["provider"] = request.provider
-    if request.model:
-        llm_config["model"] = request.model
-    if request.api_key:
-        llm_config["api_key"] = request.api_key
-    if request.base_url:
-        llm_config["base_url"] = request.base_url
+    for field in ("mode", "provider", "model", "api_key", "base_url"):
+        if field in request.model_fields_set:
+            llm_config[field] = getattr(request, field)
 
     result = await LLMService.test_connection(llm_config)
     return result

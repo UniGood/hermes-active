@@ -2,7 +2,7 @@
 配置路由
 """
 from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Body, APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from models.database import get_active_db
@@ -285,22 +285,28 @@ async def update_weather_config(
     return SuccessResponse(message="天气配置已保存")
 
 
-@router.get("/weather/test")
+@router.post("/weather/test")
 async def test_weather(
+    form: dict | None = Body(default=None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_active_db)
 ):
-    """测试天气 API"""
+    """测试天气 API（form 传未保存的表单配置）"""
     from services.weather_service import WeatherService
 
-    # 读取配置
-    amap_key = ConfigService.get_config(db, "weather.amap_key") or ""
-    adcode = ConfigService.get_config(db, "weather.adcode") or "370100"
-    provider = ConfigService.get_config(db, "weather.provider") or "amap"
-    city = ConfigService.get_config(db, "weather.city") or ""
-    qweather_key = ConfigService.get_config(db, "weather.qweather_key") or ""
-    qweather_geo_url = ConfigService.get_config(db, "weather.qweather_geo_url") or "https://geoapi.qweather.com/v2/city/lookup"
-    qweather_weather_url = ConfigService.get_config(db, "weather.qweather_weather_url") or "https://devapi.qweather.com/v7/weather/now"
+    # 读取配置，表单显式传的字段优先（测试未保存的配置）
+    def _get(key: str, default: str = "") -> str:
+        if form and key in form and form[key] is not None:
+            return str(form[key])
+        return ConfigService.get_config(db, f"weather.{key}") or default
+
+    amap_key = _get("amap_key")
+    adcode = _get("adcode", "370100")
+    provider = _get("provider", "amap")
+    city = _get("city")
+    qweather_key = _get("qweather_key")
+    qweather_geo_url = _get("qweather_geo_url", "https://geoapi.qweather.com/v2/city/lookup")
+    qweather_weather_url = _get("qweather_weather_url", "https://devapi.qweather.com/v7/weather/now")
 
     # 检查是否有有效的 API Key
     if provider == "qweather":

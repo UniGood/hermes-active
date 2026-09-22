@@ -54,7 +54,10 @@ class LLMService:
     async def test_connection(llm_config: Dict[str, Any]) -> Dict[str, Any]:
         """测试 LLM 连通性"""
         start_time = time.time()
-        client = LLMService._get_client(llm_config)
+        try:
+            client = LLMService._get_client(llm_config)
+        except ValueError as e:
+            return {"success": False, "message": str(e)}
         try:
             model = llm_config.get("model", "gpt-3.5-turbo")
 
@@ -93,7 +96,10 @@ class LLMService:
     ) -> Dict[str, Any]:
         """调用 LLM 生成消息"""
         start_time = time.time()
-        client = LLMService._get_client(llm_config)
+        try:
+            client = LLMService._get_client(llm_config)
+        except ValueError as e:
+            return {"success": False, "content": "", "message": str(e)}
         try:
             model = llm_config.get("model", "gpt-3.5-turbo")
 
@@ -112,11 +118,21 @@ class LLMService:
 
             response = await client.chat.completions.create(**call_kwargs)
 
-            content = response.choices[0].message.content.strip()
-
             # 提取 reasoning_content（部分模型如 DeepSeek 支持）
             msg = response.choices[0].message
             reasoning_content = getattr(msg, 'reasoning_content', None) or getattr(msg, 'reasoning', None)
+            if not reasoning_content:
+                details = getattr(msg, 'reasoning_details', None)
+                if details and isinstance(details, list):
+                    reasoning_content = "\n\n".join(
+                        d.get("summary") or d.get("content") or d.get("text", "")
+                        for d in details if isinstance(d, dict)
+                    )
+
+            # content 可能为 None（推理型模型），也可能整体放 reasoning 里
+            content = (msg.content or "").strip()
+            if not content and reasoning_content:
+                content = (reasoning_content or "").strip()
 
             duration = round(time.time() - start_time, 2)
 

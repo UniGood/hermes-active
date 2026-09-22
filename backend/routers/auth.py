@@ -61,7 +61,9 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/avatar")
-async def get_avatar(db: Session = Depends(get_active_db)):
+async def get_avatar(db: Session = Depends(get_active_db),
+    current_user: User = Depends(get_current_user),
+):
     """获取用户头像（公开接口，用于登录页显示）"""
     user = db.query(User).first()
     if user and user.avatar:

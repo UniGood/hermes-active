@@ -1,22 +1,28 @@
 """
 自由意识 API 路由
 """
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import Depends, APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from typing import Optional
+from middleware.auth import get_current_user
+from models.active import User
 
 router = APIRouter(prefix="/api/free-consciousness", tags=["free-consciousness"])
 
 
 @router.get("/status")
-async def get_status():
+async def get_status(
+    current_user: User = Depends(get_current_user),
+):
     """获取状态"""
     from services.free_consciousness_service import FreeConsciousnessService
     return FreeConsciousnessService.get_status()
 
 
 @router.post("/toggle")
-async def toggle(enabled: bool = Body(..., embed=True)):
+async def toggle(enabled: bool = Body(..., embed=True),
+    current_user: User = Depends(get_current_user),
+):
     """开关"""
     from services.free_consciousness_service import (
         FreeConsciousnessService, start_fc_scheduler, stop_fc_scheduler
@@ -34,7 +40,9 @@ async def toggle(enabled: bool = Body(..., embed=True)):
 
 
 @router.post("/restart")
-async def restart():
+async def restart(
+    current_user: User = Depends(get_current_user),
+):
     """重启调度器"""
     from services.free_consciousness_service import restart_fc_scheduler
     restart_fc_scheduler()
@@ -42,14 +50,18 @@ async def restart():
 
 
 @router.get("/config")
-async def get_config():
+async def get_config(
+    current_user: User = Depends(get_current_user),
+):
     """获取配置"""
     from services.free_consciousness_service import FreeConsciousnessService
     return FreeConsciousnessService.get_config()
 
 
 @router.post("/config")
-async def save_config(config: dict = Body(...)):
+async def save_config(config: dict = Body(...),
+    current_user: User = Depends(get_current_user),
+):
     """保存配置"""
     from services.free_consciousness_service import (
         FreeConsciousnessService, restart_fc_scheduler
@@ -63,24 +75,33 @@ async def save_config(config: dict = Body(...)):
 
 
 @router.post("/test-llm")
-async def test_llm():
-    """测试 LLM 连通性"""
+async def test_llm(
+    form: Optional[dict] = Body(default=None),
+    current_user: User = Depends(get_current_user),
+):
+    """测试 LLM 连通性（支持传入未保存的表单配置）"""
     from services.free_consciousness_service import (
         FreeConsciousnessService, test_llm_connection
     )
     config = FreeConsciousnessService.get_config()
+    if isinstance(form, dict) and isinstance(form.get("llm"), dict):
+        config["llm"] = form["llm"]
     return await test_llm_connection(config)
 
 
 @router.get("/logs")
-async def get_logs(page: int = 1, page_size: int = 20, round_number: Optional[int] = None):
+async def get_logs(page: int = 1, page_size: int = 20, round_number: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+):
     """分页查询日志"""
     from services.free_consciousness_service import FreeConsciousnessService
     return FreeConsciousnessService.get_logs(page, page_size, round_number)
 
 
 @router.get("/logs/{log_id}")
-async def get_log_detail(log_id: int):
+async def get_log_detail(log_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """日志详情"""
     from services.free_consciousness_service import FreeConsciousnessService
     detail = FreeConsciousnessService.get_log_detail(log_id)
@@ -90,7 +111,9 @@ async def get_log_detail(log_id: int):
 
 
 @router.delete("/logs/{log_id}")
-async def delete_log(log_id: int):
+async def delete_log(log_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """删除日志"""
     from services.free_consciousness_service import FreeConsciousnessService
     if not FreeConsciousnessService.delete_log(log_id):
@@ -99,7 +122,9 @@ async def delete_log(log_id: int):
 
 
 @router.get("/chain")
-async def get_chain():
+async def get_chain(
+    current_user: User = Depends(get_current_user),
+):
     """获取当前完整思考链"""
     from services.free_consciousness_service import (
         FreeConsciousnessService, load_thinking_chain, build_thinking_chain
@@ -111,7 +136,9 @@ async def get_chain():
 
 
 @router.post("/run")
-async def manual_run():
+async def manual_run(
+    current_user: User = Depends(get_current_user),
+):
     """手动触发一次沉思"""
     from services.free_consciousness_service import run_contemplation
     try:

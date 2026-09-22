@@ -2422,11 +2422,11 @@ const saveConfig = async () => {
   }
 }
 
-// 测试功能
+// 测试功能（传表单当前值测试，不保存也能测）
 const testLLMConnect = async () => {
   testing.value.llm = true
   try {
-    const result = await api.testLLMConnect()
+    const result = await api.testLLMConnect({ llm: config.value.llm })
     llmTestResult.value = result
   } catch (e) {
     message.error(t('activeConsciousness.messages.llmTestFail'))
@@ -2439,8 +2439,10 @@ const testLLMConnect = async () => {
 const testEmotionLLM = async () => {
   testing.value.emotionLLM = true
   try {
-    const resp = await fetch('/api/active-consciousness/test/emotion-llm-connect', { method: 'POST' })
-    const result = await resp.json()
+    const result = await api.testEmotionLLMConnect({
+      llm: config.value.llm,
+      emotion_llm: config.value.emotion_llm,
+    })
     emotionLLMTestResult.value = result
   } catch (e) {
     message.error(t('activeConsciousness.messages.emotionLLMTestFail'))
@@ -2453,8 +2455,10 @@ const testEmotionLLM = async () => {
 const testThoughtLLM = async () => {
   testing.value.thoughtLLM = true
   try {
-    const resp = await fetch('/api/active-consciousness/test/thought-llm-connect', { method: 'POST' })
-    const result = await resp.json()
+    const result = await api.testThoughtLLMConnect({
+      llm: config.value.llm,
+      thought_llm: config.value.thought_llm,
+    })
     thoughtLLMTestResult.value = result
   } catch (e) {
     message.error(t('activeConsciousness.messages.thoughtLLMTestFail'))
@@ -2497,8 +2501,7 @@ const testSessionContext = async () => {
 const testContextCollector = async () => {
   testing.value.contextCollector = true
   try {
-    const resp = await fetch('/api/active-consciousness/test/context-collector', { method: 'POST' })
-    const result = await resp.json()
+    const result = await api.testContextCollector()
     testResult.value = result
   } catch (e) {
     message.error(t('activeConsciousness.messages.contextCollectorFail'))
@@ -2511,8 +2514,7 @@ const testContextCollector = async () => {
 const testThoughtEngine = async () => {
   testing.value.thoughtEngine = true
   try {
-    const resp = await fetch('/api/active-consciousness/test/thought-engine', { method: 'POST' })
-    const result = await resp.json()
+    const result = await api.testThoughtEngine()
     testResult.value = result
   } catch (e) {
     message.error(t('activeConsciousness.messages.thoughtEngineFail'))

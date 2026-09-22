@@ -2,7 +2,7 @@
 主动意识 API 路由 - 心跳触发，主动发送消息
 """
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import Body, Depends, APIRouter, HTTPException
 
 from models.active_consciousness import (
     ActiveConsciousnessConfig, ActiveConsciousnessStatus,
@@ -12,6 +12,8 @@ from services.active_consciousness_service import (
     ActiveConsciousnessService,
     validate_active_consciousness_config
 )
+from middleware.auth import get_current_user
+from models.active import User
 
 logger = logging.getLogger("hermes.active_consciousness.router")
 
@@ -21,7 +23,9 @@ router = APIRouter(prefix="/api/active-consciousness", tags=["active-consciousne
 # ============ 配置 ============
 
 @router.get("/config")
-async def get_config():
+async def get_config(
+    current_user: User = Depends(get_current_user),
+):
     """获取主动意识配置"""
     try:
         return ActiveConsciousnessService.get_config()
@@ -31,7 +35,9 @@ async def get_config():
 
 
 @router.put("/config", response_model=SuccessResponse)
-async def update_config(config: dict):
+async def update_config(config: dict,
+    current_user: User = Depends(get_current_user),
+):
     """更新主动意识配置"""
     # 验证配置
     errors = validate_active_consciousness_config(config)
@@ -64,7 +70,9 @@ async def update_config(config: dict):
 # ============ 状态 ============
 
 @router.get("/status")
-async def get_status():
+async def get_status(
+    current_user: User = Depends(get_current_user),
+):
     """获取主动意识状态"""
     try:
         return ActiveConsciousnessService.get_status()
@@ -77,7 +85,9 @@ async def get_status():
 
 @router.get("/thoughts")
 async def get_thoughts(page: int = 1, page_size: int = 20, date: str = None,
-                       heartbeat_id: int = None, thought_id: int = None):
+                       heartbeat_id: int = None, thought_id: int = None,
+    current_user: User = Depends(get_current_user),
+):
     """获取念头日志，支持 date=YYYY-MM-DD / heartbeat_id / thought_id 过滤"""
     result = ActiveConsciousnessService.get_thoughts(page, page_size, date, heartbeat_id, thought_id)
     # 添加展示用的中文标签
@@ -89,7 +99,9 @@ async def get_thoughts(page: int = 1, page_size: int = 20, date: str = None,
 
 
 @router.delete("/thoughts/{thought_id}", response_model=SuccessResponse)
-async def delete_thought(thought_id: int):
+async def delete_thought(thought_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """删除念头"""
     if ActiveConsciousnessService.delete_thought(thought_id):
         return SuccessResponse(message="已删除")
@@ -97,32 +109,42 @@ async def delete_thought(thought_id: int):
 
 
 @router.get("/thoughts/{thought_id}")
-async def get_thought_detail(thought_id: int):
+async def get_thought_detail(thought_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """获取单条念头详情（含完整 details JSON）"""
     return ActiveConsciousnessService.get_thought_detail(thought_id)
 
 
 @router.post("/thoughts/{thought_id}/retry")
-async def retry_thought(thought_id: int):
+async def retry_thought(thought_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """重试发送念头"""
     return ActiveConsciousnessService.retry_thought(thought_id)
 
 
 @router.get("/heartbeats")
 async def get_heartbeats(page: int = 1, page_size: int = 20, date: str = None,
-                         heartbeat_id: int = None):
+                         heartbeat_id: int = None,
+    current_user: User = Depends(get_current_user),
+):
     """获取心跳日志，支持 date=YYYY-MM-DD / heartbeat_id 过滤"""
     return ActiveConsciousnessService.get_heartbeats(page, page_size, date, heartbeat_id)
 
 
 @router.get("/heartbeats/{heartbeat_id}")
-async def get_heartbeat_detail(heartbeat_id: int):
+async def get_heartbeat_detail(heartbeat_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """获取单条心跳日志详情（含完整 details JSON）"""
     return ActiveConsciousnessService.get_heartbeat_detail(heartbeat_id)
 
 
 @router.delete("/heartbeats/{heartbeat_id}", response_model=SuccessResponse)
-async def delete_heartbeat(heartbeat_id: int):
+async def delete_heartbeat(heartbeat_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """删除心跳日志"""
     if ActiveConsciousnessService.delete_heartbeat(heartbeat_id):
         return SuccessResponse(message="已删除")
@@ -131,69 +153,29 @@ async def delete_heartbeat(heartbeat_id: int):
 
 # ============ 测试 ============
 
+def _apply_form_overrides(config: dict, form: dict | None) -> dict:
+    """把前端表单当前值（未保存）覆盖到配置上——测试用，不落库。
+
+    form 期望形如 {llm: {...}, emotion_llm/thought_llm: {...}}，
+    缺失的键保持 DB 配置，保证向后兼容（不传 body = 原行为）。
+    """
+    if not form:
+        return config
+    for key in ("llm", "emotion_llm", "thought_llm"):
+        if isinstance(form.get(key), dict):
+            config[key] = form[key]
+    return config
+
+
 @router.post("/test/llm-connect")
-async def test_llm_connect():
-    """测试 LLM 连通性"""
-    try:
-        config = ActiveConsciousnessService.get_config()
-        llm_config = config.get("llm", {})
-
-        # 简单测试 prompt
-        test_prompt = "请回复'连接成功'两个字"
-
-        if llm_config.get("mode") == "hermes":
-            import sys
-            from pathlib import Path
-            sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
-            from agent.auxiliary_client import call_llm
-
-            response = call_llm(
-                messages=[{"role": "user", "content": test_prompt}],
-                temperature=0.1,
-                max_tokens=50,
-            )
-            result = response.choices[0].message.content
-            return {
-                "success": True,
-                "data": {
-                    "mode": "hermes",
-                    "response": result,
-                    "model": "hermes default"
-                }
-            }
-        else:
-            # 自定义 LLM
-            if not llm_config.get("api_key"):
-                return {"success": False, "error": "未配置 LLM API Key"}
-
-            import httpx
-            async with httpx.AsyncClient(timeout=15) as client:
-                resp = await client.post(
-                    f"{llm_config.get('base_url', 'https://api.openai.com/v1')}/chat/completions",
-                    headers={"Authorization": f"Bearer {llm_config['api_key']}"},
-                    json={
-                        "model": llm_config.get("model", "deepseek-chat"),
-                        "messages": [{"role": "user", "content": test_prompt}],
-                        "max_tokens": 50,
-                        "temperature": 0.1
-                    }
-                )
-                data = resp.json()
-                if "choices" in data and data["choices"]:
-                    result = data["choices"][0]["message"]["content"]
-                    return {
-                        "success": True,
-                        "data": {
-                            "mode": "custom",
-                            "response": result,
-                            "model": llm_config.get("model"),
-                            "base_url": llm_config.get("base_url")
-                        }
-                    }
-                else:
-                    return {"success": False, "error": f"LLM 返回异常: {data}"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+async def test_llm_connect(
+    form: dict | None = Body(default=None),
+    current_user: User = Depends(get_current_user),
+):
+    """测试 LLM 连通性（支持传入未保存的表单配置）"""
+    config = _apply_form_overrides(ActiveConsciousnessService.get_config(), form)
+    llm_config = config.get("llm", {})
+    return await _test_llm_connection(llm_config, "通用 LLM")
 
 
 async def _test_llm_connection(llm_config: dict, label: str) -> dict:
@@ -239,25 +221,33 @@ async def _test_llm_connection(llm_config: dict, label: str) -> dict:
 
 
 @router.post("/test/emotion-llm-connect")
-async def test_emotion_llm_connect():
-    """测试情绪评估 LLM 连通性"""
-    config = ActiveConsciousnessService.get_config()
+async def test_emotion_llm_connect(
+    form: dict | None = Body(default=None),
+    current_user: User = Depends(get_current_user),
+):
+    """测试情绪评估 LLM 连通性（支持传入未保存的表单配置）"""
+    config = _apply_form_overrides(ActiveConsciousnessService.get_config(), form)
     from services.active_consciousness_service import get_effective_llm_config
     llm_config = get_effective_llm_config(config, "emotion")
     return await _test_llm_connection(llm_config, "情绪评估")
 
 
 @router.post("/test/thought-llm-connect")
-async def test_thought_llm_connect():
-    """测试念头生成 LLM 连通性"""
-    config = ActiveConsciousnessService.get_config()
+async def test_thought_llm_connect(
+    form: dict | None = Body(default=None),
+    current_user: User = Depends(get_current_user),
+):
+    """测试念头生成 LLM 连通性（支持传入未保存的表单配置）"""
+    config = _apply_form_overrides(ActiveConsciousnessService.get_config(), form)
     from services.active_consciousness_service import get_effective_llm_config
     llm_config = get_effective_llm_config(config, "thought")
     return await _test_llm_connection(llm_config, "念头生成")
 
 
 @router.post("/test/thought-generation")
-async def test_thought_generation():
+async def test_thought_generation(
+    current_user: User = Depends(get_current_user),
+):
     """测试念头生成（使用 ThoughtEngine 统一入口）"""
     try:
         config = ActiveConsciousnessService.get_config()
@@ -286,7 +276,9 @@ async def test_thought_generation():
 
 
 @router.post("/test/session-context")
-async def test_session_context():
+async def test_session_context(
+    current_user: User = Depends(get_current_user),
+):
     """测试 Session 上下文获取"""
     try:
         from services.context_collector import ContextCollector
@@ -313,7 +305,9 @@ async def test_session_context():
 
 
 @router.post("/test/context-collector")
-async def test_context_collector():
+async def test_context_collector(
+    current_user: User = Depends(get_current_user),
+):
     """测试 ContextCollector 上下文收集"""
     try:
         from services.context_collector import ContextCollector
@@ -344,7 +338,9 @@ async def test_context_collector():
 
 
 @router.post("/test/thought-engine")
-async def test_thought_engine():
+async def test_thought_engine(
+    current_user: User = Depends(get_current_user),
+):
     """测试 ThoughtEngine 完整流程"""
     try:
         from services.thought_engine import ThoughtEngine

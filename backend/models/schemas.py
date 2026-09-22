@@ -88,6 +88,7 @@ class LLMConfig(BaseModel):
 
 
 class LLMTestRequest(BaseModel):
+    mode: Optional[str] = None
     provider: Optional[str] = None
     model: Optional[str] = None
     api_key: Optional[str] = None
