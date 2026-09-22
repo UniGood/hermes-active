@@ -247,6 +247,9 @@ class PassiveConsciousnessService:
             except Exception:
                 pass
 
+            # 模板情绪变量：情绪三轴来自 EmotionState（单一真相源）
+            emotion_ctx = PassiveConsciousnessService._build_emotion_context()
+
             # 获取天气数据（从 weather.* 命名空间读取配置）
             weather_data = None
             try:
@@ -300,10 +303,32 @@ class PassiveConsciousnessService:
                     "intensity": round(emotional_intensity, 3),
                     "label": PassiveConsciousnessService._intensity_label(emotional_intensity),
                 },
+                # 情绪三轴（模板占位符 {valence}/{arousal}/{social}）：只读，来自 EmotionState
+                "valence": emotion_ctx["valence"],
+                "arousal": emotion_ctx["arousal"],
+                "social": emotion_ctx["social"],
+                "label": emotion_ctx["label"],
                 "weather": weather_data,
             }
         finally:
             db.close()
+
+    @staticmethod
+    def _build_emotion_context() -> Dict[str, Any]:
+        """
+        构建模板情绪变量（单一真相源）。
+
+        情绪三轴 valence/arousal/social 与情绪 label 只从 EmotionState 读取，
+        不再从关系维度/内心六维取值。模板占位符名字保持不变。
+        """
+        st = get_emotion_state().to_dict()
+        return {
+            "valence": st.get("valence", 0.5),
+            "arousal": st.get("arousal", 0.3),
+            # EmotionState 内部字段为 social_need，模板占位符仍为 {social}
+            "social": st.get("social", st.get("social_need", 0.3)),
+            "label": st.get("label", st.get("dominant", "calm")),
+        }
 
     @staticmethod
     def _intensity_label(value: float) -> str:
@@ -351,3 +376,5 @@ class PassiveConsciousnessService:
 
 # 导入 ConfigService（避免循环导入）
 from services.config_service import ConfigService
+# 情绪单一真相源：模板情绪变量只从 EmotionState 读取
+from services.active_consciousness_service import get_emotion_state

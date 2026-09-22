@@ -1389,6 +1389,9 @@ async def evaluate_emotion_with_llm(
     """
     使用 LLM 评估当前情绪状态，输出 VA 值
 
+    只返回 EmotionState，由调用方经 update_emotion_state 落盘；
+    不写关系维度 valence/arousal/social（避免双写）。
+
     返回：(EmotionState, dict) — 情绪状态 + LLM调用详情(prompt_sent, response_received, duration_ms)
     """
     now = datetime.now()
@@ -2155,7 +2158,12 @@ def evolve_emotion(last_state: EmotionState, minutes_since_update: float) -> Emo
 
 
 def merge_emotion(evolved: EmotionState, llm_assessed: EmotionState) -> EmotionState:
-    """合并演化值和 LLM 评估值"""
+    """
+    合并演化值和 LLM 评估值
+
+    情绪三轴只在 EmotionState 内合并（单一真相源），
+    不写关系维度 valence/arousal/social；affection/trust/heat 由关系状态独立维护。
+    """
     config = ActiveConsciousnessService.get_config()
     emotion_config = config.get("emotion", {})
     weight_evolved = float(emotion_config.get("weight_evolved", "0.4"))
@@ -2198,6 +2206,9 @@ def merge_emotion_dynamic(
 ) -> EmotionState:
     """
     动态权重合并情绪
+
+    情绪变化只经 update_emotion_state 写入 EmotionState（单一真相源），
+    不在此更新关系维度 valence/arousal/social。
 
     Args:
         evolved: 演化后的情绪

@@ -105,6 +105,19 @@ class ChatHeat(BaseModel):
     recent_user_msg_at: Optional[str] = None
 
 
+class RelationState(BaseModel):
+    """
+    关系维度（慢变关系）— 情绪单一真相源拆分后的三维
+
+    affection/trust/heat 描述关系亲疏，变化缓慢；
+    情绪三轴 valence/arousal/social 只属于 EmotionState，此处不再定义。
+    needs、longing 等状态类保持独立，不受此模型影响。
+    """
+    affection: float = 0.5
+    trust: float = 0.5
+    heat: float = 0.0
+
+
 class ThoughtType(str, Enum):
     """念头类型枚举"""
     TIME = "time"           # 时间念头："23:30了，该睡了"
@@ -213,12 +226,15 @@ class DominantEmotion(str, Enum):
 @dataclass
 class EmotionState:
     """
-    情绪状态 - VA 模型
+    情绪状态 - VA 模型（情绪三轴的单一真相源）
 
     Valence (效价): 情感的正负性，0=消极，1=积极
     Arousal (唤醒度): 情感的激活程度，0=平静，1=激动
     Dominant (主导情绪): 当前最显著的情绪标签
     Social Need (社交需求): 想要社交/聊天的程度，0=不需要，1=非常想
+
+    注意：valence/arousal/social 三轴只在本类定义与演化，
+    关系维度见 RelationState（affection/trust/heat），禁止双写。
     """
     valence: float = 0.5
     arousal: float = 0.3

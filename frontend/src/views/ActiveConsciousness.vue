@@ -62,13 +62,14 @@
 
         </n-grid>
 
-        <!-- 情绪系统 -->
+        <!-- 情绪系统：情绪三轴只读（EmotionState 单一真相源）；关系三维 affection/trust/heat 可编辑 -->
         <div class="section-title" style="margin-top: 16px;">
           <n-icon size="18"><ColorPaletteOutline /></n-icon>
           <span>{{ t('activeConsciousness.emotion.system') }}</span>
         </div>
         <n-grid :cols="isMobile ? 1 : 2" :x-gap="12" :y-gap="12">
           <n-grid-item>
+            <!-- valence/arousal/social 只读展示，数据来自 status.emotion_state（EmotionState），无写入绑定 -->
             <n-card size="small" :title="t('activeConsciousness.emotion.stateVA')">
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 <div>
@@ -100,6 +101,32 @@
                   <n-tag :type="getEmotionTagType(status.emotion_state?.dominant)" size="small">
                     {{ emotionLabelCn(status.emotion_state?.dominant) }}
                   </n-tag>
+                </div>
+              </div>
+            </n-card>
+            <!-- 关系三维：affection/trust/heat 可编辑滑块（慢变关系，不含情绪三轴） -->
+            <n-card size="small" title="关系三维" style="margin-top: 12px;">
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-size: 13px; color: var(--theme-text-secondary);">affection</span>
+                    <span style="font-weight: 600;">{{ relation.affection.toFixed(2) }}</span>
+                  </div>
+                  <n-slider v-model:value="relation.affection" :min="0" :max="1" :step="0.01" />
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-size: 13px; color: var(--theme-text-secondary);">trust</span>
+                    <span style="font-weight: 600;">{{ relation.trust.toFixed(2) }}</span>
+                  </div>
+                  <n-slider v-model:value="relation.trust" :min="0" :max="1" :step="0.01" />
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-size: 13px; color: var(--theme-text-secondary);">heat</span>
+                    <span style="font-weight: 600;">{{ relation.heat.toFixed(2) }}</span>
+                  </div>
+                  <n-slider v-model:value="relation.heat" :min="0" :max="1" :step="0.01" />
                 </div>
               </div>
             </n-card>
@@ -1424,6 +1451,9 @@ const status = ref({
   llm_stats: { emotion_today: 0, emotion_week: 0, emotion_month: 0, last_emotion_dominant: null, thought_today: 0, thought_week: 0, thought_month: 0, thought_generated_today: 0, thought_generated_week: 0, thought_generated_month: 0 },
   sent_stats: { today: 0, week: 0, month: 0, year: 0, last_at: null },
 })
+
+// 关系三维（慢变关系，可编辑）：不含 valence/arousal/social，情绪三轴只读展示 EmotionState
+const relation = ref({ affection: 0.5, trust: 0.5, heat: 0.0 })
 
 // 日志
 const thoughts = ref({ total: 0, items: [] })
