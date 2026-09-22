@@ -181,10 +181,10 @@ function resizeAllCharts() {
 async function fetchPlatforms() {
   try {
     const res = await api.getAvailablePlatforms()
-    if (res.data?.success) {
-      platformOptions.value = (res.data.data || []).map(p => ({
-        label: p,
-        value: p,
+    if (res.success) {
+      platformOptions.value = (res.data || []).map(p => ({
+        label: p.name,
+        value: p.id,
       }))
     }
   } catch { /* ignore */ }
@@ -195,8 +195,8 @@ async function fetchStats() {
     const params = { hours: timeRange.value }
     if (selectedPlatform.value) params.platform = selectedPlatform.value
     const res = await api.getAnalysisStats(params)
-    if (res.data?.success) {
-      Object.assign(stats, res.data.data)
+    if (res.success) {
+      Object.assign(stats, res.data)
       await nextTick()
       renderPlatformChart()
       renderStatusChart()
@@ -210,8 +210,8 @@ async function fetchTrends() {
       hours: timeRange.value,
       interval: timeRange.value <= 24 ? 'hour' : 'day',
     })
-    if (res.data?.success) {
-      trends.data = res.data.data.data || []
+    if (res.success) {
+      trends.data = res.data.data || []
       await nextTick()
       renderTrendChart()
     }
@@ -221,8 +221,8 @@ async function fetchTrends() {
 async function fetchSentiment() {
   try {
     const res = await api.getAnalysisSentiment({ hours: timeRange.value })
-    if (res.data?.success) {
-      Object.assign(sentiment, res.data.data)
+    if (res.success) {
+      Object.assign(sentiment, res.data)
       await nextTick()
       renderEmotionChart()
       renderLongingChart()
