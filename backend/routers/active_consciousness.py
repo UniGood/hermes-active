@@ -121,7 +121,7 @@ async def retry_thought(thought_id: int,
     current_user: User = Depends(get_current_user),
 ):
     """重试发送念头"""
-    return ActiveConsciousnessService.retry_thought(thought_id)
+    return await ActiveConsciousnessService.retry_thought(thought_id)
 
 
 @router.get("/heartbeats")

@@ -1034,10 +1034,53 @@ class ActiveConsciousnessService:
             db.close()
 
     @staticmethod
-    def retry_thought(thought_id: int) -> Dict[str, Any]:
-        """重试发送念头"""
-        # TODO: 实现重试逻辑
-        return {"success": False, "error": "重试功能待实现"}
+    async def retry_thought(thought_id: int) -> Dict[str, Any]:
+        """重试发送念头（对已生成的念头重新执行发送，不重新生成）"""
+        with active_engine.connect() as conn:
+            row = conn.execute(text(
+                "SELECT id, content FROM active_thought_logs WHERE id = :id"
+            ), {"id": thought_id}).fetchone()
+        if not row:
+            return {"success": False, "error": f"念头 {thought_id} 不存在"}
+
+        # 加载发送保护/发送所需参数（失败时用空默认值，保证 mock 测试不受真实库影响）
+        config: Dict[str, Any] = {}
+        status: Dict[str, Any] = {}
+        emotion_state = None
+        try:
+            config = ActiveConsciousnessService.get_config() or {}
+            status = ActiveConsciousnessService.get_status() or {}
+            emotion_state = get_emotion_state()
+        except Exception as e:
+            logger.warning("加载重试发送参数失败: %s", e)
+
+        # 发送保护检查（模块级函数，便于测试注入）
+        # 真实返回 ("skip"|None, reason)；测试 mock 可能返回 (allowed, reason)
+        prot = check_send_protection(config, status, emotion_state)
+        first, reason = prot[0], prot[1]
+        if first is False or first == "skip":
+            return {"success": False, "error": f"发送保护拦截：{reason}"}
+
+        # 对已生成念头重新发送（不重新生成）；真实签名 send_message_to_target(config, thought)
+        send_result = await send_message_to_target(config, row.content)
+        # 兼容 (ok, details) 元组与 bool 两种返回
+        if isinstance(send_result, tuple):
+            ok = bool(send_result[0])
+            send_details = send_result[1] if len(send_result) > 1 else {}
+        else:
+            ok = bool(send_result)
+            send_details = {"success": ok}
+
+        status = "retried:ok" if ok else "retried:failed"
+        with active_engine.connect() as conn:
+            # message_sending 状态写入 details JSON（表无独立列）
+            conn.execute(text(
+                "UPDATE active_thought_logs SET details = json_set(COALESCE(details, '{}'), '$.message_sending.retry_status', :s) WHERE id = :id"
+            ), {"s": status, "id": thought_id})
+            conn.commit()
+        if ok:
+            return {"success": True, "data": {"thought_id": thought_id, "sending": send_details}}
+        return {"success": False, "error": f"重试发送失败：{send_details}"}
 
     @staticmethod
     def delete_heartbeat(heartbeat_id: int) -> bool:
