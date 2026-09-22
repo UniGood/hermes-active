@@ -31,5 +31,5 @@
 <rect x="607" y="177" width="30" height="16" rx="8" fill="url(#bub)" opacity=".62"/>
 <circle cx="650" cy="183" r="3.5" fill="#FFA07A" opacity=".5"/>
 </g>
-<rect x="3.5" y="27.5" width="833" height="205" rx="20" fill="none" stroke="#E8E8E8" stroke-width="2.5" filter="url(#sh)"/><path d="M312 27.5 H528" stroke="url(#glow)" stroke-width="3" stroke-linecap="round"/>
+<rect x="3.5" y="27.5" width="833" height="205" rx="20" fill="none" stroke="#E4E4E4" stroke-width="1.5"/><rect x="9.5" y="33.5" width="821" height="193" rx="14" fill="none" stroke="#E9E9E9" stroke-width="1" stroke-linecap="round" stroke-dasharray="0.5 5"/><path d="M3.5 61.5 V47.5 A20 20 0 0 1 23.5 27.5 H45.5 M836.5 61.5 V47.5 A20 20 0 0 0 816.5 27.5 H794.5 M3.5 198.5 V212.5 A20 20 0 0 0 23.5 232.5 H45.5 M836.5 198.5 V212.5 A20 20 0 0 1 816.5 232.5 H794.5" stroke="#FF7F50" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M312 27.5 H528" stroke="url(#glow)" stroke-width="3" stroke-linecap="round"/>
 </svg>

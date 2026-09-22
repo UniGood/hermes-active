@@ -81,13 +81,26 @@ def wire(x1, y1, x2, y2):
 
 
 def frame(x, y, w, h, rx=20):
-    """统一外框：浅灰圆角细线 + 顶边珊瑚橙渐变高光"""
+    """hero 专属装饰外框：细实线 + 点线内衬花边 + 四角珊瑚橙角标 + 顶边渐变高光（简约科技感）"""
     fx, fy, fw, fh = x + 3.5, y + 2.5, w - 7, h - 5
+    x2, y2, r = fx + fw, fy + fh, rx
     mid = int(x + w / 2)
-    return (f'<rect x="{fx}" y="{fy}" width="{fw}" height="{fh}" rx="{rx}" fill="none" '
-            f'stroke="#E8E8E8" stroke-width="2.5" filter="url(#sh)"/>'
-            f'<path d="M{mid - 108} {fy} H{mid + 108}" stroke="url(#glow)" stroke-width="3" '
-            f'stroke-linecap="round"/>')
+    base = (f'<rect x="{fx}" y="{fy}" width="{fw}" height="{fh}" rx="{r}" fill="none" '
+            f'stroke="#E4E4E4" stroke-width="1.5"/>')
+    # 内衬点线花边（圆点链）
+    dots = (f'<rect x="{fx + 6}" y="{fy + 6}" width="{fw - 12}" height="{fh - 12}" rx="{r - 6}" '
+            f'fill="none" stroke="#E9E9E9" stroke-width="1" stroke-linecap="round" '
+            f'stroke-dasharray="0.5 5"/>')
+    # 四角珊瑚橙 L 角标（沿圆角路径走）
+    corners = (f'<path d="M{fx} {fy + 34} V{fy + r} A{r} {r} 0 0 1 {fx + r} {fy} H{fx + 42}'
+               f' M{x2} {fy + 34} V{fy + r} A{r} {r} 0 0 0 {x2 - r} {fy} H{x2 - 42}'
+               f' M{fx} {y2 - 34} V{y2 - r} A{r} {r} 0 0 0 {fx + r} {y2} H{fx + 42}'
+               f' M{x2} {y2 - 34} V{y2 - r} A{r} {r} 0 0 1 {x2 - r} {y2} H{x2 - 42}" '
+               f'stroke="{CORAL}" stroke-width="3" fill="none" stroke-linecap="round"/>')
+    # 顶边珊瑚橙渐变高光
+    glow_line = (f'<path d="M{mid - 108} {fy} H{mid + 108}" stroke="url(#glow)" stroke-width="3" '
+                 f'stroke-linecap="round"/>')
+    return base + dots + corners + glow_line
 
 
 def icon(inner: str, x, y, size, color=CORAL, sw=2.0) -> str:
@@ -156,7 +169,7 @@ def build_problem(lang: str) -> str:
         lcap, rcap = "每次定时任务都是一场失忆", "带着完整记忆，主动开口"
     else:
         lcap, rcap = "Every run starts from zero", "Full memory, speaks first"
-    p = [svg_open(768, 384, vb="0 26 768 384")]
+    p = [svg_open(768, 368, vb="0 34 768 368")]
     p += [text(384, 52, f'Stateless Cron <tspan fill="{FAINT}" font-weight="400">vs</tspan> '
               f'Persistent Consciousness', 24, INK, bold=True, raw=True)]
     p += [card(32, 100, 344, 296, rx=24, stroke="none", fill=GRAY_SOFT, shadow=False)]
@@ -174,14 +187,13 @@ def build_problem(lang: str) -> str:
     p += [card(429, 202, 270, 76, rx=28, fill="#fff", shadow=True)]
     p += [text(564, 240, "I was just thinking about you", 16, INK, weight="500")]
     p += [text(564, 312, rcap, 13, "#C98B72", weight="500")]
-    p += [frame(0, 26, 768, 384)]
     p += ["</svg>"]
     return "\n".join(p)
 
 
 # ── 版式 3：architecture 架构总览 768x420 ──
 def build_architecture(lang: str) -> str:
-    p = [svg_open(768, 416, vb="64 10 768 416")]
+    p = [svg_open(768, 400, vb="64 18 768 400")]
     p += [card(180, 24, 320, 64), text(340, 56, "Vue 3 Web Console", 22, INK, bold=True)]
     p += [wire(340, 88, 340, 122), text(354, 104, "JWT REST API", 13.5, SUB, anchor="start", weight="500")]
     p += [card(80, 128, 520, 156, rx=24, stroke=CORAL, sw=3)]
@@ -196,7 +208,6 @@ def build_architecture(lang: str) -> str:
           text(230, 388, "read-only", 13.5, SUB, weight="500")]
     p += [card(360, 330, 180, 82), text(450, 360, "active.db", 21, INK, bold=True),
           text(450, 388, "read-write", 13.5, CORAL, bold=True)]
-    p += [frame(64, 10, 768, 416)]
     p += ["</svg>"]
     return "\n".join(p)
 
@@ -214,7 +225,7 @@ def build_four_systems(lang: str) -> str:
                  (P_MAIL, "Passive Consciousness", "", "Context injection on every message"),
                  (P_BRAIN, "Free Consciousness", "", "Autonomous contemplation & sediment"),
                  (P_CAL, "Scheduled Tasks", "", "Visual cron with prompt templates")]
-    p = [svg_open(768, 424, vb="0 10 768 424")]
+    p = [svg_open(768, 408, vb="0 18 768 408")]
     p += [text(32, 36, title, 25, INK, bold=True, anchor="start")]
     p += [f'<rect x="32" y="58" width="64" height="5" rx="2.5" fill="url(#rib)"/>']
     for i, (ic, en, zh, desc) in enumerate(items):
@@ -231,7 +242,6 @@ def build_four_systems(lang: str) -> str:
             p += [text(tx, cy + 26, desc, 12, SUB, anchor="start")]
         else:
             p += [text(tx, cy + 6, desc, 12.5, SUB, anchor="start")]
-    p += [frame(0, 10, 768, 424)]
     p += ["</svg>"]
     return "\n".join(p)
 
@@ -241,7 +251,7 @@ def build_deployment(lang: str) -> str:
     ltag, rtag = ("消息入口", "Web 控制台") if lang == "zh" else ("Messages", "Web Console")
     svc = [("hermes-active", ":18720", True), ("Hermes Gateway", "", False),
            ("Hindsight", ":8888", False), ("plugins/", "", False)]
-    p = [svg_open(768, 360, vb="0 38 768 360")]
+    p = [svg_open(768, 344, vb="0 46 768 344")]
     p += [f'<rect x="180" y="64" width="408" height="320" rx="28" fill="#FAFAFA"'
           f' stroke="{LINE}" stroke-width="2" stroke-dasharray="7 7"/>']
     p += [f'<rect x="204" y="52" width="86" height="24" rx="12" fill="#fff" stroke="{LINE}" stroke-width="1.5"/>']
@@ -259,31 +269,29 @@ def build_deployment(lang: str) -> str:
     p += [icon(P_BROWSER.replace("COLOR", "#9AA0A6"), 652, 196, 56, "#9AA0A6")]
     p += [wire(596, 222, 644, 222)]
     p += [text(680, 286, rtag, 12, SUB, weight="500")]
-    p += [frame(0, 38, 768, 360)]
     p += ["</svg>"]
     return "\n".join(p)
 
 
 # ── 版式 6：footer 页脚横幅 720x120 ──
 def build_footer(lang: str) -> str:
-    p = [svg_open(720, 92, vb="0 21 720 92")]
+    p = [svg_open(720, 80, vb="0 27 720 80")]
     p += [text(360, 42, f'Hermes Active — Built with <tspan fill="#FF6B6B" font-size="17">♥</tspan> '
               f'for the Hermes Agent Community', 15, "#6E6E6E", weight="500", ls=0.6, raw=True)]
     p += [f'<path d="M60 88 H330 L342 88 L350 78 L360 100 L368 88 L380 88 H660"'
           f' stroke="url(#rib)" stroke-width="2.2" fill="none" stroke-linecap="round"'
           f' stroke-linejoin="round"/>']
-    p += [frame(0, 21, 720, 92, rx=14)]
     p += ["</svg>"]
     return "\n".join(p)
 
 
 BUILDERS = {
     "hero": (build_hero, 840, 210),
-    "problem": (build_problem, 768, 384),
-    "architecture": (build_architecture, 768, 416),
-    "four-systems": (build_four_systems, 768, 424),
-    "deployment": (build_deployment, 768, 360),
-    "footer": (build_footer, 720, 92),
+    "problem": (build_problem, 768, 368),
+    "architecture": (build_architecture, 768, 400),
+    "four-systems": (build_four_systems, 768, 408),
+    "deployment": (build_deployment, 768, 344),
+    "footer": (build_footer, 720, 80),
 }
 
 
