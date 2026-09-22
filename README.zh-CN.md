@@ -6,12 +6,6 @@
   <img src="docs/images/zh-hero-banner.svg" width="800">
 </p>
 
-<h1 align="center">Hermes Active</h1>
-
-<p align="center">
-  <strong><a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a> 主动意识系统</strong>
-</p>
-
 <p align="center">
   给你的 AI 助手一颗心跳 —— 让它感知时间流逝、会想念你、能独自思考，<br>
   并带着对你们每一场对话的完整记忆，主动开口。

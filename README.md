@@ -6,12 +6,6 @@
   <img src="docs/images/en-hero-banner.svg" width="800">
 </p>
 
-<h1 align="center">Hermes Active</h1>
-
-<p align="center">
-  <strong>Proactive consciousness system for <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a></strong>
-</p>
-
 <p align="center">
   Give your AI assistant a heartbeat — let it feel time passing, miss you, think on its own,<br>
   and reach out first with full memory of every conversation you've ever had.
