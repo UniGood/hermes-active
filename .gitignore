@@ -8,3 +8,7 @@ data/
 
 # Build output
 frontend/dist/
+*.log
+*.tmp
+*.bak
+.DS_Store
