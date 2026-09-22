@@ -168,7 +168,12 @@ const testTools = [
 
 function formatMessage(text) {
   if (!text) return ''
-  return text.replace(/\n/g, '<br>')
+  // 先转义 HTML（防 XSS，与 Messages.vue 对齐），再转换换行
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>')
 }
 
 function scrollToBottom() {
