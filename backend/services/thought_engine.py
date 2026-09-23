@@ -10,6 +10,7 @@ ThoughtEngine - 统一念头生成器
 """
 
 import json
+import re
 import time
 import logging
 from datetime import datetime
@@ -18,6 +19,27 @@ from typing import Dict, Any, Optional, Tuple
 from services.context_collector import ContextCollector, ContextBundle
 
 logger = logging.getLogger("hermes.thought_engine")
+
+
+def _bigram_jaccard(a: str, b: str) -> float:
+    """字符 bigram 相似度（零依赖防复读粗筛）
+
+    注：分母用 min(|A|,|B|)（重叠系数）而非 |A∪B|。
+    短中文句 bigram 总量小，Jaccard 会系统性偏低（如 3/8=0.375），
+    难以命中 0.6 阈值；重叠系数对“换了几个字的车轱辘话”更敏感。
+    """
+    def grams(s: str) -> set:
+        s = re.sub(r'\s+', '', s or '')
+        return {s[i:i + 2] for i in range(len(s) - 1)} if len(s) > 1 else {s}
+    ga, gb = grams(a), grams(b)
+    if not ga or not gb:
+        return 0.0
+    return len(ga & gb) / min(len(ga), len(gb))
+
+
+def _is_repetitive(text: str, recent: list, threshold: float = 0.6) -> bool:
+    """与最近话题/句式相似则判复读（threshold 启发式起步值，可配）"""
+    return any(_bigram_jaccard(text, r) >= threshold for r in recent if r)
 
 
 class ThoughtEngine:
@@ -84,13 +106,26 @@ class ThoughtEngine:
         
         # 4. 解析结果
         thought, want_to_contact = self._parse_response(response)
-        
+
+        # 防复读：与最近已发送念头粗筛相似则重生成一次（只重试一次，防死循环）
+        repetitive = False
+        if want_to_contact and thought:
+            recent_full = self._recent_sent_topics(limit=3, max_chars=None)
+            if _is_repetitive(thought, recent_full):
+                logger.info("念头疑似复读，重生成一次: %s", thought[:50])
+                response, llm_details = await self._call_llm(messages)
+                thought, want_to_contact = self._parse_response(response)
+                if want_to_contact and thought and _is_repetitive(thought, recent_full):
+                    # 二次仍相似：接受并标记，不再重试
+                    repetitive = True
+
         # 5. 构建返回结果
         duration_ms = int((time.time() - start_time) * 1000)
         
         result = {
             "thought": thought,
             "want_to_contact": want_to_contact,
+            "repetitive": repetitive,
             "context_bundle": context.to_dict(),
             "llm_details": {
                 **llm_details,
@@ -207,10 +242,42 @@ class ThoughtEngine:
            (dn_start > dn_end and (now_h > dn_start or now_h < dn_end)):
             user_content += "\n（现在是深夜，想得更轻、更安静，一句就好。）"
 
+        # 防复读：最近说过的注入负面样本
+        recent_said = self._recent_sent_topics(limit=5)
+        if recent_said:
+            user_content += "\n\n最近你主动说过这些，换新的，别重复：" + "；".join(recent_said)
+
         return [
             {"role": "system", "content": system_content},
             {"role": "user", "content": user_content},
         ]
+
+    def _recent_sent_topics(self, limit: int = 5, max_chars: Optional[int] = 30) -> list:
+        """查最近 decision='send' 的已发送念头（防复读用）
+
+        Args:
+            limit: 取多少条
+            max_chars: 每条截断字数（默认 30，用于 prompt 注入）；None 表示全文（用于相似度比对）
+        """
+        from sqlalchemy import text
+        from models.database import active_engine
+        try:
+            with active_engine.connect() as conn:
+                rows = conn.execute(text(
+                    "SELECT content FROM active_thought_logs "
+                    "WHERE decision = 'send' "
+                    "ORDER BY created_at DESC LIMIT :limit"
+                ), {"limit": limit}).fetchall()
+                topics = []
+                for r in rows:
+                    c = (r[0] or "").strip()
+                    if not c:
+                        continue
+                    topics.append(c[:max_chars] if max_chars else c)
+                return topics
+        except Exception as e:
+            logger.warning("查询最近已发送念头失败: %s", e)
+            return []
     
     async def _call_llm(self, messages: list) -> Tuple[str, Dict[str, Any]]:
         """
