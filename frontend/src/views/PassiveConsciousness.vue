@@ -534,9 +534,9 @@ const longingTagType = computed(() => {
 })
 const longingColor = computed(() => {
   const score = status.value.longing.score
-  if (score < 0.3) return '#18a058'
-  if (score < 0.6) return '#f0a020'
-  return '#d03050'
+  if (score < 0.3) return 'var(--ok)'
+  if (score < 0.6) return 'var(--warn)'
+  return 'var(--err)'
 })
 const heatTagType = computed(() => {
   const heat = status.value.chat_heat.heat
@@ -546,15 +546,15 @@ const heatTagType = computed(() => {
 })
 const heatColor = computed(() => {
   const heat = status.value.chat_heat.heat
-  if (heat < 1) return '#18a058'
-  if (heat < 3) return '#f0a020'
-  return '#d03050'
+  if (heat < 1) return 'var(--ok)'
+  if (heat < 3) return 'var(--warn)'
+  return 'var(--err)'
 })
 const intensityColor = computed(() => {
   const intensity = status.value.emotional_intensity.intensity
-  if (intensity < 0.3) return '#18a058'
-  if (intensity < 0.6) return '#f0a020'
-  return '#d03050'
+  if (intensity < 0.3) return 'var(--ok)'
+  if (intensity < 0.6) return 'var(--warn)'
+  return 'var(--err)'
 })
 
 // 加载数据

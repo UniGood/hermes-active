@@ -56,7 +56,7 @@
             <div class="cron-next-runs" v-if="cronParseResult.next_runs && cronParseResult.next_runs.length">
               <div class="cron-next-title" @click="showNextRuns = !showNextRuns" style="cursor: pointer; user-select: none;">
                 {{ t('cronJobs.form.nextRunTimes') }}
-                <span style="font-size: 12px; color: #999;">{{ showNextRuns ? t('cronJobs.form.collapse') : t('cronJobs.form.expand') }}</span>
+                <span style="font-size: 12px; color: var(--text-secondary);">{{ showNextRuns ? t('cronJobs.form.collapse') : t('cronJobs.form.expand') }}</span>
               </div>
               <template v-if="showNextRuns">
                 <div v-for="(run, idx) in cronParseResult.next_runs" :key="idx" class="cron-next-item">
@@ -103,7 +103,7 @@
               <n-checkbox v-model:checked="formData.append_soul_md">
                 {{ t('cronJobs.form.appendSoulMd') }}
               </n-checkbox>
-              <span style="font-size: 12px; color: #999">
+              <span style="font-size: 12px; color: var(--text-secondary)">
                 {{ formData.append_soul_md ? t('cronJobs.form.appendSoulMdHint') : t('cronJobs.form.noAppendSoulMd') }}
               </span>
             </n-space>
@@ -167,7 +167,7 @@
             </n-space>
             <template v-if="contextConfig.session_enabled">
               <n-space align="center">
-                <span style="font-size: 13px; color: #666">{{ t('cronJobs.form.readCount') }}</span>
+                <span style="font-size: 13px; color: var(--text-secondary)">{{ t('cronJobs.form.readCount') }}</span>
                 <n-input-number
                   v-model:value="contextConfig.session_limit"
                   :min="1"
@@ -180,7 +180,7 @@
                 <n-checkbox v-model:checked="contextConfig.include_tool">
                   {{ t('cronJobs.form.includeToolContext') }}
                 </n-checkbox>
-                <span style="font-size: 12px; color: #999">
+                <span style="font-size: 12px; color: var(--text-secondary)">
                   {{ contextConfig.include_tool ? t('cronJobs.form.includeToolHint') : t('cronJobs.form.excludeToolHint') }}
                 </span>
               </n-space>
@@ -194,18 +194,18 @@
           <n-space vertical style="width: 100%">
             <n-space align="center">
               <n-switch v-model:value="contextConfig.hindsight_recall_enabled" />
-              <span style="font-size: 13px; color: #666">{{ t('cronJobs.form.enableRecall') }}</span>
+              <span style="font-size: 13px; color: var(--text-secondary)">{{ t('cronJobs.form.enableRecall') }}</span>
             </n-space>
             <template v-if="contextConfig.hindsight_recall_enabled">
               <n-space align="center">
-                <span style="font-size: 13px; color: #666">{{ t('cronJobs.form.keyword') }}</span>
+                <span style="font-size: 13px; color: var(--text-secondary)">{{ t('cronJobs.form.keyword') }}</span>
                 <n-input
                   v-model:value="contextConfig.hindsight_recall_query"
                   :placeholder="t('cronJobs.form.searchKeyword')"
                   size="small"
                   style="width: 300px"
                 />
-                <span style="font-size: 13px; color: #666">{{ t('cronJobs.form.count') }}</span>
+                <span style="font-size: 13px; color: var(--text-secondary)">{{ t('cronJobs.form.count') }}</span>
                 <n-input-number
                   v-model:value="contextConfig.hindsight_recall_limit"
                   :min="1"
@@ -221,11 +221,11 @@
           <n-space vertical style="width: 100%">
             <n-space align="center">
               <n-switch v-model:value="contextConfig.hindsight_reflect_enabled" />
-              <span style="font-size: 13px; color: #666">{{ t('cronJobs.form.enableReflect') }}</span>
+              <span style="font-size: 13px; color: var(--text-secondary)">{{ t('cronJobs.form.enableReflect') }}</span>
             </n-space>
             <template v-if="contextConfig.hindsight_reflect_enabled">
               <n-space align="center">
-                <span style="font-size: 13px; color: #666">{{ t('cronJobs.form.question') }}</span>
+                <span style="font-size: 13px; color: var(--text-secondary)">{{ t('cronJobs.form.question') }}</span>
                 <n-input
                   v-model:value="contextConfig.hindsight_reflect_query"
                   :placeholder="t('cronJobs.form.analysisQuestion')"
@@ -243,14 +243,14 @@
           <n-space vertical style="width: 100%">
             <n-space align="center">
               <n-switch v-model:value="contextConfig.weather_enabled" />
-              <span style="font-size: 13px; color: #666">{{ t('cronJobs.form.enableWeather') }}</span>
+              <span style="font-size: 13px; color: var(--text-secondary)">{{ t('cronJobs.form.enableWeather') }}</span>
             </n-space>
             <n-text v-if="contextConfig.weather_enabled" depth="3" style="font-size: 12px">
               {{ t('cronJobs.form.weatherInjectionHint') }}
             </n-text>
             <template v-if="contextConfig.weather_enabled">
               <n-space align="center">
-                <span style="font-size: 13px; color: #666">{{ t('cronJobs.form.forecastDays') }}</span>
+                <span style="font-size: 13px; color: var(--text-secondary)">{{ t('cronJobs.form.forecastDays') }}</span>
                 <n-radio-group v-model:value="contextConfig.weather_days">
                   <n-radio :value="0">{{ t('cronJobs.form.today') }}</n-radio>
                   <n-radio :value="2">{{ t('cronJobs.form.twoDays') }}</n-radio>
@@ -290,9 +290,9 @@
                 style="width: 120px"
                 :disabled="!formData.cooldown_enabled"
               />
-              <span style="font-size: 13px; color: #666">{{ t('cronJobs.form.minutes') }}</span>
+              <span style="font-size: 13px; color: var(--text-secondary)">{{ t('cronJobs.form.minutes') }}</span>
             </n-space>
-            <div style="font-size: 12px; color: #999; margin-top: 4px;">
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
               {{ t('cronJobs.form.cooldownHint') }}
             </div>
           </n-space>
@@ -301,20 +301,20 @@
         <n-divider title-placement="left">{{ t('cronJobs.form.sendMessage') }}</n-divider>
         <n-form-item :label="t('cronJobs.form.useLlm')">
           <n-switch v-model:value="formData.use_llm" />
-          <span style="margin-left: 8px; color: #999; font-size: 13px">
+          <span style="margin-left: 8px; color: var(--text-secondary); font-size: 13px">
             {{ formData.use_llm ? t('cronJobs.form.llmGenerate') : t('cronJobs.form.directSend') }}
           </span>
         </n-form-item>
         <n-form-item v-if="formData.use_llm" label="Max Tokens">
           <n-input-number v-model:value="formData.max_tokens" :min="0" :max="8192" :step="100" style="width: 180px" />
-          <span style="margin-left: 8px; color: #999; font-size: 13px">{{ t('cronJobs.form.noLimit') }}</span>
+          <span style="margin-left: 8px; color: var(--text-secondary); font-size: 13px">{{ t('cronJobs.form.noLimit') }}</span>
         </n-form-item>
         <n-form-item v-if="!formData.use_llm" :label="t('cronJobs.form.fixedMessage')">
           <n-input v-model:value="formData.fixed_message" type="textarea" :autosize="{ minRows: 2, maxRows: 6 }" :placeholder="t('cronJobs.form.fixedMessagePlaceholder')" />
         </n-form-item>
         <n-form-item :label="t('cronJobs.form.writeToDb')">
           <n-switch v-model:value="formData.write_to_db" />
-          <span style="margin-left: 8px; color: #999; font-size: 13px">
+          <span style="margin-left: 8px; color: var(--text-secondary); font-size: 13px">
             {{ formData.write_to_db ? t('cronJobs.form.writeToDbHint') : t('cronJobs.form.sendOnly') }}
           </span>
         </n-form-item>
@@ -449,7 +449,7 @@
 
         <!-- 错误信息 -->
         <n-alert v-if="logDetailData._error" type="error" style="margin-bottom: 16px;" :title="t('cronJobs.logDetail.errorInfo')">
-          <pre style="white-space: pre-wrap; font-size: 13px; color: #d03050;">{{ logDetailData._error }}</pre>
+          <pre style="white-space: pre-wrap; font-size: 13px; color: var(--err);">{{ logDetailData._error }}</pre>
         </n-alert>
 
         <!-- 跳过原因 -->
@@ -483,7 +483,7 @@
           </n-descriptions-item>
           <n-descriptions-item :label="t('cronJobs.logDetail.duration')">{{ logDetailData.llm_response.duration }}s</n-descriptions-item>
           <n-descriptions-item v-if="logDetailData.llm_response.error" :label="t('cronJobs.logDetail.error')" :span="2">
-            <pre style="white-space: pre-wrap; color: #d03050; font-size: 12px;">{{ logDetailData.llm_response.error }}</pre>
+            <pre style="white-space: pre-wrap; color: var(--err); font-size: 12px;">{{ logDetailData.llm_response.error }}</pre>
           </n-descriptions-item>
         </n-descriptions>
 
@@ -497,7 +497,7 @@
             <div v-if="logDetailData.duration"><strong>{{ t('cronJobs.logDetail.duration') }}：</strong>{{ logDetailData.duration }}s</div>
             <div v-if="logDetailData.session_id"><strong>Session：</strong><span style="font-family: monospace; font-size: 12px;">{{ logDetailData.session_id }}</span></div>
             <div v-if="logDetailData.platform"><strong>{{ t('cronJobs.logDetail.platform') }}：</strong>{{ logDetailData.platform }}</div>
-            <div style="margin-top: 6px; font-size: 12px; color: #999;">
+            <div style="margin-top: 6px; font-size: 12px; color: var(--text-secondary);">
               {{ t('cronJobs.logDetail.simplifiedLog') }}
             </div>
           </div>
@@ -1354,7 +1354,7 @@ onMounted(() => {
   display: flex;
   gap: 16px;
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
   margin-bottom: 8px;
   flex-wrap: wrap;
 }
@@ -1383,7 +1383,7 @@ onMounted(() => {
 }
 
 .cron-next-title {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 12px;
   margin-bottom: 4px;
 }
@@ -1405,7 +1405,7 @@ onMounted(() => {
 
 .context-status-label {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .context-data-section {
@@ -1426,7 +1426,7 @@ onMounted(() => {
 
 .context-count {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .context-messages {
@@ -1458,7 +1458,7 @@ onMounted(() => {
 }
 
 .context-msg-role.assistant {
-  color: #ff9a9e;
+  color: var(--kelly);
 }
 
 .context-msg-content {
@@ -1466,11 +1466,11 @@ onMounted(() => {
 }
 
 .context-msg.recall .context-msg-content {
-  color: #0a7;
+  color: var(--ok);
 }
 
 .context-msg.reflect .context-msg-content {
-  color: #f0a020;
+  color: var(--warn);
   font-style: italic;
 }
 
@@ -1509,7 +1509,7 @@ onMounted(() => {
 
 .chip-label {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 2px;
 }
 
@@ -1530,7 +1530,7 @@ onMounted(() => {
   background: #f8f9fa;
   border-radius: 6px;
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   font-family: monospace;
   word-break: break-all;
 }
@@ -1664,7 +1664,7 @@ onMounted(() => {
 .tag-assistant {
   --n-color: #fff0f3 !important;
   --n-color-hover: #ffe0e6 !important;
-  --n-text-color: #ff9a9e !important;
+  --n-text-color: var(--kelly) !important;
   --n-border: 1px solid #ffd0d6 !important;
 }
 
@@ -1678,6 +1678,6 @@ onMounted(() => {
 
 .log-total {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 </style>

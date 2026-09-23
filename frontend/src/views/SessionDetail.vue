@@ -112,7 +112,7 @@
                         </n-text>
                       </template>
                       <template v-else-if="key === 'reasoning' || key === 'reasoning_content'">
-                        <n-text style="white-space: pre-wrap; word-break: break-all; font-size: 11px; color: #999">
+                        <n-text style="white-space: pre-wrap; word-break: break-all; font-size: 11px; color: var(--text-secondary)">
                           {{ String(value).substring(0, 300) }}{{ String(value).length > 300 ? '...' : '' }}
                         </n-text>
                       </template>
@@ -213,7 +213,7 @@ function getRoleName(role) {
 }
 
 function formatContent(content) {
-  if (!content) return `<span style="color:#999">${t('sessionDetail.messages.emptyContent')}</span>`
+  if (!content) return `<span style="color:var(--text-secondary)">${t('sessionDetail.messages.emptyContent')}</span>`
   return content
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -291,7 +291,7 @@ onMounted(() => {
 
 .info-item .label {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .info-item .value {
@@ -343,13 +343,13 @@ onMounted(() => {
 
 .message-id {
   font-size: 11px;
-  color: #999;
+  color: var(--text-secondary);
   font-family: monospace;
 }
 
 .message-time {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .delete-btn {
@@ -402,7 +402,7 @@ onMounted(() => {
 .field-key {
   width: 180px;
   font-weight: 600;
-  color: var(--theme-text-secondary, #666);
+  color: var(--theme-text-secondary, var(--text-secondary));
   font-family: monospace;
   background: var(--theme-bg-muted, #f8f6f4);
 }
@@ -416,13 +416,13 @@ onMounted(() => {
   gap: 12px;
   margin-top: 8px;
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .tag-assistant {
   --n-color: #fff0f3 !important;
   --n-color-hover: #ffe0e6 !important;
-  --n-text-color: #ff9a9e !important;
+  --n-text-color: var(--kelly) !important;
   --n-border: 1px solid #ffd0d6 !important;
 }
 

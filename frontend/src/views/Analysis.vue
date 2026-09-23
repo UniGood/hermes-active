@@ -174,6 +174,11 @@ function initChart(el) {
   return chart
 }
 
+// ECharts 画布不支持 CSS 变量，需解析为具体色值
+function tokenColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
 function resizeAllCharts() {
   charts.forEach(c => c.resize())
 }
@@ -324,9 +329,9 @@ function renderStatusChart() {
     series: [{
       type: 'bar',
       data: [
-        { value: stats.success, itemStyle: { color: '#18a058' } },
-        { value: stats.skipped, itemStyle: { color: '#f0a020' } },
-        { value: stats.error, itemStyle: { color: '#d03050' } },
+        { value: stats.success, itemStyle: { color: tokenColor('--ok') } },
+        { value: stats.skipped, itemStyle: { color: tokenColor('--warn') } },
+        { value: stats.error, itemStyle: { color: tokenColor('--err') } },
       ],
       barWidth: '40%',
     }],

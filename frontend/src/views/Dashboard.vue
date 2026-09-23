@@ -4,7 +4,7 @@
     <div class="stats-grid">
       <div class="stat-card" v-for="stat in stats" :key="stat.label">
         <div class="stat-icon" :style="{ background: stat.color }">
-          <n-icon :size="24" color="#fff"><component :is="stat.icon" /></n-icon>
+          <n-icon :size="24" color="var(--text-primary)"><component :is="stat.icon" /></n-icon>
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ stat.value }}</div>
@@ -112,7 +112,7 @@ async function loadStats() {
       name: t(`common.platform.${p.platform}`) || p.platform,
       count: p.count,
       percent: Math.round((p.count / total) * 100),
-      color: platformColors[p.platform] || '#999'
+      color: platformColors[p.platform] || 'var(--text-secondary)'
     }))
   } catch (e) {
     console.error('加载统计失败:', e)
@@ -193,7 +193,7 @@ onMounted(() => {
 
 .stat-label {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .message-list {
@@ -219,7 +219,7 @@ onMounted(() => {
 
 .message-time {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .message-content {
@@ -265,7 +265,7 @@ onMounted(() => {
   min-width: 36px;
   text-align: right;
   font-size: 13px;
-  color: var(--theme-text-secondary, #666);
+  color: var(--theme-text-secondary, var(--text-secondary));
   font-weight: 500;
 }
 
@@ -273,13 +273,13 @@ onMounted(() => {
   min-width: 32px;
   text-align: right;
   font-size: 13px;
-  color: var(--theme-text-muted, #999);
+  color: var(--theme-text-muted, var(--text-secondary));
 }
 
 .tag-assistant {
   --n-color: #fff0f3 !important;
   --n-color-hover: #ffe0e6 !important;
-  --n-text-color: #ff9a9e !important;
+  --n-text-color: var(--kelly) !important;
   --n-border: 1px solid #ffd0d6 !important;
 }
 

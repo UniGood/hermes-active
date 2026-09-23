@@ -568,7 +568,7 @@ onMounted(() => {
 }
 
 .dot-green {
-  background: #18a058;
+  background: var(--ok);
   box-shadow: 0 0 8px rgba(24, 160, 88, 0.6);
   animation: pulse 2s infinite;
 }

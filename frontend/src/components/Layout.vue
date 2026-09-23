@@ -245,7 +245,7 @@ watch(() => route.path, () => {
 
 .nav-item.active {
   background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
-  color: #fff;
+  color: var(--text-primary);
   box-shadow: 0 2px 12px rgba(var(--theme-primary-rgb), 0.3);
 }
 
@@ -303,7 +303,7 @@ watch(() => route.path, () => {
 .mobile-title {
   font-size: 16px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 /* ========== 移动端适配（< 768px） ========== */

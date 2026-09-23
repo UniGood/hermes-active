@@ -157,7 +157,7 @@
                         <span style="font-weight: 600;">{{ status.decision.hour_sent_count }}/{{ decisionConfig.max_per_hour }}</span>
                       </div>
                       <n-progress :percentage="frequencyHourPercentage" :show-indicator="false" :height="4"
-                        :color="frequencyHourPercentage >= 100 ? '#d03050' : '#18a058'" />
+                        :color="frequencyHourPercentage >= 100 ? 'var(--err)' : 'var(--ok)'" />
                     </div>
                     <div style="flex: 1;">
                       <div style="display: flex; justify-content: space-between;">
@@ -165,7 +165,7 @@
                         <span style="font-weight: 600;">{{ status.sent_stats.today }}/{{ decisionConfig.max_per_day }}</span>
                       </div>
                       <n-progress :percentage="frequencyDayPercentage" :show-indicator="false" :height="4"
-                        :color="frequencyDayPercentage >= 100 ? '#d03050' : '#18a058'" />
+                        :color="frequencyDayPercentage >= 100 ? 'var(--err)' : 'var(--ok)'" />
                     </div>
                   </div>
                 </div>
@@ -1574,9 +1574,9 @@ const longingTagType = computed(() => {
 })
 const longingColor = computed(() => {
   const score = status.value.longing.score
-  if (score < 0.3) return '#18a058'
-  if (score < 0.6) return '#f0a020'
-  return '#d03050'
+  if (score < 0.3) return 'var(--ok)'
+  if (score < 0.6) return 'var(--warn)'
+  return 'var(--err)'
 })
 // 聊天热度标签（根据 level_index 和 total_levels 动态决定）
 const heatTagType = computed(() => {
@@ -1590,9 +1590,9 @@ const heatTagType = computed(() => {
 })
 const intensityColor = computed(() => {
   const intensity = status.value.emotional_intensity.intensity
-  if (intensity < 0.3) return '#18a058'
-  if (intensity < 0.6) return '#f0a020'
-  return '#d03050'
+  if (intensity < 0.3) return 'var(--ok)'
+  if (intensity < 0.6) return 'var(--warn)'
+  return 'var(--err)'
 })
 
 // 心跳健康状态：上次心跳在间隔时间内=绿，否则红
@@ -1622,9 +1622,9 @@ const chatHeatPercentage = computed(() => {
 // 聊天热度进度条颜色（超过阈值时变红）
 const heatProgressColor = computed(() => {
   const percentage = chatHeatPercentage.value
-  if (percentage >= 100) return '#d03050'  // 超过阈值：红色
-  if (percentage >= 70) return '#f0a020'   // 接近阈值：橙色
-  return '#18a058'                          // 正常：绿色
+  if (percentage >= 100) return 'var(--err)'  // 超过阈值：红色
+  if (percentage >= 70) return 'var(--warn)'   // 接近阈值：橙色
+  return 'var(--ok)'                          // 正常：绿色
 })
 
 // 频率限制百分比

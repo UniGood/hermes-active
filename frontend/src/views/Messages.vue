@@ -310,7 +310,7 @@ async function loadRecentMessages() {
 
 .result-time {
   font-size: 11px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .session-detail-card {
@@ -368,7 +368,7 @@ async function loadRecentMessages() {
 
 .message-time {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .message-content {
@@ -405,13 +405,13 @@ async function loadRecentMessages() {
 
 .result-count {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .tag-assistant {
   --n-color: #fff0f3 !important;
   --n-color-hover: #ffe0e6 !important;
-  --n-text-color: #ff9a9e !important;
+  --n-text-color: var(--kelly) !important;
   --n-border: 1px solid #ffd0d6 !important;
 }
 

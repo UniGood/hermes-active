@@ -166,16 +166,16 @@ onBeforeUnmount(() => {
 }
 
 .log-error {
-  color: var(--theme-error, #f44747);
+  color: var(--theme-error, var(--err));
   font-weight: 500;
 }
 
 .log-warn {
-  color: var(--theme-warning, #cca700);
+  color: var(--theme-warning, var(--warn));
 }
 
 .log-info {
-  color: var(--theme-success, #6a9955);
+  color: var(--theme-success, var(--ok));
 }
 
 /* 移动端适配 */

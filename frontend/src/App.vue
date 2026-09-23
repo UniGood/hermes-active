@@ -48,12 +48,12 @@ const THEME_MAP = {
     borderColor: '#ffe0e6',
     shadowColor: 'rgba(255, 154, 158, 0.15)',
     primaryRgb: '255, 154, 158',
-    textPrimary: '#333', textSecondary: '#666', textMuted: '#999',
-    success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
+    textPrimary: '#333', textSecondary: 'var(--text-secondary)', textMuted: 'var(--text-secondary)',
+    success: 'var(--ok)', error: 'var(--err)', info: '#2080f0', warning: 'var(--warn)',
     borderLight: '#f0ece8',
     userMsgBg: '#fff0f3', assistantMsgBg: '#fff3e0',
     statusActive: '#a8e6cf',
-    bgMuted: '#f8f6f4', bgLight: '#fafafa', textHint: '#aaa', errorLight: '#e53935'
+    bgMuted: '#f8f6f4', bgLight: '#fafafa', textHint: 'var(--text-secondary)', errorLight: '#e53935'
   },
   elegant: {
     primary: '#4a90d9', hover: '#6ba3e0', pressed: '#3a7cc9',
@@ -64,12 +64,12 @@ const THEME_MAP = {
     borderColor: '#d0d7de',
     shadowColor: 'rgba(74, 144, 217, 0.12)',
     primaryRgb: '74, 144, 217',
-    textPrimary: '#333', textSecondary: '#666', textMuted: '#999',
-    success: '#18a058', error: '#d03050', info: '#2080f0', warning: '#f0a020',
+    textPrimary: '#333', textSecondary: 'var(--text-secondary)', textMuted: 'var(--text-secondary)',
+    success: 'var(--ok)', error: 'var(--err)', info: '#2080f0', warning: 'var(--warn)',
     borderLight: '#f0ece8',
     userMsgBg: '#e3f2fd', assistantMsgBg: '#fff3e0',
     statusActive: '#a8e6cf',
-    bgMuted: '#f8f6f4', bgLight: '#fafafa', textHint: '#aaa', errorLight: '#e53935'
+    bgMuted: '#f8f6f4', bgLight: '#fafafa', textHint: 'var(--text-secondary)', errorLight: '#e53935'
   }
 }
 

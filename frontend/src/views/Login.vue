@@ -219,7 +219,7 @@ async function handleLogin() {
   justify-content: center;
   font-size: 32px;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-primary);
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(var(--theme-primary-rgb), 0.3);
 }
@@ -240,7 +240,7 @@ async function handleLogin() {
 .login-header p {
   margin: 0;
   font-size: 13px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .welcome-text {

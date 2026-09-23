@@ -150,7 +150,7 @@ function insertTag(code) {
 
 .chip-label {
   font-size: 12px;
-  color: var(--theme-text-secondary, #666);
+  color: var(--theme-text-secondary, var(--text-secondary));
   margin-bottom: 2px;
 }
 
@@ -161,7 +161,7 @@ function insertTag(code) {
 
 .chip-preview {
   font-size: 11px;
-  color: var(--theme-text-muted, #999);
+  color: var(--theme-text-muted, var(--text-secondary));
   font-family: monospace;
 }
 
@@ -179,7 +179,7 @@ function insertTag(code) {
 }
 
 .help-title {
-  color: var(--theme-text-secondary, #666);
+  color: var(--theme-text-secondary, var(--text-secondary));
   margin-bottom: 6px;
   font-weight: 500;
 }
@@ -192,7 +192,7 @@ function insertTag(code) {
 }
 
 .help-example {
-  color: var(--theme-text-muted, #999);
+  color: var(--theme-text-muted, var(--text-secondary));
 }
 
 .help-example code {

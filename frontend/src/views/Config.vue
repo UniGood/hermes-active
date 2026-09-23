@@ -171,7 +171,7 @@
                   v-model:value="weatherConfig.city"
                   :placeholder="t('config.weather.cityPlaceholder')"
                 />
-                <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                <span style="margin-left: 8px; font-size: 12px; color: var(--text-secondary);">
                   {{ t('config.weather.cityHint') }}
                 </span>
               </n-form-item>
@@ -199,7 +199,7 @@
                     v-model:value="weatherConfig.adcode"
                     :placeholder="t('config.weather.adcodePlaceholder')"
                   />
-                  <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  <span style="margin-left: 8px; font-size: 12px; color: var(--text-secondary);">
                     {{ t('config.weather.adcodeHint') }}
                   </span>
                 </n-form-item>
@@ -221,7 +221,7 @@
                     v-model:value="weatherConfig.qweather_geo_url"
                     placeholder="https://geoapi.qweather.com/v2/city/lookup"
                   />
-                  <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  <span style="margin-left: 8px; font-size: 12px; color: var(--text-secondary);">
                     {{ t('config.weather.geoApiHint') }}
                   </span>
                 </n-form-item>
@@ -230,7 +230,7 @@
                     v-model:value="weatherConfig.qweather_weather_url"
                     placeholder="https://devapi.qweather.com/v7/weather/now"
                   />
-                  <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                  <span style="margin-left: 8px; font-size: 12px; color: var(--text-secondary);">
                     {{ t('config.weather.weatherApiHint') }}
                   </span>
                 </n-form-item>
@@ -339,7 +339,7 @@ const passwordForm = ref({
 
 // 主题配置
 const themes = computed(() => [
-  { id: 'kelly', name: t('config.theme.kellyName'), desc: t('config.theme.kellyDesc'), color1: '#ff9a9e', color2: '#f6d365' },
+  { id: 'kelly', name: t('config.theme.kellyName'), desc: t('config.theme.kellyDesc'), color1: 'var(--kelly)', color2: '#f6d365' },
   { id: 'elegant', name: t('config.theme.elegantName'), desc: t('config.theme.elegantDesc'), color1: '#4a90d9', color2: '#e8eef5' }
 ])
 const currentTheme = ref('kelly')
@@ -636,7 +636,7 @@ onMounted(() => {
 
 .theme-desc {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 

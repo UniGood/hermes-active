@@ -5,6 +5,8 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 import i18n from './i18n'
+// 全局设计变量（Design Tokens）
+import './styles/tokens.css'
 
 // 配置 hljs 给 naive-ui 的 n-code 组件使用
 const app = createApp(App)
