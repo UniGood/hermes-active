@@ -73,6 +73,9 @@ def init_active_db():
     # 自动迁移：给 active_thought_logs 表增加 details 列（如果不存在）
     migrate_thought_logs_table()
 
+    # 冲突旧账表（翻旧账机制）
+    migrate_repair_grievances_table()
+
     # 自由意识日志表索引（表由 Base.metadata.create_all 自动创建）
     try:
         with active_engine.connect() as conn:
@@ -107,6 +110,28 @@ def migrate_thought_logs_table():
                 logger.info("已添加 hindsight_stored 列到 active_thought_logs 表")
     except Exception as e:
         logger.warning("迁移 active_thought_logs 表失败: %s", e)
+
+
+def migrate_repair_grievances_table():
+    """创建冲突旧账表（如果不存在）"""
+    import logging
+    logger = logging.getLogger("hermes.database")
+
+    try:
+        with active_engine.connect() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS repair_grievances (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event TEXT NOT NULL,
+                    severity INTEGER DEFAULT 1,
+                    settled_at TEXT,
+                    last_cited_at TEXT,
+                    created_at TEXT NOT NULL
+                )
+            """))
+            conn.commit()
+    except Exception as e:
+        logger.warning("迁移 repair_grievances 表失败: %s", e)
 
 
 def get_state_metadata():

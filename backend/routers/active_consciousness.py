@@ -1,8 +1,10 @@
 """
 主动意识 API 路由 - 心跳触发，主动发送消息
 """
+import json
 import logging
 from fastapi import Body, Depends, APIRouter, HTTPException
+from sqlalchemy.orm import Session
 
 from models.active_consciousness import (
     ActiveConsciousnessConfig, ActiveConsciousnessStatus,
@@ -12,8 +14,10 @@ from services.active_consciousness_service import (
     ActiveConsciousnessService,
     validate_active_consciousness_config
 )
+from services.config_service import ConfigService
 from middleware.auth import get_current_user
 from models.active import User
+from models.database import get_active_db
 
 logger = logging.getLogger("hermes.active_consciousness.router")
 
@@ -78,6 +82,47 @@ async def get_status(
         return ActiveConsciousnessService.get_status()
     except Exception as e:
         logger.error("获取状态失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/repair/state")
+async def get_repair_state(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_active_db),
+):
+    """获取冲突修复状态（模糊档位，不暴露积分数值，防游戏化）"""
+    # mode 中文映射
+    mode_labels = {
+        "normal": "温柔",
+        "upset": "有点赌气",
+        "cold": "冷淡",
+        "softening": "嘴硬心软",
+        "reconciled": "回暖",
+        "grudge": "淡淡的",
+        "self_at_fault": "心虚讨好",
+    }
+    try:
+        raw = ConfigService.get_config(db, "active_consciousness.repair_state")
+        state = {"mode": "normal", "points": 0}
+        if raw:
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, dict):
+                    state.update(parsed)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        mode = state.get("mode", "normal")
+        points = float(state.get("points", 0) or 0)
+        # 好感积分模糊档位：冰 / 化冰 / 回暖
+        if points < 2:
+            level = "冰"
+        elif points < 4.8:
+            level = "化冰"
+        else:
+            level = "回暖"
+        return {"mode": mode_labels.get(mode, mode), "level": level}
+    except Exception as e:
+        logger.error("获取修复状态失败: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

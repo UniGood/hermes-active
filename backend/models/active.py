@@ -234,3 +234,14 @@ class FreeConsciousnessSediment(Base):
             "source_count": self.source_count,
             "compressed_at": self.compressed_at.isoformat() if self.compressed_at else None
         }
+
+
+class RepairGrievance(Base):
+    """冲突旧账（翻旧账机制）"""
+    __tablename__ = "repair_grievances"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event = Column(Text, nullable=False)          # 事件描述
+    severity = Column(Integer, default=1)          # 1-5
+    settled_at = Column(String, nullable=True)     # 翻篇时间
+    last_cited_at = Column(String, nullable=True)  # 上次被翻的时间
+    created_at = Column(String, nullable=False)
