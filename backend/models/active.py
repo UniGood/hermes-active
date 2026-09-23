@@ -245,3 +245,25 @@ class RepairGrievance(Base):
     settled_at = Column(String, nullable=True)     # 翻篇时间
     last_cited_at = Column(String, nullable=True)  # 上次被翻的时间
     created_at = Column(String, nullable=False)
+
+
+class MessageEffect(Base):
+    """主动消息效果样本（学习回路）"""
+    __tablename__ = "message_effects"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    thought_id = Column(Integer, nullable=False)
+    topic = Column(String, nullable=True)          # 话题标签
+    tone = Column(String, nullable=True)           # 语气档位
+    sent_at = Column(String, nullable=False)
+    effect = Column(String, nullable=True)         # ignored/acknowledged/engaged
+    reply_latency = Column(Integer, nullable=True)  # 分钟
+
+
+class Lesson(Base):
+    """经验教训本（质性总结产出）"""
+    __tablename__ = "lessons"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    summary = Column(Text, nullable=False)          # 一句话教训
+    evidence_count = Column(Integer, default=0)
+    retired = Column(Integer, default=0)            # 0/1
+    created_at = Column(String, nullable=False)

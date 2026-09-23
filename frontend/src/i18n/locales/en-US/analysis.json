@@ -46,5 +46,11 @@
     "success": "Success",
     "skipped": "Skipped",
     "error": "Error"
+  },
+  "lessons": {
+    "title": "Lessons Learned",
+    "evidence": "Evidence",
+    "retire": "Retire",
+    "empty": "No lessons yet"
   }
 }

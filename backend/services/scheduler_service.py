@@ -856,6 +856,16 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # 学习回路周总结（每周一 09:00）
+    from services.learning_service import weekly_job
+    scheduler.add_job(
+        weekly_job,
+        trigger=CronTrigger(day_of_week="mon", hour=9, minute=0),
+        id="_learning_weekly",
+        name="学习回路周总结",
+        replace_existing=True
+    )
+
 
 def stop_scheduler():
     """停止调度器"""

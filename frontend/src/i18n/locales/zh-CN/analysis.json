@@ -46,5 +46,11 @@
     "success": "成功",
     "skipped": "跳过",
     "error": "错误"
+  },
+  "lessons": {
+    "title": "经验教训本",
+    "evidence": "证据",
+    "retire": "作废",
+    "empty": "还没总结出教训"
   }
 }

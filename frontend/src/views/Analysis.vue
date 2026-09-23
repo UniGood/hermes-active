@@ -108,6 +108,36 @@
     <n-card :title="t('analysis.charts.injectionStatusDistribution')" style="margin-bottom: 16px">
       <div ref="statusChartRef" style="width: 100%; height: 320px"></div>
     </n-card>
+
+    <!-- 经验教训本 -->
+    <n-card :title="t('analysis.lessons.title')" style="margin-bottom: 16px">
+      <n-empty v-if="!lessons.length" :description="t('analysis.lessons.empty')" />
+      <n-space v-else vertical>
+        <n-card
+          v-for="lesson in lessons"
+          :key="lesson.id"
+          size="small"
+          :style="lesson.retired ? 'opacity: 0.45;' : ''"
+        >
+          <n-space align="center" justify="space-between">
+            <div>
+              <div>{{ lesson.summary }}</div>
+              <n-text depth="3" style="font-size: 12px">
+                {{ t('analysis.lessons.evidence') }}: {{ lesson.evidence_count || 0 }}
+              </n-text>
+            </div>
+            <n-button
+              v-if="!lesson.retired"
+              size="small"
+              tertiary
+              @click="retireLesson(lesson.id)"
+            >
+              {{ t('analysis.lessons.retire') }}
+            </n-button>
+          </n-space>
+        </n-card>
+      </n-space>
+    </n-card>
   </div>
 </template>
 
@@ -116,12 +146,14 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'v
 import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
 import api from '../api/passive_consciousness'
+import http from '../api/http'
 
 const { t } = useI18n()
 
 const loading = ref(false)
 const timeRange = ref(24)
 const selectedPlatform = ref(null)
+const lessons = ref([])
 
 const timeRangeOptions = computed(() => [
   { label: t('analysis.timeRange.last6Hours'), value: 6 },
@@ -239,10 +271,26 @@ async function fetchSentiment() {
 async function fetchAll() {
   loading.value = true
   try {
-    await Promise.all([fetchStats(), fetchTrends(), fetchSentiment()])
+    await Promise.all([fetchStats(), fetchTrends(), fetchSentiment(), fetchLessons()])
   } finally {
     loading.value = false
   }
+}
+
+// ---- 经验教训本 ----
+
+async function fetchLessons() {
+  try {
+    const res = await http.get('/active-consciousness/lessons')
+    lessons.value = res.data || res || []
+  } catch { /* ignore */ }
+}
+
+async function retireLesson(id) {
+  try {
+    await http.post(`/active-consciousness/lessons/${id}/retire`)
+    await fetchLessons()
+  } catch { /* ignore */ }
 }
 
 // ---- Chart Renderers ----

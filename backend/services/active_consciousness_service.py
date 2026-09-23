@@ -1659,7 +1659,7 @@ async def generate_and_send_thought_with_emotion(
     }
     
     # 记录念头日志
-    ActiveConsciousnessService.write_thought_log(
+    thought_log_id = ActiveConsciousnessService.write_thought_log(
         heartbeat_id=heartbeat_id,
         thought_type=thought_type,
         content=thought,
@@ -1674,7 +1674,7 @@ async def generate_and_send_thought_with_emotion(
         hindsight_stored=bool(details.get("hindsight_stored", False)),
         details=json.dumps(thought_details, ensure_ascii=False)
     )
-    
+
     # 发送消息
     sent = await send_message_to_target(config, thought, reasoning_content=_result.get("llm_details", {}).get("reasoning_content"))
     details["message_sending"] = {
@@ -1682,9 +1682,36 @@ async def generate_and_send_thought_with_emotion(
         "thought": thought,
         "thought_type": thought_type
     }
-    
+
     if sent:
         logger.info("消息发送成功: [%s] %s", thought_type, thought[:50])
+        # 学习回路：发送成功钩子，记效果样本（不影响主流程）
+        try:
+            from services.learning_service import record_sent
+            _topic = (_result.get("type") or _result.get("topic") or thought_type or "general")
+            _tone = "normal"
+            try:
+                from services.config_service import ConfigService
+                from models.database import ActiveSession
+                _tone_db = ActiveSession()
+                try:
+                    _rs_raw = ConfigService.get_config(_tone_db, "active_consciousness.repair_state")
+                finally:
+                    _tone_db.close()
+                if _rs_raw:
+                    _rs = json.loads(_rs_raw)
+                    if isinstance(_rs, dict):
+                        _tone = _rs.get("mode") or "normal"
+            except Exception:
+                pass
+            record_sent(
+                thought_id=thought_log_id or 0,
+                topic=_topic,
+                tone=_tone,
+                sent_at=datetime.now().isoformat()
+            )
+        except Exception as _le:
+            logger.debug("学习回路采集失败（忽略）: %s", _le)
     else:
         logger.warning("消息发送失败")
     

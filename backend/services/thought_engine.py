@@ -42,6 +42,24 @@ def _is_repetitive(text: str, recent: list, threshold: float = 0.6) -> bool:
     return any(_bigram_jaccard(text, r) >= threshold for r in recent if r)
 
 
+def _build_lessons_block(lessons: list) -> str:
+    """拼经验教训注入块（空列表返回空串；retired 的跳过）"""
+    if not lessons:
+        return ""
+    lines = []
+    for lesson in lessons:
+        if not isinstance(lesson, dict):
+            continue
+        if lesson.get("retired"):
+            continue
+        summary = (lesson.get("summary") or "").strip()
+        if summary:
+            lines.append(f"- {summary}")
+    if not lines:
+        return ""
+    return "\n\n你总结过的经验（别踩坑）：\n" + "\n".join(lines)
+
+
 class ThoughtEngine:
     """统一念头生成器"""
     
@@ -121,11 +139,25 @@ class ThoughtEngine:
 
         # 5. 构建返回结果
         duration_ms = int((time.time() - start_time) * 1000)
-        
+
+        # 本次注入的教训（透明化：lesson_applied）
+        lesson_applied = []
+        try:
+            for m in messages:
+                block = m.get("content") or ""
+                if "你总结过的经验" in block:
+                    for line in block.split("你总结过的经验", 1)[1].splitlines():
+                        line = line.strip()
+                        if line.startswith("- "):
+                            lesson_applied.append(line[2:].strip())
+        except Exception:
+            pass
+
         result = {
             "thought": thought,
             "want_to_contact": want_to_contact,
             "repetitive": repetitive,
+            "lesson_applied": lesson_applied,
             "context_bundle": context.to_dict(),
             "llm_details": {
                 **llm_details,
@@ -246,6 +278,27 @@ class ThoughtEngine:
         recent_said = self._recent_sent_topics(limit=5)
         if recent_said:
             user_content += "\n\n最近你主动说过这些，换新的，别重复：" + "；".join(recent_said)
+
+        # 学习回路：注入经验教训（未 retired ≤5 条）
+        try:
+            from sqlalchemy import text as _sql_text
+            from models.database import active_engine as _active_engine
+            with _active_engine.connect() as _conn:
+                _lesson_rows = _conn.execute(_sql_text(
+                    "SELECT summary, retired FROM lessons WHERE retired = 0 "
+                    "ORDER BY created_at DESC LIMIT 5"
+                )).fetchall()
+            _lessons = []
+            for _lr in _lesson_rows:
+                if hasattr(_lr, "_mapping"):
+                    _lessons.append(dict(_lr._mapping))
+                else:
+                    _lessons.append({"summary": _lr[0], "retired": _lr[1]})
+            lessons_block = _build_lessons_block(_lessons)
+            if lessons_block:
+                user_content += lessons_block
+        except Exception:
+            pass
 
         # 冲突修复台词包：按当前 mode 取 1-2 句说话风格示例
         try:

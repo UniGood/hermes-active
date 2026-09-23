@@ -76,6 +76,10 @@ def init_active_db():
     # 冲突旧账表（翻旧账机制）
     migrate_repair_grievances_table()
 
+    # 学习回路表（效果样本 + 经验教训本）
+    migrate_message_effects_table()
+    migrate_lessons_table()
+
     # 自由意识日志表索引（表由 Base.metadata.create_all 自动创建）
     try:
         with active_engine.connect() as conn:
@@ -132,6 +136,50 @@ def migrate_repair_grievances_table():
             conn.commit()
     except Exception as e:
         logger.warning("迁移 repair_grievances 表失败: %s", e)
+
+
+def migrate_message_effects_table():
+    """创建主动消息效果样本表（如果不存在）"""
+    import logging
+    logger = logging.getLogger("hermes.database")
+
+    try:
+        with active_engine.connect() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS message_effects (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    thought_id INTEGER NOT NULL,
+                    topic TEXT,
+                    tone TEXT,
+                    sent_at TEXT NOT NULL,
+                    effect TEXT,
+                    reply_latency INTEGER
+                )
+            """))
+            conn.commit()
+    except Exception as e:
+        logger.warning("迁移 message_effects 表失败: %s", e)
+
+
+def migrate_lessons_table():
+    """创建经验教训本表（如果不存在）"""
+    import logging
+    logger = logging.getLogger("hermes.database")
+
+    try:
+        with active_engine.connect() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS lessons (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    summary TEXT NOT NULL,
+                    evidence_count INTEGER DEFAULT 0,
+                    retired INTEGER DEFAULT 0,
+                    created_at TEXT NOT NULL
+                )
+            """))
+            conn.commit()
+    except Exception as e:
+        logger.warning("迁移 lessons 表失败: %s", e)
 
 
 def get_state_metadata():

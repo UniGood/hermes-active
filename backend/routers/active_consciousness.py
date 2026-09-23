@@ -85,6 +85,39 @@ async def get_status(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============ 经验教训本 ============
+
+@router.get("/lessons")
+async def get_lessons(
+    current_user: User = Depends(get_current_user),
+):
+    """获取经验教训本（含 retired 标记）"""
+    try:
+        from services.learning_service import _load_lessons_raw
+        items = _load_lessons_raw()
+        return {"success": True, "data": items}
+    except Exception as e:
+        logger.error("获取教训列表失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/lessons/{lesson_id}/retire")
+async def retire_lesson(lesson_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    """作废一条教训（置 retired=1）"""
+    try:
+        from sqlalchemy import text
+        from models.database import active_engine
+        with active_engine.connect() as conn:
+            conn.execute(text("UPDATE lessons SET retired = 1 WHERE id = :id"), {"id": lesson_id})
+            conn.commit()
+        return {"success": True, "message": "已作废"}
+    except Exception as e:
+        logger.error("作废教训失败: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/repair/state")
 async def get_repair_state(
     current_user: User = Depends(get_current_user),
