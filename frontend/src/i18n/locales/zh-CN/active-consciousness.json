@@ -23,6 +23,24 @@
     "recentHour": "近1小时：{count} 条",
     "emotionalIntensity": "情绪强度"
   },
+  "repair": {
+    "title": "关系状态",
+    "unknown": "未知",
+    "level": {
+      "ice": "冰",
+      "thawing": "化冰",
+      "warm": "回暖"
+    },
+    "mode": {
+      "normal": "温柔",
+      "upset": "有点赌气",
+      "cold": "冷淡",
+      "softening": "嘴硬心软",
+      "reconciled": "回暖",
+      "grudge": "淡淡的",
+      "self_at_fault": "心虚讨好"
+    }
+  },
   "emotion": {
     "system": "情绪系统",
     "stateVA": "情绪状态（VA 模型）",

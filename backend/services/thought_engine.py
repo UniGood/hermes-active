@@ -247,6 +247,42 @@ class ThoughtEngine:
         if recent_said:
             user_content += "\n\n最近你主动说过这些，换新的，别重复：" + "；".join(recent_said)
 
+        # 冲突修复台词包：按当前 mode 取 1-2 句说话风格示例
+        try:
+            import json as _json
+            from models.database import ActiveSession
+            from services.config_service import ConfigService
+            pack_raw = None
+            _pack_db = ActiveSession()
+            try:
+                pack_raw = ConfigService.get_config(
+                    _pack_db, "active_consciousness.prompts.repair_dialogue_pack"
+                )
+            finally:
+                _pack_db.close()
+            pack_raw = pack_raw or _DEFAULTS.get("active_consciousness.prompts.repair_dialogue_pack")
+            pack = _json.loads(pack_raw) if isinstance(pack_raw, str) else (pack_raw or {})
+            mode = "normal"
+            _mode_db = ActiveSession()
+            try:
+                rs_raw = ConfigService.get_config(_mode_db, "active_consciousness.repair_state")
+            finally:
+                _mode_db.close()
+            if rs_raw:
+                try:
+                    rs = _json.loads(rs_raw)
+                    if isinstance(rs, dict):
+                        mode = rs.get("mode", "normal") or "normal"
+                except (ValueError, TypeError):
+                    pass
+            lines = pack.get(mode) or pack.get("normal") or []
+            if lines:
+                # 取 1-2 句（按内容哈希稳定选，避免每次心跳换风格）
+                picked = lines[:2] if len(lines) <= 2 else [lines[0], lines[1]]
+                user_content += "\n\n你在这种心情下的说话风格示例：" + "；".join(picked)
+        except Exception:
+            pass
+
         return [
             {"role": "system", "content": system_content},
             {"role": "user", "content": user_content},

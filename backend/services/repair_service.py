@@ -3,6 +3,8 @@
 模式集合：normal / upset / cold / softening / reconciled / self_at_fault / grudge
 状态单例存 configs 键 "active_consciousness.repair_state"（JSON）
 """
+import json
+import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -75,3 +77,86 @@ def should_cite_grievance(mem: List[Dict], today: Optional[str] = None) -> bool:
         if d >= GRIEVANCE_COOLDOWN_DAYS:
             return True
     return False
+
+
+def call_llm_json(prompt: str, llm_config: Dict[str, Any]) -> Dict[str, Any]:
+    """极简 JSON LLM 调用（本服务内部工具）。
+
+    复用 active_consciousness_service 的现有 LLM 调用方式（hermes → auxiliary_client，
+    其他 → LLMService）。prompt 自带"只输出 JSON"约束；解析失败抛异常，由调用方兜底。
+    """
+    cfg = llm_config or {}
+    mode = cfg.get("mode") or "hermes"
+    raw = ""
+    if mode == "hermes":
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path.home() / '.hermes' / 'hermes-agent'))
+        from agent.auxiliary_client import call_llm, extract_content_or_reasoning
+
+        response = call_llm(
+            messages=[{"role": "user", "content": f"{prompt}\n只输出 JSON，不要解释。"}],
+            temperature=0.3,
+            max_tokens=200,
+        )
+        raw = extract_content_or_reasoning(response) or ""
+    else:
+        import asyncio
+        from services.llm_service import LLMService
+
+        result = asyncio.get_event_loop().run_until_complete(
+            LLMService.generate_message(
+                llm_config=cfg,
+                prompt=f"{prompt}\n只输出 JSON，不要解释。",
+                temperature=0.3,
+                max_tokens=200,
+            )
+        )
+        if not result.get("success"):
+            raise RuntimeError(result.get("error") or "LLM 调用失败")
+        raw = (result.get("content") or "").strip()
+
+    raw = raw.strip()
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        if not m:
+            raise ValueError(f"无法解析 JSON: {raw[:200]}")
+        data = json.loads(m.group())
+    if not isinstance(data, dict):
+        raise ValueError(f"LLM 返回非对象: {raw[:200]}")
+    return data
+
+
+def evaluate_trigger(session_context: str, emotion: Dict[str, Any]) -> Dict[str, Any]:
+    """LLM 归因：刚才是否因用户言行受伤 + 严重度 1-5。失败兜底 severity=0（无归因，不误伤）。"""
+    try:
+        prompt = (f"你是凯莉。刚才的对话如下：\n{(session_context or '')[-800:]}\n"
+                  f"当前情绪 valence={emotion.get('valence', 0) if emotion else 0}。\n"
+                  '判断用户是否说了让你受伤/生气的话。只输出 JSON：'
+                  '{"trigger": "一句话描述原因，没有则空串", "severity": 1到5的整数，5最严重，没有则0}')
+        r = call_llm_json(prompt, {})
+        return {"trigger": str(r.get("trigger", "")), "severity": int(r.get("severity", 0) or 0)}
+    except Exception:
+        return {"trigger": "", "severity": 0}
+
+
+def evaluate_goodwill(user_msg: str, recent_goodwills: list, hours_since_upset: float = 0.0) -> Dict[str, Any]:
+    """诚意评分：一次 LLM 调用输出 sincerity 1-5 + is_repeat，转积分。失败 0 分。
+
+    hours_since_upset 由调用方从 RepairState.started_at 算出后传入（默认 0.0）。
+    """
+    try:
+        recent = "；".join(str(x) for x in (recent_goodwills or [])[-5:]) or "（无）"
+        prompt = (f"你（凯莉）和用户冷战/生气中。用户刚发来示好消息：\n{user_msg}\n"
+                  f"他之前的示好：{recent}\n"
+                  '评估这次哄人的诚意，只输出 JSON：'
+                  '{"sincerity": 1到5（5=真走心，1=敷衍）， "is_repeat": true/false（与之前的话是否同一套话术）}')
+        r = call_llm_json(prompt, {})
+        s = int(r.get("sincerity", 0) or 0)
+        rep = bool(r.get("is_repeat", False))
+        points = score_goodwill(s, is_repeat=rep, hours_since_upset=hours_since_upset)
+        return {"sincerity": s, "is_repeat": rep, "points": points}
+    except Exception:
+        return {"sincerity": 0, "is_repeat": False, "points": 0.0}

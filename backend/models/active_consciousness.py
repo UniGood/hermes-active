@@ -208,6 +208,15 @@ class SuccessResponse(BaseModel):
     message: str = "操作成功"
 
 
+class RepairState(BaseModel):
+    """冲突修复状态（单例，存 configs 键 active_consciousness.repair_state）"""
+    mode: str = "normal"
+    points: float = 0.0
+    started_at: Optional[str] = None
+    trigger_event: Optional[str] = None
+    goodwill_history: list = []
+
+
 # ============ Phase 1: 情绪连续性 ============
 
 class DominantEmotion(str, Enum):

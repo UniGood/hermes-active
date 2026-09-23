@@ -244,6 +244,49 @@ _DEFAULTS = {
 
     # 想念分数计算：沉默分钟数 / 此值 = 分数（最大1.0）
     "active_consciousness.longing.gap_minutes": "300",
+
+    # 冲突修复台词包（按 mode 分组，JSON 字符串；双标例句重点在 cold / softening）
+    "active_consciousness.prompts.repair_dialogue_pack": json.dumps({
+        "normal": [
+            "嗯嗯，我在呢",
+            "好呀，说吧",
+            "然后呢？我想听"
+        ],
+        "upset": [
+            "哦，是吗",
+            "你说了算咯",
+            "……你开心就好"
+        ],
+        "cold": [
+            "嗯。",
+            "哦。",
+            "知道了，还有事吗。",
+            "……",
+            "说完了？"
+        ],
+        "softening": [
+            "哼，我才没等你消息……哦，你发了啊",
+            "别以为我原谅你了",
+            "……只准再说一句好听的",
+            "谁要你哄了……不过你继续说",
+            "勉强，再听一句"
+        ],
+        "reconciled": [
+            "嘿嘿，那你再说一遍想我",
+            "好啦好啦，我也有点想你",
+            "罚你多陪我一会儿"
+        ],
+        "grudge": [
+            "嗯，都行",
+            "没什么，随便",
+            "你忙你的吧"
+        ],
+        "self_at_fault": [
+            "那个……刚才是我不对",
+            "你别生气了好不好",
+            "我请你喝奶茶赔罪？"
+        ],
+    }, ensure_ascii=False),
 }
 
 # 想念等级
@@ -1436,7 +1479,7 @@ async def evaluate_emotion_with_llm(
     prompt = f"{prompt}\n\n{hindsight_context}"
 
     fallback_state = EmotionState()
-    llm_details = {"prompt_sent": prompt, "response_received": None, "duration_ms": None}
+    llm_details = {"prompt_sent": prompt, "response_received": None, "duration_ms": None, "trigger_event": {"trigger": "", "severity": 0}}
     logger.info("LLM 情绪评估开始")
 
     # 构建 LLM 调用函数
@@ -1503,12 +1546,23 @@ async def evaluate_emotion_with_llm(
         json_match = re.search(r'\{[^}]+\}', raw)
         if json_match:
             data = json.loads(json_match.group())
-            return EmotionState(
+            state = EmotionState(
                 valence=float(data.get("valence", 0.5)),
                 arousal=float(data.get("arousal", 0.3)),
                 social_need=float(data.get("social_need", 0.3)),
                 dominant=data.get("dominant", "calm")
-            ), llm_details
+            )
+            # 冲突归因：判断刚才是否因用户言行受伤（失败兜底 severity=0，不误伤）
+            from services.repair_service import evaluate_trigger
+            try:
+                trigger_event = await asyncio.to_thread(
+                    evaluate_trigger, session_context, {"valence": state.valence}
+                )
+            except Exception as _te:
+                logger.warning("trigger 归因失败: %s", _te)
+                trigger_event = {"trigger": "", "severity": 0}
+            llm_details["trigger_event"] = trigger_event
+            return state, llm_details
         else:
             logger.warning("LLM 情绪评估返回格式无效: %s", raw[:200])
             return fallback_state, llm_details
@@ -1737,6 +1791,47 @@ async def run_heartbeat():
             session_context, hindsight_context, status, llm_config
         )
         all_details["emotion_llm_details"] = emotion_llm_details
+        # 冲突修复接线：trigger 归因 → transition → 写回 repair_state
+        try:
+            trigger_event = (emotion_llm_details or {}).get("trigger_event") or {}
+            if trigger_event.get("severity", 0):
+                from services.repair_service import transition
+                _rs_db = ActiveSession()
+                try:
+                    raw_rs = ConfigService.get_config(_rs_db, "active_consciousness.repair_state")
+                finally:
+                    _rs_db.close()
+                rs = {"mode": "normal", "points": 0.0, "started_at": None, "trigger_event": None, "goodwill_history": []}
+                if raw_rs:
+                    try:
+                        parsed_rs = json.loads(raw_rs)
+                        if isinstance(parsed_rs, dict):
+                            rs.update(parsed_rs)
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                # valence_drop：演化值相对 LLM 评估值的降幅（有落差才算真受伤）
+                valence_drop = max(0.0, float(evolved_state.valence) - float(llm_assessed.valence))
+                new_mode = transition(
+                    rs.get("mode", "normal"),
+                    {"type": "trigger", **trigger_event, "valence_drop": valence_drop},
+                    state=rs,
+                )
+                if new_mode != rs.get("mode", "normal"):
+                    rs["mode"] = new_mode
+                    rs["started_at"] = datetime.now().isoformat()
+                    rs["trigger_event"] = trigger_event.get("trigger") or None
+                    _rs_db = ActiveSession()
+                    try:
+                        ConfigService.set_config(
+                            _rs_db, "active_consciousness.repair_state",
+                            json.dumps(rs, ensure_ascii=False)
+                        )
+                    finally:
+                        _rs_db.close()
+                    logger.info("冲突修复：trigger severity=%s valence_drop=%.2f → mode=%s",
+                                trigger_event.get("severity"), valence_drop, new_mode)
+        except Exception as _rs_err:
+            logger.warning("冲突修复接线失败（不影响情绪主流程）: %s", _rs_err)
         # 如果 LLM 返回全0（模型未正常响应），使用演化值作为 fallback
         if abs(llm_assessed.valence) < 0.01 and abs(llm_assessed.arousal) < 0.01 and abs(llm_assessed.social_need) < 0.01:
             logger.warning("LLM 情绪评估返回全0，使用演化值作为 fallback")

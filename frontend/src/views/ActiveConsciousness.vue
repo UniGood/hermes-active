@@ -3,8 +3,15 @@
     <n-tabs v-model:value="activeTab" type="line" animated>
       <!-- Tab 1: 状态 -->
       <n-tab-pane name="status" :tab="t('activeConsciousness.tabs.status')">
+        <!-- 关系状态（冲突修复）：只显示 mode 语气 + 模糊档位，不暴露积分数值 -->
+        <n-card size="small" :title="t('activeConsciousness.repair.title')" class="repair-card">
+          <div class="repair-row">
+            <span class="repair-mode">{{ repairModeLabel }}</span>
+            <n-tag size="small" round class="repair-level-tag">{{ repairLevelLabel }}</n-tag>
+          </div>
+        </n-card>
         <!-- 状态概览 -->
-        <div class="section-title">
+        <div class="section-title" style="margin-top: 16px;">
           <n-icon size="18"><StatsChartOutline /></n-icon>
           <span>{{ t('activeConsciousness.status.overview') }}</span>
         </div>
@@ -1363,6 +1370,7 @@ import { useMessage, NButton, NTag, NSpace, NPopconfirm } from 'naive-ui'
 import { HelpCircleOutline, CheckmarkCircle, CloseCircle, StatsChartOutline, ColorPaletteOutline, AnalyticsOutline, SendOutline } from '@vicons/ionicons5'
 import api from '../api/active_consciousness'
 import mainApi from '../api'
+import http from '../api/http'
 import TimeFormatSelector from '../components/TimeFormatSelector.vue'
 
 const message = useMessage()
@@ -2335,6 +2343,40 @@ const loadStatus = async () => {
     message.error(t('activeConsciousness.messages.loadStatusFail'))
   }
 }
+
+// 关系状态（冲突修复）：mode 语气 + 模糊档位，不显示积分数值
+const repairState = ref({ mode: null, level: null })
+// API 返回中文/键名两种可能，统一映射到 i18n key
+const MODE_KEY_MAP = {
+  normal: 'normal', upset: 'upset', cold: 'cold', softening: 'softening',
+  reconciled: 'reconciled', grudge: 'grudge', self_at_fault: 'self_at_fault',
+  温柔: 'normal', 有点赌气: 'upset', 冷淡: 'cold', 嘴硬心软: 'softening',
+  回暖: 'reconciled', 淡淡的: 'grudge', 心虚讨好: 'self_at_fault',
+}
+const LEVEL_KEY_MAP = {
+  ice: 'ice', thawing: 'thawing', warm: 'warm',
+  冰: 'ice', 化冰: 'thawing', 回暖: 'warm',
+}
+const repairModeLabel = computed(() => {
+  const key = MODE_KEY_MAP[repairState.value.mode]
+  return key ? t(`activeConsciousness.repair.mode.${key}`) : t('activeConsciousness.repair.unknown')
+})
+const repairLevelLabel = computed(() => {
+  const key = LEVEL_KEY_MAP[repairState.value.level]
+  return key ? t(`activeConsciousness.repair.level.${key}`) : ''
+})
+const loadRepairState = async () => {
+  try {
+    const data = await http.get('/active-consciousness/repair/state')
+    repairState.value = {
+      mode: data?.mode ?? null,
+      level: data?.level ?? null,
+    }
+  } catch (e) {
+    // 加载失败静默显示"未知"，不打断页面
+    repairState.value = { mode: null, level: null }
+  }
+}
 const loadThoughts = async (page = 1, dateVal) => {
   thoughtsLoading.value = true
   try {
@@ -2573,6 +2615,7 @@ onMounted(async () => {
   await Promise.all([
     loadConfig(),
     loadStatus(),
+    loadRepairState(),
     loadThoughts(),
     loadHeartbeats(),
     loadNotifySessions(config.value.notify.platform).then(() => {
@@ -2605,6 +2648,26 @@ onMounted(async () => {
 
 .section-title .n-icon {
   color: var(--theme-primary);
+}
+
+/* 关系状态卡（冲突修复） */
+.repair-card {
+  margin-bottom: 0;
+}
+.repair-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.repair-mode {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--kelly);
+}
+.repair-level-tag {
+  color: var(--kelly) !important;
+  border-color: var(--kelly) !important;
+  background: transparent !important;
 }
 
 /* PC 端状态卡片等高对齐 */

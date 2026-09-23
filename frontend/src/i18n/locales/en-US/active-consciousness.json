@@ -23,6 +23,24 @@
     "recentHour": "Last 1hr: {count} msgs",
     "emotionalIntensity": "Emotional Intensity"
   },
+  "repair": {
+    "title": "Relationship",
+    "unknown": "Unknown",
+    "level": {
+      "ice": "Ice",
+      "thawing": "Thawing",
+      "warm": "Warm"
+    },
+    "mode": {
+      "normal": "Gentle",
+      "upset": "Sulking",
+      "cold": "Cold",
+      "softening": "Softening",
+      "reconciled": "Reconciled",
+      "grudge": "Distant",
+      "self_at_fault": "Guilty"
+    }
+  },
   "emotion": {
     "system": "Emotion System",
     "stateVA": "Emotion State (VA Model)",

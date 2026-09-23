@@ -249,6 +249,11 @@ class PassiveConsciousnessService:
 
             # 模板情绪变量：情绪三轴来自 EmotionState（单一真相源）
             emotion_ctx = PassiveConsciousnessService._build_emotion_context()
+            # 注入时机顺带：用户回复她的主动消息且冷战中 → 诚意评分（失败不影响主流程）
+            try:
+                PassiveConsciousnessService.maybe_evaluate_goodwill()
+            except Exception as _gw_err:
+                logger.debug("诚意评分跳过: %s", _gw_err)
 
             # 获取天气数据（从 weather.* 命名空间读取配置）
             weather_data = None
@@ -308,6 +313,8 @@ class PassiveConsciousnessService:
                 "arousal": emotion_ctx["arousal"],
                 "social": emotion_ctx["social"],
                 "label": emotion_ctx["label"],
+                # 冲突修复语气词（模板占位符 {mood_mode}）
+                "mood_mode": emotion_ctx.get("mood_mode", "温柔"),
                 "weather": weather_data,
             }
         finally:
@@ -320,6 +327,7 @@ class PassiveConsciousnessService:
 
         情绪三轴 valence/arousal/social 与情绪 label 只从 EmotionState 读取，
         不再从关系维度/内心六维取值。模板占位符名字保持不变。
+        另附 {mood_mode} 语气词（冲突修复状态 → 中文语气），供模板选用。
         """
         st = get_emotion_state().to_dict()
         return {
@@ -328,7 +336,156 @@ class PassiveConsciousnessService:
             # EmotionState 内部字段为 social_need，模板占位符仍为 {social}
             "social": st.get("social", st.get("social_need", 0.3)),
             "label": st.get("label", st.get("dominant", "calm")),
+            "mood_mode": PassiveConsciousnessService._get_mood_mode_label(),
         }
+
+    # 冲突修复 mode → 中文语气词（模板 {mood_mode} 占位符）
+    MOOD_MODE_LABELS = {
+        "normal": "温柔",
+        "upset": "有点赌气",
+        "cold": "冷淡硬句",
+        "softening": "嘴硬心软",
+        "reconciled": "回暖撒娇",
+        "grudge": "淡淡的",
+        "self_at_fault": "心虚讨好",
+    }
+
+    @staticmethod
+    def _load_repair_state() -> Dict[str, Any]:
+        """读取冲突修复状态单例（configs 键 active_consciousness.repair_state）"""
+        state = {"mode": "normal", "points": 0.0, "started_at": None,
+                 "trigger_event": None, "goodwill_history": []}
+        try:
+            db = ActiveSession()
+            try:
+                raw = ConfigService.get_config(db, "active_consciousness.repair_state")
+            finally:
+                db.close()
+            if raw:
+                parsed = json.loads(raw)
+                if isinstance(parsed, dict):
+                    state.update(parsed)
+        except Exception as e:
+            logger.debug("读取 repair_state 失败，使用默认: %s", e)
+        return state
+
+    @staticmethod
+    def _save_repair_state(state: Dict[str, Any]) -> None:
+        """写回冲突修复状态单例"""
+        db = ActiveSession()
+        try:
+            ConfigService.set_config(
+                db, "active_consciousness.repair_state",
+                json.dumps(state, ensure_ascii=False)
+            )
+        finally:
+            db.close()
+
+    @staticmethod
+    def _get_mood_mode_label() -> str:
+        """当前 repair mode → 中文语气词（模板 {mood_mode}）"""
+        try:
+            mode = PassiveConsciousnessService._load_repair_state().get("mode", "normal")
+            return PassiveConsciousnessService.MOOD_MODE_LABELS.get(mode, "温柔")
+        except Exception:
+            return "温柔"
+
+    @staticmethod
+    def maybe_evaluate_goodwill(user_msg: str = "") -> Optional[Dict[str, Any]]:
+        """注入时机顺带：用户回复她的主动消息且冷战中 → 诚意评分 → transition → 更新 repair_state。
+
+        触发条件：mode 不是 normal，且（state.db 里）上一条是她的主动消息且距今 <2h。
+        失败不影响注入主流程（内部 try/except 全包）。
+        """
+        try:
+            from services.repair_service import evaluate_goodwill, transition
+
+            state = PassiveConsciousnessService._load_repair_state()
+            mode = state.get("mode", "normal")
+            if mode == "normal":
+                return None
+
+            # 查最近消息：确认上一条是她的主动消息且距今 <2h
+            now = datetime.now()
+            rows = []
+            try:
+                with state_engine.connect() as conn:
+                    rows = conn.execute(text(
+                        "SELECT role, content, timestamp FROM messages WHERE session_id IN "
+                        "(SELECT id FROM sessions WHERE source='weixin' AND ended_at IS NULL) "
+                        "ORDER BY timestamp DESC LIMIT 5"
+                    )).fetchall()
+            except Exception as e:
+                logger.debug("查询消息失败，跳过诚意评分: %s", e)
+                return None
+
+            def _ts(v):
+                try:
+                    if isinstance(v, (int, float)):
+                        return datetime.fromtimestamp(float(v))
+                    s = str(v)
+                    if s.replace('.', '').isdigit():
+                        return datetime.fromtimestamp(float(s))
+                    return datetime.fromisoformat(s)
+                except Exception:
+                    return None
+
+            msgs = [{"role": r[0], "content": (r[1] or ""), "ts": _ts(r[2])} for r in (rows or [])]
+            # 最新一条应是用户消息（注入时机 = 用户消息到达）
+            if not msgs or msgs[0].get("role") != "user":
+                return None
+            current_user_msg = user_msg or msgs[0].get("content") or ""
+            if not current_user_msg.strip():
+                return None
+            # 上一条须是她的主动消息（[凯莉% 前缀）且距今 <2h
+            if len(msgs) < 2:
+                return None
+            prev = msgs[1]
+            prev_content = prev.get("content") or ""
+            if prev.get("role") != "assistant" or not prev_content.startswith("[凯莉"):
+                return None
+            if not prev.get("ts") or (now - prev["ts"]).total_seconds() >= 2 * 3600:
+                return None
+
+            # hours_since_upset 从 started_at 算
+            hours_since_upset = 0.0
+            started_at = state.get("started_at")
+            if started_at:
+                try:
+                    hours_since_upset = max(
+                        0.0, (now - datetime.fromisoformat(started_at)).total_seconds() / 3600
+                    )
+                except Exception:
+                    hours_since_upset = 0.0
+
+            recent_goodwills = state.get("goodwill_history") or []
+            # 只存用户示好文本，便于 evaluate_goodwill 做重复话术比对
+            recent_texts = [
+                (g.get("text") if isinstance(g, dict) else str(g))
+                for g in recent_goodwills[-5:]
+            ]
+            result = evaluate_goodwill(current_user_msg, recent_texts, hours_since_upset=hours_since_upset)
+
+            # 更新 state：points 累计、mode 变化、goodwills 追加
+            state["points"] = float(state.get("points", 0.0) or 0.0) + float(result.get("points", 0.0) or 0.0)
+            new_mode = transition(mode, {"type": "goodwill", "points": result.get("points", 0.0)}, state=state)
+            state["mode"] = new_mode
+            history = list(state.get("goodwill_history") or [])
+            history.append({
+                "text": current_user_msg[:100],
+                "sincerity": result.get("sincerity", 0),
+                "points": result.get("points", 0.0),
+                "at": now.isoformat(),
+            })
+            state["goodwill_history"] = history[-20:]
+            PassiveConsciousnessService._save_repair_state(state)
+            logger.info("诚意评分: sincerity=%s repeat=%s points=%.2f → mode=%s",
+                        result.get("sincerity"), result.get("is_repeat"),
+                        result.get("points", 0.0), new_mode)
+            return result
+        except Exception as e:
+            logger.warning("诚意评分失败（不影响注入主流程）: %s", e)
+            return None
 
     @staticmethod
     def _intensity_label(value: float) -> str:
